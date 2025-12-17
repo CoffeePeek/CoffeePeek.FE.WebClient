@@ -54,6 +54,7 @@ const toCsv = (arr: string[]): string => arr.join(',');
 
 export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
   const fallbackShops = useMemo(() => normalizeMockShops(), []);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const qParam = searchParams.get('q') ?? '';
@@ -233,7 +234,7 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
             )}
           </div>
 
-          <Sheet>
+          <Sheet open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <SlidersHorizontal className="size-4" />
@@ -241,12 +242,13 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
                 {activeFiltersCount > 0 && <Badge className="ml-1">{activeFiltersCount}</Badge>}
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="max-h-[80vh]">
-              <SheetHeader>
+            <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl">
+              <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-800" />
+              <SheetHeader className="pb-2">
                 <SheetTitle>Фильтры</SheetTitle>
               </SheetHeader>
 
-              <div className="py-4 space-y-6">
+              <div className="flex-1 overflow-auto px-4 pb-28 space-y-6">
                 <div className="space-y-2">
                   <Label>Город</Label>
                   <Select
@@ -369,18 +371,30 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
                     </div>
                   </ScrollArea>
                 </div>
+              </div>
 
-                <div className="flex items-center justify-between">
+              <div className="sticky bottom-0 border-t bg-background px-4 py-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)]">
+                <div className="flex gap-2">
                   <Button
                     variant="outline"
+                    className="flex-1 h-12"
                     onClick={() => {
                       setQDraft('');
                       setSearchParams(new URLSearchParams());
+                      setIsFiltersOpen(false);
                     }}
                   >
                     Сбросить
                   </Button>
-                  <Button onClick={() => refetch()}>Применить</Button>
+                  <Button
+                    className="flex-1 h-12"
+                    onClick={() => {
+                      refetch();
+                      setIsFiltersOpen(false);
+                    }}
+                  >
+                    Применить
+                  </Button>
                 </div>
               </div>
             </SheetContent>

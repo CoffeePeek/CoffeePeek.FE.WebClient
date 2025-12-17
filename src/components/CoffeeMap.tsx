@@ -1,59 +1,137 @@
-import React, { useState } from 'react';
-import { mockCoffeeShops } from '../data/mockData';
+import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import { coffeeshopApi, internalApi } from '../api';
+import type { BrewMethodDto, ShortShopDto } from '../api/types';
 import { MapPin, Star, Filter } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
+import { ScrollArea } from './ui/scroll-area';
+import { YandexCoffeeMap, type MapBounds } from './maps/YandexCoffeeMap';
+import { mockCoffeeShops } from '../data/mockData';
 
 type CoffeeMapProps = {
   onShopSelect: (shopId: string) => void;
 };
 
 export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
-  const [showOpenOnly, setShowOpenOnly] = useState(false);
-  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
+  const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY as string | undefined;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openOnlyParam = searchParams.get('openOnly') === '1';
+  const brewMethodIdsParam = useMemo(() => {
+    const raw = searchParams.get('brewMethodIds');
+    return raw
+      ? raw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+  }, [searchParams]);
 
-  const allMethods = Array.from(
-    new Set(mockCoffeeShops.flatMap((shop) => shop.brewMethods))
-  );
+  const [bounds, setBounds] = useState<MapBounds | null>(null);
 
-  const filteredShops = mockCoffeeShops.filter((shop) => {
-    if (showOpenOnly && !shop.isOpen) return false;
-    if (
-      selectedMethods.length > 0 &&
-      !selectedMethods.some((method) => shop.brewMethods.includes(method))
-    ) {
-      return false;
-    }
-    return true;
+  const { data: brewMethodsResponse } = useQuery({
+    queryKey: ['brewMethods'],
+    queryFn: () => internalApi.getBrewMethods(),
+    staleTime: 10 * 60 * 1000,
   });
 
-  const toggleMethod = (method: string) => {
-    setSelectedMethods((prev) =>
-      prev.includes(method)
-        ? prev.filter((m) => m !== method)
-        : [...prev, method]
-    );
+  const brewMethods: BrewMethodDto[] = brewMethodsResponse?.data?.brewMethods ?? [];
+
+  const { data: shopsResponse, isFetching, error } = useQuery({
+    queryKey: ['map-shops', bounds],
+    queryFn: () => {
+      if (!bounds) {
+        // initial lightweight fallback until the map reports bounds
+        return coffeeshopApi.getCoffeeShops({ pageNumber: 1, pageSize: 20 });
+      }
+      return coffeeshopApi.getCoffeeShopsInBounds(bounds);
+    },
+    staleTime: 30 * 1000,
+    retry: 2,
+  });
+
+  const normalizeMockShops = (): ShortShopDto[] =>
+    mockCoffeeShops.map((shop) => ({
+      id: shop.id,
+      name: shop.name,
+      imageUrls: [shop.image],
+      rating: shop.rating,
+      reviewCount: shop.reviewCount,
+      location: {
+        address: shop.location.address,
+        latitude: shop.location.lat,
+        longitude: shop.location.lng,
+      },
+      isOpen: shop.isOpen,
+      // map screen doesn't need these precisely; keep minimal valid dto shape
+      equipments: shop.equipment.map((name) => ({ name })),
+      priceRange: 2,
+    }));
+
+  const apiShops = shopsResponse?.data?.content ?? [];
+  const shops: ShortShopDto[] = apiShops.length > 0 ? apiShops : normalizeMockShops();
+
+  const filteredShops: ShortShopDto[] = useMemo(() => {
+    return shops.filter((shop) => {
+      if (openOnlyParam && !shop.isOpen) return false;
+
+      // Optional client-side brew-method filter only if API provides brewMethods in list/map response.
+      if (brewMethodIdsParam.length > 0) {
+        const ids: string[] =
+          (shop as any)?.brewMethods?.map?.((b: any) => b?.id).filter(Boolean) ??
+          [];
+        if (ids.length > 0 && !brewMethodIdsParam.some((id) => ids.includes(id))) return false;
+      }
+
+      return true;
+    });
+  }, [brewMethodIdsParam, openOnlyParam, shops]);
+
+  const activeFiltersCount = (openOnlyParam ? 1 : 0) + brewMethodIdsParam.length;
+
+  const toggleBrewMethod = (id: string, checked: boolean) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      const current = new Set(brewMethodIdsParam);
+      if (checked) current.add(id);
+      else current.delete(id);
+      const arr = Array.from(current);
+      if (arr.length) next.set('brewMethodIds', arr.join(','));
+      else next.delete('brewMethodIds');
+      return next;
+    });
   };
 
   const resetFilters = () => {
-    setShowOpenOnly(false);
-    setSelectedMethods([]);
+    setSearchParams(new URLSearchParams());
   };
+
+  const defaultCenter: [number, number] = useMemo(() => {
+    const firstWithCoords = shops.find(
+      (s) => typeof s.location?.latitude === 'number' && typeof s.location?.longitude === 'number'
+    );
+    if (firstWithCoords?.location?.latitude && firstWithCoords?.location?.longitude) {
+      return [firstWithCoords.location.latitude, firstWithCoords.location.longitude];
+    }
+    // Moscow as safe default
+    return [55.751244, 37.618423];
+  }, [shops]);
 
   return (
     <div className="relative">
-      {/* Map Placeholder */}
-      <div className="h-[50vh] bg-gradient-to-br from-amber-50 to-orange-100 relative">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <MapPin className="size-12 text-amber-700 mx-auto mb-2" />
-            <p className="text-neutral-600">Интерактивная карта</p>
-            <p className="text-sm text-neutral-500">Геолокация кофеен</p>
-          </div>
-        </div>
+      <div className="relative">
+        <YandexCoffeeMap
+          apiKey={apiKey}
+          shops={filteredShops}
+          defaultCenter={defaultCenter}
+          onShopSelect={onShopSelect}
+          onBoundsChange={setBounds}
+        />
 
         {/* Filter Button */}
         <Sheet>
@@ -64,45 +142,69 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
             >
               <Filter className="size-4 mr-2" />
               Фильтры
-              {(showOpenOnly || selectedMethods.length > 0) && (
+              {activeFiltersCount > 0 && (
                 <Badge className="ml-2 bg-amber-700 text-white">
-                  {(showOpenOnly ? 1 : 0) + selectedMethods.length}
+                  {activeFiltersCount}
                 </Badge>
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[80vh]">
-            <SheetHeader>
+          <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl">
+            <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-800" />
+            <SheetHeader className="pb-2">
               <SheetTitle>Фильтры</SheetTitle>
             </SheetHeader>
-            <div className="space-y-6 py-4">
+            <div className="flex-1 overflow-auto px-4 pb-28 space-y-6">
               <div className="flex items-center justify-between">
                 <Label htmlFor="open-only">Только открытые сейчас</Label>
                 <Switch
                   id="open-only"
-                  checked={showOpenOnly}
-                  onCheckedChange={setShowOpenOnly}
+                  checked={openOnlyParam}
+                  onCheckedChange={(v) => {
+                    setSearchParams((prev) => {
+                      const next = new URLSearchParams(prev);
+                      if (v) next.set('openOnly', '1');
+                      else next.delete('openOnly');
+                      return next;
+                    });
+                  }}
                 />
               </div>
 
               <div>
                 <Label className="mb-3 block">Методы заваривания</Label>
-                <div className="flex flex-wrap gap-2">
-                  {allMethods.map((method) => (
-                    <Badge
-                      key={method}
-                      variant={selectedMethods.includes(method) ? 'default' : 'outline'}
-                      className={`cursor-pointer ${
-                        selectedMethods.includes(method)
-                          ? 'bg-amber-700 hover:bg-amber-800'
-                          : ''
-                      }`}
-                      onClick={() => toggleMethod(method)}
-                    >
-                      {method}
-                    </Badge>
-                  ))}
-                </div>
+                <ScrollArea className="h-44 rounded-md border p-3">
+                  <div className="space-y-3">
+                    {brewMethods.map((m) => {
+                      const id = m.id ?? '';
+                      if (!id) return null;
+                      const checked = brewMethodIdsParam.includes(id);
+                      return (
+                        <div key={id} className="flex items-center gap-3">
+                          <Checkbox checked={checked} onCheckedChange={(v) => toggleBrewMethod(id, Boolean(v))} />
+                          <span className="text-sm">{m.name}</span>
+                        </div>
+                      );
+                    })}
+                    {brewMethods.length === 0 && (
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Нет данных по методам приготовления (endpoint /api/internal/brew-methods).
+                      </p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+
+            </div>
+
+            <div className="sticky bottom-0 border-t bg-background px-4 py-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)]">
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 h-12" onClick={resetFilters}>
+                  Сбросить
+                </Button>
+                <Button className="flex-1 h-12" onClick={() => { /* UI-only filters; map/list update instantly */ }}>
+                  Применить
+                </Button>
               </div>
             </div>
           </SheetContent>
@@ -114,6 +216,12 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
         <h2 className="text-neutral-900 mb-3">
           Найдено кофеен: {filteredShops.length}
         </h2>
+
+        {error && (
+          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            Не удалось загрузить кофейни для карты. Показываем сохраненные данные.
+          </div>
+        )}
 
         <div className="space-y-3">
           {filteredShops.length === 0 ? (
@@ -136,7 +244,7 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
               >
                 <div className="flex gap-3">
                   <img
-                    src={shop.image}
+                    src={shop.imageUrls?.[0] ?? 'https://via.placeholder.com/160'}
                     alt={shop.name}
                     className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
                   />
@@ -155,6 +263,11 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
                         <span className="text-sm text-neutral-900">{shop.rating.toFixed(1)}</span>
                       </div>
                       <span className="text-xs text-neutral-500">({shop.reviewCount})</span>
+                      {isFetching && (
+                        <Badge variant="outline" className="ml-auto">
+                          Обновление…
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-start gap-1">
                       <MapPin className="size-3 text-neutral-500 mt-0.5 flex-shrink-0" />

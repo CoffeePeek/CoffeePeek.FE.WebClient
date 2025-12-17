@@ -45,6 +45,7 @@ npm run build:analyze
 
 - `VITE_API_BASE_URL` — базовый URL API в production
 - `VITE_USE_LOCAL_API` — `true/false`, использовать локальный API URL (для локальной отладки)
+- `VITE_YANDEX_MAPS_API_KEY` — API key Яндекс.Карт (нужен для страницы `/map`)
 
 ## E2E smoke-тест
 

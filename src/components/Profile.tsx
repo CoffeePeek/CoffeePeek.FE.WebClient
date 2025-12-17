@@ -30,6 +30,7 @@ import { RoastersList } from './RoastersList';
 import { ReferralProgram } from './ReferralProgram';
 import { AddCoffeeShop } from './AddCoffeeShop';
 import { ModeratorPanel } from './ModeratorPanel';
+import { EditProfileSheet } from './EditProfileSheet';
 
 type ProfileSection = 'main' | 'reviews' | 'posts' | 'roasters' | 'referral' | 'add-shop' | 'moderator';
 
@@ -39,8 +40,9 @@ type ProfileProps = {
 
 export function Profile({ onNavigateToLog }: ProfileProps) {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const [activeSection, setActiveSection] = useState<ProfileSection>('main');
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const initials = (() => {
     const name = user?.name?.trim();
@@ -138,7 +140,12 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
                 )}
               </div>
               <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">{user?.email || 'alexey.petrov@mail.ru'}</p>
-              <Button variant="outline" size="sm" className="dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800">
+              <Button
+                variant="outline"
+                size="sm"
+                className="dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                onClick={() => setIsEditOpen(true)}
+              >
                 Редактировать профиль
               </Button>
             </div>
@@ -234,6 +241,12 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
         <LogOut className="size-4 mr-2" />
         Выйти из аккаунта
       </Button>
+
+      <EditProfileSheet
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        onSaved={refreshUser}
+      />
     </div>
   );
 }
