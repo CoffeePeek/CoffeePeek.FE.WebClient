@@ -42,6 +42,17 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
   const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState<ProfileSection>('main');
 
+  const initials = (() => {
+    const name = user?.name?.trim();
+    if (name) {
+      const parts = name.split(/\s+/).filter(Boolean);
+      return parts.slice(0, 2).map((n) => n[0]?.toUpperCase()).join('') || 'U';
+    }
+    const email = user?.email?.trim();
+    if (email) return email[0]?.toUpperCase() || 'U';
+    return 'U';
+  })();
+
   // Show different sections
   if (activeSection === 'reviews') {
     return <UserReviews onBack={() => setActiveSection('main')} />;
@@ -114,7 +125,7 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
           <div className="flex items-center gap-4 mb-4">
             <Avatar className="size-20">
               <AvatarFallback className="bg-amber-700 text-white text-xl">
-                {user?.name.split(' ').map(n => n[0]).join('') || 'АП'}
+                {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">

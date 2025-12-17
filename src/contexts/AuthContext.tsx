@@ -36,8 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return {
       id: userDto.id || '',
-      name: userDto.userName,
-      email: userDto.email,
+      name: userDto.userName || userDto.username || userDto.email || '',
+      email: userDto.email || '',
       avatar: userDto.photoUrl || undefined,
       isModerator,
     };

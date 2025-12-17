@@ -10,6 +10,10 @@ import { Separator } from './ui/separator';
 import { Alert, AlertDescription } from './ui/alert';
 import { useAuth } from '../contexts/AuthContext';
 import { mockCoffeeShops, mockReviews } from '../data/mockData';
+import { Skeleton } from './ui/skeleton';
+import { toast } from 'sonner@2.0.3';
+import { copyToClipboard } from '../shared/lib/clipboard';
+import { toErrorMessage } from '../shared/lib/errors';
 
 type CoffeeShopDetailProps = {
   shopId: string;
@@ -83,19 +87,48 @@ export function CoffeeShopDetail({ shopId, onBack }: CoffeeShopDetailProps) {
 
   const shop: ShopDto | null = shopResponse?.data?.shop ?? normalizeMockShop(shopId);
   const reviews: CoffeeShopReviewDto[] = useMemo(() => {
-    if (reviewsResponse && reviewsResponse.length > 0) {
+    // If API call succeeded (even if empty), use it. Only fallback to mock when API failed entirely.
+    if (reviewsResponse !== undefined) {
       return reviewsResponse.filter((r) => r.shopId.toString() === shopId);
     }
     return normalizeMockReviews(shopId);
   }, [reviewsResponse, shopId]);
 
   const hasError = Boolean(shopError || reviewsError || shopResponse?.isSuccess === false);
+  const errorText = toErrorMessage(shopError || reviewsError) || shopResponse?.message || '';
 
   if (isShopLoading || isReviewsLoading) {
     return (
       <div className="bg-white min-h-screen pb-20">
-        <div className="p-4 text-center py-12">
-          <p className="text-neutral-500">Загрузка...</p>
+        <div className="relative">
+          <Skeleton className="w-full h-64" />
+          <div className="absolute top-4 left-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+          </div>
+        </div>
+
+        <div className="px-4 py-4 space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-4/6" />
+          </div>
+
+          <div className="space-y-3">
+            <Skeleton className="h-5 w-1/3" />
+            <div className="grid grid-cols-2 gap-2">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <Skeleton key={idx} className="h-10 w-full rounded-lg" />
+              ))}
+            </div>
+          </div>
+
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
       </div>
     );
@@ -149,10 +182,28 @@ export function CoffeeShopDetail({ shopId, onBack }: CoffeeShopDetailProps) {
       <div className="px-4 py-4">
         {hasError && (
           <Alert className="mb-4 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30">
-            <AlertDescription className="text-sm text-amber-800 dark:text-amber-300">
-              {shopError instanceof Error
-                ? shopError.message
-                : shopResponse?.message || 'Не удалось обновить данные кофейни.'}
+            <AlertDescription className="text-sm text-amber-800 dark:text-amber-300 space-y-3">
+              <div>
+                {shopError instanceof Error
+                  ? shopError.message
+                  : shopResponse?.message || 'Не удалось обновить данные кофейни.'}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      await copyToClipboard(errorText);
+                      toast.success('Текст ошибки скопирован');
+                    } catch {
+                      toast.error('Не удалось скопировать');
+                    }
+                  }}
+                >
+                  Скопировать ошибку
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         )}

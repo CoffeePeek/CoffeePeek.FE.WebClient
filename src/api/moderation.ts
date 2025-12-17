@@ -57,40 +57,7 @@ export const moderationApi = {
     id: number,
     status: ModerationStatus
   ): Promise<BaseResponse> => {
-    // Use apiClient.get to handle proxy and auth automatically
-    // But we need query params, so we'll use the request method directly
-    const token = localStorage.getItem('accessToken');
-    const isDevelopment = import.meta.env.DEV;
-    const useLocalApi = import.meta.env.VITE_USE_LOCAL_API === 'true';
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://nginx-dev-c5be.up.railway.app';
-    const LOCAL_API_URL = 'http://localhost:80';
-    
-    const baseURL = isDevelopment 
-      ? '' // Use relative path in dev (Vite proxy handles it)
-      : (useLocalApi ? LOCAL_API_URL : API_BASE_URL);
-    
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(
-      `${baseURL}/api/moderation/status?id=${id}&status=${status}`,
-      {
-        method: 'PUT',
-        headers,
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
+    return apiClient.put<BaseResponse>(`/api/moderation/status?id=${encodeURIComponent(String(id))}&status=${encodeURIComponent(status)}`);
   },
 };
 

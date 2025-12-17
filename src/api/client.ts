@@ -1,6 +1,7 @@
 import type { BaseResponse, PaginationHeaders } from './types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://nginx-dev-c5be.up.railway.app';
+// Default production API domain (can be overridden by VITE_API_BASE_URL)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://gateway-dev-1b7e.up.railway.app';
 const LOCAL_API_URL = 'http://localhost:80';
 
 // In development, use relative paths to go through Vite proxy (avoids CORS)
@@ -20,20 +21,34 @@ const BASE_URL = (() => {
   return useLocalApi ? LOCAL_API_URL : API_BASE_URL;
 })();
 
-// Debug: log the base URL being used
-console.log('🔧 API Client Environment:', {
+const debugLog = (...args: unknown[]) => {
+  if (isDevelopment) {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+};
+
+const warnLog = (...args: unknown[]) => {
+  if (isDevelopment) {
+    // eslint-disable-next-line no-console
+    console.warn(...args);
+  }
+};
+
+// Debug: log the base URL being used (dev only)
+debugLog('API Client Environment:', {
   MODE: import.meta.env.MODE,
   DEV: import.meta.env.DEV,
   isDevelopment,
   BASE_URL: BASE_URL || '(empty - using Vite proxy)',
   useLocalApi,
-  willUseProxy: BASE_URL === ''
+  willUseProxy: BASE_URL === '',
 });
 
 // Warn if we're not using proxy in what seems like dev mode
 if (BASE_URL !== '' && window.location.hostname === 'localhost') {
-  console.warn('⚠️ WARNING: Not using proxy but running on localhost!');
-  console.warn('⚠️ This will cause CORS errors. Make sure you are running "npm run dev"');
+  warnLog('WARNING: Not using proxy but running on localhost!');
+  warnLog('This can cause CORS errors. Make sure you are running "npm run dev"');
 }
 
 class ApiClient {
@@ -41,6 +56,35 @@ class ApiClient {
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
+  }
+
+  private getPaginationHeaders(response: Response): PaginationHeaders {
+    const paginationHeaders: PaginationHeaders = {};
+    const totalCount = response.headers.get('X-Total-Count');
+    const totalPages = response.headers.get('X-Total-Pages');
+    const currentPage = response.headers.get('X-Current-Page');
+    const pageSize = response.headers.get('X-Page-Size');
+
+    if (totalCount) paginationHeaders['X-Total-Count'] = totalCount;
+    if (totalPages) paginationHeaders['X-Total-Pages'] = totalPages;
+    if (currentPage) paginationHeaders['X-Current-Page'] = currentPage;
+    if (pageSize) paginationHeaders['X-Page-Size'] = pageSize;
+
+    return paginationHeaders;
+  }
+
+  private attachHeaders<T>(data: T, response: Response): T & { headers?: PaginationHeaders } {
+    const paginationHeaders = this.getPaginationHeaders(response);
+
+    // Only objects can be safely spread/extended. For non-objects, we return the original value.
+    if (data !== null && typeof data === 'object') {
+      return { ...(data as Record<string, unknown>), headers: paginationHeaders } as T & {
+        headers?: PaginationHeaders;
+      };
+    }
+
+    // headers is optional in the return type; primitives can't carry it.
+    return data as T & { headers?: PaginationHeaders };
   }
 
   private getAuthToken(): string | null {
@@ -140,15 +184,12 @@ class ApiClient {
       const port = typeof window !== 'undefined' ? window.location.port : '3000';
       const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
       url = `${protocol}//${window.location.hostname}:${port}${endpoint}`;
-      console.log('🔧 Using explicit localhost URL for proxy:', url);
+      debugLog('Using explicit localhost URL for proxy:', url);
     } else {
       url = `${this.baseURL}${endpoint}`;
     }
     
-    console.log('🌐 Making request:', options.method || 'GET', url);
-    console.log('🔍 Base URL:', this.baseURL || '(empty - using proxy)');
-    console.log('🔍 Final URL:', url);
-    console.log('🔍 Is localhost:', isLocalhost);
+    debugLog('Making request:', options.method || 'GET', url);
     
     let response: Response;
     try {
@@ -159,11 +200,12 @@ class ApiClient {
     } catch (error) {
       // If CORS error and we're on localhost, provide helpful message
       if (isLocalhost && error instanceof TypeError) {
-        console.error('❌ CORS Error detected on localhost!');
-        console.error('💡 This should not happen if using Vite proxy.');
-        console.error('💡 Make sure you are running "npm run dev" (not "npm run build")');
-        console.error('💡 Check that vite.config.ts proxy is configured correctly.');
-        console.error('💡 Try restarting the dev server.');
+        // eslint-disable-next-line no-console
+        console.error('CORS Error detected on localhost.');
+        warnLog('This should not happen if using Vite proxy.');
+        warnLog('Make sure you are running "npm run dev" (not "npm run build")');
+        warnLog('Check that vite.config.ts proxy is configured correctly.');
+        warnLog('Try restarting the dev server.');
       }
       throw error;
     }
@@ -184,32 +226,27 @@ class ApiClient {
     }
 
     const data = await this.handleResponse<T>(response);
-
-    // Extract pagination headers if present
-    const paginationHeaders: PaginationHeaders = {};
-    const totalCount = response.headers.get('X-Total-Count');
-    const totalPages = response.headers.get('X-Total-Pages');
-    const currentPage = response.headers.get('X-Current-Page');
-    const pageSize = response.headers.get('X-Page-Size');
-
-    if (totalCount) paginationHeaders['X-Total-Count'] = totalCount;
-    if (totalPages) paginationHeaders['X-Total-Pages'] = totalPages;
-    if (currentPage) paginationHeaders['X-Current-Page'] = currentPage;
-    if (pageSize) paginationHeaders['X-Page-Size'] = pageSize;
-
-    return { ...data, headers: paginationHeaders };
+    return this.attachHeaders(data, response);
   }
 
-  async get<T>(endpoint: string, params?: Record<string, string | number | boolean>): Promise<T & { headers?: PaginationHeaders }> {
+  async get<T>(
+    endpoint: string,
+    params?: Record<string, string | number | boolean | Array<string | number | boolean>>,
+    extraHeaders?: HeadersInit
+  ): Promise<T & { headers?: PaginationHeaders }> {
     let url = endpoint;
     if (params) {
       const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParams.append(key, String(v)));
+          return;
+        }
         searchParams.append(key, String(value));
       });
       url += `?${searchParams.toString()}`;
     }
-    return this.request<T>(url, { method: 'GET' });
+    return this.request<T>(url, { method: 'GET', headers: extraHeaders });
   }
 
   async post<T>(endpoint: string, data?: unknown, headers?: HeadersInit): Promise<T & { headers?: PaginationHeaders }> {
@@ -270,7 +307,8 @@ class ApiClient {
       }
     }
 
-    return this.handleResponse<T>(response);
+    const data = await this.handleResponse<T>(response);
+    return this.attachHeaders(data, response);
   }
 }
 

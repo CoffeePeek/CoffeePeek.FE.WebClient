@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { mockCoffeeShops } from '../data/mockData';
 import { MapPin, Star, Filter } from 'lucide-react';
 import { Badge } from './ui/badge';
@@ -36,6 +36,11 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
         ? prev.filter((m) => m !== method)
         : [...prev, method]
     );
+  };
+
+  const resetFilters = () => {
+    setShowOpenOnly(false);
+    setSelectedMethods([]);
   };
 
   return (
@@ -111,46 +116,57 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
         </h2>
 
         <div className="space-y-3">
-          {filteredShops.map((shop) => (
-            <div
-              key={shop.id}
-              onClick={() => onShopSelect(shop.id)}
-              className="bg-white rounded-lg p-4 shadow-sm border border-neutral-200 cursor-pointer hover:shadow-md transition-shadow"
-            >
-              <div className="flex gap-3">
-                <img
-                  src={shop.image}
-                  alt={shop.name}
-                  className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-1">
-                    <h3 className="text-neutral-900 truncate">{shop.name}</h3>
-                    {shop.isOpen && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 ml-2 flex-shrink-0">
-                        Открыто
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex items-center gap-1">
-                      <Star className="size-3 fill-amber-500 text-amber-500" />
-                      <span className="text-sm text-neutral-900">{shop.rating.toFixed(1)}</span>
+          {filteredShops.length === 0 ? (
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-neutral-200">
+              <p className="text-sm text-neutral-600">
+                По выбранным фильтрам ничего не найдено.
+              </p>
+              <div className="mt-3">
+                <Button variant="outline" size="sm" onClick={resetFilters}>
+                  Сбросить фильтры
+                </Button>
+              </div>
+            </div>
+          ) : (
+            filteredShops.map((shop) => (
+              <div
+                key={shop.id}
+                onClick={() => onShopSelect(shop.id)}
+                className="bg-white rounded-lg p-4 shadow-sm border border-neutral-200 cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="flex gap-3">
+                  <img
+                    src={shop.image}
+                    alt={shop.name}
+                    className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-1">
+                      <h3 className="text-neutral-900 truncate">{shop.name}</h3>
+                      {shop.isOpen && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 ml-2 flex-shrink-0">
+                          Открыто
+                        </Badge>
+                      )}
                     </div>
-                    <span className="text-xs text-neutral-500">
-                      ({shop.reviewCount})
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-1">
-                    <MapPin className="size-3 text-neutral-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs text-neutral-600 truncate">
-                      {shop.location.address}
-                    </span>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-1">
+                        <Star className="size-3 fill-amber-500 text-amber-500" />
+                        <span className="text-sm text-neutral-900">{shop.rating.toFixed(1)}</span>
+                      </div>
+                      <span className="text-xs text-neutral-500">({shop.reviewCount})</span>
+                    </div>
+                    <div className="flex items-start gap-1">
+                      <MapPin className="size-3 text-neutral-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-neutral-600 truncate">
+                        {shop.location.address}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>

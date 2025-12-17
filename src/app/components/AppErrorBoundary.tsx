@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { captureException } from '../../shared/lib/telemetry';
 
 type Props = {
   children: ReactNode;
@@ -17,8 +18,7 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // In production this could be wired to Sentry/LogRocket/etc.
-    console.error('App boundary error', error, errorInfo);
+    captureException(error, { errorInfo });
   }
 
   render() {

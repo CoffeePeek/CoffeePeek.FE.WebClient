@@ -94,6 +94,7 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+build
 
 # Gatsby files
 .cache/
@@ -234,3 +235,10 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # End of https://www.toptal.com/developers/gitignore/api/react,node,rider
+
+# Local workspace files
+*.code-workspace
+
+# Playwright
+test-results/
+playwright-report/

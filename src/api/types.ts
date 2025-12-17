@@ -63,7 +63,8 @@ export interface RefreshTokenResponse extends BaseResponse {
 // User Types
 export interface UserDto {
   id?: string | null;
-  userName: string;
+  userName?: string;
+  username?: string;
   email: string;
   password?: string;
   token?: string | null;
@@ -84,6 +85,7 @@ export interface UsersListResponse extends BaseResponse {
 
 export interface UpdateProfileRequest {
   userName?: string;
+  username?: string;
   about?: string | null;
 }
 
@@ -99,14 +101,17 @@ export interface LocationDto {
 }
 
 export interface EquipmentDto {
+  id?: string;
   name: string;
 }
 
 export interface BeansDto {
+  id?: string;
   name: string;
 }
 
 export interface RoasterDto {
+  id?: string;
   name: string;
 }
 
@@ -141,6 +146,8 @@ export interface ShortShopDto {
 }
 
 export interface ShopDto extends ShortShopDto {
+  cityId?: string;
+  brewMethods?: unknown[] | null;
   beans?: BeansDto[] | null;
   roasters?: RoasterDto[] | null;
   description?: string | null;
@@ -278,6 +285,70 @@ export interface GetCitiesResponse extends BaseResponse {
   data: {
     cities: CityDto[];
   };
+}
+
+export interface BrewMethodDto {
+  id?: string;
+  name: string;
+}
+
+export interface GetBeansResponse extends BaseResponse {
+  data: {
+    beans: BeansDto[];
+  };
+}
+
+export interface GetEquipmentsResponse extends BaseResponse {
+  data: {
+    equipments: EquipmentDto[];
+  };
+}
+
+export interface GetRoastersResponse extends BaseResponse {
+  data: {
+    roasters: RoasterDto[];
+  };
+}
+
+export interface GetBrewMethodsResponse extends BaseResponse {
+  data: {
+    brewMethods: BrewMethodDto[];
+  };
+}
+
+export interface GetUserStatisticsResponse extends BaseResponse {
+  data: Record<string, unknown>;
+}
+
+export interface CreateCheckInRequest {
+  coffeeShopId: string;
+}
+
+export interface CreateCheckInResponse extends BaseResponse {
+  data: Record<string, unknown>;
+}
+
+export interface GetCheckInsResponse extends BaseResponse {
+  data: Record<string, unknown>;
+}
+
+export interface GetCheckInsByUserIdResponse extends BaseResponse {
+  data: Record<string, unknown>;
+}
+
+export type VacancyJobType = 'All' | 'Barista' | 'Manager' | 'Cook';
+
+export interface VacancyDto {
+  id?: string;
+  title?: string;
+  company?: string;
+  location?: string;
+  type?: string;
+  salary?: string;
+}
+
+export interface GetVacanciesResponse extends BaseResponse {
+  data: Record<string, unknown> | VacancyDto[];
 }
 
 // Pagination Headers

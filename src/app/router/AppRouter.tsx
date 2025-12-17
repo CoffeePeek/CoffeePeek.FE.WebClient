@@ -3,14 +3,15 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { MainLayout } from '../layouts/MainLayout';
 import { RequireAuth } from '../guards/RequireAuth';
 import { LoaderScreen } from '../components/LoaderScreen';
-import { FeedPage } from '../../pages/FeedPage';
-import { MapPage } from '../../pages/MapPage';
-import { JobsPage } from '../../pages/JobsPage';
-import { ProfilePage } from '../../pages/ProfilePage';
-import { CoffeeLogPage } from '../../pages/CoffeeLogPage';
-import { ShopPage } from '../../pages/ShopPage';
-import { LoginPage } from '../../pages/auth/LoginPage';
-import { RegisterPage } from '../../pages/auth/RegisterPage';
+
+const FeedPage = React.lazy(() => import('../../pages/FeedPage').then((m) => ({ default: m.FeedPage })));
+const MapPage = React.lazy(() => import('../../pages/MapPage').then((m) => ({ default: m.MapPage })));
+const JobsPage = React.lazy(() => import('../../pages/JobsPage').then((m) => ({ default: m.JobsPage })));
+const ProfilePage = React.lazy(() => import('../../pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const CoffeeLogPage = React.lazy(() => import('../../pages/CoffeeLogPage').then((m) => ({ default: m.CoffeeLogPage })));
+const ShopPage = React.lazy(() => import('../../pages/ShopPage').then((m) => ({ default: m.ShopPage })));
+const LoginPage = React.lazy(() => import('../../pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+const RegisterPage = React.lazy(() => import('../../pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 
 export function AppRouter() {
   return (

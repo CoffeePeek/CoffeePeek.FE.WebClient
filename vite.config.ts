@@ -2,8 +2,9 @@
   import { defineConfig } from 'vite';
   import react from '@vitejs/plugin-react-swc';
   import path from 'path';
+  import { visualizer } from 'rollup-plugin-visualizer';
 
-  export default defineConfig({
+  export default defineConfig(({ mode }) => ({
     plugins: [react()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
@@ -52,9 +53,26 @@
     build: {
       target: 'esnext',
       outDir: 'dist',
+      rollupOptions: {
+        plugins:
+          mode === 'analyze'
+            ? [
+                visualizer({
+                  filename: 'dist/stats.html',
+                  gzipSize: true,
+                  brotliSize: true,
+                  template: 'treemap',
+                  open: false,
+                }),
+              ]
+            : [],
+      },
     },
     server: {
-      port: 3000,
+    // 3000 on Windows can be reserved/blocked (EACCES). Use Vite default-ish port.
+    port: 5173,
+    strictPort: false,
+    host: '127.0.0.1',
       open: true,
       cors: true,
       proxy: {
@@ -91,4 +109,4 @@
         },
       },
     },
-  });
+  }));
