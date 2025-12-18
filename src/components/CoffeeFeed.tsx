@@ -18,6 +18,7 @@ import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useSearchParams } from 'react-router-dom';
+import { useFavorites } from '../contexts/FavoritesContext';
 
 type CoffeeFeedProps = {
   onShopSelect: (shopId: string) => void;
@@ -55,6 +56,7 @@ const toCsv = (arr: string[]): string => arr.join(',');
 export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
   const fallbackShops = useMemo(() => normalizeMockShops(), []);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const { isFavorite, toggleFavorite, isPending } = useFavorites();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const qParam = searchParams.get('q') ?? '';
@@ -242,13 +244,13 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
                 {activeFiltersCount > 0 && <Badge className="ml-1">{activeFiltersCount}</Badge>}
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl">
+            <SheetContent side="bottom" className="h-[92svh] rounded-t-2xl overflow-hidden">
               <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-800" />
               <SheetHeader className="pb-2">
                 <SheetTitle>Фильтры</SheetTitle>
               </SheetHeader>
 
-              <div className="flex-1 overflow-auto px-4 pb-28 space-y-6">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-28 space-y-6">
                 <div className="space-y-2">
                   <Label>Город</Label>
                   <Select
@@ -278,16 +280,35 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
 
                 <div className="space-y-2">
                   <Label>Оборудование</Label>
-                  <ScrollArea className="h-44 rounded-md border p-3">
-                    <div className="space-y-3">
+                  <div className="rounded-md border p-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                       {equipments.map((e) => {
                         const checked = equipmentIdsParam.includes(e.id ?? '');
+                        const id = e.id ?? '';
+                        if (!id) return null;
                         return (
-                          <div key={e.id} className="flex items-center gap-3">
+                          <button
+                            key={id}
+                            type="button"
+                            className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
+                            onClick={() => {
+                              setSearchParams((prev) => {
+                                const next = new URLSearchParams(prev);
+                                const current = new Set(parseCsv(next.get('equipmentIds')));
+                                if (!checked) current.add(id);
+                                else current.delete(id);
+                                const arr = Array.from(current);
+                                if (arr.length) next.set('equipmentIds', toCsv(arr));
+                                else next.delete('equipmentIds');
+                                return next;
+                              });
+                            }}
+                          >
                             <Checkbox
+                              className="size-5"
                               checked={checked}
+                              onClick={(ev) => ev.stopPropagation()}
                               onCheckedChange={(v) => {
-                                const id = e.id ?? '';
                                 setSearchParams((prev) => {
                                   const next = new URLSearchParams(prev);
                                   const current = new Set(parseCsv(next.get('equipmentIds')));
@@ -300,26 +321,45 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
                                 });
                               }}
                             />
-                            <span className="text-sm">{e.name}</span>
-                          </div>
+                            <span className="text-sm leading-5">{e.name}</span>
+                          </button>
                         );
                       })}
                     </div>
-                  </ScrollArea>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Обжарщик</Label>
-                  <ScrollArea className="h-44 rounded-md border p-3">
-                    <div className="space-y-3">
+                  <div className="rounded-md border p-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                       {roasters.map((r) => {
                         const checked = roasterIdsParam.includes(r.id ?? '');
+                        const id = r.id ?? '';
+                        if (!id) return null;
                         return (
-                          <div key={r.id} className="flex items-center gap-3">
+                          <button
+                            key={id}
+                            type="button"
+                            className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
+                            onClick={() => {
+                              setSearchParams((prev) => {
+                                const next = new URLSearchParams(prev);
+                                const current = new Set(parseCsv(next.get('roasterIds')));
+                                if (!checked) current.add(id);
+                                else current.delete(id);
+                                const arr = Array.from(current);
+                                if (arr.length) next.set('roasterIds', toCsv(arr));
+                                else next.delete('roasterIds');
+                                return next;
+                              });
+                            }}
+                          >
                             <Checkbox
+                              className="size-5"
                               checked={checked}
+                              onClick={(ev) => ev.stopPropagation()}
                               onCheckedChange={(v) => {
-                                const id = r.id ?? '';
                                 setSearchParams((prev) => {
                                   const next = new URLSearchParams(prev);
                                   const current = new Set(parseCsv(next.get('roasterIds')));
@@ -332,26 +372,45 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
                                 });
                               }}
                             />
-                            <span className="text-sm">{r.name}</span>
-                          </div>
+                            <span className="text-sm leading-5">{r.name}</span>
+                          </button>
                         );
                       })}
                     </div>
-                  </ScrollArea>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Способ приготовления</Label>
-                  <ScrollArea className="h-44 rounded-md border p-3">
-                    <div className="space-y-3">
+                  <div className="rounded-md border p-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                       {brewMethods.map((b) => {
                         const checked = brewMethodIdsParam.includes(b.id ?? '');
+                        const id = b.id ?? '';
+                        if (!id) return null;
                         return (
-                          <div key={b.id} className="flex items-center gap-3">
+                          <button
+                            key={id}
+                            type="button"
+                            className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
+                            onClick={() => {
+                              setSearchParams((prev) => {
+                                const next = new URLSearchParams(prev);
+                                const current = new Set(parseCsv(next.get('brewMethodIds')));
+                                if (!checked) current.add(id);
+                                else current.delete(id);
+                                const arr = Array.from(current);
+                                if (arr.length) next.set('brewMethodIds', toCsv(arr));
+                                else next.delete('brewMethodIds');
+                                return next;
+                              });
+                            }}
+                          >
                             <Checkbox
+                              className="size-5"
                               checked={checked}
+                              onClick={(ev) => ev.stopPropagation()}
                               onCheckedChange={(v) => {
-                                const id = b.id ?? '';
                                 setSearchParams((prev) => {
                                   const next = new URLSearchParams(prev);
                                   const current = new Set(parseCsv(next.get('brewMethodIds')));
@@ -364,12 +423,12 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
                                 });
                               }}
                             />
-                            <span className="text-sm">{b.name}</span>
-                          </div>
+                            <span className="text-sm leading-5">{b.name}</span>
+                          </button>
                         );
                       })}
                     </div>
-                  </ScrollArea>
+                  </div>
                 </div>
               </div>
 
@@ -464,9 +523,18 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
                   className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-md hover:bg-white transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
+                    toggleFavorite(shop.id);
                   }}
+                  disabled={isPending(shop.id)}
+                  aria-label={isFavorite(shop.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
                 >
-                  <Heart className="size-4 text-neutral-700" />
+                  <Heart
+                    className={`size-4 ${
+                      isFavorite(shop.id)
+                        ? 'fill-amber-600 text-amber-600'
+                        : 'text-neutral-700'
+                    }`}
+                  />
                 </button>
                 {shop.isOpen && (
                   <Badge className="absolute top-2 left-2 bg-green-600 hover:bg-green-600 text-white border-0">

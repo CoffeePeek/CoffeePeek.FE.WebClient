@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, ApiError } from './client';
 import type {
   GetCoffeeShopsResponse,
   GetCoffeeShopResponse,
@@ -83,12 +83,23 @@ export const coffeeshopApi = {
     maxLat: number;
     maxLon: number;
   }): Promise<GetCoffeeShopsResponse> => {
-    return apiClient.get<GetCoffeeShopsResponse>('/api/shops/map', {
+    const query = {
       minLat: params.minLat,
       minLon: params.minLon,
       maxLat: params.maxLat,
       maxLon: params.maxLon,
-    });
+    };
+
+    // Prefer OpenAPI route: /api/coffeeshop/map
+    // Fallback to legacy gateway route: /api/shops/map
+    try {
+      return await apiClient.get<GetCoffeeShopsResponse>('/api/coffeeshop/map', query);
+    } catch (e) {
+      if (e instanceof ApiError && (e.status === 404 || e.status === 405)) {
+        return await apiClient.get<GetCoffeeShopsResponse>('/api/shops/map', query);
+      }
+      throw e;
+    }
   },
 
   addToFavorite: async (id: string, userId: string): Promise<CreateEntityResponse> => {

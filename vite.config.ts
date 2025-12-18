@@ -1,10 +1,20 @@
 
-  import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
   import react from '@vitejs/plugin-react-swc';
   import path from 'path';
   import { visualizer } from 'rollup-plugin-visualizer';
 
-  export default defineConfig(({ mode }) => ({
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
+export default defineConfig(({ mode }) => {
+  // Load env without the VITE_ prefix filter (3rd arg = '') so we can access all vars if needed.
+  const env = loadEnv(mode, process.cwd(), '');
+
+  const apiBaseUrl = normalizeBaseUrl(env.VITE_API_BASE_URL || 'https://gateway-dev-1b7e.up.railway.app');
+
+  return {
     plugins: [react()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
@@ -69,44 +79,49 @@
       },
     },
     server: {
-    // 3000 on Windows can be reserved/blocked (EACCES). Use Vite default-ish port.
-    port: 5173,
-    strictPort: false,
-    host: '127.0.0.1',
+      // 3000 on Windows can be reserved/blocked (EACCES). Use Vite default-ish port.
+      port: 5173,
+      strictPort: false,
+      host: '127.0.0.1',
       open: true,
       cors: true,
       proxy: {
         '^/api': {
-          target: 'https://gateway-dev-1b7e.up.railway.app',
+          target: apiBaseUrl,
           changeOrigin: true,
-          secure: true,
+          // In some Windows/corporate environments HTTPS can be intercepted by a self-signed root CA,
+          // which breaks Node TLS verification and causes DEPTH_ZERO_SELF_SIGNED_CERT. This proxy is
+          // DEV-only, so we disable TLS verification here to keep local dev unblocked.
+          secure: false,
           rewrite: (path) => path,
           ws: true,
           configure: (proxy, _options) => {
             proxy.on('error', (err, _req, _res) => {
               console.error('❌ Proxy error:', err);
             });
-            proxy.on('proxyReq', (proxyReq, req, _res) => {
-              console.log('➡️  [PROXY] Proxying request:', req.method, req.url, '->', 'https://gateway-dev-1b7e.up.railway.app' + req.url);
+            proxy.on('proxyReq', (_proxyReq, req, _res) => {
+              console.log('➡️  [PROXY] Proxying request:', req.method, req.url, '->', apiBaseUrl + req.url);
             });
             proxy.on('proxyRes', (proxyRes, req, _res) => {
               console.log('⬅️  [PROXY] Response:', proxyRes.statusCode, req.url);
               // Add CORS headers to all responses
               proxyRes.headers['Access-Control-Allow-Origin'] = '*';
               proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
-              proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Page-Number, X-Page-Size, Accept';
+              proxyRes.headers['Access-Control-Allow-Headers'] =
+                'Content-Type, Authorization, X-Page-Number, X-Page-Size, Accept';
               proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
               proxyRes.headers['Access-Control-Max-Age'] = '86400';
             });
           },
         },
         '/favorite': {
-          target: 'https://gateway-dev-1b7e.up.railway.app',
+          target: apiBaseUrl,
           changeOrigin: true,
-          secure: true,
+          secure: false,
           rewrite: (path) => path,
           ws: true,
         },
       },
     },
-  }));
+  };
+});

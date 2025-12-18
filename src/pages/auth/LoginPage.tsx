@@ -9,21 +9,26 @@ export function LoginPage() {
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
 
+  const state = location.state as { from?: Location; email?: string } | null;
+  const initialEmail = state?.email;
+
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated) return;
 
-    const state = location.state as { from?: Location } | null;
     const fromPath = state?.from?.pathname ?? '/feed';
     const fromSearch = state?.from?.search ?? '';
 
     navigate(`${fromPath}${fromSearch}`, { replace: true });
-  }, [isAuthenticated, isLoading, location.state, navigate]);
+  }, [isAuthenticated, isLoading, navigate, state?.from?.pathname, state?.from?.search]);
 
   return (
     <Login
-      onSwitchToRegister={() => {
-        navigate('/auth/register');
+      initialEmail={initialEmail}
+      onSwitchToRegister={(email) => {
+        navigate('/auth/register', {
+          state: { from: state?.from, email },
+        });
       }}
     />
   );

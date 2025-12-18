@@ -78,7 +78,9 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
 
   const filteredShops: ShortShopDto[] = useMemo(() => {
     return shops.filter((shop) => {
-      if (openOnlyParam && !shop.isOpen) return false;
+      // Be tolerant to API variations: some map endpoints may omit `isOpen`.
+      // If it's explicitly false -> filter out; if missing/true -> keep.
+      if (openOnlyParam && shop.isOpen === false) return false;
 
       // Optional client-side brew-method filter only if API provides brewMethods in list/map response.
       if (brewMethodIdsParam.length > 0) {
@@ -149,12 +151,12 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl">
+          <SheetContent side="bottom" className="h-[92svh] rounded-t-2xl overflow-hidden">
             <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-800" />
             <SheetHeader className="pb-2">
               <SheetTitle>Фильтры</SheetTitle>
             </SheetHeader>
-            <div className="flex-1 overflow-auto px-4 pb-28 space-y-6">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-28 space-y-6">
               <div className="flex items-center justify-between">
                 <Label htmlFor="open-only">Только открытые сейчас</Label>
                 <Switch
@@ -173,17 +175,27 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
 
               <div>
                 <Label className="mb-3 block">Методы заваривания</Label>
-                <ScrollArea className="h-44 rounded-md border p-3">
-                  <div className="space-y-3">
+                <div className="rounded-md border p-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                     {brewMethods.map((m) => {
                       const id = m.id ?? '';
                       if (!id) return null;
                       const checked = brewMethodIdsParam.includes(id);
                       return (
-                        <div key={id} className="flex items-center gap-3">
-                          <Checkbox checked={checked} onCheckedChange={(v) => toggleBrewMethod(id, Boolean(v))} />
-                          <span className="text-sm">{m.name}</span>
-                        </div>
+                        <button
+                          key={id}
+                          type="button"
+                          className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
+                          onClick={() => toggleBrewMethod(id, !checked)}
+                        >
+                          <Checkbox
+                            className="size-5"
+                            checked={checked}
+                            onClick={(ev) => ev.stopPropagation()}
+                            onCheckedChange={(v) => toggleBrewMethod(id, Boolean(v))}
+                          />
+                          <span className="text-sm leading-5">{m.name}</span>
+                        </button>
                       );
                     })}
                     {brewMethods.length === 0 && (
@@ -192,7 +204,7 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
                       </p>
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               </div>
 
             </div>
@@ -260,9 +272,11 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex items-center gap-1">
                         <Star className="size-3 fill-amber-500 text-amber-500" />
-                        <span className="text-sm text-neutral-900">{shop.rating.toFixed(1)}</span>
+                        <span className="text-sm text-neutral-900">
+                          {(Number(shop.rating) || 0).toFixed(1)}
+                        </span>
                       </div>
-                      <span className="text-xs text-neutral-500">({shop.reviewCount})</span>
+                      <span className="text-xs text-neutral-500">({Number(shop.reviewCount) || 0})</span>
                       {isFetching && (
                         <Badge variant="outline" className="ml-auto">
                           Обновление…
@@ -272,7 +286,7 @@ export function CoffeeMap({ onShopSelect }: CoffeeMapProps) {
                     <div className="flex items-start gap-1">
                       <MapPin className="size-3 text-neutral-500 mt-0.5 flex-shrink-0" />
                       <span className="text-xs text-neutral-600 truncate">
-                        {shop.location.address}
+                        {shop.location?.address ?? 'Адрес не указан'}
                       </span>
                     </div>
                   </div>

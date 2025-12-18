@@ -1,8 +1,10 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ThemeProvider } from '../../contexts/ThemeContext';
 import { AuthProvider } from '../../contexts/AuthContext';
+import { FavoritesProvider } from '../../contexts/FavoritesContext';
 import { Toaster } from '../../components/ui/sonner';
 import { toast } from 'sonner@2.0.3';
 import { toErrorMessage } from '../../shared/lib/errors';
@@ -40,14 +42,51 @@ export function AppProviders({ children }: AppProvidersProps) {
       })
   );
 
+  // Bind UI sizing to the real viewport height (not document/page height).
+  // This avoids "vh" inconsistencies on mobile (address bar, keyboard) and in emulators.
+  useEffect(() => {
+    const root = document.documentElement;
+
+    const setVh = () => {
+      const vhPx =
+        (window.visualViewport?.height ?? window.innerHeight ?? 0) * 0.01;
+      if (!vhPx) return;
+      root.style.setProperty('--app-vh', `${vhPx}px`);
+    };
+
+    setVh();
+
+    const onResize = () => setVh();
+    window.addEventListener('resize', onResize);
+    window.visualViewport?.addEventListener('resize', onResize);
+    window.visualViewport?.addEventListener('scroll', onResize);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('scroll', onResize);
+    };
+  }, []);
+
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  const maybeWithGoogle = (node: React.ReactNode) => {
+    const id = googleClientId?.trim();
+    if (!id) return <>{node}</>;
+    return <GoogleOAuthProvider clientId={id}>{node}</GoogleOAuthProvider>;
+  };
+
   return (
     <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
-          <Toaster richColors closeButton />
-        </ThemeProvider>
-      </QueryClientProvider>
+      {maybeWithGoogle(
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <AuthProvider>
+              <FavoritesProvider>{children}</FavoritesProvider>
+            </AuthProvider>
+            <Toaster richColors closeButton />
+          </ThemeProvider>
+        </QueryClientProvider>
+      )}
     </BrowserRouter>
   );
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { userApi } from '../api';
 import type { UpdateProfileRequest, UserDto } from '../api/types';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from './ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -73,13 +73,16 @@ export function EditProfileSheet({ open, onOpenChange, onSaved }: EditProfileShe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl">
+      <SheetContent side="bottom" className="h-[92svh] rounded-t-2xl overflow-hidden">
         <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-800" />
         <SheetHeader className="pb-2">
           <SheetTitle>Редактировать профиль</SheetTitle>
+          <SheetDescription className="sr-only">
+            Изменение имени, username и информации о себе.
+          </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-auto px-4 pb-28 space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-28 space-y-5">
           <div className="space-y-2">
             <Label>Email</Label>
             <Input value={initial.email} disabled className="h-12 text-base" />

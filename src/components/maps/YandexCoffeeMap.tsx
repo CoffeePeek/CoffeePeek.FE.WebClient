@@ -48,8 +48,10 @@ export function YandexCoffeeMap({
   const points = useMemo(() => {
     return shops
       .map((s) => {
-        const lat = s.location?.latitude ?? null;
-        const lon = s.location?.longitude ?? null;
+        // Be tolerant to different backend field names for coordinates.
+        const loc: any = s.location as any;
+        const lat = loc?.latitude ?? loc?.lat ?? null;
+        const lon = loc?.longitude ?? loc?.lon ?? loc?.lng ?? null;
         if (typeof lat !== 'number' || typeof lon !== 'number') return null;
         return { id: s.id, name: s.name, coords: [lat, lon] as [number, number] };
       })
@@ -104,5 +106,7 @@ export function YandexCoffeeMap({
     </div>
   );
 }
+
+
 
 

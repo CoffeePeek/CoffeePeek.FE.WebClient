@@ -1,42 +1,94 @@
-import { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { authApi } from '../api';
 import { Coffee, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Checkbox } from './ui/checkbox';
 import { Alert, AlertDescription } from './ui/alert';
+import { useMutation } from '@tanstack/react-query';
+import { toErrorMessage } from '../shared/lib/errors';
+import { GoogleSignIn } from './GoogleSignIn';
+import { toast } from 'sonner@2.0.3';
 
 type RegisterProps = {
-  onSwitchToLogin: () => void;
+  onSwitchToLogin: (email?: string) => void;
+  initialEmail?: string;
 };
 
-export function Register({ onSwitchToLogin }: RegisterProps) {
-  const { register } = useAuth();
+type Step = 'email' | 'details';
+
+export function Register({ onSwitchToLogin, initialEmail }: RegisterProps) {
+  const { register, googleLogin } = useAuth();
+  const [step, setStep] = useState<Step>('email');
+  const [email, setEmail] = useState(initialEmail ?? '');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const checkExistsMutation = useMutation({
+    mutationKey: ['auth-check-exists'],
+    mutationFn: async (emailToCheck: string) => authApi.checkUserExists(emailToCheck),
+  });
+
+  const emailTrimmed = useMemo(() => email.trim(), [email]);
+
+  const handleEmailContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!acceptTerms) {
-      setError('Пожалуйста, примите условия использования');
-      return;
-    }
     setError(null);
-    setIsLoading(true);
-    
+
     try {
-      await register(name, email, password);
+      const response = await checkExistsMutation.mutateAsync(emailTrimmed);
+      const message = (response?.message ?? '').toString();
+      const isNotFoundMessage = /user\s*not\s*found|not\s*found|404/i.test(message);
+
+      // Some backend environments return isSuccess=false + "User not found" for "email doesn't exist".
+      // Treat it as "exists = false" (continue registration), not as a blocking error.
+      const exists =
+        response?.isSuccess === true
+          ? response.data === true
+          : isNotFoundMessage
+            ? false
+            : null;
+
+      if (exists === null) {
+        throw new Error(message || 'Не удалось проверить email');
+      }
+
+      if (exists === true) {
+        // Account exists -> go to login with the same email prefilled
+        onSwitchToLogin(emailTrimmed);
+        return;
+      }
+
+      setStep('details');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка регистрации. Попробуйте снова.');
+      const msg = toErrorMessage(err) || 'Не удалось проверить email. Попробуйте снова.';
+      // If request threw with "not found" meaning "doesn't exist", proceed.
+      if (/user\s*not\s*found|not\s*found|404/i.test(msg)) {
+        setStep('details');
+        return;
+      }
+      setError(msg);
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await register(name.trim(), emailTrimmed, password);
+      toast.success('Регистрация успешна. Теперь войдите в аккаунт.');
+      onSwitchToLogin(emailTrimmed);
+    } catch (err) {
+      setError(toErrorMessage(err) || 'Ошибка регистрации. Попробуйте снова.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -66,104 +118,123 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
                 </AlertDescription>
               </Alert>
             )}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="dark:text-neutral-200">Имя</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Ваше имя"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="pl-10 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50 dark:placeholder:text-neutral-500"
-                    required
-                  />
+            {step === 'email' ? (
+              <form onSubmit={handleEmailContinue} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="dark:text-neutral-200">
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50 dark:placeholder:text-neutral-500"
+                      required
+                      autoComplete="email"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="dark:text-neutral-200">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50 dark:placeholder:text-neutral-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="dark:text-neutral-200">Пароль</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50 dark:placeholder:text-neutral-500"
-                    required
-                    minLength={6}
-                  />
+                <Button
+                  type="submit"
+                  className="w-full bg-amber-700 hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-700"
+                  disabled={checkExistsMutation.isPending || emailTrimmed.length === 0}
+                >
+                  {checkExistsMutation.isPending ? 'Проверяем…' : 'Продолжить'}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email-locked" className="dark:text-neutral-200">
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+                    <Input
+                      id="email-locked"
+                      type="email"
+                      value={emailTrimmed}
+                      disabled
+                      className="pl-10 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50"
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    className="text-sm text-amber-700 dark:text-amber-500 hover:underline"
+                    onClick={() => {
+                      setStep('email');
+                      setError(null);
+                    }}
                   >
-                    {showPassword ? (
-                      <EyeOff className="size-4" />
-                    ) : (
-                      <Eye className="size-4" />
-                    )}
+                    Изменить email
                   </button>
                 </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Минимум 6 символов
-                </p>
-              </div>
 
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="terms"
-                  checked={acceptTerms}
-                  onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
-                  className="mt-1 dark:border-neutral-700"
-                />
-                <label
-                  htmlFor="terms"
-                  className="text-sm text-neutral-600 dark:text-neutral-400 leading-tight cursor-pointer"
-                >
-                  Я принимаю{' '}
-                  <a href="#" className="text-amber-700 dark:text-amber-500 hover:underline">
-                    условия использования
-                  </a>{' '}
-                  и{' '}
-                  <a href="#" className="text-amber-700 dark:text-amber-500 hover:underline">
-                    политику конфиденциальности
-                  </a>
-                </label>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="dark:text-neutral-200">
+                    Full name
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Ваше имя и фамилия"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="pl-10 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50 dark:placeholder:text-neutral-500"
+                      required
+                      autoComplete="name"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="dark:text-neutral-200">
+                    Пароль
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50 dark:placeholder:text-neutral-500"
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Минимум 6 символов</p>
+                </div>
 
               <Button
                 type="submit"
                 className="w-full bg-amber-700 hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-700"
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
-                {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
+                {isSubmitting ? 'Регистрация...' : 'Зарегистрироваться'}
               </Button>
-            </form>
+              </form>
+            )}
 
             <div className="mt-6 text-center">
               <button
-                onClick={onSwitchToLogin}
+                onClick={() => onSwitchToLogin(emailTrimmed)}
                 className="text-sm text-amber-700 dark:text-amber-500 hover:underline"
               >
                 Уже есть аккаунт? Войти
@@ -182,31 +253,18 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
                 </div>
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full mt-4 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                <svg className="size-5 mr-2" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Google
-              </Button>
+              <div className="w-full mt-4">
+                <GoogleSignIn
+                  onIdToken={async (idToken) => {
+                    setError(null);
+                    try {
+                      await googleLogin(idToken);
+                    } catch (e) {
+                      setError(toErrorMessage(e) || 'Ошибка входа через Google');
+                    }
+                  }}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

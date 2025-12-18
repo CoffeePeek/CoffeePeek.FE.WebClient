@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { 
   User, 
   BookMarked, 
@@ -16,14 +16,17 @@ import {
   Sun,
   Users
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from './ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
+import { Skeleton } from './ui/skeleton';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { internalApi } from '../api';
 import { UserReviews } from './UserReviews';
 import { UserPosts } from './UserPosts';
 import { RoastersList } from './RoastersList';
@@ -43,6 +46,45 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
   const { user, logout, refreshUser } = useAuth();
   const [activeSection, setActiveSection] = useState<ProfileSection>('main');
   const [isEditOpen, setIsEditOpen] = useState(false);
+
+  const { data: statsResponse, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['user-stats', user?.id],
+    queryFn: () => internalApi.getUserStatistics(user!.id),
+    enabled: Boolean(user?.id) && activeSection === 'main',
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+
+  const stats = useMemo(() => {
+    const raw = statsResponse?.data as unknown;
+    const getNumber = (...keys: string[]): number | null => {
+      if (!raw || typeof raw !== 'object') return null;
+      const obj = raw as Record<string, unknown>;
+      for (const k of keys) {
+        const v = obj[k];
+        if (typeof v === 'number' && Number.isFinite(v)) return v;
+        if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v);
+      }
+      return null;
+    };
+
+    const checkins =
+      getNumber('checkIns', 'checkins', 'checkInsCount', 'checkinsCount', 'checkInCount', 'checkinCount') ?? null;
+    const shops =
+      getNumber(
+        'coffeeShops',
+        'coffeeShopsCount',
+        'coffeeShopCount',
+        'shops',
+        'shopsCount',
+        'visitedShops',
+        'visitedShopsCount'
+      ) ?? null;
+    const reviews =
+      getNumber('reviews', 'reviewsCount', 'reviewCount', 'userReviews', 'userReviewsCount') ?? null;
+
+    return { checkins, shops, reviews };
+  }, [statsResponse?.data]);
 
   const initials = (() => {
     const name = user?.name?.trim();
@@ -154,15 +196,33 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
             <div className="text-center">
-              <div className="text-xl text-amber-700 dark:text-amber-500 mb-1">12</div>
+              <div className="text-xl text-amber-700 dark:text-amber-500 mb-1">
+                {isStatsLoading ? (
+                  <Skeleton className="h-7 w-10 mx-auto" />
+                ) : (
+                  <span>{stats.checkins ?? '—'}</span>
+                )}
+              </div>
               <div className="text-xs text-neutral-600 dark:text-neutral-400">Чекинов</div>
             </div>
             <div className="text-center">
-              <div className="text-xl text-amber-700 dark:text-amber-500 mb-1">8</div>
+              <div className="text-xl text-amber-700 dark:text-amber-500 mb-1">
+                {isStatsLoading ? (
+                  <Skeleton className="h-7 w-10 mx-auto" />
+                ) : (
+                  <span>{stats.shops ?? '—'}</span>
+                )}
+              </div>
               <div className="text-xs text-neutral-600 dark:text-neutral-400">Кофеен</div>
             </div>
             <div className="text-center">
-              <div className="text-xl text-amber-700 dark:text-amber-500 mb-1">5</div>
+              <div className="text-xl text-amber-700 dark:text-amber-500 mb-1">
+                {isStatsLoading ? (
+                  <Skeleton className="h-7 w-10 mx-auto" />
+                ) : (
+                  <span>{stats.reviews ?? '—'}</span>
+                )}
+              </div>
               <div className="text-xs text-neutral-600 dark:text-neutral-400">Отзывов</div>
             </div>
           </div>

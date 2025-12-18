@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { authApi, userApi } from '../api';
-import type { UserDto } from '../api/types';
+import type { GoogleLoginUserDto, UserDto } from '../api/types';
 import React from 'react';
 
 type User = {
@@ -15,6 +15,7 @@ type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  googleLogin: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -40,6 +41,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: userDto.email || '',
       avatar: userDto.photoUrl || undefined,
       isModerator,
+    };
+  };
+
+  const mapGoogleUserToUser = (googleUser: GoogleLoginUserDto): User => {
+    return {
+      id: googleUser.id || '',
+      name: googleUser.name || googleUser.email || '',
+      email: googleUser.email || '',
+      avatar: googleUser.picture || undefined,
+      isModerator: false,
     };
   };
 
@@ -102,11 +113,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       if (response.isSuccess) {
-        // After registration, automatically log in
-        await login(email, password);
+        // Registration succeeded. Do NOT auto-login here:
+        // UI expects to route user to the login screen after registration.
+        return;
       } else {
         throw new Error(response.message || 'Registration failed');
       }
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const googleLogin = async (idToken: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+      const response = await authApi.googleLogin({ idToken });
+      if (response.isSuccess) {
+        // Google login response already contains user payload; set it immediately so UI can redirect.
+        if (response.data?.user) {
+          const mappedUser = mapGoogleUserToUser(response.data.user);
+          setUser(mappedUser);
+          localStorage.setItem('user', JSON.stringify(mappedUser));
+        }
+
+        // In some environments /api/user may be unavailable for google users; don't block auth on it.
+        setIsLoading(false);
+        return;
+      }
+      throw new Error(response.message || 'Google login failed');
     } catch (error) {
       setIsLoading(false);
       throw error;
@@ -136,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         login,
         register,
+        googleLogin,
         logout,
         isAuthenticated: !!user,
         isLoading,

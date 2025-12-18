@@ -1,8 +1,20 @@
 import type { BaseResponse, PaginationHeaders } from './types';
 
+export class ApiError extends Error {
+  public readonly status: number;
+  public readonly data?: unknown;
+
+  constructor(message: string, status: number, data?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
 // Default production API domain (can be overridden by VITE_API_BASE_URL)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://gateway-dev-1b7e.up.railway.app';
-const LOCAL_API_URL = 'http://localhost:80';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const LOCAL_API_URL = import.meta.env.LOCAL_API_URL;
 
 // In development, use relative paths to go through Vite proxy (avoids CORS)
 // In production, use full API URL
@@ -102,14 +114,14 @@ class ApiClient {
       if (response.ok) {
         return {} as T;
       }
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new ApiError(`HTTP error! status: ${response.status}`, response.status);
     }
 
     const data = await response.json();
 
     if (!response.ok) {
       const error: BaseResponse = data;
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      throw new ApiError(error.message || `HTTP error! status: ${response.status}`, response.status, data);
     }
 
     return data as T;

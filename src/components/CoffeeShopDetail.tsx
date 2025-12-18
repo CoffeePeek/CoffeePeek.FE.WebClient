@@ -14,6 +14,7 @@ import { Skeleton } from './ui/skeleton';
 import { toast } from 'sonner@2.0.3';
 import { copyToClipboard } from '../shared/lib/clipboard';
 import { toErrorMessage } from '../shared/lib/errors';
+import { useFavorites } from '../contexts/FavoritesContext';
 
 type CoffeeShopDetailProps = {
   shopId: string;
@@ -62,6 +63,7 @@ const normalizeMockReviews = (shopId: string): CoffeeShopReviewDto[] =>
 
 export function CoffeeShopDetail({ shopId, onBack }: CoffeeShopDetailProps) {
   const { user } = useAuth();
+  const { isFavorite, toggleFavorite, isPending } = useFavorites();
 
   const {
     data: shopResponse,
@@ -167,8 +169,15 @@ export function CoffeeShopDetail({ shopId, onBack }: CoffeeShopDetailProps) {
           <ArrowLeft className="size-5 text-neutral-900" />
         </button>
         <div className="absolute top-4 right-4 flex gap-2">
-          <button className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
-            <Heart className="size-5 text-neutral-900" />
+          <button
+            className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg"
+            onClick={() => toggleFavorite(shopId)}
+            disabled={isPending(shopId)}
+            aria-label={isFavorite(shopId) ? 'Убрать из избранного' : 'Добавить в избранное'}
+          >
+            <Heart
+              className={`size-5 ${isFavorite(shopId) ? 'fill-amber-600 text-amber-600' : 'text-neutral-900'}`}
+            />
           </button>
           <button className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
             <Share2 className="size-5 text-neutral-900" />
