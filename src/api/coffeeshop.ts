@@ -31,7 +31,7 @@ export const coffeeshopApi = {
     }
 
     const response = await apiClient.get<GetCoffeeShopsResponse>(
-      '/api/shops',
+      '/api/CoffeeShop',
       Object.keys(queryParams).length > 0 ? queryParams : undefined,
       Object.keys(headers).length > 0 ? headers : undefined
     );

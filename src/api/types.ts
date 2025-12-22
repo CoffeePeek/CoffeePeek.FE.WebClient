@@ -252,13 +252,18 @@ export interface SendCoffeeShopToModerationRequest {
   schedules?: ScheduleDto[];
 }
 
-export interface UpdateModerationCoffeeShopRequest {
-  id?: number;
-  name?: string;
-  notValidatedAddress?: string;
-  shopContact?: ShopContactDto;
-  shopPhotos?: string[];
-  schedules?: ScheduleDto[];
+export interface SendCoffeeShopToModerationRequest {
+  name: string;
+  notValidatedAddress: string;
+  description: string;
+  beans: string[];
+  roasters: string[];
+  brewMethods: string[];
+  shopPhotos?: {
+    fileName: string;
+    contentType: string;
+    data: number[]; // Массив байтов
+  }[];
 }
 
 export interface SendCoffeeShopToModerationResponse extends BaseResponse {

@@ -8,30 +8,30 @@ import type {
   GetUserStatisticsResponse,
 } from './types';
 
+const DEFAULT_CACHE_TIME = 24 * 60 * 60 * 1000;
+
 export const internalApi = {
   getCities: async (): Promise<GetCitiesResponse> => {
-    return apiClient.get<GetCitiesResponse>('/api/internal/cities');
+    return apiClient.get<GetCitiesResponse>('/api/Internal/cities');
   },
 
-  getBeans: async (): Promise<GetBeansResponse> => {
-    return apiClient.get<GetBeansResponse>('/api/internal/beans');
+  getBeans: async () => {
+    return apiClient.get<GetBeansResponse>('/api/Internal/beans', undefined, undefined, DEFAULT_CACHE_TIME);
   },
 
   getEquipments: async (): Promise<GetEquipmentsResponse> => {
-    return apiClient.get<GetEquipmentsResponse>('/api/internal/equipments');
+    return apiClient.get<GetEquipmentsResponse>('/api/Internal/equipments', undefined, undefined, DEFAULT_CACHE_TIME);
   },
 
   getRoasters: async (): Promise<GetRoastersResponse> => {
-    return apiClient.get<GetRoastersResponse>('/api/internal/roasters');
+    return apiClient.get<GetRoastersResponse>('/api/Internal/roasters', undefined, undefined, DEFAULT_CACHE_TIME);
   },
 
   getBrewMethods: async (): Promise<GetBrewMethodsResponse> => {
-    return apiClient.get<GetBrewMethodsResponse>('/api/internal/brew-methods');
+    return apiClient.get<GetBrewMethodsResponse>('/api/Internal/brew-methods', undefined, undefined, DEFAULT_CACHE_TIME);
   },
 
   getUserStatistics: async (userId: string): Promise<GetUserStatisticsResponse> => {
-    return apiClient.get<GetUserStatisticsResponse>(`/api/internal/statistics/${userId}`);
+    return apiClient.get<GetUserStatisticsResponse>(`/api/Internal/statistics/${userId}`);
   },
 };
-
-

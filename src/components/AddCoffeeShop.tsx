@@ -1,317 +1,307 @@
-import { useState } from 'react';
-import { ArrowLeft, MapPin, Coffee, Clock, Upload, Plus, X } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Card, CardContent } from './ui/card';
-import { Badge } from './ui/badge';
+import { useState, useEffect } from "react";
+import {
+  ArrowLeft,
+  MapPin,
+  Coffee,
+  Clock,
+  Upload,
+  Plus,
+  X,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Card, CardContent } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { internalApi, moderationApi } from "../api";
 
 type AddCoffeeShopProps = {
   onBack: () => void;
 };
 
+type DictionaryItem = { id: string; name: string };
+
 export function AddCoffeeShop({ onBack }: AddCoffeeShopProps) {
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedBeans, setSelectedBeans] = useState<string[]>([]);
-  const [selectedRoasters, setSelectedRoasters] = useState<string[]>([]);
-  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
-  const [customBean, setCustomBean] = useState('');
-  const [customRoaster, setCustomRoaster] = useState('');
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [description, setDescription] = useState("");
 
-  const availableBeans = ['Эфиопия', 'Колумбия', 'Бразилия', 'Кения', 'Гватемала', 'Коста-Рика'];
-  const availableRoasters = ['Tasty Coffee', 'Кооператив Чёрный', 'Torrefacto', 'Braziliya'];
-  const brewMethods = ['Espresso', 'V60', 'Chemex', 'Aeropress', 'French Press', 'Kalita Wave', 'Syphon'];
+  // Справочники хранят объекты целиком
+  const [availableBeans, setAvailableBeans] = useState<DictionaryItem[]>([]);
+  const [availableRoasters, setAvailableRoasters] = useState<DictionaryItem[]>(
+    []
+  );
+  const [brewMethods, setBrewMethods] = useState<DictionaryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const toggleItem = (item: string, list: string[], setList: (items: string[]) => void) => {
-    if (list.includes(item)) {
-      setList(list.filter((i) => i !== item));
-    } else {
-      setList([...list, item]);
-    }
+  // Выбранные элементы хранят только ID (Guid)
+  const [selectedBeanIds, setSelectedBeanIds] = useState<string[]>([]);
+  const [selectedRoasterIds, setSelectedRoasterIds] = useState<string[]>([]);
+  const [selectedMethodIds, setSelectedMethodIds] = useState<string[]>([]);
+
+  const [customBean, setCustomBean] = useState("");
+  const [customRoaster, setCustomRoaster] = useState("");
+  const [photos, setPhotos] = useState<
+    { name: string; type: string; data: Uint8Array; preview: string }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchFormData = async () => {
+      try {
+        setIsLoading(true);
+        const [beansRes, roastersRes, methodsRes] = await Promise.all([
+          internalApi.getBeans(),
+          internalApi.getRoasters(),
+          internalApi.getBrewMethods(),
+        ]);
+        // Сохраняем массивы объектов [{id, name}, ...]
+        setAvailableBeans(beansRes.data.beans || []);
+        setAvailableRoasters(roastersRes.data.roasters || []);
+        setBrewMethods(methodsRes.data.brewMethods || []);
+      } catch (error) {
+        console.error("Failed to load form data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFormData();
+  }, []);
+
+  const toggleItem = (
+    id: string,
+    currentIds: string[],
+    setIds: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    setIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
   };
 
-  const addCustomBean = () => {
-    if (customBean && !selectedBeans.includes(customBean)) {
-      setSelectedBeans([...selectedBeans, customBean]);
-      setCustomBean('');
-    }
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const newPhotos = await Promise.all(
+      Array.from(files).map(async (file: File) => {
+        const buffer = await file.arrayBuffer();
+        return {
+          name: file.name,
+          type: file.type,
+          data: new Uint8Array(buffer),
+          preview: URL.createObjectURL(file),
+        };
+      })
+    );
+    setPhotos((prev) => [...prev, ...newPhotos]);
   };
 
-  const addCustomRoaster = () => {
-    if (customRoaster && !selectedRoasters.includes(customRoaster)) {
-      setSelectedRoasters([...selectedRoasters, customRoaster]);
-      setCustomRoaster('');
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // В реальном приложении здесь был бы API вызов
-    console.log({
-      name,
-      address,
-      description,
-      beans: selectedBeans,
-      roasters: selectedRoasters,
-      methods: selectedMethods,
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => {
+      const newArr = [...prev];
+      URL.revokeObjectURL(newArr[index].preview);
+      newArr.splice(index, 1);
+      return newArr;
     });
-    // Показать успешное сообщение и вернуться назад
-    alert('Кофейня успешно добавлена! После модерации она появится в каталоге.');
-    onBack();
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("Name", name);
+      formData.append("FullAddress", address);
+      formData.append("Description", description);
+
+      // Отправляем ID как Guid
+      selectedBeanIds.forEach((id) => formData.append("CoffeeBeanIds", id));
+      selectedRoasterIds.forEach((id) => formData.append("RoasterIds", id));
+      selectedMethodIds.forEach((id) => formData.append("BrewMethodIds", id));
+
+      photos.forEach((p) => {
+        const blob = new Blob([p.data], { type: p.type });
+        formData.append("ShopPhotos", blob, p.name);
+      });
+
+      await moderationApi.sendCoffeeShopToModeration(formData as any);
+      alert("Успешно отправлено!");
+      onBack();
+    } catch (error: any) {
+      console.error("Error:", error.response?.data);
+      alert("Ошибка. Проверьте консоль.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading)
+    return (
+      <div className="p-8 text-center animate-pulse">Загрузка данных...</div>
+    );
 
   return (
-    <div className="p-4 pb-20">
-      {/* Header */}
+    <div className="p-4 pb-20 max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={onBack}
-          className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+          className="p-2 hover:bg-neutral-100 rounded-full"
         >
-          <ArrowLeft className="size-5 text-neutral-700 dark:text-neutral-300" />
+          <ArrowLeft />
         </button>
-        <div className="flex-1">
-          <h1 className="text-neutral-900 dark:text-neutral-50">Добавить кофейню</h1>
-          <p className="text-neutral-600 dark:text-neutral-400 text-sm">
-            Поделитесь новым заведением с сообществом
-          </p>
-        </div>
+        <h1 className="text-xl font-bold">Добавить кофейню</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Info */}
-        <Card className="dark:bg-neutral-900 dark:border-neutral-800">
+        <Card>
           <CardContent className="p-4 space-y-4">
-            <div>
-              <Label htmlFor="name" className="dark:text-neutral-200">
-                Название кофейни *
-              </Label>
+            <div className="space-y-2">
+              <Label>Название *</Label>
               <Input
-                id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Название"
-                className="dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50"
                 required
               />
             </div>
-
-            <div>
-              <Label htmlFor="address" className="dark:text-neutral-200">
-                Адрес *
-              </Label>
+            <div className="space-y-2">
+              <Label>Адрес *</Label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+                <MapPin className="absolute left-3 top-3 size-4 text-neutral-400" />
                 <Input
-                  id="address"
+                  className="pl-10"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Улица, дом"
-                  className="pl-10 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50"
                   required
                 />
               </div>
             </div>
-
-            <div>
-              <Label htmlFor="description" className="dark:text-neutral-200">
-                Описание *
-              </Label>
+            <div className="space-y-2">
+              <Label>Описание *</Label>
               <Textarea
-                id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Расскажите о кофейне..."
-                rows={4}
-                className="dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50"
                 required
               />
             </div>
           </CardContent>
         </Card>
 
-        {/* Coffee Beans */}
-        <Card className="dark:bg-neutral-900 dark:border-neutral-800">
+        {/* Секция Зерна */}
+        <Card>
           <CardContent className="p-4">
-            <Label className="dark:text-neutral-200 mb-3 block">
+            <Label className="mb-3 block font-semibold">
               Используемое зерно
             </Label>
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-2 mb-4">
               {availableBeans.map((bean) => (
                 <Badge
-                  key={bean}
-                  variant={selectedBeans.includes(bean) ? 'default' : 'outline'}
-                  className={`cursor-pointer ${
-                    selectedBeans.includes(bean)
-                      ? 'bg-amber-700 hover:bg-amber-800 dark:bg-amber-600'
-                      : 'dark:border-neutral-700 dark:text-neutral-300'
-                  }`}
-                  onClick={() => toggleItem(bean, selectedBeans, setSelectedBeans)}
+                  key={bean.id}
+                  variant={
+                    selectedBeanIds.includes(bean.id) ? "default" : "outline"
+                  }
+                  className="cursor-pointer"
+                  onClick={() =>
+                    toggleItem(bean.id, selectedBeanIds, setSelectedBeanIds)
+                  }
                 >
-                  {bean}
+                  {bean.name}
                 </Badge>
               ))}
             </div>
-            <div className="flex gap-2">
-              <Input
-                value={customBean}
-                onChange={(e) => setCustomBean(e.target.value)}
-                placeholder="Другое зерно..."
-                className="flex-1 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={addCustomBean}
-                className="dark:border-neutral-700 dark:text-neutral-300"
-              >
-                <Plus className="size-4" />
-              </Button>
-            </div>
-            {selectedBeans.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {selectedBeans.map((bean) => (
-                  <Badge
-                    key={bean}
-                    variant="secondary"
-                    className="dark:bg-neutral-800 dark:text-neutral-200"
-                  >
-                    {bean}
-                    <button
-                      type="button"
-                      onClick={() => toggleItem(bean, selectedBeans, setSelectedBeans)}
-                      className="ml-1"
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
           </CardContent>
         </Card>
 
-        {/* Roasters */}
-        <Card className="dark:bg-neutral-900 dark:border-neutral-800">
+        {/* Секция Обжарщиков */}
+        <Card>
           <CardContent className="p-4">
-            <Label className="dark:text-neutral-200 mb-3 block">
-              Обжарщики
-            </Label>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {availableRoasters.map((roaster) => (
+            <Label className="mb-3 block font-semibold">Обжарщики</Label>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {availableRoasters.map((r) => (
                 <Badge
-                  key={roaster}
-                  variant={selectedRoasters.includes(roaster) ? 'default' : 'outline'}
-                  className={`cursor-pointer ${
-                    selectedRoasters.includes(roaster)
-                      ? 'bg-amber-700 hover:bg-amber-800 dark:bg-amber-600'
-                      : 'dark:border-neutral-700 dark:text-neutral-300'
-                  }`}
-                  onClick={() => toggleItem(roaster, selectedRoasters, setSelectedRoasters)}
+                  key={r.id}
+                  variant={
+                    selectedRoasterIds.includes(r.id) ? "default" : "outline"
+                  }
+                  className="cursor-pointer"
+                  onClick={() =>
+                    toggleItem(r.id, selectedRoasterIds, setSelectedRoasterIds)
+                  }
                 >
-                  {roaster}
+                  {r.name}
                 </Badge>
               ))}
             </div>
-            <div className="flex gap-2">
-              <Input
-                value={customRoaster}
-                onChange={(e) => setCustomRoaster(e.target.value)}
-                placeholder="Другой обжарщик..."
-                className="flex-1 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-50"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={addCustomRoaster}
-                className="dark:border-neutral-700 dark:text-neutral-300"
-              >
-                <Plus className="size-4" />
-              </Button>
-            </div>
-            {selectedRoasters.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {selectedRoasters.map((roaster) => (
-                  <Badge
-                    key={roaster}
-                    variant="secondary"
-                    className="dark:bg-neutral-800 dark:text-neutral-200"
-                  >
-                    {roaster}
-                    <button
-                      type="button"
-                      onClick={() => toggleItem(roaster, selectedRoasters, setSelectedRoasters)}
-                      className="ml-1"
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
           </CardContent>
         </Card>
 
-        {/* Brew Methods */}
-        <Card className="dark:bg-neutral-900 dark:border-neutral-800">
+        {/* Секция Методов */}
+        <Card>
           <CardContent className="p-4">
-            <Label className="dark:text-neutral-200 mb-3 block">
+            <Label className="mb-3 block font-semibold">
               Методы заваривания
             </Label>
             <div className="flex flex-wrap gap-2">
-              {brewMethods.map((method) => (
+              {brewMethods.map((m) => (
                 <Badge
-                  key={method}
-                  variant={selectedMethods.includes(method) ? 'default' : 'outline'}
-                  className={`cursor-pointer ${
-                    selectedMethods.includes(method)
-                      ? 'bg-amber-700 hover:bg-amber-800 dark:bg-amber-600'
-                      : 'dark:border-neutral-700 dark:text-neutral-300'
-                  }`}
-                  onClick={() => toggleItem(method, selectedMethods, setSelectedMethods)}
+                  key={m.id}
+                  variant={
+                    selectedMethodIds.includes(m.id) ? "default" : "outline"
+                  }
+                  className="cursor-pointer"
+                  onClick={() =>
+                    toggleItem(m.id, selectedMethodIds, setSelectedMethodIds)
+                  }
                 >
-                  {method}
+                  {m.name}
                 </Badge>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Photos */}
-        <Card className="dark:bg-neutral-900 dark:border-neutral-800">
+        <Card>
           <CardContent className="p-4">
-            <Label className="dark:text-neutral-200 mb-3 block">
-              Фотографии (опционально)
-            </Label>
-            <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg p-6 text-center">
-              <Upload className="size-8 text-neutral-400 mx-auto mb-2" />
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                Нажмите для загрузки фото
-              </p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-500">
-                PNG, JPG до 10MB
-              </p>
+            <Label className="mb-3 block font-semibold">Фотографии</Label>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {photos.map((p, i) => (
+                <div
+                  key={i}
+                  className="relative aspect-square border rounded-lg overflow-hidden"
+                >
+                  <img
+                    src={p.preview}
+                    className="object-cover w-full h-full"
+                    alt=""
+                  />
+                  <button
+                    onClick={() => removePhoto(i)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
             </div>
+            <label className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center cursor-pointer hover:bg-neutral-50">
+              <Upload className="text-neutral-400 mb-2" />
+              <span className="text-sm text-neutral-500">Загрузить фото</span>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </label>
           </CardContent>
         </Card>
 
-        {/* Submit */}
-        <div className="space-y-3">
-          <Button
-            type="submit"
-            className="w-full bg-amber-700 hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-700"
-          >
-            Отправить на модерацию
-          </Button>
-          <p className="text-xs text-center text-neutral-500 dark:text-neutral-400">
-            Ваша заявка будет проверена в течение 24 часов
-          </p>
-        </div>
+        <Button
+          type="submit"
+          className="w-full bg-amber-700 hover:bg-amber-800 text-white py-6"
+          disabled={isLoading}
+        >
+          {isLoading ? "Отправка..." : "Отправить на модерацию"}
+        </Button>
       </form>
     </div>
   );

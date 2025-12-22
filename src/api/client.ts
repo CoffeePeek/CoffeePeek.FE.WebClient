@@ -63,8 +63,14 @@ if (BASE_URL !== '' && window.location.hostname === 'localhost') {
   warnLog('This can cause CORS errors. Make sure you are running "npm run dev"');
 }
 
+interface CacheEntry<T> {
+  data: T & { headers?: PaginationHeaders };
+  expiry: number;
+}
+
 class ApiClient {
   public baseURL: string;
+  private cache = new Map<string, CacheEntry<any>>();
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -168,6 +174,20 @@ class ApiClient {
     }
   }
 
+  public clearCache(): void {
+    this.cache.clear();
+    debugLog('API Cache cleared');
+  }
+
+  private invalidateCache(endpoint: string) {
+    const baseRoute = endpoint.split('?')[0];
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(baseRoute)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -244,21 +264,33 @@ class ApiClient {
   async get<T>(
     endpoint: string,
     params?: Record<string, string | number | boolean | Array<string | number | boolean>>,
-    extraHeaders?: HeadersInit
+    extraHeaders?: HeadersInit,
+    cacheTTL: number = 0
   ): Promise<T & { headers?: PaginationHeaders }> {
     let url = endpoint;
     if (params) {
       const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          value.forEach((v) => searchParams.append(key, String(v)));
-          return;
-        }
-        searchParams.append(key, String(value));
-      });
       url += `?${searchParams.toString()}`;
     }
-    return this.request<T>(url, { method: 'GET', headers: extraHeaders });
+
+    if (cacheTTL > 0) {
+      const cached = this.cache.get(url);
+      if (cached && cached.expiry > Date.now()) {
+        debugLog('Returning cached data for:', url);
+        return cached.data;
+      }
+    }
+
+    const result = await this.request<T>(url, { method: 'GET', headers: extraHeaders });
+
+    if (cacheTTL > 0) {
+      this.cache.set(url, {
+        data: result,
+        expiry: Date.now() + cacheTTL
+      });
+    }
+
+    return result;
   }
 
   async post<T>(endpoint: string, data?: unknown, headers?: HeadersInit): Promise<T & { headers?: PaginationHeaders }> {
@@ -299,7 +331,7 @@ class ApiClient {
     const effectiveBaseURL = (isLocalhost && this.baseURL !== '') ? '' : this.baseURL;
 
     let response = await fetch(`${effectiveBaseURL}${endpoint}`, {
-      method: 'PUT',
+      method: 'POST',
       body: formData,
       headers,
     });
