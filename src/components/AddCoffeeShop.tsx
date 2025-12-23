@@ -8,6 +8,11 @@ import {
   Plus,
   X,
 } from "lucide-react";
+import type {
+  SendCoffeeShopToModerationRequest,
+} from "../api/types";
+import axios from 'axios';
+
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -40,11 +45,8 @@ export function AddCoffeeShop({ onBack }: AddCoffeeShopProps) {
   const [selectedRoasterIds, setSelectedRoasterIds] = useState<string[]>([]);
   const [selectedMethodIds, setSelectedMethodIds] = useState<string[]>([]);
 
-  const [customBean, setCustomBean] = useState("");
-  const [customRoaster, setCustomRoaster] = useState("");
-  const [photos, setPhotos] = useState<
-    { name: string; type: string; data: Uint8Array; preview: string }[]
-  >([]);
+  type PhotoFile = { file: File; preview: string };
+  const [photos, setPhotos] = useState<PhotoFile[]>([]);
 
   useEffect(() => {
     const fetchFormData = async () => {
@@ -78,20 +80,15 @@ export function AddCoffeeShop({ onBack }: AddCoffeeShopProps) {
     );
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const newPhotos = await Promise.all(
-      Array.from(files).map(async (file: File) => {
-        const buffer = await file.arrayBuffer();
-        return {
-          name: file.name,
-          type: file.type,
-          data: new Uint8Array(buffer),
-          preview: URL.createObjectURL(file),
-        };
-      })
-    );
+
+    const newPhotos = Array.from(files).map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
     setPhotos((prev) => [...prev, ...newPhotos]);
   };
 
@@ -107,28 +104,53 @@ export function AddCoffeeShop({ onBack }: AddCoffeeShopProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      const formData = new FormData();
-      formData.append("Name", name);
-      formData.append("FullAddress", address);
-      formData.append("Description", description);
+      const requests = photos.map(p => ({
+        fileName: p.file.name,
+        contentType: p.file.type
+      }));
+      const uploadConfigs = await moderationApi.generateUploadUrls(requests);
 
-      // Отправляем ID как Guid
-      selectedBeanIds.forEach((id) => formData.append("CoffeeBeanIds", id));
-      selectedRoasterIds.forEach((id) => formData.append("RoasterIds", id));
-      selectedMethodIds.forEach((id) => formData.append("BrewMethodIds", id));
+      // --- ШАГ 2: Загружаем файлы напрямую в S3/MinIO ---
+      const uploadTasks = photos.map((p, index) => {
+        const config = uploadConfigs[index];
 
-      photos.forEach((p) => {
-        const blob = new Blob([p.data], { type: p.type });
-        formData.append("ShopPhotos", blob, p.name);
+        return axios.put(config.uploadUrl, p.file, {
+          headers: {
+            "Content-Type": p.file.type,
+            "x-amz-tagging": "is_permanent=false" // Наше правило для жизненного цикла
+          }
+        });
       });
 
-      await moderationApi.sendCoffeeShopToModeration(formData as any);
-      alert("Успешно отправлено!");
+      await Promise.all(uploadTasks);
+
+      // --- ШАГ 3: Отправляем финальную команду на бэкенд ---
+      const requestData: SendCoffeeShopToModerationRequest = {
+        name: name,
+        notValidatedAddress: address,
+        description: description,
+        priceRange: 1,
+        cityId: "39f0b293-ac83-491a-9ef1-8ba060c935d9",
+        coffeeBeanIds: selectedBeanIds,
+        roasterIds: selectedRoasterIds,
+        brewMethodIds: selectedMethodIds,
+        shopPhotos: photos.map((p, index) => ({
+          fileName: p.file.name,
+          contentType: p.file.type,
+          storageKey: uploadConfigs[index].storageKey,
+          size: p.file.size
+        }))
+      };
+
+      await moderationApi.sendCoffeeShopToModeration(requestData);
+
+      alert("Кофейня успешно отправлена на модерацию!");
       onBack();
     } catch (error: any) {
-      console.error("Error:", error.response?.data);
-      alert("Ошибка. Проверьте консоль.");
+      console.error("Submission failed:", error);
+      alert("Ошибка при сохранении. Проверьте консоль.");
     } finally {
       setIsLoading(false);
     }

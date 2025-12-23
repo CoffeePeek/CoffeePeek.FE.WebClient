@@ -3,10 +3,12 @@ import type {
   GetCoffeeShopsInModerationResponse,
   SendCoffeeShopToModerationRequest,
   SendCoffeeShopToModerationResponse,
-  UpdateModerationCoffeeShopRequest,
   UpdateModerationCoffeeShopResponse,
   BaseResponse,
   ModerationStatus,
+  BaseApiResponse,
+  UploadUrlResponse,
+  UploadUrlRequest,
 } from "./types";
 
 export const moderationApi = {
@@ -25,33 +27,16 @@ export const moderationApi = {
     },
 
   sendCoffeeShopToModeration: async (
-    data: any
+    data: SendCoffeeShopToModerationRequest
   ): Promise<SendCoffeeShopToModerationResponse> => {
-    const formData = new FormData();
-
-    formData.append("Name", data.name);
-    formData.append("fullAddress", data.FullAddress);
-    if (data.description) formData.append("Description", data.description);
-
-    data.beans?.forEach((id: string) => formData.append("CoffeeBeanIds", id));
-    data.roasters?.forEach((id: string) => formData.append("RoasterIds", id));
-    data.brewMethods?.forEach((id: string) =>
-      formData.append("BrewMethodIds", id)
-    );
-
-    data.photos?.forEach((p: any) => {
-      const blob = new Blob([p.data], { type: p.type });
-      formData.append("ShopPhotos", blob, p.name);
-    });
-
-    return apiClient.postFormData<SendCoffeeShopToModerationResponse>(
+    return await apiClient.post<SendCoffeeShopToModerationResponse>(
       "/api/moderation",
-      formData
+      data
     );
   },
 
   updateModerationCoffeeShop: async (
-    data: UpdateModerationCoffeeShopRequest
+    data: any
   ): Promise<UpdateModerationCoffeeShopResponse> => {
     // According to the API spec, this endpoint uses multipart/form-data
     const formData = new FormData();
@@ -95,5 +80,15 @@ export const moderationApi = {
         String(id)
       )}&status=${encodeURIComponent(status)}`
     );
+  },
+
+  generateUploadUrls: async (
+    requests: UploadUrlRequest[]
+  ): Promise<UploadUrlResponse[]> => {
+    const response = await apiClient.post<BaseApiResponse<UploadUrlResponse[]>>(
+      `/api/moderation/upload-urls`,
+      requests
+    );
+    return response.data;
   },
 };

@@ -7,6 +7,15 @@ export interface BaseResponse {
   errors?: Record<string, string[]> | null;
 }
 
+export interface BaseApiResponse<T> {
+  data: T;
+  isSuccess: boolean;
+  message?: string;
+  errorCode?: string | null;
+  traceId?: string | null;
+  errors?: Record<string, string[]> | null;
+}
+
 export interface BooleanResponse extends BaseResponse {
   data: boolean;
 }
@@ -230,7 +239,7 @@ export interface GetReviewsByUserIdResponse extends BaseResponse {
 }
 
 // Moderation Types
-export type ModerationStatus = 'Pending' | 'Approved';
+export type ModerationStatus = "Pending" | "Approved";
 
 export interface ModerationShopDto {
   id: number;
@@ -244,26 +253,24 @@ export interface ModerationShopDto {
   schedules: ScheduleDto[];
 }
 
-export interface SendCoffeeShopToModerationRequest {
-  name: string;
-  notValidatedAddress: string;
-  shopContact?: ShopContactDto;
-  shopPhotos?: string[];
-  schedules?: ScheduleDto[];
+export interface UploadedPhotoDto {
+  fileName: string;
+  contentType: string;
+  storageKey: string;
+  size: number;
 }
 
 export interface SendCoffeeShopToModerationRequest {
   name: string;
   notValidatedAddress: string;
   description: string;
-  beans: string[];
-  roasters: string[];
-  brewMethods: string[];
-  shopPhotos?: {
-    fileName: string;
-    contentType: string;
-    data: number[]; // Массив байтов
-  }[];
+  priceRange: number;
+  cityId: string;
+  coffeeBeanIds: string[];
+  roasterIds: string[];
+  brewMethodIds: string[];
+  equipmentIds?: string[];
+  shopPhotos: UploadedPhotoDto[]; // Теперь это метаданные
 }
 
 export interface SendCoffeeShopToModerationResponse extends BaseResponse {
@@ -278,6 +285,22 @@ export interface GetCoffeeShopsInModerationResponse extends BaseResponse {
   data: {
     moderationShop: ModerationShopDto[];
   };
+}
+
+export interface GetCoffeeShopsInModerationResponse extends BaseResponse {
+  data: {
+    moderationShop: ModerationShopDto[];
+  };
+}
+
+export interface UploadUrlRequest {
+  fileName: string;
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadUrl: string;
+  storageKey: string;
 }
 
 // Internal Types
@@ -341,7 +364,7 @@ export interface GetCheckInsByUserIdResponse extends BaseResponse {
   data: Record<string, unknown>;
 }
 
-export type VacancyJobType = 'All' | 'Barista' | 'Manager' | 'Cook';
+export type VacancyJobType = "All" | "Barista" | "Manager" | "Cook";
 
 export interface VacancyDto {
   id?: string;
@@ -358,10 +381,8 @@ export interface GetVacanciesResponse extends BaseResponse {
 
 // Pagination Headers
 export interface PaginationHeaders {
-  'X-Total-Count'?: string;
-  'X-Total-Pages'?: string;
-  'X-Current-Page'?: string;
-  'X-Page-Size'?: string;
+  "X-Total-Count"?: string;
+  "X-Total-Pages"?: string;
+  "X-Current-Page"?: string;
+  "X-Page-Size"?: string;
 }
-
-
