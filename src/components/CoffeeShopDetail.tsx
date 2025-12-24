@@ -9,7 +9,6 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { Alert, AlertDescription } from './ui/alert';
 import { useAuth } from '../contexts/AuthContext';
-import { mockCoffeeShops, mockReviews } from '../data/mockData';
 import { Skeleton } from './ui/skeleton';
 import { toast } from 'sonner@2.0.3';
 import { copyToClipboard } from '../shared/lib/clipboard';
@@ -20,46 +19,6 @@ type CoffeeShopDetailProps = {
   shopId: string;
   onBack: () => void;
 };
-
-const normalizeMockShop = (id: string): ShopDto | null => {
-  const fallback = mockCoffeeShops.find((shop) => shop.id === id);
-  if (!fallback) return null;
-
-  return {
-    id: fallback.id,
-    name: fallback.name,
-    description: fallback.description,
-    rating: fallback.rating,
-    reviewCount: fallback.reviewCount,
-    location: {
-      address: fallback.location.address,
-      latitude: fallback.location.lat,
-      longitude: fallback.location.lng,
-    },
-    isOpen: fallback.isOpen,
-    imageUrls: [fallback.image],
-    beans: fallback.beans.map((name) => ({ name })),
-    roasters: fallback.roasters.map((name) => ({ name })),
-    equipments: fallback.equipment.map((name) => ({ name })),
-    priceRange: 2,
-  };
-};
-
-const normalizeMockReviews = (shopId: string): CoffeeShopReviewDto[] =>
-  mockReviews
-    .filter((review) => review.coffeeShopId === shopId)
-    .map((review) => ({
-      id: Number(review.id),
-      shopId: Number(review.coffeeShopId),
-      userId: 0,
-      header: review.comment.slice(0, 32) || 'Отзыв',
-      comment: review.comment,
-      ratingCoffee: review.rating,
-      ratingService: review.rating,
-      ratingPlace: review.rating,
-      createdAt: new Date().toISOString(),
-      shopName: '',
-    }));
 
 export function CoffeeShopDetail({ shopId, onBack }: CoffeeShopDetailProps) {
   const { user } = useAuth();
@@ -87,13 +46,12 @@ export function CoffeeShopDetail({ shopId, onBack }: CoffeeShopDetailProps) {
     retry: 1,
   });
 
-  const shop: ShopDto | null = shopResponse?.data?.shop ?? normalizeMockShop(shopId);
+  const shop: ShopDto | null = shopResponse?.data?.shop ?? null;
   const reviews: CoffeeShopReviewDto[] = useMemo(() => {
-    // If API call succeeded (even if empty), use it. Only fallback to mock when API failed entirely.
     if (reviewsResponse !== undefined) {
       return reviewsResponse.filter((r) => r.shopId.toString() === shopId);
     }
-    return normalizeMockReviews(shopId);
+    return [];
   }, [reviewsResponse, shopId]);
 
   const hasError = Boolean(shopError || reviewsError || shopResponse?.isSuccess === false);

@@ -30,10 +30,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Convert API UserDto to app User type
   const mapUserDtoToUser = (userDto: UserDto): User => {
-    const isModerator = userDto.roles?.some(role => 
-      role.toLowerCase().includes('moderator') || 
-      role.toLowerCase().includes('admin')
-    ) || false;
+    // Проверяем роли пользователя - ищем 'admin', 'moderator' или 'Administrator'
+    const roles = userDto.roles || [];
+    const normalizedRoles = roles.map(role => role.toLowerCase().trim());
+    
+    const isModerator = normalizedRoles.some(role => 
+      role === 'admin' || 
+      role === 'administrator' ||
+      role === 'moderator' ||
+      role.includes('moderator') || 
+      role.includes('admin')
+    );
+
+    // Логируем для отладки (только в dev режиме)
+    if (import.meta.env.DEV) {
+      console.log('User roles from backend:', roles);
+      console.log('Is moderator/admin:', isModerator);
+    }
 
     return {
       id: userDto.id || '',
@@ -65,9 +78,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await userApi.getProfile();
       if (response.isSuccess && response.data) {
+        // Логируем полный ответ для отладки (только в dev режиме)
+        if (import.meta.env.DEV) {
+          console.log('User profile response:', response.data);
+          console.log('User roles:', response.data.roles);
+        }
+        
         const mappedUser = mapUserDtoToUser(response.data);
         setUser(mappedUser);
         localStorage.setItem('user', JSON.stringify(mappedUser));
+      } else {
+        console.warn('User profile response not successful:', response);
       }
     } catch (error) {
       console.error('Failed to load user profile:', error);

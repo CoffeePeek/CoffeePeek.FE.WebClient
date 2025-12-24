@@ -240,17 +240,25 @@ export interface GetReviewsByUserIdResponse extends BaseResponse {
 
 // Moderation Types
 export type ModerationStatus = "Pending" | "Approved";
+export type PriceRange = 1 | 2 | 3 | 4;
 
 export interface ModerationShopDto {
-  id: number;
+  id: string; // Guid
   name: string;
-  notValidatedAddress: string;
-  address?: number | null;
+  notValidatedAddress?: string | null;
+  description?: string | null;
+  priceRange?: PriceRange | null;
+  cityId?: string | null; // Guid
+  userId: string; // Guid
   moderationStatus: ModerationStatus;
   status: string;
   shopContact?: ShopContactDto | null;
-  shopPhotos: string[];
-  schedules: ScheduleDto[];
+  schedules?: ScheduleDto[] | null;
+  equipmentIds?: string[] | null; // Guid[]
+  coffeeBeanIds?: string[] | null; // Guid[]
+  roasterIds?: string[] | null; // Guid[]
+  brewMethodIds?: string[] | null; // Guid[]
+  shopPhotos?: string[] | null;
 }
 
 export interface UploadedPhotoDto {

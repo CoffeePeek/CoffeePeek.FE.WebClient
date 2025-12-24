@@ -69,7 +69,7 @@ export const coffeeshopApi = {
     if (params?.minRating !== undefined) queryParams.minRating = params.minRating;
 
     const response = await apiClient.get<GetCoffeeShopsResponse>(
-      '/api/shops/search',
+      '/api/coffeeshop/search',
       Object.keys(queryParams).length > 0 ? queryParams : undefined,
       Object.keys(headers).length > 0 ? headers : undefined
     );

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, XCircle, Edit2, Save, MapPin, Coffee, Users } from 'lucide-react';
-import { moderationApi } from '../api';
-import type { ModerationShopDto, ModerationStatus } from '../api/types';
+import { moderationApi, internalApi } from '../api';
+import type { ModerationShopDto, ModerationStatus, PriceRange, CityDto, EquipmentDto, RoasterDto, BrewMethodDto, BeansDto } from '../api/types';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
@@ -10,7 +10,10 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Checkbox } from './ui/checkbox';
 import { useAuth } from '../contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 
 type ModeratorPanelProps = {
   onBack: () => void;
@@ -26,6 +29,43 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Загружаем справочники для редактирования
+  const { data: citiesResponse } = useQuery({
+    queryKey: ['cities'],
+    queryFn: () => internalApi.getCities(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: equipmentsResponse } = useQuery({
+    queryKey: ['equipments'],
+    queryFn: () => internalApi.getEquipments(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: roastersResponse } = useQuery({
+    queryKey: ['roasters'],
+    queryFn: () => internalApi.getRoasters(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: brewMethodsResponse } = useQuery({
+    queryKey: ['brewMethods'],
+    queryFn: () => internalApi.getBrewMethods(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: beansResponse } = useQuery({
+    queryKey: ['beans'],
+    queryFn: () => internalApi.getBeans(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const cities: CityDto[] = citiesResponse?.data?.cities ?? [];
+  const equipments: EquipmentDto[] = equipmentsResponse?.data?.equipments ?? [];
+  const roasters: RoasterDto[] = roastersResponse?.data?.roasters ?? [];
+  const brewMethods: BrewMethodDto[] = brewMethodsResponse?.data?.brewMethods ?? [];
+  const beans = beansResponse?.data?.beans ?? [];
 
   useEffect(() => {
     const loadSubmissions = async () => {
@@ -83,10 +123,17 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
       await moderationApi.updateModerationCoffeeShop({
         id: editedData.id,
         name: editedData.name,
-        notValidatedAddress: editedData.notValidatedAddress,
+        notValidatedAddress: editedData.notValidatedAddress || undefined,
+        description: editedData.description || undefined,
+        priceRange: editedData.priceRange || undefined,
+        cityId: editedData.cityId || undefined,
         shopContact: editedData.shopContact || undefined,
-        shopPhotos: editedData.shopPhotos,
-        schedules: editedData.schedules,
+        shopPhotos: editedData.shopPhotos || undefined,
+        schedules: editedData.schedules || undefined,
+        equipmentIds: editedData.equipmentIds || undefined,
+        coffeeBeanIds: editedData.coffeeBeanIds || undefined,
+        roasterIds: editedData.roasterIds || undefined,
+        brewMethodIds: editedData.brewMethodIds || undefined,
       });
       
       const updated = submissions.map(s => 
@@ -99,6 +146,15 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
       setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const toggleArrayItem = (id: string, array: string[] | undefined, setter: (ids: string[] | undefined) => void) => {
+    const current = array || [];
+    if (current.includes(id)) {
+      setter(current.filter(i => i !== id).length > 0 ? current.filter(i => i !== id) : undefined);
+    } else {
+      setter([...current, id]);
     }
   };
 
@@ -222,7 +278,9 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
               <div>
                 <Label htmlFor="description">Описание</Label>
                 {!isEditing ? (
-                  <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">{selectedSubmission.description}</p>
+                  <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                    {selectedSubmission.description || 'Не указано'}
+                  </p>
                 ) : (
                   <Textarea
                     id="description"
@@ -239,7 +297,7 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
                 {!isEditing ? (
                   <div className="mt-1 flex items-center gap-2 text-sm">
                     <MapPin className="size-4 text-neutral-500" />
-                    {selectedSubmission.notValidatedAddress}
+                    {selectedSubmission.notValidatedAddress || 'Не указано'}
                   </div>
                 ) : (
                   <Input
@@ -254,62 +312,239 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
                 )}
               </div>
 
-              {selectedSubmission.shopContact && (
-                <div>
-                  <Label>Контакты</Label>
-                  {!isEditing ? (
-                    <div className="mt-1 text-sm space-y-1">
-                      {selectedSubmission.shopContact.phone && (
-                        <div>Телефон: {selectedSubmission.shopContact.phone}</div>
-                      )}
-                      {selectedSubmission.shopContact.website && (
-                        <div>Сайт: {selectedSubmission.shopContact.website}</div>
-                      )}
-                      {selectedSubmission.shopContact.instagram && (
-                        <div>Instagram: {selectedSubmission.shopContact.instagram}</div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="mt-1 space-y-2">
-                      <Input
-                        placeholder="Телефон"
-                        value={editedData?.shopContact?.phone || ''}
-                        onChange={(e) => setEditedData(editedData ? { 
-                          ...editedData, 
-                          shopContact: { ...editedData.shopContact, phone: e.target.value }
-                        } : null)}
-                      />
-                      <Input
-                        placeholder="Сайт"
-                        value={editedData?.shopContact?.website || ''}
-                        onChange={(e) => setEditedData(editedData ? { 
-                          ...editedData, 
-                          shopContact: { ...editedData.shopContact, website: e.target.value }
-                        } : null)}
-                      />
-                      <Input
-                        placeholder="Instagram"
-                        value={editedData?.shopContact?.instagram || ''}
-                        onChange={(e) => setEditedData(editedData ? { 
-                          ...editedData, 
-                          shopContact: { ...editedData.shopContact, instagram: e.target.value }
-                        } : null)}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+              <div>
+                <Label htmlFor="city">Город</Label>
+                {!isEditing ? (
+                  <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                    {cities.find(c => c.id === selectedSubmission.cityId)?.name || 'Не указано'}
+                  </p>
+                ) : (
+                  <Select
+                    value={editedData?.cityId || '__none__'}
+                    onValueChange={(value) => setEditedData(editedData ? { 
+                      ...editedData, 
+                      cityId: value === '__none__' ? undefined : value
+                    } : null)}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Выберите город" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Не указано</SelectItem>
+                      {cities.map((city) => (
+                        <SelectItem key={city.id} value={city.id}>
+                          {city.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="priceRange">Ценовой диапазон</Label>
+                {!isEditing ? (
+                  <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                    {selectedSubmission.priceRange ? '₽'.repeat(selectedSubmission.priceRange) : 'Не указано'}
+                  </p>
+                ) : (
+                  <Select
+                    value={editedData?.priceRange?.toString() || '__none__'}
+                    onValueChange={(value) => setEditedData(editedData ? { 
+                      ...editedData, 
+                      priceRange: value === '__none__' ? undefined : (parseInt(value) as PriceRange)
+                    } : null)}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Выберите ценовой диапазон" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Не указано</SelectItem>
+                      <SelectItem value="1">₽</SelectItem>
+                      <SelectItem value="2">₽₽</SelectItem>
+                      <SelectItem value="3">₽₽₽</SelectItem>
+                      <SelectItem value="4">₽₽₽₽</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div>
+                <Label>Контакты</Label>
+                {!isEditing ? (
+                  <div className="mt-1 text-sm space-y-1">
+                    {selectedSubmission.shopContact?.phone ? (
+                      <div>Телефон: {selectedSubmission.shopContact.phone}</div>
+                    ) : null}
+                    {selectedSubmission.shopContact?.website ? (
+                      <div>Сайт: {selectedSubmission.shopContact.website}</div>
+                    ) : null}
+                    {selectedSubmission.shopContact?.instagram ? (
+                      <div>Instagram: {selectedSubmission.shopContact.instagram}</div>
+                    ) : null}
+                    {!selectedSubmission.shopContact && <div className="text-neutral-500">Не указано</div>}
+                  </div>
+                ) : (
+                  <div className="mt-1 space-y-2">
+                    <Input
+                      placeholder="Телефон"
+                      value={editedData?.shopContact?.phone || ''}
+                      onChange={(e) => setEditedData(editedData ? { 
+                        ...editedData, 
+                        shopContact: { 
+                          ...(editedData.shopContact || {}), 
+                          phone: e.target.value || undefined
+                        }
+                      } : null)}
+                    />
+                    <Input
+                      placeholder="Сайт"
+                      value={editedData?.shopContact?.website || ''}
+                      onChange={(e) => setEditedData(editedData ? { 
+                        ...editedData, 
+                        shopContact: { 
+                          ...(editedData.shopContact || {}), 
+                          website: e.target.value || undefined
+                        }
+                      } : null)}
+                    />
+                    <Input
+                      placeholder="Instagram"
+                      value={editedData?.shopContact?.instagram || ''}
+                      onChange={(e) => setEditedData(editedData ? { 
+                        ...editedData, 
+                        shopContact: { 
+                          ...(editedData.shopContact || {}), 
+                          instagram: e.target.value || undefined
+                        }
+                      } : null)}
+                    />
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="coffee" className="space-y-4">
-              <div className="text-sm text-neutral-500">
-                Информация о кофе будет доступна после одобрения кофейни
+              <div>
+                <Label>Зерно</Label>
+                {!isEditing ? (
+                  <div className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                    {selectedSubmission.coffeeBeanIds && selectedSubmission.coffeeBeanIds.length > 0
+                      ? beans.filter(b => selectedSubmission.coffeeBeanIds?.includes(b.id || '')).map(b => b.name).join(', ')
+                      : 'Не указано'}
+                  </div>
+                ) : (
+                  <div className="mt-1 space-y-2 max-h-64 overflow-y-auto border rounded-md p-2">
+                    {beans.map((bean) => {
+                      const checked = editedData?.coffeeBeanIds?.includes(bean.id || '') || false;
+                      return (
+                        <div key={bean.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleArrayItem(
+                              bean.id || '',
+                              editedData?.coffeeBeanIds,
+                              (ids) => setEditedData(editedData ? { ...editedData, coffeeBeanIds: ids } : null)
+                            )}
+                          />
+                          <Label className="text-sm">{bean.name}</Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label>Обжарщики</Label>
+                {!isEditing ? (
+                  <div className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                    {selectedSubmission.roasterIds && selectedSubmission.roasterIds.length > 0
+                      ? roasters.filter(r => selectedSubmission.roasterIds?.includes(r.id || '')).map(r => r.name).join(', ')
+                      : 'Не указано'}
+                  </div>
+                ) : (
+                  <div className="mt-1 space-y-2 max-h-64 overflow-y-auto border rounded-md p-2">
+                    {roasters.map((roaster) => {
+                      const checked = editedData?.roasterIds?.includes(roaster.id || '') || false;
+                      return (
+                        <div key={roaster.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleArrayItem(
+                              roaster.id || '',
+                              editedData?.roasterIds,
+                              (ids) => setEditedData(editedData ? { ...editedData, roasterIds: ids } : null)
+                            )}
+                          />
+                          <Label className="text-sm">{roaster.name}</Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label>Способы приготовления</Label>
+                {!isEditing ? (
+                  <div className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                    {selectedSubmission.brewMethodIds && selectedSubmission.brewMethodIds.length > 0
+                      ? brewMethods.filter(b => selectedSubmission.brewMethodIds?.includes(b.id || '')).map(b => b.name).join(', ')
+                      : 'Не указано'}
+                  </div>
+                ) : (
+                  <div className="mt-1 space-y-2 max-h-64 overflow-y-auto border rounded-md p-2">
+                    {brewMethods.map((method) => {
+                      const checked = editedData?.brewMethodIds?.includes(method.id || '') || false;
+                      return (
+                        <div key={method.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleArrayItem(
+                              method.id || '',
+                              editedData?.brewMethodIds,
+                              (ids) => setEditedData(editedData ? { ...editedData, brewMethodIds: ids } : null)
+                            )}
+                          />
+                          <Label className="text-sm">{method.name}</Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="equipment" className="space-y-4">
-              <div className="text-sm text-neutral-500">
-                Информация об оборудовании будет доступна после одобрения кофейни
+              <div>
+                <Label>Оборудование</Label>
+                {!isEditing ? (
+                  <div className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                    {selectedSubmission.equipmentIds && selectedSubmission.equipmentIds.length > 0
+                      ? equipments.filter(e => selectedSubmission.equipmentIds?.includes(e.id || '')).map(e => e.name).join(', ')
+                      : 'Не указано'}
+                  </div>
+                ) : (
+                  <div className="mt-1 space-y-2 max-h-64 overflow-y-auto border rounded-md p-2">
+                    {equipments.map((equipment) => {
+                      const checked = editedData?.equipmentIds?.includes(equipment.id || '') || false;
+                      return (
+                        <div key={equipment.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleArrayItem(
+                              equipment.id || '',
+                              editedData?.equipmentIds,
+                              (ids) => setEditedData(editedData ? { ...editedData, equipmentIds: ids } : null)
+                            )}
+                          />
+                          <Label className="text-sm">{equipment.name}</Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>

@@ -270,7 +270,25 @@ class ApiClient {
     let url = endpoint;
     if (params) {
       const searchParams = new URLSearchParams();
-      url += `?${searchParams.toString()}`;
+      for (const [key, value] of Object.entries(params)) {
+        if (value === null || value === undefined) {
+          continue; // Skip null/undefined values
+        }
+        if (Array.isArray(value)) {
+          // For arrays, add each value separately (ASP.NET Core expects ?equipments=guid1&equipments=guid2)
+          for (const item of value) {
+            if (item !== null && item !== undefined) {
+              searchParams.append(key, String(item));
+            }
+          }
+        } else {
+          searchParams.append(key, String(value));
+        }
+      }
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
     }
 
     if (cacheTTL > 0) {
@@ -332,6 +350,45 @@ class ApiClient {
 
     let response = await fetch(`${effectiveBaseURL}${endpoint}`, {
       method: 'POST',
+      body: formData,
+      headers,
+    });
+
+    // If 401, try to refresh token and retry once
+    if (response.status === 401 && token) {
+      await this.refreshAccessToken();
+      
+      const newToken = this.getAuthToken();
+      if (newToken) {
+        headers['Authorization'] = `Bearer ${newToken}`;
+        response = await fetch(`${effectiveBaseURL}${endpoint}`, {
+          method: 'POST',
+          body: formData,
+          headers,
+        });
+      }
+    }
+
+    const data = await this.handleResponse<T>(response);
+    return this.attachHeaders(data, response);
+  }
+
+  async putFormData<T>(endpoint: string, formData: FormData): Promise<T & { headers?: PaginationHeaders }> {
+    const token = this.getAuthToken();
+    const headers: HeadersInit = {};
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Force relative path if on localhost (dev mode)
+    const isLocalhost = typeof window !== 'undefined' && 
+                       (window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1');
+    const effectiveBaseURL = (isLocalhost && this.baseURL !== '') ? '' : this.baseURL;
+
+    let response = await fetch(`${effectiveBaseURL}${endpoint}`, {
+      method: 'PUT',
       body: formData,
       headers,
     });

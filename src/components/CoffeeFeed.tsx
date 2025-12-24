@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { coffeeshopApi, internalApi } from "../api";
 import type {
   BrewMethodDto,
@@ -22,7 +23,6 @@ import { Card, CardContent } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
-import { mockCoffeeShops } from "../data/mockData";
 import { copyToClipboard } from "../shared/lib/clipboard";
 import { toast } from "sonner@2.0.3";
 import { Input } from "./ui/input";
@@ -43,32 +43,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { useSearchParams } from "react-router-dom";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "./ui/accordion";
 import { useFavorites } from "../contexts/FavoritesContext";
 
 type CoffeeFeedProps = {
   onShopSelect: (shopId: string) => void;
 };
-
-const normalizePriceRange = (value: string): number =>
-  Math.min(value.length || 1, 4);
-
-const normalizeMockShops = (): ShortShopDto[] =>
-  mockCoffeeShops.map((shop) => ({
-    id: shop.id,
-    name: shop.name,
-    imageUrls: [shop.image],
-    rating: shop.rating,
-    reviewCount: shop.reviewCount,
-    location: {
-      address: shop.location.address,
-      latitude: shop.location.lat,
-      longitude: shop.location.lng,
-    },
-    isOpen: shop.isOpen,
-    equipments: shop.equipment.map((name) => ({ name })),
-    priceRange: normalizePriceRange(shop.priceRange),
-  }));
 
 const parseCsv = (value: string | null): string[] =>
   value
@@ -81,7 +66,6 @@ const parseCsv = (value: string | null): string[] =>
 const toCsv = (arr: string[]): string => arr.join(",");
 
 export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
-  const fallbackShops = useMemo(() => normalizeMockShops(), []);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const { isFavorite, toggleFavorite, isPending } = useFavorites();
 
@@ -106,7 +90,7 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
     return () => clearTimeout(t);
   }, [qDraft, setSearchParams]);
 
-  const { data: citiesResponse } = useQuery({
+  const { data: citiesResponse, isLoading: isCitiesLoading } = useQuery({
     queryKey: ["cities"],
     queryFn: () => internalApi.getCities(),
     staleTime: 10 * 60 * 1000,
@@ -136,20 +120,35 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
   const brewMethods: BrewMethodDto[] =
     brewMethodsResponse?.data?.brewMethods ?? [];
 
+  // Ensure we always have a cityId - set first city as default if not specified
+  useEffect(() => {
+    if (cityIdParam || isCitiesLoading) return;
+    const firstCityId = cities[0]?.id;
+    if (!firstCityId) return;
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("cityId", firstCityId);
+      return next;
+    });
+  }, [cities, cityIdParam, isCitiesLoading, setSearchParams]);
+
+  // Determine effective cityId to use for queries
+  const effectiveCityId = cityIdParam || cities[0]?.id;
+
   const hasServerFilters = Boolean(
-    qParam.trim() || cityIdParam || equipmentIdsParam.length > 0
+    qParam.trim() || effectiveCityId || equipmentIdsParam.length > 0
   );
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: [
       "coffee-shops",
-      { q: qParam, cityId: cityIdParam, equipmentIds: equipmentIdsParam },
+      { q: qParam, cityId: effectiveCityId, equipmentIds: equipmentIdsParam },
     ],
     queryFn: () => {
       if (hasServerFilters) {
         return coffeeshopApi.searchCoffeeShops({
           q: qParam.trim() || undefined,
-          cityId: cityIdParam || undefined,
+          cityId: effectiveCityId || undefined,
           equipments:
             equipmentIdsParam.length > 0 ? equipmentIdsParam : undefined,
           pageNumber: 1,
@@ -157,17 +156,17 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
         });
       }
       return coffeeshopApi.getCoffeeShops({
-        cityId: cityIdParam || undefined,
+        cityId: effectiveCityId || undefined,
         pageNumber: 1,
         pageSize: 20,
       });
     },
+    enabled: !isCitiesLoading && !!effectiveCityId, // Wait for cities to load and cityId to be set
     staleTime: 120 * 1000,
     retry: 2,
   });
 
-  const apiShops = data?.data?.content ?? [];
-  const shops = apiShops.length > 0 ? apiShops : fallbackShops;
+  const shops: ShortShopDto[] = data?.data?.content ?? [];
   const hasApiError = Boolean(error) || data?.isSuccess === false;
   const errorText =
     error instanceof Error
@@ -298,204 +297,250 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
                 <SheetTitle>Фильтры</SheetTitle>
               </SheetHeader>
 
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-28 space-y-6">
-                <div className="space-y-2">
-                  <Label>Город</Label>
-                  <Select
-                    value={cityIdParam || "all"}
-                    onValueChange={(value) => {
-                      setSearchParams((prev) => {
-                        const next = new URLSearchParams(prev);
-                        if (value === "all") next.delete("cityId");
-                        else next.set("cityId", value);
-                        return next;
-                      });
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите город" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Все города</SelectItem>
-                      {cities.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-28">
+                <Accordion type="multiple" className="w-full space-y-2">
+                  <AccordionItem value="city" className="border rounded-lg px-4">
+                    <AccordionTrigger className="py-3">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <Label className="text-base font-medium">Город</Label>
+                        {cityIdParam && (
+                          <Badge variant="secondary" className="ml-2">
+                            {cities.find((c) => c.id === cityIdParam)?.name || "Выбран"}
+                          </Badge>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4">
+                      <Select
+                        value={cityIdParam || "all"}
+                        onValueChange={(value) => {
+                          setSearchParams((prev) => {
+                            const next = new URLSearchParams(prev);
+                            if (value === "all") next.delete("cityId");
+                            else next.set("cityId", value);
+                            return next;
+                          });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите город" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Все города</SelectItem>
+                          {cities.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <div className="space-y-2">
-                  <Label>Оборудование</Label>
-                  <div className="rounded-md border p-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                      {equipments.map((e) => {
-                        const checked = equipmentIdsParam.includes(e.id ?? "");
-                        const id = e.id ?? "";
-                        if (!id) return null;
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
-                            onClick={() => {
-                              setSearchParams((prev) => {
-                                const next = new URLSearchParams(prev);
-                                const current = new Set(
-                                  parseCsv(next.get("equipmentIds"))
-                                );
-                                if (!checked) current.add(id);
-                                else current.delete(id);
-                                const arr = Array.from(current);
-                                if (arr.length)
-                                  next.set("equipmentIds", toCsv(arr));
-                                else next.delete("equipmentIds");
-                                return next;
-                              });
-                            }}
-                          >
-                            <Checkbox
-                              className="size-5"
-                              checked={checked}
-                              onClick={(ev) => ev.stopPropagation()}
-                              onCheckedChange={(v) => {
-                                setSearchParams((prev) => {
-                                  const next = new URLSearchParams(prev);
-                                  const current = new Set(
-                                    parseCsv(next.get("equipmentIds"))
-                                  );
-                                  if (v) current.add(id);
-                                  else current.delete(id);
-                                  const arr = Array.from(current);
-                                  if (arr.length)
-                                    next.set("equipmentIds", toCsv(arr));
-                                  else next.delete("equipmentIds");
-                                  return next;
-                                });
-                              }}
-                            />
-                            <span className="text-sm leading-5">{e.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                  <AccordionItem value="equipment" className="border rounded-lg px-4">
+                    <AccordionTrigger className="py-3">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <Label className="text-base font-medium">Оборудование</Label>
+                        {equipmentIdsParam.length > 0 && (
+                          <Badge variant="secondary" className="ml-2">
+                            {equipmentIdsParam.length}
+                          </Badge>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4">
+                      <div className="rounded-md border p-2 max-h-64 overflow-y-auto">
+                        <div className="grid grid-cols-1 gap-1">
+                          {equipments.map((e) => {
+                            const checked = equipmentIdsParam.includes(e.id ?? "");
+                            const id = e.id ?? "";
+                            if (!id) return null;
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
+                                onClick={() => {
+                                  setSearchParams((prev) => {
+                                    const next = new URLSearchParams(prev);
+                                    const current = new Set(
+                                      parseCsv(next.get("equipmentIds"))
+                                    );
+                                    if (!checked) current.add(id);
+                                    else current.delete(id);
+                                    const arr = Array.from(current);
+                                    if (arr.length)
+                                      next.set("equipmentIds", toCsv(arr));
+                                    else next.delete("equipmentIds");
+                                    return next;
+                                  });
+                                }}
+                              >
+                                <Checkbox
+                                  className="size-5"
+                                  checked={checked}
+                                  onClick={(ev) => ev.stopPropagation()}
+                                  onCheckedChange={(v) => {
+                                    setSearchParams((prev) => {
+                                      const next = new URLSearchParams(prev);
+                                      const current = new Set(
+                                        parseCsv(next.get("equipmentIds"))
+                                      );
+                                      if (v) current.add(id);
+                                      else current.delete(id);
+                                      const arr = Array.from(current);
+                                      if (arr.length)
+                                        next.set("equipmentIds", toCsv(arr));
+                                      else next.delete("equipmentIds");
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <span className="text-sm leading-5">{e.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <div className="space-y-2">
-                  <Label>Обжарщик</Label>
-                  <div className="rounded-md border p-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                      {roasters.map((r) => {
-                        const checked = roasterIdsParam.includes(r.id ?? "");
-                        const id = r.id ?? "";
-                        if (!id) return null;
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
-                            onClick={() => {
-                              setSearchParams((prev) => {
-                                const next = new URLSearchParams(prev);
-                                const current = new Set(
-                                  parseCsv(next.get("roasterIds"))
-                                );
-                                if (!checked) current.add(id);
-                                else current.delete(id);
-                                const arr = Array.from(current);
-                                if (arr.length)
-                                  next.set("roasterIds", toCsv(arr));
-                                else next.delete("roasterIds");
-                                return next;
-                              });
-                            }}
-                          >
-                            <Checkbox
-                              className="size-5"
-                              checked={checked}
-                              onClick={(ev) => ev.stopPropagation()}
-                              onCheckedChange={(v) => {
-                                setSearchParams((prev) => {
-                                  const next = new URLSearchParams(prev);
-                                  const current = new Set(
-                                    parseCsv(next.get("roasterIds"))
-                                  );
-                                  if (v) current.add(id);
-                                  else current.delete(id);
-                                  const arr = Array.from(current);
-                                  if (arr.length)
-                                    next.set("roasterIds", toCsv(arr));
-                                  else next.delete("roasterIds");
-                                  return next;
-                                });
-                              }}
-                            />
-                            <span className="text-sm leading-5">{r.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                  <AccordionItem value="roaster" className="border rounded-lg px-4">
+                    <AccordionTrigger className="py-3">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <Label className="text-base font-medium">Обжарщик</Label>
+                        {roasterIdsParam.length > 0 && (
+                          <Badge variant="secondary" className="ml-2">
+                            {roasterIdsParam.length}
+                          </Badge>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4">
+                      <div className="rounded-md border p-2 max-h-64 overflow-y-auto">
+                        <div className="grid grid-cols-1 gap-1">
+                          {roasters.map((r) => {
+                            const checked = roasterIdsParam.includes(r.id ?? "");
+                            const id = r.id ?? "";
+                            if (!id) return null;
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
+                                onClick={() => {
+                                  setSearchParams((prev) => {
+                                    const next = new URLSearchParams(prev);
+                                    const current = new Set(
+                                      parseCsv(next.get("roasterIds"))
+                                    );
+                                    if (!checked) current.add(id);
+                                    else current.delete(id);
+                                    const arr = Array.from(current);
+                                    if (arr.length)
+                                      next.set("roasterIds", toCsv(arr));
+                                    else next.delete("roasterIds");
+                                    return next;
+                                  });
+                                }}
+                              >
+                                <Checkbox
+                                  className="size-5"
+                                  checked={checked}
+                                  onClick={(ev) => ev.stopPropagation()}
+                                  onCheckedChange={(v) => {
+                                    setSearchParams((prev) => {
+                                      const next = new URLSearchParams(prev);
+                                      const current = new Set(
+                                        parseCsv(next.get("roasterIds"))
+                                      );
+                                      if (v) current.add(id);
+                                      else current.delete(id);
+                                      const arr = Array.from(current);
+                                      if (arr.length)
+                                        next.set("roasterIds", toCsv(arr));
+                                      else next.delete("roasterIds");
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <span className="text-sm leading-5">{r.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <div className="space-y-2">
-                  <Label>Способ приготовления</Label>
-                  <div className="rounded-md border p-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                      {brewMethods.map((b) => {
-                        const checked = brewMethodIdsParam.includes(b.id ?? "");
-                        const id = b.id ?? "";
-                        if (!id) return null;
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
-                            onClick={() => {
-                              setSearchParams((prev) => {
-                                const next = new URLSearchParams(prev);
-                                const current = new Set(
-                                  parseCsv(next.get("brewMethodIds"))
-                                );
-                                if (!checked) current.add(id);
-                                else current.delete(id);
-                                const arr = Array.from(current);
-                                if (arr.length)
-                                  next.set("brewMethodIds", toCsv(arr));
-                                else next.delete("brewMethodIds");
-                                return next;
-                              });
-                            }}
-                          >
-                            <Checkbox
-                              className="size-5"
-                              checked={checked}
-                              onClick={(ev) => ev.stopPropagation()}
-                              onCheckedChange={(v) => {
-                                setSearchParams((prev) => {
-                                  const next = new URLSearchParams(prev);
-                                  const current = new Set(
-                                    parseCsv(next.get("brewMethodIds"))
-                                  );
-                                  if (v) current.add(id);
-                                  else current.delete(id);
-                                  const arr = Array.from(current);
-                                  if (arr.length)
-                                    next.set("brewMethodIds", toCsv(arr));
-                                  else next.delete("brewMethodIds");
-                                  return next;
-                                });
-                              }}
-                            />
-                            <span className="text-sm leading-5">{b.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                  <AccordionItem value="brewMethod" className="border rounded-lg px-4">
+                    <AccordionTrigger className="py-3">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <Label className="text-base font-medium">Способ приготовления</Label>
+                        {brewMethodIdsParam.length > 0 && (
+                          <Badge variant="secondary" className="ml-2">
+                            {brewMethodIdsParam.length}
+                          </Badge>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4">
+                      <div className="rounded-md border p-2 max-h-64 overflow-y-auto">
+                        <div className="grid grid-cols-1 gap-1">
+                          {brewMethods.map((b) => {
+                            const checked = brewMethodIdsParam.includes(b.id ?? "");
+                            const id = b.id ?? "";
+                            if (!id) return null;
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                className="flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900/40 active:bg-neutral-100 dark:active:bg-neutral-900/60"
+                                onClick={() => {
+                                  setSearchParams((prev) => {
+                                    const next = new URLSearchParams(prev);
+                                    const current = new Set(
+                                      parseCsv(next.get("brewMethodIds"))
+                                    );
+                                    if (!checked) current.add(id);
+                                    else current.delete(id);
+                                    const arr = Array.from(current);
+                                    if (arr.length)
+                                      next.set("brewMethodIds", toCsv(arr));
+                                    else next.delete("brewMethodIds");
+                                    return next;
+                                  });
+                                }}
+                              >
+                                <Checkbox
+                                  className="size-5"
+                                  checked={checked}
+                                  onClick={(ev) => ev.stopPropagation()}
+                                  onCheckedChange={(v) => {
+                                    setSearchParams((prev) => {
+                                      const next = new URLSearchParams(prev);
+                                      const current = new Set(
+                                        parseCsv(next.get("brewMethodIds"))
+                                      );
+                                      if (v) current.add(id);
+                                      else current.delete(id);
+                                      const arr = Array.from(current);
+                                      if (arr.length)
+                                        next.set("brewMethodIds", toCsv(arr));
+                                      else next.delete("brewMethodIds");
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <span className="text-sm leading-5">{b.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
 
               <div className="sticky bottom-0 border-t bg-background px-4 py-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)]">

@@ -10,6 +10,7 @@ const JobsPage = React.lazy(() => import('../../pages/JobsPage').then((m) => ({ 
 const ProfilePage = React.lazy(() => import('../../pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const CoffeeLogPage = React.lazy(() => import('../../pages/CoffeeLogPage').then((m) => ({ default: m.CoffeeLogPage })));
 const ShopPage = React.lazy(() => import('../../pages/ShopPage').then((m) => ({ default: m.ShopPage })));
+const AdminPage = React.lazy(() => import('../../pages/AdminPage').then((m) => ({ default: m.AdminPage })));
 const LoginPage = React.lazy(() => import('../../pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = React.lazy(() => import('../../pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 
@@ -37,6 +38,7 @@ export function AppRouter() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/log" element={<CoffeeLogPage />} />
           <Route path="/shops/:shopId" element={<ShopPage />} />
+          <Route path="/admin/*" element={<AdminPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/feed" replace />} />
