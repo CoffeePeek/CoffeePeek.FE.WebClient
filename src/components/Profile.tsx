@@ -13,8 +13,7 @@ import {
   MessageSquare,
   Camera,
   Moon,
-  Sun,
-  Users
+  Sun
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from './ui/card';
@@ -32,10 +31,9 @@ import { UserPosts } from './UserPosts';
 import { RoastersList } from './RoastersList';
 import { ReferralProgram } from './ReferralProgram';
 import { AddCoffeeShop } from './AddCoffeeShop';
-import { ModeratorPanel } from './ModeratorPanel';
 import { EditProfileSheet } from './EditProfileSheet';
 
-type ProfileSection = 'main' | 'reviews' | 'posts' | 'roasters' | 'referral' | 'add-shop' | 'moderator';
+type ProfileSection = 'main' | 'reviews' | 'posts' | 'roasters' | 'referral' | 'add-shop';
 
 type ProfileProps = {
   onNavigateToLog: () => void;
@@ -118,10 +116,6 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
     return <AddCoffeeShop onBack={() => setActiveSection('main')} />;
   }
 
-  if (activeSection === 'moderator') {
-    return <ModeratorPanel onBack={() => setActiveSection('main')} />;
-  }
-
   const menuSections = [
     {
       title: 'Моя активность',
@@ -131,13 +125,6 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
         { id: 'posts', icon: Camera, label: 'Мои посты', badge: '8', action: () => setActiveSection('posts') },
       ],
     },
-    // Показываем раздел модератора только для модераторов
-    ...(user?.isModerator ? [{
-      title: 'Модерация',
-      items: [
-        { id: 'moderator', icon: Users, label: 'Панель модератора', badge: '4', action: () => setActiveSection('moderator') },
-      ],
-    }] : []),
     {
       title: 'Сообщество',
       items: [
@@ -162,7 +149,7 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
   ];
 
   return (
-    <div className="p-4 pb-20">
+    <div className="p-4 pb-20 lg:pb-4">
       {/* User Profile Card */}
       <Card className="mb-6 dark:bg-neutral-900 dark:border-neutral-800">
         <CardContent className="p-6">
@@ -174,7 +161,9 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-neutral-900 dark:text-neutral-50">{user?.name || 'Алексей Петров'}</h2>
+                <h2 className="text-neutral-900 dark:text-neutral-50">
+                  {user?.name && !user.name.includes('@') ? user.name : (user?.email?.split('@')[0] || 'Пользователь')}
+                </h2>
                 {user?.isModerator && (
                   <Badge variant="default" className="bg-amber-600 dark:bg-amber-700 text-xs">
                     Модератор
@@ -229,6 +218,53 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
         </CardContent>
       </Card>
 
+      {/* Menu Sections */}
+      {menuSections.map((section, sectionIndex) => (
+        <div key={section.title} className="mb-6">
+          <h3 className="text-neutral-600 dark:text-neutral-400 text-sm mb-3 px-2">
+            {section.title}
+          </h3>
+          <Card className="dark:bg-neutral-900 dark:border-neutral-800 gap-0">
+            <div className="p-0">
+              {section.items.map((item, itemIndex) => {
+                const Icon = item.icon;
+                const isClickable = Boolean(item.action);
+                const Component = isClickable ? 'button' : 'div';
+                return (
+                  <div key={item.id}>
+                    <Component
+                      onClick={item.action}
+                      className={`w-full flex items-center justify-between p-4 ${isClickable ? 'hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer' : 'cursor-default'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="size-5 text-amber-700 dark:text-amber-500" />
+                        <span className="text-neutral-900 dark:text-neutral-50">{item.label}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {item.badge && (
+                          <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400">
+                            {item.badge}
+                          </Badge>
+                        )}
+                        {item.rightText && (
+                          <span className="text-sm text-neutral-500 dark:text-neutral-400">{item.rightText}</span>
+                        )}
+                        {isClickable && (
+                        <ChevronRight className="size-4 text-neutral-400" />
+                        )}
+                      </div>
+                    </Component>
+                    {itemIndex < section.items.length - 1 && (
+                      <Separator className="dark:bg-neutral-800" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+      ))}
+
       {/* Theme Toggle */}
       <Card className="mb-6 dark:bg-neutral-900 dark:border-neutral-800">
         <CardContent className="p-4">
@@ -248,49 +284,6 @@ export function Profile({ onNavigateToLog }: ProfileProps) {
           </div>
         </CardContent>
       </Card>
-
-      {/* Menu Sections */}
-      {menuSections.map((section, sectionIndex) => (
-        <div key={section.title} className="mb-6">
-          <h3 className="text-neutral-600 dark:text-neutral-400 text-sm mb-3 px-2">
-            {section.title}
-          </h3>
-          <Card className="dark:bg-neutral-900 dark:border-neutral-800">
-            <CardContent className="p-0">
-              {section.items.map((item, itemIndex) => {
-                const Icon = item.icon;
-                return (
-                  <div key={item.id}>
-                    <button
-                      onClick={item.action}
-                      className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon className="size-5 text-amber-700 dark:text-amber-500" />
-                        <span className="text-neutral-900 dark:text-neutral-50">{item.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {item.badge && (
-                          <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400">
-                            {item.badge}
-                          </Badge>
-                        )}
-                        {item.rightText && (
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400">{item.rightText}</span>
-                        )}
-                        <ChevronRight className="size-4 text-neutral-400" />
-                      </div>
-                    </button>
-                    {itemIndex < section.items.length - 1 && (
-                      <Separator className="dark:bg-neutral-800" />
-                    )}
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-      ))}
 
       {/* Logout Button */}
       <Button

@@ -126,8 +126,12 @@ export interface RoasterDto {
 
 export interface ShopContactDto {
   phone?: string | null;
+  phoneNumber?: string | null; // Альтернативное название
   website?: string | null;
+  siteLink?: string | null; // Альтернативное название
   instagram?: string | null;
+  instagramLink?: string | null; // Альтернативное название
+  email?: string | null;
 }
 
 export interface ShopScheduleIntervalDto {
@@ -136,8 +140,10 @@ export interface ShopScheduleIntervalDto {
 }
 
 export interface ScheduleDto {
-  dayOfWeek: number; // 0-6
-  intervals: ShopScheduleIntervalDto[];
+  dayOfWeek?: number | null; // 0-6 (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+  openingTime?: string | null; // TimeSpan в формате "HH:mm:ss" или "HH:mm"
+  closingTime?: string | null; // TimeSpan в формате "HH:mm:ss" или "HH:mm"
+  intervals?: ShopScheduleIntervalDto[] | null;
 }
 
 export type PriceRange = 1 | 2 | 3 | 4; // 1=$, 2=$$, 3=$$$, 4=$$$$
@@ -239,10 +245,11 @@ export interface GetReviewsByUserIdResponse extends BaseResponse {
 }
 
 // Moderation Types
-export type ModerationStatus = "Pending" | "Approved";
+export type ModerationStatus = "Pending" | "Approved" | "Rejected";
 export type PriceRange = 1 | 2 | 3 | 4;
 
-export interface ModerationShopDto {
+// Промежуточный тип для данных с бэкенда (moderationStatus может быть числом)
+export interface ModerationShopDtoRaw {
   id: string; // Guid
   name: string;
   notValidatedAddress?: string | null;
@@ -250,7 +257,7 @@ export interface ModerationShopDto {
   priceRange?: PriceRange | null;
   cityId?: string | null; // Guid
   userId: string; // Guid
-  moderationStatus: ModerationStatus;
+  moderationStatus: ModerationStatus | number; // Может быть числом (0, 1, 2) или строкой
   status: string;
   shopContact?: ShopContactDto | null;
   schedules?: ScheduleDto[] | null;
@@ -259,6 +266,11 @@ export interface ModerationShopDto {
   roasterIds?: string[] | null; // Guid[]
   brewMethodIds?: string[] | null; // Guid[]
   shopPhotos?: string[] | null;
+}
+
+// Нормализованный тип для использования в приложении
+export interface ModerationShopDto extends Omit<ModerationShopDtoRaw, 'moderationStatus'> {
+  moderationStatus: ModerationStatus; // Всегда строка после нормализации
 }
 
 export interface UploadedPhotoDto {
@@ -272,12 +284,14 @@ export interface SendCoffeeShopToModerationRequest {
   name: string;
   notValidatedAddress: string;
   description: string;
-  priceRange: number;
+  priceRange?: number | null;
   cityId: string;
   coffeeBeanIds: string[];
   roasterIds: string[];
   brewMethodIds: string[];
   equipmentIds?: string[];
+  shopContact?: ShopContactDto | null;
+  schedules?: ScheduleDto[] | null;
   shopPhotos: UploadedPhotoDto[]; // Теперь это метаданные
 }
 
@@ -291,13 +305,7 @@ export interface UpdateModerationCoffeeShopResponse extends BaseResponse {
 
 export interface GetCoffeeShopsInModerationResponse extends BaseResponse {
   data: {
-    moderationShop: ModerationShopDto[];
-  };
-}
-
-export interface GetCoffeeShopsInModerationResponse extends BaseResponse {
-  data: {
-    moderationShop: ModerationShopDto[];
+    moderationShop: ModerationShopDtoRaw[]; // Сырые данные с бэкенда (moderationStatus может быть числом)
   };
 }
 

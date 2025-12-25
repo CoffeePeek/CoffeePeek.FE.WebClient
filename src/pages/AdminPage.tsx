@@ -13,22 +13,7 @@ export function AdminPage() {
 
   if (path === '/admin/moderator') {
     return (
-      <div className="min-h-screen bg-white dark:bg-neutral-900 pb-20">
-        <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3">
-          <div className="flex items-center gap-3 max-w-md mx-auto">
-            <Button
-              onClick={() => navigate('/profile')}
-              variant="ghost"
-              size="sm"
-              className="p-2"
-            >
-              <ArrowLeft className="size-5" />
-            </Button>
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
-              Панель модератора
-            </h2>
-          </div>
-        </div>
+      <div className="min-h-screen bg-white dark:bg-neutral-900 pb-20 lg:pb-4">
         <ModeratorPanel onBack={() => navigate('/profile')} />
       </div>
     );
@@ -36,9 +21,9 @@ export function AdminPage() {
 
   if (path === '/admin/stats') {
     return (
-      <div className="min-h-screen bg-white dark:bg-neutral-900 pb-20">
-        <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3">
-          <div className="flex items-center gap-3 max-w-md mx-auto">
+      <div className="min-h-screen bg-white dark:bg-neutral-900 pb-20 lg:pb-4">
+        <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 px-4 py-3">
+          <div className="flex items-center gap-3 max-w-md lg:max-w-6xl mx-auto">
             <Button
               onClick={() => navigate('/feed')}
               variant="ghost"
@@ -52,7 +37,7 @@ export function AdminPage() {
             </h2>
           </div>
         </div>
-        <div className="px-4 py-6 max-w-md mx-auto">
+        <div className="px-4 py-6 max-w-md lg:max-w-6xl mx-auto">
           <div className="space-y-4">
             <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
               <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-2">
@@ -70,9 +55,9 @@ export function AdminPage() {
 
   if (path === '/admin/settings') {
     return (
-      <div className="min-h-screen bg-white dark:bg-neutral-900 pb-20">
-        <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3">
-          <div className="flex items-center gap-3 max-w-md mx-auto">
+      <div className="min-h-screen bg-white dark:bg-neutral-900 pb-20 lg:pb-4">
+        <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 px-4 py-3">
+          <div className="flex items-center gap-3 max-w-md lg:max-w-6xl mx-auto">
             <Button
               onClick={() => navigate('/feed')}
               variant="ghost"
@@ -86,7 +71,7 @@ export function AdminPage() {
             </h2>
           </div>
         </div>
-        <div className="px-4 py-6 max-w-md mx-auto">
+        <div className="px-4 py-6 max-w-md lg:max-w-6xl mx-auto">
           <div className="space-y-4">
             <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
               <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-2">

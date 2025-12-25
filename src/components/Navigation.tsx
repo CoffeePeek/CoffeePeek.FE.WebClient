@@ -14,7 +14,7 @@ type NavigationProps = {
 
 export function Navigation({ items }: NavigationProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800">
+    <nav className="fixed bottom-0 left-0 right-0 lg:hidden bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800">
       <div className="max-w-md mx-auto flex justify-around">
         {items.map((item) => {
           const Icon = item.icon;

@@ -12,7 +12,12 @@ export default defineConfig(({ mode }) => {
   // Load env without the VITE_ prefix filter (3rd arg = '') so we can access all vars if needed.
   const env = loadEnv(mode, process.cwd(), '');
 
-  const apiBaseUrl = normalizeBaseUrl(env.VITE_API_BASE_URL || 'https://gateway-dev-1b7e.up.railway.app');
+  // Normalize API URL - convert https://localhost to http://localhost for local dev
+  let apiBaseUrl = normalizeBaseUrl(env.VITE_API_BASE_URL || 'https://gateway-dev-1b7e.up.railway.app');
+  if (apiBaseUrl.includes('localhost') && apiBaseUrl.startsWith('https://')) {
+    apiBaseUrl = apiBaseUrl.replace('https://', 'http://');
+    console.log('⚠️  Converted HTTPS localhost to HTTP for proxy:', apiBaseUrl);
+  }
 
   return {
     plugins: [react()],
@@ -96,8 +101,23 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path,
           ws: true,
           configure: (proxy, _options) => {
-            proxy.on('error', (err, _req, _res) => {
-              console.error('❌ Proxy error:', err);
+            proxy.on('error', (err, req, res) => {
+              console.error('❌ Proxy error:', err.message);
+              console.error('   Request:', req.method, req.url);
+              console.error('   Target:', apiBaseUrl);
+              if (err.code === 'ECONNREFUSED') {
+                console.error('   ⚠️  Connection refused - is the backend server running?');
+                console.error('   💡 Check that the backend is accessible at:', apiBaseUrl);
+              }
+              if (!res.headersSent) {
+                res.writeHead(502, {
+                  'Content-Type': 'application/json',
+                });
+                res.end(JSON.stringify({
+                  error: 'Bad Gateway',
+                  message: `Cannot connect to backend at ${apiBaseUrl}. Is the server running?`,
+                }));
+              }
             });
             proxy.on('proxyReq', (_proxyReq, req, _res) => {
               console.log('➡️  [PROXY] Proxying request:', req.method, req.url, '->', apiBaseUrl + req.url);

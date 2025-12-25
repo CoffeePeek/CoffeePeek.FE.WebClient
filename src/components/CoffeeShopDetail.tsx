@@ -59,7 +59,7 @@ export function CoffeeShopDetail({ shopId, onBack }: CoffeeShopDetailProps) {
 
   if (isShopLoading || isReviewsLoading) {
     return (
-      <div className="bg-white min-h-screen pb-20">
+      <div className="bg-white min-h-screen pb-20 lg:pb-4">
         <div className="relative">
           <Skeleton className="w-full h-64" />
           <div className="absolute top-4 left-4">
@@ -96,7 +96,7 @@ export function CoffeeShopDetail({ shopId, onBack }: CoffeeShopDetailProps) {
 
   if (!shop) {
     return (
-      <div className="bg-white min-h-screen pb-20">
+      <div className="bg-white min-h-screen pb-20 lg:pb-4">
         <div className="p-4">
           <Button onClick={onBack} variant="ghost" className="mb-4">
             <ArrowLeft className="size-4 mr-2" />

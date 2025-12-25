@@ -17,7 +17,7 @@ export const coffeeshopApi = {
     params?: GetCoffeeShopsParams
   ): Promise<GetCoffeeShopsResponse & { pagination?: PaginationHeaders }> => {
     const headers: HeadersInit = {};
-    
+
     if (params?.pageNumber) {
       headers['X-Page-Number'] = String(params.pageNumber);
     }
@@ -43,7 +43,7 @@ export const coffeeshopApi = {
   },
 
   getCoffeeShop: async (id: string): Promise<GetCoffeeShopResponse> => {
-    return apiClient.get<GetCoffeeShopResponse>(`/api/shops/${id}`);
+    return apiClient.get<GetCoffeeShopResponse>(`/api/coffeeshop/${id}`);
   },
 
   searchCoffeeShops: async (
@@ -90,24 +90,21 @@ export const coffeeshopApi = {
       maxLon: params.maxLon,
     };
 
-    // Prefer OpenAPI route: /api/coffeeshop/map
-    // Fallback to legacy gateway route: /api/shops/map
     try {
       return await apiClient.get<GetCoffeeShopsResponse>('/api/coffeeshop/map', query);
     } catch (e) {
       if (e instanceof ApiError && (e.status === 404 || e.status === 405)) {
-        return await apiClient.get<GetCoffeeShopsResponse>('/api/shops/map', query);
+        return await apiClient.get<GetCoffeeShopsResponse>('/api/coffeeshop/map', query);
       }
       throw e;
     }
   },
 
-  addToFavorite: async (id: string, userId: string): Promise<CreateEntityResponse> => {
-    return apiClient.post<CreateEntityResponse>(`/favorite/${id}`, { userId });
+  addToFavorite: async (id: string): Promise<CreateEntityResponse> => {
+    return apiClient.po3st<CreateEntityResponse>(`/api/favorite-shop`, { id });
   },
-
-  removeFromFavorite: async (id: string, userId: string): Promise<void> => {
-    await apiClient.delete(`/favorite/${id}`, { userId });
+  removeFromFavorite: async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/favorite-shop`, { id });
   },
 };
 

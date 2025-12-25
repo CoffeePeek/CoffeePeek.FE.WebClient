@@ -259,12 +259,12 @@ export function CoffeeFeed({ onShopSelect }: CoffeeFeedProps) {
 
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400 pointer-events-none" />
             <Input
               value={qDraft}
               onChange={(e) => setQDraft(e.target.value)}
               placeholder="Поиск по названию…"
-              className="pl-9"
+              className="!pl-10"
             />
             {qDraft && (
               <button

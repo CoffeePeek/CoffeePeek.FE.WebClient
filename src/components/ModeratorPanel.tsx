@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle, XCircle, Edit2, Save, MapPin, Coffee, Users } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Edit2, Save, MapPin, Coffee } from 'lucide-react';
 import { moderationApi, internalApi } from '../api';
-import type { ModerationShopDto, ModerationStatus, PriceRange, CityDto, EquipmentDto, RoasterDto, BrewMethodDto, BeansDto } from '../api/types';
+import type { ModerationShopDto, ModerationShopDtoRaw, ModerationStatus, PriceRange, CityDto, EquipmentDto, RoasterDto, BrewMethodDto, BeansDto } from '../api/types';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
@@ -25,7 +25,7 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
   const [selectedSubmission, setSelectedSubmission] = useState<ModerationShopDto | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<ModerationShopDto | null>(null);
-  const [filter, setFilter] = useState<'all' | 'Pending' | 'Approved'>('Pending');
+  const [filter, setFilter] = useState<'all' | 'Pending' | 'Approved' | 'Rejected'>('Pending');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -67,6 +67,28 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
   const brewMethods: BrewMethodDto[] = brewMethodsResponse?.data?.brewMethods ?? [];
   const beans = beansResponse?.data?.beans ?? [];
 
+  // Преобразует число в строку для ModerationStatus
+  const normalizeModerationStatus = (status: ModerationStatus | number): ModerationStatus => {
+    if (typeof status === 'string') {
+      return status;
+    }
+    // Преобразуем число в строку: 0 = Pending, 1 = Approved, 2 = Rejected
+    const statusMap: Record<number, ModerationStatus> = {
+      0: 'Pending',
+      1: 'Approved',
+      2: 'Rejected',
+    };
+    return statusMap[status] || 'Pending';
+  };
+
+  // Преобразует сырые данные с бэкенда в нормализованный формат
+  const normalizeModerationShop = (shop: ModerationShopDtoRaw): ModerationShopDto => {
+    return {
+      ...shop,
+      moderationStatus: normalizeModerationStatus(shop.moderationStatus),
+    };
+  };
+
   useEffect(() => {
     const loadSubmissions = async () => {
       try {
@@ -76,7 +98,11 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
         const response = await moderationApi.getAllModerationShops();
         
         if (response.isSuccess && response.data?.moderationShop) {
-          setSubmissions(response.data.moderationShop);
+          // Нормализуем moderationStatus для каждой заявки
+          const normalizedSubmissions = response.data.moderationShop.map((shop: ModerationShopDtoRaw) =>
+            normalizeModerationShop(shop)
+          );
+          setSubmissions(normalizedSubmissions);
         } else {
           setError(response.message || 'Не удалось загрузить заявки');
         }
@@ -110,6 +136,25 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
       setSelectedSubmission({ ...selectedSubmission, moderationStatus: 'Approved' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка при одобрении');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedSubmission) return;
+    
+    try {
+      setIsSaving(true);
+      await moderationApi.updateModerationStatus(selectedSubmission.id, 'Rejected');
+      
+      const updated = submissions.map(s => 
+        s.id === selectedSubmission.id ? { ...s, moderationStatus: 'Rejected' as ModerationStatus } : s
+      );
+      setSubmissions(updated);
+      setSelectedSubmission({ ...selectedSubmission, moderationStatus: 'Rejected' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка при отклонении');
     } finally {
       setIsSaving(false);
     }
@@ -219,11 +264,13 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
             <Badge 
               variant={
                 selectedSubmission.moderationStatus === 'Approved' ? 'default' : 
+                selectedSubmission.moderationStatus === 'Rejected' ? 'destructive' :
                 'secondary'
               }
             >
               {selectedSubmission.moderationStatus === 'Pending' && 'На рассмотрении'}
               {selectedSubmission.moderationStatus === 'Approved' && 'Одобрено'}
+              {selectedSubmission.moderationStatus === 'Rejected' && 'Отклонено'}
             </Badge>
           </div>
 
@@ -344,9 +391,15 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
               <div>
                 <Label htmlFor="priceRange">Ценовой диапазон</Label>
                 {!isEditing ? (
-                  <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-                    {selectedSubmission.priceRange ? '₽'.repeat(selectedSubmission.priceRange) : 'Не указано'}
-                  </p>
+                  <div className="mt-1 flex items-center gap-1">
+                    {selectedSubmission.priceRange ? (
+                      Array.from({ length: selectedSubmission.priceRange }).map((_, i) => (
+                        <Coffee key={i} className="size-4 text-amber-700 dark:text-amber-500" />
+                      ))
+                    ) : (
+                      <span className="text-sm text-neutral-600 dark:text-neutral-300">Не указано</span>
+                    )}
+                  </div>
                 ) : (
                   <Select
                     value={editedData?.priceRange?.toString() || '__none__'}
@@ -360,10 +413,32 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">Не указано</SelectItem>
-                      <SelectItem value="1">₽</SelectItem>
-                      <SelectItem value="2">₽₽</SelectItem>
-                      <SelectItem value="3">₽₽₽</SelectItem>
-                      <SelectItem value="4">₽₽₽₽</SelectItem>
+                      <SelectItem value="1">
+                        <span className="flex items-center gap-1">
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="2">
+                        <span className="flex items-center gap-1">
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="3">
+                        <span className="flex items-center gap-1">
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="4">
+                        <span className="flex items-center gap-1">
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                          <Coffee className="size-4 text-amber-700 dark:text-amber-500" />
+                        </span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -551,7 +626,7 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
 
           {/* Action Buttons */}
           {selectedSubmission.moderationStatus === 'Pending' && (
-            <div className="pt-4">
+            <div className="pt-4 space-y-2">
               <Button
                 className="w-full gap-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
                 onClick={handleApprove}
@@ -559,6 +634,15 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
               >
                 <CheckCircle className="size-4" />
                 {isSaving ? 'Сохранение...' : 'Одобрить'}
+              </Button>
+              <Button
+                className="w-full gap-2 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                onClick={handleReject}
+                disabled={isSaving}
+                variant="destructive"
+              >
+                <XCircle className="size-4" />
+                {isSaving ? 'Сохранение...' : 'Отклонить'}
               </Button>
             </div>
           )}
@@ -570,22 +654,19 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3">
-        <div className="flex items-center justify-between">
+      <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 px-4 py-3">
+        <div className="flex items-center gap-3 max-w-md lg:max-w-6xl mx-auto">
           <Button
+            onClick={onBack}
             variant="ghost"
             size="sm"
-            onClick={onBack}
-            className="gap-2"
+            className="p-2"
           >
-            <ArrowLeft className="size-4" />
-            Назад
+            <ArrowLeft className="size-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <Users className="size-5 text-amber-700 dark:text-amber-500" />
-            <h2 className="text-amber-900 dark:text-amber-500">Модерация</h2>
-          </div>
-          <div className="w-16" />
+          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+            Панель модератора
+          </h2>
         </div>
       </div>
 
@@ -606,14 +687,7 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
 
       {/* Filter Tabs */}
       <div className="px-4 pb-4">
-        <div className="flex gap-2 overflow-x-auto">
-          <Button
-            variant={filter === 'Pending' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter('Pending')}
-          >
-            На рассмотрении
-          </Button>
+        <div className="flex flex-wrap gap-2">
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}
             size="sm"
@@ -622,11 +696,25 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
             Все
           </Button>
           <Button
+            variant={filter === 'Pending' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('Pending')}
+          >
+            На рассмотрении
+          </Button>
+          <Button
             variant={filter === 'Approved' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('Approved')}
           >
             Одобренные
+          </Button>
+          <Button
+            variant={filter === 'Rejected' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('Rejected')}
+          >
+            Отклонённые
           </Button>
         </div>
       </div>
@@ -669,12 +757,14 @@ export function ModeratorPanel({ onBack }: ModeratorPanelProps) {
                     <Badge 
                       variant={
                         submission.moderationStatus === 'Approved' ? 'default' : 
+                        submission.moderationStatus === 'Rejected' ? 'destructive' :
                         'secondary'
                       }
                       className="shrink-0 text-xs"
                     >
                       {submission.moderationStatus === 'Pending' && 'Новое'}
                       {submission.moderationStatus === 'Approved' && 'Одобрено'}
+                      {submission.moderationStatus === 'Rejected' && 'Отклонено'}
                     </Badge>
                   </div>
                   <p className="text-sm text-neutral-600 dark:text-neutral-300 line-clamp-2 mb-2">

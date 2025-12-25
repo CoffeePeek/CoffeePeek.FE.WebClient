@@ -19,7 +19,7 @@ export function AdminNavBar() {
 
   return (
     <div className="bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200 dark:border-amber-900/30">
-      <div className="max-w-md mx-auto px-4 py-2">
+      <div className="max-w-md lg:max-w-6xl mx-auto px-4 py-2">
         <div className="flex items-center gap-2 mb-2">
           <Shield className="size-4 text-amber-700 dark:text-amber-500" />
           <span className="text-xs font-semibold text-amber-900 dark:text-amber-400">

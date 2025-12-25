@@ -19,7 +19,7 @@ export function MainLayout() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <header className="sticky top-0 z-50 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
         <div className="px-4 py-3">
-          <div className="flex items-center justify-center max-w-md mx-auto">
+          <div className="flex items-center justify-center max-w-md lg:max-w-6xl mx-auto">
             <div className="flex items-center gap-2">
               <Coffee className="size-6 text-amber-700 dark:text-amber-500" />
               <h1 className="text-amber-900 dark:text-amber-500">CoffeePeek</h1>
@@ -29,7 +29,7 @@ export function MainLayout() {
         <AdminNavBar />
       </header>
 
-      <main className="pb-16 max-w-md mx-auto">
+      <main className="pb-16 lg:pb-4 max-w-md lg:max-w-6xl mx-auto">
         <Outlet />
       </main>
 

@@ -112,7 +112,7 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="p-4 pb-20">
+    <div className="p-4 pb-20 lg:pb-4">
       {/* User Profile Header */}
       <Card className="mb-6">
         <CardContent className="p-6">
