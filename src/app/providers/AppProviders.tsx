@@ -6,7 +6,7 @@ import { ThemeProvider } from '../../contexts/ThemeContext';
 import { AuthProvider } from '../../contexts/AuthContext';
 import { FavoritesProvider } from '../../contexts/FavoritesContext';
 import { Toaster } from '../../components/ui/sonner';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { toErrorMessage } from '../../shared/lib/errors';
 import { captureException } from '../../shared/lib/telemetry';
 
@@ -34,7 +34,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         }),
         defaultOptions: {
           queries: {
-            retry: 2,
+            retry: false,
             refetchOnWindowFocus: false,
             staleTime: 60 * 1000,
           },
@@ -76,8 +76,9 @@ export function AppProviders({ children }: AppProvidersProps) {
   };
 
   return (
-    <BrowserRouter>
-      {maybeWithGoogle(
+
+    maybeWithGoogle(
+      <BrowserRouter>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <AuthProvider>
@@ -86,8 +87,9 @@ export function AppProviders({ children }: AppProvidersProps) {
             <Toaster richColors closeButton />
           </ThemeProvider>
         </QueryClientProvider>
-      )}
-    </BrowserRouter>
+      </BrowserRouter >
+    )
+
   );
 }
 

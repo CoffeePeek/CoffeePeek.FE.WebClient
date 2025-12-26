@@ -146,7 +146,6 @@ export interface ScheduleDto {
   intervals?: ShopScheduleIntervalDto[] | null;
 }
 
-export type PriceRange = 1 | 2 | 3 | 4; // 1=$, 2=$$, 3=$$$, 4=$$$$
 
 export interface ShortShopDto {
   id: string;

@@ -33,7 +33,7 @@ export const authApi = {
   },
 
   refreshToken: async (refreshToken: string): Promise<RefreshTokenResponse> => {
-    const response = await apiClient.get<RefreshTokenResponse>('/api/auth/refresh', { refreshToken });
+    const response = await apiClient.post<RefreshTokenResponse>('/api/auth/refresh', { refreshToken });
     
     // Update stored tokens
     if (response.data?.accessToken && response.data?.refreshToken) {

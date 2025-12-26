@@ -101,7 +101,7 @@ export const coffeeshopApi = {
   },
 
   addToFavorite: async (id: string): Promise<CreateEntityResponse> => {
-    return apiClient.po3st<CreateEntityResponse>(`/api/favorite-shop`, { id });
+    return apiClient.post<CreateEntityResponse>(`/api/favorite-shop`, { id });
   },
   removeFromFavorite: async (id: string): Promise<void> => {
     await apiClient.delete(`/api/favorite-shop`, { id });
