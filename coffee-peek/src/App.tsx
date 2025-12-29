@@ -13,6 +13,7 @@ const App: React.FC = () => {
   const [timer, setTimer] = useState(59);
 
   useEffect(() => {
+    const API_BASE_URL = import.meta.env.VITE_API_URL;
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
 
@@ -26,7 +27,7 @@ const App: React.FC = () => {
         token: token
       }).toString();
 
-      fetch(`https://localhost:7231/api/user/confirm-email?${queryParams}`, {
+      fetch(`${API_BASE_URL}/api/user/confirm-email?${queryParams}`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
