@@ -1,63 +1,73 @@
-# CoffeePeek WebClient
+# React + TypeScript + Vite
 
-## Требования
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-- Node.js 18+ (рекомендуется LTS)
-- npm
+Currently, two official plugins are available:
 
-## Быстрый старт
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-Установить зависимости:
+## React Compiler
 
-```bash
-npm install
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-Запустить dev-сервер:
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-```bash
-npm run dev
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-По умолчанию dev-сервер стартует на `http://127.0.0.1:5173` (см. `vite.config.ts`). Это сделано, чтобы избежать `EACCES` на `3000` в некоторых конфигурациях Windows.
-
-## Сборка
-
-```bash
-npm run build
-```
-
-Артефакты сборки кладутся в `dist/` (см. `vite.config.ts` → `build.outDir`).
-
-## Анализ бандла
-
-Собрать проект и сгенерировать отчет по бандлу:
-
-```bash
-npm run build:analyze
-```
-
-Отчет будет в `dist/stats.html`.
-
-## Переменные окружения
-
-Пример переменных лежит в `env.example` (создать `.env.local` и заполнить значениями):
-
-- `VITE_API_BASE_URL` — базовый URL API в production
-- `VITE_USE_LOCAL_API` — `true/false`, использовать локальный API URL (для локальной отладки)
-- `VITE_YANDEX_MAPS_API_KEY` — API key Яндекс.Карт (нужен для страницы `/map`)
-- `VITE_GOOGLE_CLIENT_ID` — Google OAuth client id (нужен для входа через Google)
-
-## E2E smoke-тест
-
-```bash
-npm run test:e2e
-```
-
-## Deploy на Vercel
-
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist`
-- **SPA rewrites**: заданы в `vercel.json`, чтобы роутинг React Router работал при прямом открытии URL.
-
-Если вы используете переменные окружения, добавьте их в Vercel → Project Settings → Environment Variables (Production/Preview).
