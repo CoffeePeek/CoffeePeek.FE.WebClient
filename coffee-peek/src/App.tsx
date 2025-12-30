@@ -9,22 +9,62 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ModeratorPanel from './components/ModeratorPanel';
 import CoffeeShopList from './components/CoffeeShopList';
+import Header from './components/Header';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
 import { UserProvider, useUser } from './contexts/UserContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { parseJWT, isTokenExpired } from './utils/jwt';
 
-type AppPage = 'landing' | 'login' | 'register' | 'verification' | 'dashboard';
+type AppPage = 'landing' | 'login' | 'register' | 'verification' | 'dashboard' | 'coffeeshops' | 'map' | 'jobs' | 'profile' | 'settings';
 
 const AppContent: React.FC = () => {
-  const { user, isLoading, updateUserFromToken } = useUser();
+  const { user, isLoading, updateUserFromToken, logout } = useUser();
+  const { theme } = useTheme();
   const [page, setPage] = useState<AppPage>('landing');
   const [step, setStep] = useState<VerificationStep>(VerificationStep.LANDING);
   const [userState, setUserState] = useState<UserState>({ email: '', code: '' });
   const [isFormLoading, setIsFormLoading] = useState(false);
   const [timer, setTimer] = useState(59);
+  
+  // Add navigation state
+  const [currentPage, setCurrentPage] = useState<string>('home');
+  
+  const handleNavigate = (pageName: string) => {
+    setCurrentPage(pageName);
+    
+    // Navigate to appropriate page
+    if (['coffeeshops', 'map', 'jobs', 'profile', 'settings'].includes(pageName)) {
+      if (!user) {
+        setPage('login');
+        return;
+      }
+      setPage('dashboard');
+    }
+  };
+  
+  const handleLogout = () => {
+    logout();
+    setCurrentPage('home');
+    setPage('landing');
+  };
+
+  
+  // Переключаемся на dashboard когда пользователь загружен
+  useEffect(() => {
+    if (user && (page === 'landing' || page === 'verification')) {
+      // Set current page to coffeeshops when user is logged in
+      setCurrentPage('coffeeshops');
+      setPage('dashboard');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Используем user.id вместо всего объекта user
 
   // Переключаемся на dashboard когда пользователь загружен
   useEffect(() => {
     if (user && (page === 'landing' || page === 'verification')) {
+      // Set current page to coffeeshops when user is logged in
+      setCurrentPage('coffeeshops');
       setPage('dashboard');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,11 +155,27 @@ const AppContent: React.FC = () => {
 
   // Если пользователь авторизован и на dashboard, показываем соответствующий контент
   if (page === 'dashboard' && user) {
-    if (user.isModerator) {
-      return <ModeratorPanel />;
-    } else {
-      return <CoffeeShopList />;
-    }
+    const bgClass = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-white';
+    const textClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
+    
+    return (
+      <div className={`min-h-screen ${bgClass}`}>
+        <Header 
+          currentPage={currentPage} 
+          onNavigate={handleNavigate} 
+          onLogout={handleLogout} 
+        />
+        <div className={`pt-16 min-h-screen ${bgClass}`}>
+          {currentPage === 'coffeeshops' || currentPage === 'home' ? (
+            user.isModerator ? <ModeratorPanel /> : <CoffeeShopList />
+          ) : null}
+          {currentPage === 'map' ? <div className={`p-6 ${textClass}`}>Карта (в разработке)</div> : null}
+          {currentPage === 'jobs' ? <div className={`p-6 ${textClass}`}>Работа (в разработке)</div> : null}
+          {currentPage === 'profile' ? <ProfilePage /> : null}
+          {currentPage === 'settings' ? <SettingsPage /> : null}
+        </div>
+      </div>
+    );
   }
 
   // Обработка страниц логина/регистрации
@@ -346,9 +402,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <UserProvider>
-      <AppContent />
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <AppContent />
+      </UserProvider>
+    </ThemeProvider>
   );
 };
 

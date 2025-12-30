@@ -185,3 +185,57 @@ export async function logout(accessToken: string): Promise<void> {
   }
 }
 
+// UserProfile interfaces
+export interface UserProfile {
+  id?: string;
+  userCredentialId: string;
+  userName: string;
+  email: string;
+  about?: string;
+  createdAt: string;
+  avatarUrl?: string;
+  reviewCount?: number;
+  checkInCount?: number;
+  addedShopsCount?: number;
+  roles?: string[];
+}
+
+export interface UpdateProfileRequest {
+  userName?: string;
+  email?: string;
+  about?: string;
+  avatarUrl?: string;
+}
+
+/**
+ * Получает профиль текущего пользователя
+ */
+export async function getProfile(accessToken: string): Promise<ApiResponse<UserProfile>> {
+  const response = await fetch(`${API_BASE_URL}/api/User`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json',
+    },
+  });
+
+  return handleResponse<UserProfile>(response);
+}
+
+/**
+ * Обновляет профиль текущего пользователя
+ */
+export async function updateProfile(accessToken: string, profileData: UpdateProfileRequest): Promise<ApiResponse<UserProfile>> {
+  const response = await fetch(`${API_BASE_URL}/api/User`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(profileData),
+  });
+
+  return handleResponse<UserProfile>(response);
+}
+

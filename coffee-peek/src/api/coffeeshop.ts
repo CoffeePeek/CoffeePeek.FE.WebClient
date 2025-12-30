@@ -1,6 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
-import { ApiResponse } from './auth';
+import { ApiResponse } from "./auth";
 
 export interface CoffeeShop {
   id: string;
@@ -28,6 +28,51 @@ export interface CoffeeShop {
   shopPhotos?: string[];
   rating?: number;
   reviewCount?: number;
+  isOpen?: boolean;
+}
+
+export interface DetailedCoffeeShop {
+  id: string;
+  cityId: string;
+  name: string;
+  description?: string;
+  imageUrls?: string[];
+  rating: number;
+  reviewCount: number;
+  isOpen: boolean;
+  priceRange: string;
+  location?: {
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  beans?: Array<{
+    id: string;
+    name: string;
+  }>;
+  roasters?: Array<{
+    id: string;
+    name: string;
+  }>;
+  equipments?: Array<{
+    id: string;
+    name: string;
+  }>;
+  brewMethods?: Array<{
+    id: string;
+    name: string;
+  }>;
+  shopContact?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+    instagram?: string;
+  };
+  schedules?: Array<{
+    dayOfWeek: number;
+    openTime?: string;
+    closeTime?: string;
+  }>;
 }
 
 export interface CoffeeShopFilters {
@@ -37,6 +82,14 @@ export interface CoffeeShopFilters {
   roasterIds?: string[];
   brewMethodIds?: string[];
   priceRange?: string;
+}
+
+export interface GetCoffeeShopsResponse {
+  items: CoffeeShop[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
 }
 
 export interface City {
@@ -69,33 +122,37 @@ export interface BrewMethod {
  * API может возвращать либо success, либо isSuccess
  */
 async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-  const contentType = response.headers.get('content-type');
-  
-  if (!contentType?.includes('application/json')) {
+  const contentType = response.headers.get("content-type");
+
+  if (!contentType?.includes("application/json")) {
     if (response.ok) {
-      return { success: true, message: '', data: {} as T };
+      return { success: true, message: "", data: {} as T };
     }
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  const apiResponse = await response.json() as any;
-  
+  const apiResponse = (await response.json()) as any;
+
   if (!response.ok) {
-    throw new Error(apiResponse.message || `HTTP error! status: ${response.status}`);
+    throw new Error(
+      apiResponse.message || `HTTP error! status: ${response.status}`
+    );
   }
 
   // Проверяем успешность операции (API может использовать success или isSuccess)
-  const isSuccess = apiResponse.success !== false && (apiResponse.isSuccess === true || apiResponse.success === true);
-  
+  const isSuccess =
+    apiResponse.success !== false &&
+    (apiResponse.isSuccess === true || apiResponse.success === true);
+
   if (!isSuccess) {
-    throw new Error(apiResponse.message || 'Request failed');
+    throw new Error(apiResponse.message || "Request failed");
   }
 
   // Нормализуем ответ к единому формату
   return {
     success: true,
     isSuccess: true,
-    message: apiResponse.message || '',
+    message: apiResponse.message || "",
     data: apiResponse.data,
   } as ApiResponse<T>;
 }
@@ -103,37 +160,74 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
 /**
  * Получает список кофеен с фильтрами
  */
-export async function getCoffeeShops(filters?: CoffeeShopFilters): Promise<ApiResponse<CoffeeShop[]>> {
+export async function getCoffeeShops(
+  filters?: CoffeeShopFilters,
+  page: number = 1,
+  pageSize: number = 10
+): Promise<ApiResponse<GetCoffeeShopsResponse>> {
   const params = new URLSearchParams();
-  
+
+  // Use the filters object which should include cityId
   if (filters) {
-    if (filters.cityId) params.append('cityId', filters.cityId);
-    if (filters.priceRange) params.append('priceRange', filters.priceRange);
+    if (filters.cityId) params.append("cityId", filters.cityId);
+    if (filters.priceRange) params.append("priceRange", filters.priceRange);
     if (filters.equipmentIds) {
-      filters.equipmentIds.forEach(id => params.append('equipmentIds', id));
+      filters.equipmentIds.forEach((id) => params.append("equipmentIds", id));
     }
     if (filters.coffeeBeanIds) {
-      filters.coffeeBeanIds.forEach(id => params.append('coffeeBeanIds', id));
+      filters.coffeeBeanIds.forEach((id) => params.append("coffeeBeanIds", id));
     }
     if (filters.roasterIds) {
-      filters.roasterIds.forEach(id => params.append('roasterIds', id));
+      filters.roasterIds.forEach((id) => params.append("roasterIds", id));
     }
     if (filters.brewMethodIds) {
-      filters.brewMethodIds.forEach(id => params.append('brewMethodIds', id));
+      filters.brewMethodIds.forEach((id) => params.append("brewMethodIds", id));
     }
   }
 
+  // Add pagination parameters
+  params.append("page", page.toString());
+  params.append("pageSize", pageSize.toString());
+
   const queryString = params.toString();
-  const url = `${API_BASE_URL}/api/CoffeeShop${queryString ? `?${queryString}` : ''}`;
+  const url = `${API_BASE_URL}/api/CoffeeShop${
+    queryString ? `?${queryString}` : ""
+  }`;
 
   const response = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Accept': 'application/json',
+      Accept: "application/json",
     },
   });
 
-  return handleResponse<CoffeeShop[]>(response);
+  return handleResponse<GetCoffeeShopsResponse>(response);
+}
+
+/**
+ * Получает список кофеен по cityId с пагинацией
+ */
+export async function getCoffeeShopsByCity(
+  cityId: string,
+  page: number = 1,
+  pageSize: number = 10
+): Promise<ApiResponse<GetCoffeeShopsResponse>> {
+  const params = new URLSearchParams();
+  params.append("cityId", cityId);
+  params.append("page", page.toString());
+  params.append("pageSize", pageSize.toString());
+
+  const queryString = params.toString();
+  const url = `${API_BASE_URL}/api/CoffeeShop?${queryString}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  return handleResponse<GetCoffeeShopsResponse>(response);
 }
 
 /**
@@ -141,9 +235,9 @@ export async function getCoffeeShops(filters?: CoffeeShopFilters): Promise<ApiRe
  */
 export async function getCities(): Promise<ApiResponse<City[]>> {
   const response = await fetch(`${API_BASE_URL}/api/Internal/cities`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Accept': 'application/json',
+      Accept: "application/json",
     },
   });
 
@@ -155,9 +249,9 @@ export async function getCities(): Promise<ApiResponse<City[]>> {
  */
 export async function getEquipments(): Promise<ApiResponse<Equipment[]>> {
   const response = await fetch(`${API_BASE_URL}/api/Internal/equipments`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Accept': 'application/json',
+      Accept: "application/json",
     },
   });
 
@@ -169,9 +263,9 @@ export async function getEquipments(): Promise<ApiResponse<Equipment[]>> {
  */
 export async function getCoffeeBeans(): Promise<ApiResponse<CoffeeBean[]>> {
   const response = await fetch(`${API_BASE_URL}/api/Internal/beans`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Accept': 'application/json',
+      Accept: "application/json",
     },
   });
 
@@ -183,9 +277,9 @@ export async function getCoffeeBeans(): Promise<ApiResponse<CoffeeBean[]>> {
  */
 export async function getRoasters(): Promise<ApiResponse<Roaster[]>> {
   const response = await fetch(`${API_BASE_URL}/api/Internal/roasters`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Accept': 'application/json',
+      Accept: "application/json",
     },
   });
 
@@ -197,12 +291,25 @@ export async function getRoasters(): Promise<ApiResponse<Roaster[]>> {
  */
 export async function getBrewMethods(): Promise<ApiResponse<BrewMethod[]>> {
   const response = await fetch(`${API_BASE_URL}/api/Internal/brew-methods`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Accept': 'application/json',
+      Accept: "application/json",
     },
   });
 
   return handleResponse<BrewMethod[]>(response);
 }
 
+/**
+ * Получает кофейню по ID
+ */
+export async function getCoffeeShopById(id: string): Promise<ApiResponse<DetailedCoffeeShop>> {
+  const response = await fetch(`${API_BASE_URL}/api/CoffeeShop/${id}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  return handleResponse<DetailedCoffeeShop>(response);
+}

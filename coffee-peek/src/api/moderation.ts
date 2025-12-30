@@ -67,7 +67,34 @@ export interface UploadUrlRequest {
 
 export interface UploadUrlResponse {
   uploadUrl: string;
-  fileUrl: string;
+  storageKey: string;
+}
+
+export interface SendCoffeeShopToModerationRequest {
+  name: string;
+  notValidatedAddress: string;
+  description?: string;
+  priceRange?: string;
+  cityId?: string;
+  shopContact?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+    instagram?: string;
+  };
+  schedules?: Array<{
+    dayOfWeek: number;
+    openTime?: string;
+    closeTime?: string;
+  }>;
+  equipmentIds?: string[];
+  coffeeBeanIds?: string[];
+  roasterIds?: string[];
+  brewMethodIds?: string[];
+  shopPhotos?: Array<{
+    uploadUrl: string;
+    storageKey: string;
+  }>;
 }
 
 /**
@@ -194,5 +221,43 @@ export async function getUploadUrls(
   });
 
   return handleResponse<UploadUrlResponse[]>(response);
+}
+
+/**
+ * Отправляет кофейню на модерацию
+ */
+export async function sendCoffeeShopToModeration(
+  accessToken: string,
+  shopData: SendCoffeeShopToModerationRequest
+): Promise<ApiResponse<ModerationShop>> {
+  const formData = new FormData();
+  
+  Object.entries(shopData).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      if (Array.isArray(value)) {
+        if (key === 'shopPhotos') {
+          // Для фотографий отправляем как JSON массив объектов
+          formData.append(key, JSON.stringify(value));
+        } else {
+          value.forEach(item => formData.append(key, String(item)));
+        }
+      } else if (typeof value === 'object') {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, String(value));
+      }
+    }
+  });
+
+  const response = await fetch(`${API_BASE_URL}/api/Moderation`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json',
+    },
+    body: formData,
+  });
+
+  return handleResponse<ModerationShop>(response);
 }
 

@@ -1,5 +1,6 @@
-
 import React from 'react';
+import { useTheme } from '../contexts/ThemeContext';
+import { getThemeClasses } from '../utils/theme';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost';
@@ -13,12 +14,14 @@ const Button: React.FC<ButtonProps> = ({
   className = '', 
   ...props 
 }) => {
-  const baseStyles = "w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
+  const { theme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
+  const baseStyles = "py-2.5 px-4 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
   
   const variants = {
     primary: "bg-[#EAB308] text-[#1A1412] hover:bg-[#FACC15] shadow-lg shadow-yellow-900/10",
-    secondary: "bg-[#2D241F] text-white hover:bg-[#3D2F28] border border-[#3D2F28]",
-    ghost: "bg-transparent text-[#A39E93] hover:text-white"
+    secondary: themeClasses.button.secondary,
+    ghost: themeClasses.button.ghost
   };
 
   return (
