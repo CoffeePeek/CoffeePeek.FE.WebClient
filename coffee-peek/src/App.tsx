@@ -142,11 +142,11 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 lg:p-8 bg-[#1A1412] relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 lg:p-8 bg-[#1A1412] relative overflow-hidden">
       <div className="absolute inset-0 bg-pattern opacity-20 pointer-events-none hidden lg:block" />
       <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#EAB308]/5 blur-[120px] rounded-full hidden lg:block" />
 
-      <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl z-10">
+      <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto z-10">
         <div className="relative bg-[#1A1412]/80 backdrop-blur-xl border-0 lg:border lg:border-[#3D2F28] lg:rounded-[32px] lg:p-12 lg:shadow-2xl lg:shadow-black/50 transition-all duration-500">
 
           {(step !== VerificationStep.SUCCESS && step !== VerificationStep.LINK_PROCESSING) && (
