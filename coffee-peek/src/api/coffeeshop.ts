@@ -29,6 +29,25 @@ export interface CoffeeShop {
   rating?: number;
   reviewCount?: number;
   isOpen?: boolean;
+  location?: {
+    latitude?: number;
+    longitude?: number;
+  };
+  // Поля для карты
+  latitude?: number;
+  longitude?: number;
+  title?: string;
+}
+
+export interface MapShop {
+  id: string;
+  latitude: number;
+  longitude: number;
+  title: string;
+}
+
+export interface GetShopsInBoundsResponse {
+  shops: MapShop[];
 }
 
 export interface DetailedCoffeeShop {
@@ -116,6 +135,15 @@ export interface BrewMethod {
   id: string;
   name: string;
 }
+
+// Кэш для справочных данных
+const referenceDataCache: {
+  cities?: { data: City[]; promise?: Promise<ApiResponse<City[]>> };
+  equipments?: { data: Equipment[]; promise?: Promise<ApiResponse<Equipment[]>> };
+  coffeeBeans?: { data: CoffeeBean[]; promise?: Promise<ApiResponse<CoffeeBean[]>> };
+  roasters?: { data: Roaster[]; promise?: Promise<ApiResponse<Roaster[]>> };
+  brewMethods?: { data: BrewMethod[]; promise?: Promise<ApiResponse<BrewMethod[]>> };
+} = {};
 
 /**
  * Обрабатывает ответ от API
@@ -231,73 +259,242 @@ export async function getCoffeeShopsByCity(
 }
 
 /**
- * Получает список городов
+ * Получает список кофеен для карты по границам видимой области
+ */
+export async function getCoffeeShopsByMapBounds(
+  minLat?: number,
+  minLon?: number,
+  maxLat?: number,
+  maxLon?: number
+): Promise<ApiResponse<GetShopsInBoundsResponse>> {
+  const params = new URLSearchParams();
+  
+  if (minLat !== undefined) params.append("minLat", minLat.toString());
+  if (minLon !== undefined) params.append("minLon", minLon.toString());
+  if (maxLat !== undefined) params.append("maxLat", maxLat.toString());
+  if (maxLon !== undefined) params.append("maxLon", maxLon.toString());
+
+  const queryString = params.toString();
+  const url = `${API_BASE_URL}/api/CoffeeShop/map${queryString ? `?${queryString}` : ""}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  return handleResponse<GetShopsInBoundsResponse>(response);
+}
+
+/**
+ * Получает список городов (с кэшированием)
  */
 export async function getCities(): Promise<ApiResponse<City[]>> {
-  const response = await fetch(`${API_BASE_URL}/api/Internal/cities`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<City[]>(response);
+  // Если данные уже в кэше, возвращаем их
+  if (referenceDataCache.cities?.data) {
+    return { success: true, data: referenceDataCache.cities.data };
+  }
+  
+  // Если запрос уже выполняется, возвращаем тот же промис
+  if (referenceDataCache.cities?.promise) {
+    return referenceDataCache.cities.promise;
+  }
+  
+  // Создаем новый запрос
+  const promise = (async () => {
+    const response = await fetch(`${API_BASE_URL}/api/Internal/cities`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    
+    const result = await handleResponse<City[]>(response);
+    
+    // Сохраняем данные в кэш
+    if (result.success && result.data) {
+      referenceDataCache.cities = { data: result.data };
+    }
+    
+    // Удаляем промис из кэша после завершения
+    delete referenceDataCache.cities?.promise;
+    
+    return result;
+  })();
+  
+  // Сохраняем промис в кэш
+  referenceDataCache.cities = { promise };
+  
+  return promise;
 }
 
 /**
- * Получает список оборудования
+ * Получает список оборудования (с кэшированием)
  */
 export async function getEquipments(): Promise<ApiResponse<Equipment[]>> {
-  const response = await fetch(`${API_BASE_URL}/api/Internal/equipments`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<Equipment[]>(response);
+  // Если данные уже в кэше, возвращаем их
+  if (referenceDataCache.equipments?.data) {
+    return { success: true, data: referenceDataCache.equipments.data };
+  }
+  
+  // Если запрос уже выполняется, возвращаем тот же промис
+  if (referenceDataCache.equipments?.promise) {
+    return referenceDataCache.equipments.promise;
+  }
+  
+  // Создаем новый запрос
+  const promise = (async () => {
+    const response = await fetch(`${API_BASE_URL}/api/Internal/equipments`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    
+    const result = await handleResponse<Equipment[]>(response);
+    
+    // Сохраняем данные в кэш
+    if (result.success && result.data) {
+      referenceDataCache.equipments = { data: result.data };
+    }
+    
+    // Удаляем промис из кэша после завершения
+    delete referenceDataCache.equipments?.promise;
+    
+    return result;
+  })();
+  
+  // Сохраняем промис в кэш
+  referenceDataCache.equipments = { promise };
+  
+  return promise;
 }
 
 /**
- * Получает список кофейных зёрен
+ * Получает список кофейных зёрен (с кэшированием)
  */
 export async function getCoffeeBeans(): Promise<ApiResponse<CoffeeBean[]>> {
-  const response = await fetch(`${API_BASE_URL}/api/Internal/beans`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<CoffeeBean[]>(response);
+  // Если данные уже в кэше, возвращаем их
+  if (referenceDataCache.coffeeBeans?.data) {
+    return { success: true, data: referenceDataCache.coffeeBeans.data };
+  }
+  
+  // Если запрос уже выполняется, возвращаем тот же промис
+  if (referenceDataCache.coffeeBeans?.promise) {
+    return referenceDataCache.coffeeBeans.promise;
+  }
+  
+  // Создаем новый запрос
+  const promise = (async () => {
+    const response = await fetch(`${API_BASE_URL}/api/Internal/beans`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    
+    const result = await handleResponse<CoffeeBean[]>(response);
+    
+    // Сохраняем данные в кэш
+    if (result.success && result.data) {
+      referenceDataCache.coffeeBeans = { data: result.data };
+    }
+    
+    // Удаляем промис из кэша после завершения
+    delete referenceDataCache.coffeeBeans?.promise;
+    
+    return result;
+  })();
+  
+  // Сохраняем промис в кэш
+  referenceDataCache.coffeeBeans = { promise };
+  
+  return promise;
 }
 
 /**
- * Получает список обжарщиков
+ * Получает список обжарщиков (с кэшированием)
  */
 export async function getRoasters(): Promise<ApiResponse<Roaster[]>> {
-  const response = await fetch(`${API_BASE_URL}/api/Internal/roasters`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<Roaster[]>(response);
+  // Если данные уже в кэше, возвращаем их
+  if (referenceDataCache.roasters?.data) {
+    return { success: true, data: referenceDataCache.roasters.data };
+  }
+  
+  // Если запрос уже выполняется, возвращаем тот же промис
+  if (referenceDataCache.roasters?.promise) {
+    return referenceDataCache.roasters.promise;
+  }
+  
+  // Создаем новый запрос
+  const promise = (async () => {
+    const response = await fetch(`${API_BASE_URL}/api/Internal/roasters`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    
+    const result = await handleResponse<Roaster[]>(response);
+    
+    // Сохраняем данные в кэш
+    if (result.success && result.data) {
+      referenceDataCache.roasters = { data: result.data };
+    }
+    
+    // Удаляем промис из кэша после завершения
+    delete referenceDataCache.roasters?.promise;
+    
+    return result;
+  })();
+  
+  // Сохраняем промис в кэш
+  referenceDataCache.roasters = { promise };
+  
+  return promise;
 }
 
 /**
- * Получает список способов заваривания
+ * Получает список способов заваривания (с кэшированием)
  */
 export async function getBrewMethods(): Promise<ApiResponse<BrewMethod[]>> {
-  const response = await fetch(`${API_BASE_URL}/api/Internal/brew-methods`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  return handleResponse<BrewMethod[]>(response);
+  // Если данные уже в кэше, возвращаем их
+  if (referenceDataCache.brewMethods?.data) {
+    return { success: true, data: referenceDataCache.brewMethods.data };
+  }
+  
+  // Если запрос уже выполняется, возвращаем тот же промис
+  if (referenceDataCache.brewMethods?.promise) {
+    return referenceDataCache.brewMethods.promise;
+  }
+  
+  // Создаем новый запрос
+  const promise = (async () => {
+    const response = await fetch(`${API_BASE_URL}/api/Internal/brew-methods`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    
+    const result = await handleResponse<BrewMethod[]>(response);
+    
+    // Сохраняем данные в кэш
+    if (result.success && result.data) {
+      referenceDataCache.brewMethods = { data: result.data };
+    }
+    
+    // Удаляем промис из кэша после завершения
+    delete referenceDataCache.brewMethods?.promise;
+    
+    return result;
+  })();
+  
+  // Сохраняем промис в кэш
+  referenceDataCache.brewMethods = { promise };
+  
+  return promise;
 }
 
 /**

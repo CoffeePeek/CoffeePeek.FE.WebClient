@@ -16,7 +16,8 @@ const ModeratorPanel: React.FC = () => {
   const [selectedShop, setSelectedShop] = useState<ModerationShop | null>(null);
   const [editingShop, setEditingShop] = useState<ModerationShop | null>(null);
   const [editForm, setEditForm] = useState<Partial<ModerationShop>>({});
-  const [statusFilter, setStatusFilter] = useState<string>('all'); // 'all', 'Pending', 'Approved', 'Rejected'
+  const [statusFilter, setStatusFilter] = useState<string>('Pending'); // По умолчанию показываем только кофейни на модерации
+  const [viewMode, setViewMode] = useState<'list' | 'edit'>('list'); // Режим просмотра: список или редактирование
   
   // Reference data for caching
   const [cities, setCities] = useState<City[]>([]);
@@ -231,6 +232,21 @@ const ModeratorPanel: React.FC = () => {
     }
   };
 
+  const handleReturnToModeration = async (shopId: string) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Не авторизован');
+      }
+
+      await updateModerationStatus(token, shopId, 'Pending');
+      await loadShops();
+    } catch (err: any) {
+      setError(err.message || 'Ошибка при возврате в модерацию');
+      console.error('Error returning shop to moderation:', err);
+    }
+  };
+
   const startEditing = (shop: ModerationShop) => {
     setEditingShop(shop);
     setEditForm({
@@ -248,11 +264,13 @@ const ModeratorPanel: React.FC = () => {
       brewMethodIds: shop.brewMethodIds,
       shopPhotos: shop.shopPhotos,
     });
+    setViewMode('edit'); // Переключаемся в режим редактирования
   };
 
   const cancelEditing = () => {
     setEditingShop(null);
     setEditForm({});
+    setViewMode('list'); // Возвращаемся к списку
   };
 
   const saveEditedShop = async () => {
@@ -283,6 +301,7 @@ const ModeratorPanel: React.FC = () => {
       await updateModerationShop(token, updateRequest);
       setEditingShop(null);
       setEditForm({});
+      setViewMode('list'); // Возвращаемся к списку
       await loadShops(); // Reload the shops to get updated data
       setSelectedShop(null); // Reset selection to show updated data
     } catch (err: any) {
@@ -328,110 +347,59 @@ const ModeratorPanel: React.FC = () => {
     return names;
   };
   
-  const getCoffeeBeanNamesByIds = (ids: string[]) => {
+  const getCoffeeBeanNamesByIds = (ids: string[]): Array<{id: string, name: string | null}> => {
     if (!ids || !Array.isArray(ids) || ids.length === 0) return [];
     // Если данные еще не загружены
     if (!referenceDataLoaded) {
-      return []; // Возвращаем пустой массив, чтобы показать "Загрузка..." в UI
+      return ids.map(id => ({ id, name: null })); // Возвращаем ID с null для имени
     }
     // Если данные загружены, ищем имена
     if (!Array.isArray(coffeeBeans) || coffeeBeans.length === 0) {
-      console.log('getCoffeeBeanNamesByIds: coffeeBeans array is empty', { coffeeBeans, ids });
-      return [];
-    }
-    // Детальное логирование для первого вызова
-    const isFirstCall = !(window as any).__beanSearchLogged;
-    if (isFirstCall) {
-      (window as any).__beanSearchLogged = true;
-      console.log('=== Bean ID Matching Debug ===');
-      console.log('Searching for IDs:', ids.slice(0, 3));
-      console.log('Available beans (first 5):', coffeeBeans.slice(0, 5).map(b => ({ id: b.id, name: b.name })));
-      if (ids.length > 0 && coffeeBeans.length > 0) {
-        console.log('ID comparison test:', {
-          searchingId: ids[0],
-          firstBeanId: coffeeBeans[0]?.id,
-          exactMatch: ids[0] === coffeeBeans[0]?.id,
-          typeMatch: typeof ids[0] === typeof coffeeBeans[0]?.id,
-          idLength: ids[0]?.length,
-          beanIdLength: coffeeBeans[0]?.id?.length
-        });
-      }
+      // Если справочник пуст, возвращаем ID
+      return ids.map(id => ({ id, name: null }));
     }
     
-    const names = ids.map(id => {
+    return ids.map(id => {
       // Ищем точное совпадение ID (строковое сравнение)
       const bean = coffeeBeans.find(b => b.id === id);
-      return bean ? bean.name : null;
-    }).filter(name => name !== null) as string[];
-    
-    if (names.length === 0 && ids.length > 0 && isFirstCall) {
-      console.log('❌ No beans found!', {
-        searchingIds: ids.slice(0, 5),
-        availableBeanIds: coffeeBeans.slice(0, 10).map(b => b.id),
-        totalBeans: coffeeBeans.length,
-        suggestion: 'Проверьте, что ID из кофейни совпадают с ID в справочнике'
-      });
-    } else if (names.length > 0 && isFirstCall) {
-      console.log('✅ Found beans:', names.slice(0, 3));
-    }
-    
-    return names;
+      return { id, name: bean ? bean.name : null };
+    });
   };
   
-  const getRoasterNamesByIds = (ids: string[]) => {
+  const getRoasterNamesByIds = (ids: string[]): Array<{id: string, name: string | null}> => {
     if (!ids || !Array.isArray(ids) || ids.length === 0) return [];
     // Если данные еще не загружены
     if (!referenceDataLoaded) {
-      return [];
+      return ids.map(id => ({ id, name: null }));
     }
     // Если данные загружены, ищем имена
     if (!Array.isArray(roasters) || roasters.length === 0) {
-      console.log('getRoasterNamesByIds: roasters array is empty', { roasters, ids });
-      return [];
+      return ids.map(id => ({ id, name: null }));
     }
-    const names = ids.map(id => {
+    
+    return ids.map(id => {
       // Ищем точное совпадение ID (строковое сравнение)
       const roaster = roasters.find(r => r.id === id);
-      return roaster ? roaster.name : null;
-    }).filter(name => name !== null) as string[];
-    
-    if (names.length === 0 && ids.length > 0) {
-      console.log('No roasters found for IDs:', {
-        searchingIds: ids,
-        availableRoasterIds: roasters.slice(0, 5).map(r => r.id),
-        totalRoasters: roasters.length
-      });
-    }
-    
-    return names;
+      return { id, name: roaster ? roaster.name : null };
+    });
   };
   
-  const getBrewMethodNamesByIds = (ids: string[]) => {
+  const getBrewMethodNamesByIds = (ids: string[]): Array<{id: string, name: string | null}> => {
     if (!ids || !Array.isArray(ids) || ids.length === 0) return [];
     // Если данные еще не загружены
     if (!referenceDataLoaded) {
-      return [];
+      return ids.map(id => ({ id, name: null }));
     }
     // Если данные загружены, ищем имена
     if (!Array.isArray(brewMethods) || brewMethods.length === 0) {
-      console.log('getBrewMethodNamesByIds: brewMethods array is empty', { brewMethods, ids });
-      return [];
+      return ids.map(id => ({ id, name: null }));
     }
-    const names = ids.map(id => {
+    
+    return ids.map(id => {
       // Ищем точное совпадение ID (строковое сравнение)
       const method = brewMethods.find(m => m.id === id);
-      return method ? method.name : null;
-    }).filter(name => name !== null) as string[];
-    
-    if (names.length === 0 && ids.length > 0) {
-      console.log('No brew methods found for IDs:', {
-        searchingIds: ids,
-        availableMethodIds: brewMethods.slice(0, 5).map(m => m.id),
-        totalMethods: brewMethods.length
-      });
-    }
-    
-    return names;
+      return { id, name: method ? method.name : null };
+    });
   };
   
   // Helper function to get status display text and styling
@@ -528,627 +496,588 @@ const ModeratorPanel: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Список кофеен */}
-          <div className="lg:col-span-2 space-y-4">
-            {!Array.isArray(filteredShops) || filteredShops.length === 0 ? (
-              <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-8 text-center`}>
-                <p className={themeClasses.text.secondary}>
-                  {shops.length === 0 ? 'Нет кофеен на модерации' : 'Нет кофеен с выбранным статусом'}
-                </p>
-              </div>
-            ) : (
-              filteredShops.map((shop) => (
-                <div
-                  key={shop.id}
-                  className={`${themeClasses.bg.card} border rounded-2xl p-6 cursor-pointer transition-all ${
-                    selectedShop?.id === shop.id
-                      ? 'border-[#EAB308] shadow-lg shadow-[#EAB308]/10'
-                      : `${themeClasses.border.default} hover:border-[#EAB308]/50`
-                  }`}
-                  onClick={() => setSelectedShop(shop)}
+        {viewMode === 'edit' && editingShop ? (
+          // Режим редактирования - показываем только форму редактирования
+          <div className="max-w-4xl mx-auto">
+            <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6`}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className={`text-2xl font-bold ${themeClasses.text.primary}`}>
+                  Редактирование кофейни: {editingShop.name}
+                </h2>
+                <Button
+                  variant="secondary"
+                  onClick={cancelEditing}
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3 className={`text-xl font-bold ${themeClasses.text.primary}`}>{shop.name}</h3>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusInfo(shop.moderationStatus).className}`}
-                        >
-                          {getStatusInfo(shop.moderationStatus).text}
-                        </span>
-                        {(shop.moderationStatus === 'Pending' || shop.moderationStatus === '0') && (
-                          <div className="flex gap-1.5 ml-auto flex-shrink-0">
-                            <Button
-                              variant="primary"
-                              className="py-1.5 px-3 text-xs whitespace-nowrap"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                startEditing(shop);
-                              }}
-                            >
-                              Редактировать
-                            </Button>
-                            <Button
-                              variant="primary"
-                              className="py-1.5 px-3 text-xs whitespace-nowrap"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleApprove(shop.id);
-                              }}
-                            >
-                              Одобрить
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              className="py-1.5 px-3 text-xs whitespace-nowrap"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleReject(shop.id);
-                              }}
-                            >
-                              Отклонить
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        {shop.notValidatedAddress && (
-                          <p className={`${themeClasses.text.secondary} text-sm flex items-center gap-1`}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                              <circle cx="12" cy="10" r="3"></circle>
-                            </svg>
-                            {shop.notValidatedAddress}
-                          </p>
-                        )}
-                        {shop.cityId && (
-                          <p className={`${themeClasses.text.secondary} text-sm flex items-center gap-1`}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                              <circle cx="12" cy="10" r="3"></circle>
-                            </svg>
-                            {referenceDataLoaded ? getCityNameById(shop.cityId) : 'Загрузка...'}
-                          </p>
-                        )}
-                        {shop.priceRange && (
-                          <p className={`${themeClasses.text.secondary} text-sm`}>
-                            {shop.priceRange === 'Budget' ? '💰 Бюджетный' : 
-                             shop.priceRange === 'Moderate' ? '💰💰 Средний' : 
-                             shop.priceRange === 'Premium' ? '💰💰💰 Премиум' : 
-                             shop.priceRange}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {shop.description && (
-                    <p className={`${themeClasses.text.secondary} text-sm mb-4 line-clamp-2`}>{shop.description}</p>
-                  )}
-                  
-                  {/* Display relational data in the list view */}
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {(shop.equipmentIds && shop.equipmentIds.length > 0) && (
-                      <div className="flex flex-wrap gap-1 items-center">
-                        <span className={`${themeClasses.text.secondary} text-xs font-medium`}>Оборудование:</span>
-                        {referenceDataLoaded ? (
-                          (() => {
-                            const names = getEquipmentNamesByIds(shop.equipmentIds || []);
-                            if (names.length > 0) {
-                              return names.map((name, idx) => (
-                                <span key={idx} className={`px-2 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-xs`}>
-                                  {name}
-                                </span>
-                              ));
-                            } else {
-                              return (
-                                <span className={`${themeClasses.text.secondary} text-xs italic`}>
-                                  {shop.equipmentIds.length} элемент(ов) - не найдено в справочнике
-                                </span>
-                              );
-                            }
-                          })()
-                        ) : (
-                          <span className={`${themeClasses.text.secondary} text-xs`}>Загрузка...</span>
-                        )}
-                      </div>
-                    )}
-                    {(shop.coffeeBeanIds && shop.coffeeBeanIds.length > 0) && (
-                      <div className="flex flex-wrap gap-1 items-center">
-                        <span className={`${themeClasses.text.secondary} text-xs font-medium`}>Зёрна:</span>
-                        {referenceDataLoaded ? (
-                          (() => {
-                            const names = getCoffeeBeanNamesByIds(shop.coffeeBeanIds || []);
-                            if (names.length > 0) {
-                              return names.map((name, idx) => (
-                                <span key={idx} className={`px-2 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-xs`}>
-                                  {name}
-                                </span>
-                              ));
-                            } else {
-                              return (
-                                <span className={`${themeClasses.text.secondary} text-xs italic`}>
-                                  {shop.coffeeBeanIds.length} элемент(ов) - не найдено в справочнике
-                                </span>
-                              );
-                            }
-                          })()
-                        ) : (
-                          <span className={`${themeClasses.text.secondary} text-xs`}>Загрузка...</span>
-                        )}
-                      </div>
-                    )}
-                    {(shop.roasterIds && shop.roasterIds.length > 0) && (
-                      <div className="flex flex-wrap gap-1 items-center">
-                        <span className={`${themeClasses.text.secondary} text-xs font-medium`}>Обжарщики:</span>
-                        {referenceDataLoaded ? (
-                          (() => {
-                            const names = getRoasterNamesByIds(shop.roasterIds || []);
-                            if (names.length > 0) {
-                              return names.map((name, idx) => (
-                                <span key={idx} className={`px-2 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-xs`}>
-                                  {name}
-                                </span>
-                              ));
-                            } else {
-                              return (
-                                <span className={`${themeClasses.text.secondary} text-xs italic`}>
-                                  {shop.roasterIds.length} элемент(ов) - не найдено в справочнике
-                                </span>
-                              );
-                            }
-                          })()
-                        ) : (
-                          <span className={`${themeClasses.text.secondary} text-xs`}>Загрузка...</span>
-                        )}
-                      </div>
-                    )}
-                    {(shop.brewMethodIds && shop.brewMethodIds.length > 0) && (
-                      <div className="flex flex-wrap gap-1 items-center">
-                        <span className={`${themeClasses.text.secondary} text-xs font-medium`}>Методы:</span>
-                        {referenceDataLoaded ? (
-                          (() => {
-                            const names = getBrewMethodNamesByIds(shop.brewMethodIds || []);
-                            if (names.length > 0) {
-                              return names.map((name, idx) => (
-                                <span key={idx} className={`px-2 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-xs`}>
-                                  {name}
-                                </span>
-                              ));
-                            } else {
-                              return (
-                                <span className={`${themeClasses.text.secondary} text-xs italic`}>
-                                  {shop.brewMethodIds.length} элемент(ов) - не найдено в справочнике
-                                </span>
-                              );
-                            }
-                          })()
-                        ) : (
-                          <span className={`${themeClasses.text.secondary} text-xs`}>Загрузка...</span>
-                        )}
-                      </div>
-                    )}
+                  Назад к списку
+                </Button>
+              </div>
+              
+              {/* Форма редактирования */}
+              <div className="space-y-4">
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Название</label>
+                  <input
+                    type="text"
+                    value={editForm.name || ''}
+                    onChange={(e) => handleEditFormChange('name', e.target.value)}
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
+                  />
+                </div>
+                
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Адрес</label>
+                  <input
+                    type="text"
+                    value={editForm.notValidatedAddress || ''}
+                    onChange={(e) => handleEditFormChange('notValidatedAddress', e.target.value)}
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
+                  />
+                </div>
+                
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Описание</label>
+                  <textarea
+                    value={editForm.description || ''}
+                    onChange={(e) => handleEditFormChange('description', e.target.value)}
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
+                    rows={3}
+                  />
+                </div>
+                
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Ценовой диапазон</label>
+                  <select
+                    value={editForm.priceRange || ''}
+                    onChange={(e) => handleEditFormChange('priceRange', e.target.value)}
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
+                  >
+                    <option value="">Выберите диапазон</option>
+                    <option value="Budget">Бюджетный</option>
+                    <option value="Moderate">Средний</option>
+                    <option value="Premium">Премиум</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Город</label>
+                  <select
+                    value={editForm.cityId || ''}
+                    onChange={(e) => handleEditFormChange('cityId', e.target.value)}
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
+                    disabled={!referenceDataLoaded}
+                  >
+                    <option value="">Выберите город</option>
+                    {referenceDataLoaded && cities.map(city => (
+                      <option key={city.id} value={city.id}>{city.name}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Контакты</label>
+                  <div className="space-y-2 mt-1">
+                    <input
+                      type="text"
+                      placeholder="Телефон"
+                      value={editForm.shopContact?.phone || ''}
+                      onChange={(e) => handleNestedEditFormChange('shopContact', 'phone', e.target.value)}
+                      className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Email"
+                      value={editForm.shopContact?.email || ''}
+                      onChange={(e) => handleNestedEditFormChange('shopContact', 'email', e.target.value)}
+                      className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Сайт"
+                      value={editForm.shopContact?.website || ''}
+                      onChange={(e) => handleNestedEditFormChange('shopContact', 'website', e.target.value)}
+                      className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Instagram"
+                      value={editForm.shopContact?.instagram || ''}
+                      onChange={(e) => handleNestedEditFormChange('shopContact', 'instagram', e.target.value)}
+                      className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
+                    />
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-
-          {/* Детали выбранной кофейни */}
-          {selectedShop && (
-            <div className="lg:col-span-1">
-              <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 sticky top-6`}>
-                <h2 className={`text-2xl font-bold ${themeClasses.text.primary} mb-4`}>Детали</h2>
                 
-                <div className="space-y-4">
-                  {/* Фотографии кофейни */}
-                  {selectedShop.shopPhotos && selectedShop.shopPhotos.length > 0 && (
-                    <div className="mb-4">
-                      <label className={`${themeClasses.text.secondary} text-sm`}>Фотографии</label>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {selectedShop.shopPhotos.map((photo, index) => (
-                          <div key={index} className={`aspect-square ${themeClasses.bg.input} rounded-xl overflow-hidden`}>
-                            <img
-                              src={photo}
-                              alt={`Фото кофейни ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <label className={`${themeClasses.text.secondary} text-sm`}>Название</label>
-                    <p className={themeClasses.text.primary}>{selectedShop.name}</p>
-                  </div>
-
-                  {selectedShop.notValidatedAddress && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm`}>Адрес</label>
-                      <p className={themeClasses.text.primary}>{selectedShop.notValidatedAddress}</p>
-                    </div>
-                  )}
-
-                  {selectedShop.description && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm`}>Описание</label>
-                      <p className={themeClasses.text.primary}>{selectedShop.description}</p>
-                    </div>
-                  )}
-
-                  {selectedShop.priceRange && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm`}>Ценовой диапазон</label>
-                      <p className={themeClasses.text.primary}>
-                        {selectedShop.priceRange === 'Budget' ? '💰 Бюджетный' : 
-                         selectedShop.priceRange === 'Moderate' ? '💰💰 Средний' : 
-                         selectedShop.priceRange === 'Premium' ? '💰💰💰 Премиум' : 
-                         selectedShop.priceRange}
-                      </p>
-                    </div>
-                  )}
-
-                  {selectedShop.cityId && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm`}>Город</label>
-                      <p className={themeClasses.text.primary}>{referenceDataLoaded ? getCityNameById(selectedShop.cityId) : selectedShop.cityId}</p>
-                    </div>
-                  )}
-
-                  {selectedShop.userId && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm`}>ID Пользователя</label>
-                      <p className={`${themeClasses.text.tertiary} text-xs font-mono break-all`}>{selectedShop.userId}</p>
-                    </div>
-                  )}
-
-                  {selectedShop.moderationStatus && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Статус модерации</label>
-                      <span className={`inline-block px-3 py-1.5 rounded-xl text-sm font-medium ${getStatusInfo(selectedShop.moderationStatus).className}`}>
-                        {getStatusInfo(selectedShop.moderationStatus).text}
-                      </span>
-                    </div>
-                  )}
-
-                  {selectedShop.status && selectedShop.status !== selectedShop.moderationStatus && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm`}>Статус</label>
-                      <p className={themeClasses.text.primary}>{selectedShop.status}</p>
-                    </div>
-                  )}
-
-                  {selectedShop.shopContact && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm`}>Контакты</label>
-                      <div className={`${themeClasses.text.primary} text-sm space-y-1`}>
-                        {selectedShop.shopContact.phone && <p>📞 {selectedShop.shopContact.phone}</p>}
-                        {selectedShop.shopContact.email && <p>✉️ {selectedShop.shopContact.email}</p>}
-                        {selectedShop.shopContact.website && <p>🌐 {selectedShop.shopContact.website}</p>}
-                        {selectedShop.shopContact.instagram && <p>📷 {selectedShop.shopContact.instagram}</p>}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedShop.schedules && selectedShop.schedules.length > 0 && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>График работы</label>
-                      <div className={`${themeClasses.bg.input} rounded-xl p-3 space-y-2`}>
-                        {selectedShop.schedules.map((schedule, index) => {
-                          const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
-                          const dayName = days[schedule.dayOfWeek] || `День ${schedule.dayOfWeek}`;
-                          return (
-                            <div key={index} className={`flex justify-between items-center ${themeClasses.text.primary} text-sm`}>
-                              <span>{dayName}</span>
-                              <span className="text-[#EAB308]">
-                                {schedule.openTime && schedule.closeTime 
-                                  ? `${schedule.openTime} - ${schedule.closeTime}`
-                                  : 'Закрыто'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedShop.equipmentIds && selectedShop.equipmentIds.length > 0 && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Оборудование</label>
-                      <div className="flex flex-wrap gap-2">
-                        {referenceDataLoaded ? (
-                          getEquipmentNamesByIds(selectedShop.equipmentIds).map((name, idx) => (
-                            <span key={idx} className={`px-3 py-1.5 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm`}>
-                              {name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className={`${themeClasses.text.secondary} text-sm`}>Загрузка...</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedShop.coffeeBeanIds && selectedShop.coffeeBeanIds.length > 0 && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Кофейные зёрна</label>
-                      <div className="flex flex-wrap gap-2">
-                        {getCoffeeBeanNamesByIds(selectedShop.coffeeBeanIds).length > 0 ? (
-                          getCoffeeBeanNamesByIds(selectedShop.coffeeBeanIds).map((name, idx) => (
-                            <span key={idx} className={`px-3 py-1.5 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm`}>
-                              {name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className={`${themeClasses.text.secondary} text-sm`}>Загрузка...</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedShop.roasterIds && selectedShop.roasterIds.length > 0 && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Обжарщики</label>
-                      <div className="flex flex-wrap gap-2">
-                        {getRoasterNamesByIds(selectedShop.roasterIds).length > 0 ? (
-                          getRoasterNamesByIds(selectedShop.roasterIds).map((name, idx) => (
-                            <span key={idx} className={`px-3 py-1.5 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm`}>
-                              {name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className={`${themeClasses.text.secondary} text-sm`}>Загрузка...</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedShop.brewMethodIds && selectedShop.brewMethodIds.length > 0 && (
-                    <div>
-                      <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Методы заваривания</label>
-                      <div className="flex flex-wrap gap-2">
-                        {getBrewMethodNamesByIds(selectedShop.brewMethodIds).length > 0 ? (
-                          getBrewMethodNamesByIds(selectedShop.brewMethodIds).map((name, idx) => (
-                            <span key={idx} className={`px-3 py-1.5 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm`}>
-                              {name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className={`${themeClasses.text.secondary} text-sm`}>Загрузка...</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {editingShop && editingShop.id === selectedShop.id ? (
-                    // Edit form
-                    <div className={`pt-4 border-t ${themeClasses.border.default} space-y-4`}>
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Название</label>
-                        <input
-                          type="text"
-                          value={editForm.name || ''}
-                          onChange={(e) => handleEditFormChange('name', e.target.value)}
-                          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Адрес</label>
-                        <input
-                          type="text"
-                          value={editForm.notValidatedAddress || ''}
-                          onChange={(e) => handleEditFormChange('notValidatedAddress', e.target.value)}
-                          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Описание</label>
-                        <textarea
-                          value={editForm.description || ''}
-                          onChange={(e) => handleEditFormChange('description', e.target.value)}
-                          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
-                          rows={3}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Ценовой диапазон</label>
-                        <select
-                          value={editForm.priceRange || ''}
-                          onChange={(e) => handleEditFormChange('priceRange', e.target.value)}
-                          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
-                        >
-                          <option value="">Выберите диапазон</option>
-                          <option value="Budget">Бюджетный</option>
-                          <option value="Moderate">Средний</option>
-                          <option value="Premium">Премиум</option>
-                        </select>
-                      </div>
-                      
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Город</label>
-                        <select
-                          value={editForm.cityId || ''}
-                          onChange={(e) => handleEditFormChange('cityId', e.target.value)}
-                          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1`}
-                          disabled={!referenceDataLoaded}
-                        >
-                          <option value="">Выберите город</option>
-                          {referenceDataLoaded && cities.map(city => (
-                            <option key={city.id} value={city.id}>{city.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Контакты</label>
-                        <div className="space-y-2 mt-1">
-                          <input
-                            type="text"
-                            placeholder="Телефон"
-                            value={editForm.shopContact?.phone || ''}
-                            onChange={(e) => handleNestedEditFormChange('shopContact', 'phone', e.target.value)}
-                            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
-                          />
-                          <input
-                            type="text"
-                            placeholder="Email"
-                            value={editForm.shopContact?.email || ''}
-                            onChange={(e) => handleNestedEditFormChange('shopContact', 'email', e.target.value)}
-                            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
-                          />
-                          <input
-                            type="text"
-                            placeholder="Сайт"
-                            value={editForm.shopContact?.website || ''}
-                            onChange={(e) => handleNestedEditFormChange('shopContact', 'website', e.target.value)}
-                            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
-                          />
-                          <input
-                            type="text"
-                            placeholder="Instagram"
-                            value={editForm.shopContact?.instagram || ''}
-                            onChange={(e) => handleNestedEditFormChange('shopContact', 'instagram', e.target.value)}
-                            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Оборудование</label>
-                        <select
-                          multiple
-                          value={editForm.equipmentIds || []}
-                          onChange={(e) => {
-                            const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
-                            handleEditFormChange('equipmentIds', selectedOptions);
-                          }}
-                          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1 h-32`}
-                          disabled={!referenceDataLoaded}
-                        >
-                          {referenceDataLoaded && equipments.map(equipment => (
-                            <option key={equipment.id} value={equipment.id}>{equipment.name}</option>
-                          ))}
-                        </select>
-                        <p className={`${themeClasses.text.secondary} text-xs mt-1`}>Удерживайте Ctrl для выбора нескольких значений</p>
-                      </div>
-                      
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Кофейные зёрна</label>
-                        <select
-                          multiple
-                          value={editForm.coffeeBeanIds || []}
-                          onChange={(e) => {
-                            const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
-                            handleEditFormChange('coffeeBeanIds', selectedOptions);
-                          }}
-                          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1 h-32`}
-                          disabled={!referenceDataLoaded}
-                        >
-                          {referenceDataLoaded && coffeeBeans.map(bean => (
-                            <option key={bean.id} value={bean.id}>{bean.name}</option>
-                          ))}
-                        </select>
-                        <p className={`${themeClasses.text.secondary} text-xs mt-1`}>Удерживайте Ctrl для выбора нескольких значений</p>
-                      </div>
-                      
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Обжарщики</label>
-                        <select
-                          multiple
-                          value={editForm.roasterIds || []}
-                          onChange={(e) => {
-                            const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
-                            handleEditFormChange('roasterIds', selectedOptions);
-                          }}
-                          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1 h-32`}
-                          disabled={!referenceDataLoaded}
-                        >
-                          {referenceDataLoaded && roasters.map(roaster => (
-                            <option key={roaster.id} value={roaster.id}>{roaster.name}</option>
-                          ))}
-                        </select>
-                        <p className={`${themeClasses.text.secondary} text-xs mt-1`}>Удерживайте Ctrl для выбора нескольких значений</p>
-                      </div>
-                      
-                      <div>
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Методы заваривания</label>
-                        <select
-                          multiple
-                          value={editForm.brewMethodIds || []}
-                          onChange={(e) => {
-                            const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
-                            handleEditFormChange('brewMethodIds', selectedOptions);
-                          }}
-                          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1 h-32`}
-                          disabled={!referenceDataLoaded}
-                        >
-                          {referenceDataLoaded && brewMethods.map(method => (
-                            <option key={method.id} value={method.id}>{method.name}</option>
-                          ))}
-                        </select>
-                        <p className={`${themeClasses.text.secondary} text-xs mt-1`}>Удерживайте Ctrl для выбора нескольких значений</p>
-                      </div>
-                      
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          variant="primary"
-                          className="flex-1"
-                          onClick={saveEditedShop}
-                        >
-                          Сохранить
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          className="flex-1"
-                          onClick={cancelEditing}
-                        >
-                          Отмена
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    // Action buttons for non-editing mode
-                    (selectedShop.moderationStatus === 'Pending' || selectedShop.moderationStatus === '0') && (
-                      <div className={`pt-4 border-t ${themeClasses.border.default}`}>
-                        <div className="flex flex-col gap-2">
-                          <Button
-                            variant="primary"
-                            className="w-full"
-                            onClick={() => startEditing(selectedShop)}
-                          >
-                            Редактировать
-                          </Button>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="primary"
-                              className="flex-1"
-                              onClick={() => handleApprove(selectedShop.id)}
-                            >
-                              Одобрить
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              className="flex-1"
-                              onClick={() => handleReject(selectedShop.id)}
-                            >
-                              Отклонить
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  )}
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Оборудование</label>
+                  <select
+                    multiple
+                    value={editForm.equipmentIds || []}
+                    onChange={(e) => {
+                      const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
+                      handleEditFormChange('equipmentIds', selectedOptions);
+                    }}
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1 h-32`}
+                    disabled={!referenceDataLoaded}
+                  >
+                    {referenceDataLoaded && equipments.map(equipment => (
+                      <option key={equipment.id} value={equipment.id}>{equipment.name}</option>
+                    ))}
+                  </select>
+                  <p className={`${themeClasses.text.secondary} text-xs mt-1`}>Удерживайте Ctrl для выбора нескольких значений</p>
+                </div>
+                
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Кофейные зёрна</label>
+                  <select
+                    multiple
+                    value={editForm.coffeeBeanIds || []}
+                    onChange={(e) => {
+                      const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
+                      handleEditFormChange('coffeeBeanIds', selectedOptions);
+                    }}
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1 h-32`}
+                    disabled={!referenceDataLoaded}
+                  >
+                    {referenceDataLoaded && coffeeBeans.map(bean => (
+                      <option key={bean.id} value={bean.id}>{bean.name}</option>
+                    ))}
+                  </select>
+                  <p className={`${themeClasses.text.secondary} text-xs mt-1`}>Удерживайте Ctrl для выбора нескольких значений</p>
+                </div>
+                
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Обжарщики</label>
+                  <select
+                    multiple
+                    value={editForm.roasterIds || []}
+                    onChange={(e) => {
+                      const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
+                      handleEditFormChange('roasterIds', selectedOptions);
+                    }}
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1 h-32`}
+                    disabled={!referenceDataLoaded}
+                  >
+                    {referenceDataLoaded && roasters.map(roaster => (
+                      <option key={roaster.id} value={roaster.id}>{roaster.name}</option>
+                    ))}
+                  </select>
+                  <p className={`${themeClasses.text.secondary} text-xs mt-1`}>Удерживайте Ctrl для выбора нескольких значений</p>
+                </div>
+                
+                <div>
+                  <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Методы заваривания</label>
+                  <select
+                    multiple
+                    value={editForm.brewMethodIds || []}
+                    onChange={(e) => {
+                      const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
+                      handleEditFormChange('brewMethodIds', selectedOptions);
+                    }}
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} mt-1 h-32`}
+                    disabled={!referenceDataLoaded}
+                  >
+                    {referenceDataLoaded && brewMethods.map(method => (
+                      <option key={method.id} value={method.id}>{method.name}</option>
+                    ))}
+                  </select>
+                  <p className={`${themeClasses.text.secondary} text-xs mt-1`}>Удерживайте Ctrl для выбора нескольких значений</p>
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="primary"
+                    className="flex-1"
+                    onClick={saveEditedShop}
+                  >
+                    Сохранить
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={cancelEditing}
+                  >
+                    Отмена
+                  </Button>
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          // Режим списка - показываем список кофеен
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Список кофеен */}
+            <div className="lg:col-span-2 space-y-4">
+              {!Array.isArray(filteredShops) || filteredShops.length === 0 ? (
+                <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-8 text-center`}>
+                  <p className={themeClasses.text.secondary}>
+                    {shops.length === 0 ? 'Нет кофеен на модерации' : 'Нет кофеен с выбранным статусом'}
+                  </p>
+                </div>
+              ) : (
+                filteredShops.map((shop) => (
+                  <div
+                    key={shop.id}
+                    className={`${themeClasses.bg.card} border rounded-2xl p-6 cursor-pointer transition-all ${
+                      selectedShop?.id === shop.id
+                        ? 'border-[#EAB308] shadow-lg shadow-[#EAB308]/10'
+                        : `${themeClasses.border.default} hover:border-[#EAB308]/50`
+                    }`}
+                    onClick={() => setSelectedShop(shop)}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <h3 className={`text-xl font-bold ${themeClasses.text.primary}`}>{shop.name}</h3>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusInfo(shop.moderationStatus).className}`}
+                          >
+                            {getStatusInfo(shop.moderationStatus).text}
+                          </span>
+                          {getStatusInfo(shop.moderationStatus).value === 'Pending' && (
+                            <div className="flex gap-1.5 ml-auto flex-shrink-0">
+                              <Button
+                                variant="primary"
+                                className="py-1.5 px-3 text-xs whitespace-nowrap"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startEditing(shop);
+                                }}
+                              >
+                                Редактировать
+                              </Button>
+                              <Button
+                                variant="primary"
+                                className="py-1.5 px-3 text-xs whitespace-nowrap"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleApprove(shop.id);
+                                }}
+                              >
+                                Одобрить
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                className="py-1.5 px-3 text-xs whitespace-nowrap"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleReject(shop.id);
+                                }}
+                              >
+                                Отклонить
+                              </Button>
+                            </div>
+                          )}
+                          {getStatusInfo(shop.moderationStatus).value === 'Rejected' && (
+                            <div className="flex gap-1.5 ml-auto flex-shrink-0">
+                              <Button
+                                variant="primary"
+                                className="py-1.5 px-3 text-xs whitespace-nowrap"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleReturnToModeration(shop.id);
+                                }}
+                              >
+                                Вернуть в модерацию
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          {shop.notValidatedAddress && (
+                            <p className={`${themeClasses.text.secondary} text-sm flex items-center gap-1`}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                              </svg>
+                              {shop.notValidatedAddress}
+                            </p>
+                          )}
+                          {shop.cityId && (
+                            <p className={`${themeClasses.text.secondary} text-sm flex items-center gap-1`}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                              </svg>
+                              {referenceDataLoaded ? getCityNameById(shop.cityId) : 'Загрузка...'}
+                            </p>
+                          )}
+                          {shop.priceRange && (
+                            <p className={`${themeClasses.text.secondary} text-sm`}>
+                              {shop.priceRange === 'Budget' || String(shop.priceRange) === '0' ? '💰 Бюджетный' : 
+                               shop.priceRange === 'Moderate' || String(shop.priceRange) === '1' ? '💰💰 Средний' : 
+                               shop.priceRange === 'Premium' || String(shop.priceRange) === '2' ? '💰💰💰 Премиум' : 
+                               ''}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {shop.description && (
+                      <p className={`${themeClasses.text.secondary} text-sm mb-4 line-clamp-2`}>{shop.description}</p>
+                    )}
+                    
+                    {/* Display relational data in the list view */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {(shop.equipmentIds && shop.equipmentIds.length > 0) && (
+                        <div className="flex flex-wrap gap-1 items-center">
+                          <span className={`${themeClasses.text.secondary} text-xs font-medium`}>Оборудование:</span>
+                          {referenceDataLoaded ? (
+                            getEquipmentNamesByIds(shop.equipmentIds || []).map((name, idx) => (
+                              <span key={idx} className={`px-2 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-xs`}>
+                                {name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className={`${themeClasses.text.secondary} text-xs`}>Загрузка...</span>
+                          )}
+                        </div>
+                      )}
+                      {(shop.coffeeBeanIds && shop.coffeeBeanIds.length > 0) && (
+                        <div className="flex flex-wrap gap-1 items-center">
+                          <span className={`${themeClasses.text.secondary} text-xs font-medium`}>Зёрна:</span>
+                          {referenceDataLoaded ? (
+                            getCoffeeBeanNamesByIds(shop.coffeeBeanIds || []).map((item, idx) => (
+                              <span key={idx} className={`px-2 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-xs`}>
+                                {item.name || item.id}
+                              </span>
+                            ))
+                          ) : (
+                            <span className={`${themeClasses.text.secondary} text-xs`}>Загрузка...</span>
+                          )}
+                        </div>
+                      )}
+                      {(shop.roasterIds && shop.roasterIds.length > 0) && (
+                        <div className="flex flex-wrap gap-1 items-center">
+                          <span className={`${themeClasses.text.secondary} text-xs font-medium`}>Обжарщики:</span>
+                          {referenceDataLoaded ? (
+                            getRoasterNamesByIds(shop.roasterIds || []).map((item, idx) => (
+                              <span key={idx} className={`px-2 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-xs`}>
+                                {item.name || item.id}
+                              </span>
+                            ))
+                          ) : (
+                            <span className={`${themeClasses.text.secondary} text-xs`}>Загрузка...</span>
+                          )}
+                        </div>
+                      )}
+                      {(shop.brewMethodIds && shop.brewMethodIds.length > 0) && (
+                        <div className="flex flex-wrap gap-1 items-center">
+                          <span className={`${themeClasses.text.secondary} text-xs font-medium`}>Методы:</span>
+                          {referenceDataLoaded ? (
+                            getBrewMethodNamesByIds(shop.brewMethodIds || []).map((item, idx) => (
+                              <span key={idx} className={`px-2 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-xs`}>
+                                {item.name || item.id}
+                              </span>
+                            ))
+                          ) : (
+                            <span className={`${themeClasses.text.secondary} text-xs`}>Загрузка...</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Детали выбранной кофейни */}
+            {selectedShop && (
+              <div className="lg:col-span-1">
+                <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 sticky top-6`}>
+                  <h2 className={`text-2xl font-bold ${themeClasses.text.primary} mb-4`}>Детали</h2>
+                  
+                  <div className="space-y-4">
+                    {/* Фотографии кофейни */}
+                    {selectedShop.shopPhotos && selectedShop.shopPhotos.length > 0 && (
+                      <div className="mb-4">
+                        <label className={`${themeClasses.text.secondary} text-sm`}>Фотографии</label>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {selectedShop.shopPhotos.map((photo, index) => (
+                            <div key={index} className={`aspect-square ${themeClasses.bg.input} rounded-xl overflow-hidden`}>
+                              <img
+                                src={photo}
+                                alt={`Фото кофейни ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className={`${themeClasses.text.secondary} text-sm`}>Название</label>
+                      <p className={themeClasses.text.primary}>{selectedShop.name}</p>
+                    </div>
+
+                    {selectedShop.notValidatedAddress && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm`}>Адрес</label>
+                        <p className={themeClasses.text.primary}>{selectedShop.notValidatedAddress}</p>
+                      </div>
+                    )}
+
+                    {selectedShop.description && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm`}>Описание</label>
+                        <p className={themeClasses.text.primary}>{selectedShop.description}</p>
+                      </div>
+                    )}
+
+                    {selectedShop.priceRange && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm`}>Ценовой диапазон</label>
+                        <p className={themeClasses.text.primary}>
+                          {selectedShop.priceRange === 'Budget' || String(selectedShop.priceRange) === '0' ? '💰 Бюджетный' : 
+                           selectedShop.priceRange === 'Moderate' || String(selectedShop.priceRange) === '1' ? '💰💰 Средний' : 
+                           selectedShop.priceRange === 'Premium' || String(selectedShop.priceRange) === '2' ? '💰💰💰 Премиум' : 
+                           ''}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedShop.cityId && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm`}>Город</label>
+                        <p className={themeClasses.text.primary}>{referenceDataLoaded ? getCityNameById(selectedShop.cityId) : selectedShop.cityId}</p>
+                      </div>
+                    )}
+
+                    {selectedShop.userId && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm`}>ID Пользователя</label>
+                        <p className={`${themeClasses.text.tertiary} text-xs font-mono break-all`}>{selectedShop.userId}</p>
+                      </div>
+                    )}
+
+                    {selectedShop.moderationStatus && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Статус модерации</label>
+                        <span className={`inline-block px-3 py-1.5 rounded-xl text-sm font-medium ${getStatusInfo(selectedShop.moderationStatus).className}`}>
+                          {getStatusInfo(selectedShop.moderationStatus).text}
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedShop.shopContact && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm`}>Контакты</label>
+                        <div className={`${themeClasses.text.primary} text-sm space-y-1`}>
+                          {selectedShop.shopContact.phone && <p>📞 {selectedShop.shopContact.phone}</p>}
+                          {selectedShop.shopContact.email && <p>✉️ {selectedShop.shopContact.email}</p>}
+                          {selectedShop.shopContact.website && <p>🌐 {selectedShop.shopContact.website}</p>}
+                          {selectedShop.shopContact.instagram && <p>📷 {selectedShop.shopContact.instagram}</p>}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedShop.equipmentIds && selectedShop.equipmentIds.length > 0 && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Оборудование</label>
+                        <div className="flex flex-wrap gap-2">
+                          {referenceDataLoaded ? (
+                            getEquipmentNamesByIds(selectedShop.equipmentIds).map((name, idx) => (
+                              <span key={idx} className={`px-3 py-1.5 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm`}>
+                                {name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className={`${themeClasses.text.secondary} text-sm`}>Загрузка...</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedShop.coffeeBeanIds && selectedShop.coffeeBeanIds.length > 0 && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Кофейные зёрна</label>
+                        <div className="flex flex-wrap gap-2">
+                          {referenceDataLoaded ? (
+                            getCoffeeBeanNamesByIds(selectedShop.coffeeBeanIds || []).map((item, idx) => (
+                              <span key={idx} className={`px-3 py-1.5 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm`}>
+                                {item.name || item.id}
+                              </span>
+                            ))
+                          ) : (
+                            <span className={`${themeClasses.text.secondary} text-sm`}>Загрузка...</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedShop.roasterIds && selectedShop.roasterIds.length > 0 && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Обжарщики</label>
+                        <div className="flex flex-wrap gap-2">
+                          {referenceDataLoaded ? (
+                            getRoasterNamesByIds(selectedShop.roasterIds || []).map((item, idx) => (
+                              <span key={idx} className={`px-3 py-1.5 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm`}>
+                                {item.name || item.id}
+                              </span>
+                            ))
+                          ) : (
+                            <span className={`${themeClasses.text.secondary} text-sm`}>Загрузка...</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedShop.brewMethodIds && selectedShop.brewMethodIds.length > 0 && (
+                      <div>
+                        <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Методы заваривания</label>
+                        <div className="flex flex-wrap gap-2">
+                          {referenceDataLoaded ? (
+                            getBrewMethodNamesByIds(selectedShop.brewMethodIds || []).map((item, idx) => (
+                              <span key={idx} className={`px-3 py-1.5 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm`}>
+                                {item.name || item.id}
+                              </span>
+                            ))
+                          ) : (
+                            <span className={`${themeClasses.text.secondary} text-sm`}>Загрузка...</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action buttons for non-editing mode */}
+                    <div className={`pt-4 border-t ${themeClasses.border.default}`}>
+                      {getStatusInfo(selectedShop.moderationStatus).value === 'Pending' && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="primary"
+                            className="flex-1"
+                            onClick={() => handleApprove(selectedShop.id)}
+                          >
+                            Одобрить
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="flex-1"
+                            onClick={() => handleReject(selectedShop.id)}
+                          >
+                            Отклонить
+                          </Button>
+                        </div>
+                      )}
+                      {getStatusInfo(selectedShop.moderationStatus).value === 'Rejected' && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="primary"
+                            className="flex-1"
+                            onClick={() => handleReturnToModeration(selectedShop.id)}
+                          >
+                            Вернуть в модерацию
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

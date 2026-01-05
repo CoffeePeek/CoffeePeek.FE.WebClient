@@ -42,16 +42,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const email = getUserEmail(token);
     const id = getUserId(token);
 
-    const isModerator = roles.some(role => 
-      role.toLowerCase() === 'moderator' || 
-      role.toLowerCase() === 'admin' || 
-      role.toLowerCase() === 'administrator'
-    );
-
+    // Роли могут быть "User" и "Admin"
+    // Admin имеет права модератора и администратора
     const isAdmin = roles.some(role => 
       role.toLowerCase() === 'admin' || 
       role.toLowerCase() === 'administrator'
     );
+
+    // Модератор = Admin (так как ролей только User и Admin)
+    const isModerator = isAdmin;
 
     setUser({
       id: id || '',

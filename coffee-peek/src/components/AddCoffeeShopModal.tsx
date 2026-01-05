@@ -31,11 +31,11 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const [formData, setFormData] = useState<SendCoffeeShopToModerationRequest>({
+  const [formData, setFormData] = useState<Omit<SendCoffeeShopToModerationRequest, 'priceRange'> & { priceRange?: string }>({
     name: '',
     notValidatedAddress: '',
     description: '',
-    priceRange: '',
+    priceRange: undefined,
     cityId: '',
     shopContact: {
       phone: '',
@@ -84,7 +84,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadPhotos = async (): Promise<Array<{ uploadUrl: string; storageKey: string }>> => {
+  const uploadPhotos = async (): Promise<Array<{ fileName: string; contentType: string; storageKey: string; size: number }>> => {
     if (selectedFiles.length === 0) return [];
 
     const token = localStorage.getItem('accessToken');
@@ -120,8 +120,10 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
       }
 
       return {
-        uploadUrl: storageKey, // Используем storageKey как URL для отображения
+        fileName: file.name,
+        contentType: file.type,
         storageKey: storageKey,
+        size: file.size,
       };
     });
 
@@ -151,9 +153,17 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
         throw new Error('Не авторизован');
       }
 
+      // Преобразуем PriceRange из строки в число (enum)
+      const priceRangeMap: Record<string, number> = {
+        'Budget': 0,
+        'Moderate': 1,
+        'Premium': 2,
+      };
+      
       // Отправляем данные кофейни
       const shopData: SendCoffeeShopToModerationRequest = {
         ...formData,
+        priceRange: formData.priceRange ? priceRangeMap[formData.priceRange] : undefined,
         shopPhotos: uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
         equipmentIds: formData.equipmentIds && formData.equipmentIds.length > 0 ? formData.equipmentIds : undefined,
         coffeeBeanIds: formData.coffeeBeanIds && formData.coffeeBeanIds.length > 0 ? formData.coffeeBeanIds : undefined,
@@ -177,7 +187,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
           name: '',
           notValidatedAddress: '',
           description: '',
-          priceRange: '',
+          priceRange: undefined,
           cityId: '',
           shopContact: {
             phone: '',

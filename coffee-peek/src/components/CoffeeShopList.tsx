@@ -152,6 +152,22 @@ const CoffeeShopList: React.FC = () => {
       setIsLoading(true);
       const response = await getCoffeeShops(filters, currentPage, pageSize);
       console.log('Coffee shops response:', response);
+      
+      // Логируем структуру данных для отладки
+      if (response.data) {
+        const responseData: any = response.data;
+        const shopsList = responseData.items || responseData.content || [];
+        console.log('Coffee shops list:', shopsList);
+        shopsList.forEach((shop: any) => {
+          if (shop.shopPhotos || shop.imageUrls) {
+            console.log(`Shop ${shop.name} photos:`, {
+              shopPhotos: shop.shopPhotos,
+              imageUrls: shop.imageUrls,
+              allFields: Object.keys(shop)
+            });
+          }
+        });
+      }
         
       // Handle different response formats
       if (response.data && typeof response.data === 'object') {
@@ -298,13 +314,13 @@ const CoffeeShopList: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <MaterialSelect
                 label="Город"
-                value={selectedCity}
+                  value={selectedCity}
                 onChange={(value) => setSelectedCity(value)}
                 options={[
                   { value: '', label: 'Выберите город' },
                   ...cities.map(city => ({ value: city.id, label: city.name }))
                 ]}
-                required
+                  required
                 icon={
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -315,7 +331,7 @@ const CoffeeShopList: React.FC = () => {
 
               <MaterialSelect
                 label="Ценовой диапазон"
-                value={filters.priceRange || ''}
+                  value={filters.priceRange || ''}
                 onChange={(value) => handleFilterChange('priceRange', value || undefined)}
                 options={[
                   { value: '', label: 'Любой' },
@@ -333,7 +349,7 @@ const CoffeeShopList: React.FC = () => {
 
               <MaterialSelect
                 label="Оборудование"
-                value={selectedEquipment}
+                  value={selectedEquipment}
                 onChange={(value) => setSelectedEquipment(value)}
                 options={[
                   { value: '', label: 'Любое оборудование' },
@@ -349,7 +365,7 @@ const CoffeeShopList: React.FC = () => {
 
               <MaterialSelect
                 label="Кофейные зёрна"
-                value={selectedBeans}
+                  value={selectedBeans}
                 onChange={(value) => setSelectedBeans(value)}
                 options={[
                   { value: '', label: 'Любые зёрна' },
@@ -365,7 +381,7 @@ const CoffeeShopList: React.FC = () => {
 
               <MaterialSelect
                 label="Обжарщики"
-                value={selectedRoasters}
+                  value={selectedRoasters}
                 onChange={(value) => setSelectedRoasters(value)}
                 options={[
                   { value: '', label: 'Любые обжарщики' },
@@ -381,7 +397,7 @@ const CoffeeShopList: React.FC = () => {
 
               <MaterialSelect
                 label="Методы заваривания"
-                value={selectedBrewMethods}
+                  value={selectedBrewMethods}
                 onChange={(value) => setSelectedBrewMethods(value)}
                 options={[
                   { value: '', label: 'Любые методы' },
@@ -397,14 +413,14 @@ const CoffeeShopList: React.FC = () => {
               <div className="flex items-end md:col-span-2 lg:col-span-3">
                 <button
                   onClick={() => {
-                    clearFilters();
-                    if (cities.length > 0) {
-                      setSelectedCity(cities[0].id);
-                    }
-                    setSelectedEquipment('');
-                    setSelectedBeans('');
-                    setSelectedRoasters('');
-                    setSelectedBrewMethods('');
+                  clearFilters();
+                  if (cities.length > 0) {
+                    setSelectedCity(cities[0].id);
+                  }
+                  setSelectedEquipment('');
+                  setSelectedBeans('');
+                  setSelectedRoasters('');
+                  setSelectedBrewMethods('');
                   }}
                   className={`w-full py-3 px-6 ${themeClasses.bg.tertiary} ${theme === 'dark' ? 'hover:bg-[#4A3D35]' : 'hover:bg-gray-200'} ${themeClasses.text.primary} rounded-2xl font-medium transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${themeClasses.shadow}`}
                 >
@@ -437,6 +453,16 @@ const CoffeeShopList: React.FC = () => {
                     ? (shop as any).imageUrls
                     : [];
                 
+                // Логируем для отладки
+                if (photos.length > 0) {
+                  console.log(`CoffeeShopList: Фото для кофейни ${shop.name}:`, photos);
+                } else {
+                  console.log(`CoffeeShopList: Нет фото для кофейни ${shop.name}`, {
+                    shopPhotos: shop.shopPhotos,
+                    imageUrls: (shop as any).imageUrls
+                  });
+                }
+                
                 return (
                 <div
                   key={shop.id}
@@ -449,7 +475,7 @@ const CoffeeShopList: React.FC = () => {
                         images={photos}
                         shopName={shop.name}
                         isCardView={true}
-                      />
+                        />
                     </div>
                   ) : (
                     <div className="mb-4 rounded-xl overflow-hidden h-48 bg-[#1A1412] flex items-center justify-center">

@@ -70,6 +70,18 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
               >
                 Кофейни
               </button>
+              {user?.isAdmin && (
+                <button
+                  onClick={() => onNavigate('moderation')}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    currentPage === 'moderation' 
+                      ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
+                      : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
+                  }`}
+                >
+                  Модерация
+                </button>
+              )}
               <button
                 onClick={() => onNavigate('map')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -138,7 +150,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
                 {isMobileMenuOpen ? (
                   <Icons.Close className="w-5 h-5" />
                 ) : (
-                  <Icons.Menu className="w-5 h-5" />
+                <Icons.Menu className="w-5 h-5" />
                 )}
               </button>
             </div>
@@ -148,74 +160,89 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
         {/* Mobile navigation */}
         {isMobileMenuOpen && (
           <div className={`md:hidden py-4 border-t ${themeClasses.border}`}>
-            <div className="grid grid-cols-3 gap-2">
-              <button
+          <div className="grid grid-cols-3 gap-2">
+            <button
                 onClick={() => {
                   onNavigate('coffeeshops');
                   setIsMobileMenuOpen(false);
                 }}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  currentPage === 'coffeeshops' 
+              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                currentPage === 'coffeeshops' 
                     ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
                     : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-                }`}
-              >
-                Кофейни
-              </button>
-              <button
+              }`}
+            >
+              Кофейни
+            </button>
+              {user?.isAdmin && (
+                <button
+                  onClick={() => {
+                    onNavigate('moderation');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    currentPage === 'moderation' 
+                      ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
+                      : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
+                  }`}
+                >
+                  Модерация
+                </button>
+              )}
+            <button
                 onClick={() => {
                   onNavigate('map');
                   setIsMobileMenuOpen(false);
                 }}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  currentPage === 'map' 
+              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                currentPage === 'map' 
                     ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
                     : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-                }`}
-              >
-                Карта
-              </button>
-              <button
+              }`}
+            >
+              Карта
+            </button>
+            <button
                 onClick={() => {
                   onNavigate('jobs');
                   setIsMobileMenuOpen(false);
                 }}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  currentPage === 'jobs' 
+              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                currentPage === 'jobs' 
                     ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
                     : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-                }`}
-              >
-                Работа
-              </button>
-              <button
+              }`}
+            >
+              Работа
+            </button>
+            <button
                 onClick={() => {
                   onNavigate('profile');
                   setIsMobileMenuOpen(false);
                 }}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  currentPage === 'profile' 
+              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                currentPage === 'profile' 
                     ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
                     : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-                }`}
-              >
-                Профиль
-              </button>
-              <button
+              }`}
+            >
+              Профиль
+            </button>
+            <button
                 onClick={() => {
                   onNavigate('settings');
                   setIsMobileMenuOpen(false);
                 }}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  currentPage === 'settings' 
+              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                currentPage === 'settings' 
                     ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
                     : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-                }`}
-              >
-                Настройки
-              </button>
-            </div>
+              }`}
+            >
+              Настройки
+            </button>
           </div>
+        </div>
         )}
       </div>
     </header>

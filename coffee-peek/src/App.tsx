@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ModeratorPanel from './components/ModeratorPanel';
 import CoffeeShopList from './components/CoffeeShopList';
+import MapPage from './components/MapPage';
 import Header from './components/Header';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
@@ -16,7 +17,7 @@ import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { parseJWT, isTokenExpired } from './utils/jwt';
 
-type AppPage = 'landing' | 'login' | 'register' | 'verification' | 'dashboard' | 'coffeeshops' | 'map' | 'jobs' | 'profile' | 'settings';
+type AppPage = 'landing' | 'login' | 'register' | 'verification' | 'dashboard' | 'coffeeshops' | 'moderation' | 'map' | 'jobs' | 'profile' | 'settings';
 
 const AppContent: React.FC = () => {
   const { user, isLoading, updateUserFromToken, logout } = useUser();
@@ -34,7 +35,7 @@ const AppContent: React.FC = () => {
     setCurrentPage(pageName);
     
     // Navigate to appropriate page
-    if (['coffeeshops', 'map', 'jobs', 'profile', 'settings'].includes(pageName)) {
+    if (['coffeeshops', 'moderation', 'map', 'jobs', 'profile', 'settings'].includes(pageName)) {
       if (!user) {
         setPage('login');
         return;
@@ -167,9 +168,10 @@ const AppContent: React.FC = () => {
         />
         <div className={`pt-16 min-h-screen ${bgClass}`}>
           {currentPage === 'coffeeshops' || currentPage === 'home' ? (
-            user.isModerator ? <ModeratorPanel /> : <CoffeeShopList />
+            <CoffeeShopList />
           ) : null}
-          {currentPage === 'map' ? <div className={`p-6 ${textClass}`}>Карта (в разработке)</div> : null}
+          {currentPage === 'moderation' && user.isAdmin ? <ModeratorPanel /> : null}
+          {currentPage === 'map' ? <MapPage /> : null}
           {currentPage === 'jobs' ? <div className={`p-6 ${textClass}`}>Работа (в разработке)</div> : null}
           {currentPage === 'profile' ? <ProfilePage /> : null}
           {currentPage === 'settings' ? <SettingsPage /> : null}
@@ -403,9 +405,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ThemeProvider>
-      <UserProvider>
-        <AppContent />
-      </UserProvider>
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
     </ThemeProvider>
   );
 };

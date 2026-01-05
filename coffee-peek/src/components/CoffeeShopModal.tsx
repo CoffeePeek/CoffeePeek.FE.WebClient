@@ -53,140 +53,219 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
           {/* Main shop info */}
           <div className="mb-6">
             {shop.imageUrls && shop.imageUrls.length > 0 && (
-              <PhotoCarousel images={shop.imageUrls} shopName={shop.name} isCardView={false} />
+              <div className="mb-4">
+                <PhotoCarousel images={shop.imageUrls} shopName={shop.name} isCardView={false} />
+              </div>
             )}
 
-            <div className="flex items-center gap-4 mb-3">
-              <div className="flex items-center gap-1">
-                <span className="text-[#EAB308]">⭐</span>
-                <span className={themeClasses.text.primary}>{(shop.rating || 0).toFixed(1)}</span>
-                <span className={`${themeClasses.text.secondary} text-sm`}>({shop.reviewCount || 0} отзывов)</span>
+            {/* Header info with rating, price, status */}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[#EAB308] text-xl">⭐</span>
+                <span className={`${themeClasses.text.primary} font-semibold text-lg`}>{(shop.rating || 0).toFixed(1)}</span>
+                <span className={`${themeClasses.text.secondary} text-sm`}>({shop.reviewCount || 0} {shop.reviewCount === 1 ? 'отзыв' : shop.reviewCount < 5 ? 'отзыва' : 'отзывов'})</span>
               </div>
-              <span className={`${themeClasses.text.secondary} text-sm`}>
+              <div className="flex items-center gap-1 text-lg">
                 {formatPriceRange(shop.priceRange || '')}
-              </span>
-              <span className={`px-2 py-1 rounded-full text-xs ${
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                 shop.isOpen 
                   ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                   : 'bg-red-500/20 text-red-400 border border-red-500/30'
               }`}>
-                {shop.isOpen ? 'Открыто' : 'Закрыто'}
+                {shop.isOpen ? '🟢 Открыто' : '🔴 Закрыто'}
               </span>
             </div>
 
-            {shop.location && shop.location.address && (
-              <p className={`${themeClasses.text.secondary} mb-2`}>📍 {shop.location.address}</p>
+            {/* Address and location */}
+            {shop.location && (
+              <div className={`mb-4 p-3 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
+                <div className="flex items-start gap-2">
+                  <span className="text-xl">📍</span>
+                  <div className="flex-1">
+                    {shop.location.address && (
+                      <p className={`${themeClasses.text.primary} font-medium mb-1`}>{shop.location.address}</p>
+                    )}
+                    {shop.location.latitude && shop.location.longitude && (
+                      <p className={`${themeClasses.text.secondary} text-xs`}>
+                        Координаты: {shop.location.latitude.toFixed(6)}, {shop.location.longitude.toFixed(6)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
 
+            {/* Description */}
             {shop.description && (
-              <p className={`${themeClasses.text.secondary} mb-4`}>{shop.description}</p>
+              <div className={`mb-4 p-3 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
+                <h3 className={`text-sm font-semibold ${themeClasses.text.primary} mb-2`}>О кофейне</h3>
+                <p className={`${themeClasses.text.secondary} leading-relaxed`}>{shop.description}</p>
+              </div>
             )}
           </div>
 
           {/* Contact info */}
-          {shop.shopContact && (
-            <div className="mb-6">
-              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-2`}>Контакты</h3>
-              <div className="space-y-1">
+          {shop.shopContact && (shop.shopContact.phone || shop.shopContact.email || shop.shopContact.website || shop.shopContact.instagram) && (
+            <div className={`mb-6 p-4 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
+              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-3 flex items-center gap-2`}>
+                <span>📞</span>
+                <span>Контакты</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {shop.shopContact.phone && (
-                  <p className={themeClasses.text.secondary}>📞 {shop.shopContact.phone}</p>
+                  <a 
+                    href={`tel:${shop.shopContact.phone}`}
+                    className={`flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
+                  >
+                    <span className="text-lg">📞</span>
+                    <span className="break-all">{shop.shopContact.phone}</span>
+                  </a>
                 )}
                 {shop.shopContact.email && (
-                  <p className={themeClasses.text.secondary}>✉️ {shop.shopContact.email}</p>
+                  <a 
+                    href={`mailto:${shop.shopContact.email}`}
+                    className={`flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
+                  >
+                    <span className="text-lg">✉️</span>
+                    <span className="break-all">{shop.shopContact.email}</span>
+                  </a>
                 )}
                 {shop.shopContact.website && (
-                  <p className={themeClasses.text.secondary}>🌐 {shop.shopContact.website}</p>
+                  <a 
+                    href={shop.shopContact.website.startsWith('http') ? shop.shopContact.website : `https://${shop.shopContact.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
+                  >
+                    <span className="text-lg">🌐</span>
+                    <span className="break-all">{shop.shopContact.website}</span>
+                  </a>
                 )}
                 {shop.shopContact.instagram && (
-                  <p className={themeClasses.text.secondary}>📱 {shop.shopContact.instagram}</p>
+                  <a 
+                    href={shop.shopContact.instagram.startsWith('http') ? shop.shopContact.instagram : `https://instagram.com/${shop.shopContact.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
+                  >
+                    <span className="text-lg">📱</span>
+                    <span className="break-all">{shop.shopContact.instagram}</span>
+                  </a>
                 )}
               </div>
             </div>
           )}
 
-          {/* Equipment */}
-          {shop.equipments && shop.equipments.length > 0 && (
-            <div className="mb-6">
-              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-2`}>Оборудование</h3>
-              <div className="flex flex-wrap gap-2">
-                {shop.equipments && shop.equipments.map(equipment => (
-                  <span 
-                    key={equipment.id}
-                    className={`px-3 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-sm`}
-                  >
-                    {equipment.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Coffee details grid */}
+          {(shop.equipments?.length > 0 || shop.beans?.length > 0 || shop.roasters?.length > 0 || shop.brewMethods?.length > 0) && (
+            <div className={`mb-6 p-4 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
+              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-4 flex items-center gap-2`}>
+                <span>☕</span>
+                <span>Детали кофе</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Equipment */}
+                {shop.equipments && shop.equipments.length > 0 && (
+                  <div>
+                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>⚙️ Оборудование</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {shop.equipments.map(equipment => (
+                        <span 
+                          key={equipment.id}
+                          className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
+                        >
+                          {equipment.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          {/* Coffee beans */}
-          {shop.beans && shop.beans.length > 0 && (
-            <div className="mb-6">
-              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-2`}>Кофейные зёрна</h3>
-              <div className="flex flex-wrap gap-2">
-                {shop.beans && shop.beans.map(bean => (
-                  <span 
-                    key={bean.id}
-                    className={`px-3 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-sm`}
-                  >
-                    {bean.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+                {/* Coffee beans */}
+                {shop.beans && shop.beans.length > 0 && (
+                  <div>
+                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>🌱 Кофейные зёрна</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {shop.beans.map(bean => (
+                        <span 
+                          key={bean.id}
+                          className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
+                        >
+                          {bean.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          {/* Roasters */}
-          {shop.roasters && shop.roasters.length > 0 && (
-            <div className="mb-6">
-              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-2`}>Обжарщики</h3>
-              <div className="flex flex-wrap gap-2">
-                {shop.roasters && shop.roasters.map(roaster => (
-                  <span 
-                    key={roaster.id}
-                    className={`px-3 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-sm`}
-                  >
-                    {roaster.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+                {/* Roasters */}
+                {shop.roasters && shop.roasters.length > 0 && (
+                  <div>
+                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>🔥 Обжарщики</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {shop.roasters.map(roaster => (
+                        <span 
+                          key={roaster.id}
+                          className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
+                        >
+                          {roaster.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          {/* Brew methods */}
-          {shop.brewMethods && shop.brewMethods.length > 0 && (
-            <div className="mb-6">
-              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-2`}>Методы заваривания</h3>
-              <div className="flex flex-wrap gap-2">
-                {shop.brewMethods && shop.brewMethods.map(method => (
-                  <span 
-                    key={method.id}
-                    className={`px-3 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-full text-sm`}
-                  >
-                    {method.name}
-                  </span>
-                ))}
+                {/* Brew methods */}
+                {shop.brewMethods && shop.brewMethods.length > 0 && (
+                  <div>
+                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>💧 Методы заваривания</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {shop.brewMethods.map(method => (
+                        <span 
+                          key={method.id}
+                          className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
+                        >
+                          {method.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* Schedule */}
           {shop.schedules && shop.schedules.length > 0 && (
-            <div>
-              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-2`}>Расписание</h3>
-              <div className="space-y-1">
-                {shop.schedules && shop.schedules.map(schedule => (
-                  <div key={schedule.dayOfWeek} className={`flex justify-between py-1 border-b ${themeClasses.border.default}`}>
-                    <span className={themeClasses.text.secondary}>{formatDayOfWeek(schedule.dayOfWeek)}</span>
-                    <span className={themeClasses.text.primary}>
-                      {schedule.openTime && schedule.closeTime 
-                        ? `${schedule.openTime} - ${schedule.closeTime}`
-                        : 'Закрыто'}
-                    </span>
-                  </div>
-                ))}
+            <div className={`p-4 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
+              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-3 flex items-center gap-2`}>
+                <span>🕐</span>
+                <span>Расписание работы</span>
+              </h3>
+              <div className="space-y-2">
+                {shop.schedules.map(schedule => {
+                  const isToday = new Date().getDay() === schedule.dayOfWeek;
+                  return (
+                    <div 
+                      key={schedule.dayOfWeek} 
+                      className={`flex justify-between items-center py-2 px-3 rounded-lg ${
+                        isToday ? `${themeClasses.bg.primary} border ${themeClasses.border.default}` : ''
+                      }`}
+                    >
+                      <span className={`${isToday ? themeClasses.text.primary : themeClasses.text.secondary} font-medium`}>
+                        {formatDayOfWeek(schedule.dayOfWeek)}
+                        {isToday && <span className="ml-2 text-xs text-[#EAB308]">(сегодня)</span>}
+                      </span>
+                      <span className={`${isToday ? themeClasses.text.primary : themeClasses.text.secondary} font-semibold`}>
+                        {schedule.openTime && schedule.closeTime 
+                          ? `${schedule.openTime} - ${schedule.closeTime}`
+                          : <span className="text-red-400">Закрыто</span>}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

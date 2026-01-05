@@ -29,6 +29,29 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
     return null;
   }
 
+  // Фильтруем валидные URL (API уже возвращает готовые URL)
+  const validImages = images
+    .filter(img => {
+      if (!img || img.trim().length === 0) {
+        console.warn('PhotoCarousel: пустой URL изображения для', shopName);
+        return false;
+      }
+      // Проверяем, что это похоже на валидный URL
+      const trimmed = img.trim();
+      if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:')) {
+        console.warn('PhotoCarousel: подозрительный URL (не начинается с http/https/data):', trimmed, 'для', shopName);
+      }
+      return true;
+    })
+    .map(img => img.trim());
+  
+  console.log(`PhotoCarousel: Валидные изображения для ${shopName}:`, validImages);
+  
+  if (validImages.length === 0) {
+    console.warn(`PhotoCarousel: Нет валидных изображений для ${shopName}, исходные images:`, images);
+    return null;
+  }
+
   return (
     <div className="relative group h-full">
       <div className={`relative overflow-hidden rounded-xl bg-[#1A1412] ${isCardView ? 'h-full' : 'aspect-video'}`}>
@@ -36,31 +59,41 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
           className="flex transition-transform duration-300 ease-in-out h-full"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
-          {images.map((image, index) => (
-            <div key={index} className="w-full flex-shrink-0">
-              <img
-                src={image}
-                alt={`${shopName} - ${index + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'https://via.placeholder.com/800x600/1A1412/FFFFFF?text=Image+Not+Found'; // fallback placeholder
-                }}
-                onLoad={(e) => {
-                  // Ensure the image is loaded properly
-                  const target = e.target as HTMLImageElement;
-                  if (!target.src) {
-                    target.src = 'https://via.placeholder.com/800x600/1A1412/FFFFFF?text=No+Image';
-                  }
-                }}
-              />
-            </div>
-          ))}
+          {validImages.map((image, index) => {
+            console.log(`PhotoCarousel: Загрузка изображения ${index + 1} для ${shopName}:`, image);
+            return (
+              <div key={index} className="w-full flex-shrink-0">
+                <img
+                  src={image}
+                  alt={`${shopName} - ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    console.error('Ошибка загрузки изображения:', {
+                      url: image,
+                      shopName: shopName,
+                      index: index,
+                      currentSrc: target.src,
+                      error: e
+                    });
+                    // Показываем placeholder только если это не уже placeholder
+                    if (!target.src.includes('placeholder')) {
+                      target.src = 'https://via.placeholder.com/800x600/1A1412/FFFFFF?text=Image+Not+Found';
+                    }
+                  }}
+                  onLoad={() => {
+                    console.log(`PhotoCarousel: Изображение ${index + 1} успешно загружено для ${shopName}`);
+                  }}
+                  loading="lazy"
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {/* Navigation arrows */}
-      {images.length > 1 && (
+      {validImages.length > 1 && (
         <>
           <button
             onClick={(e) => {
@@ -86,9 +119,9 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
       )}
 
       {/* Indicators */}
-      {images.length > 1 && (
+      {validImages.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-          {images.map((_, index) => (
+          {validImages.map((_, index) => (
             <button
               key={index}
               onClick={(e) => {
@@ -105,9 +138,9 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
       )}
 
       {/* Counter */}
-      {images.length > 1 && (
+      {validImages.length > 1 && (
         <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-          {currentIndex + 1} / {images.length}
+          {currentIndex + 1} / {validImages.length}
         </div>
       )}
     </div>

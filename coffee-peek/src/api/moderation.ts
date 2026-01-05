@@ -74,7 +74,7 @@ export interface SendCoffeeShopToModerationRequest {
   name: string;
   notValidatedAddress: string;
   description?: string;
-  priceRange?: string;
+  priceRange?: number;
   cityId?: string;
   shopContact?: {
     phone?: string;
@@ -92,8 +92,10 @@ export interface SendCoffeeShopToModerationRequest {
   roasterIds?: string[];
   brewMethodIds?: string[];
   shopPhotos?: Array<{
-    uploadUrl: string;
+    fileName: string;
+    contentType: string;
     storageKey: string;
+    size: number;
   }>;
 }
 
@@ -230,32 +232,14 @@ export async function sendCoffeeShopToModeration(
   accessToken: string,
   shopData: SendCoffeeShopToModerationRequest
 ): Promise<ApiResponse<ModerationShop>> {
-  const formData = new FormData();
-  
-  Object.entries(shopData).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (Array.isArray(value)) {
-        if (key === 'shopPhotos') {
-          // Для фотографий отправляем как JSON массив объектов
-          formData.append(key, JSON.stringify(value));
-        } else {
-          value.forEach(item => formData.append(key, String(item)));
-        }
-      } else if (typeof value === 'object') {
-        formData.append(key, JSON.stringify(value));
-      } else {
-        formData.append(key, String(value));
-      }
-    }
-  });
-
   const response = await fetch(`${API_BASE_URL}/api/Moderation`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
-    body: formData,
+    body: JSON.stringify(shopData),
   });
 
   return handleResponse<ModerationShop>(response);

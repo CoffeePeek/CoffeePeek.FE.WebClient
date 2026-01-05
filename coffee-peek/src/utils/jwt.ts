@@ -2,10 +2,13 @@
  * Парсит JWT токен и извлекает claims (payload)
  */
 export interface JWTClaims {
-  sub?: string; // User ID
-  email?: string;
+  sub?: string; // Subject
+  nameid?: string; // User ID (JwtRegisteredClaimNames.NameId)
+  email?: string; // Email (JwtRegisteredClaimNames.Email)
   name?: string;
   roles?: string[];
+  role?: string | string[]; // Role claim (может быть строкой или массивом)
+  'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'?: string | string[]; // ClaimTypes.Role
   exp?: number; // Expiration timestamp
   iat?: number; // Issued at timestamp
   [key: string]: unknown; // Другие claims
@@ -81,6 +84,9 @@ export function isTokenExpired(token: string | null | undefined): boolean {
 
 /**
  * Извлекает роль пользователя из токена
+ * Роли добавляются через ClaimTypes.Role, что в JWT может быть:
+ * - "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" (полный путь)
+ * - "role" (короткое имя)
  */
 export function getUserRoles(token: string | null | undefined): string[] {
   if (!token) {
@@ -92,22 +98,26 @@ export function getUserRoles(token: string | null | undefined): string[] {
     return [];
   }
   
-  // Роли могут быть в разных форматах
-  if (Array.isArray(claims.roles)) {
-    return claims.roles;
+  // Проверяем стандартный claim для ролей (ClaimTypes.Role)
+  const roleClaimFull = claims['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+  if (Array.isArray(roleClaimFull)) {
+    return roleClaimFull;
+  }
+  if (typeof roleClaimFull === 'string') {
+    return [roleClaimFull];
   }
   
+  // Проверяем короткое имя "role"
+  if (Array.isArray(claims.role)) {
+    return claims.role;
+  }
   if (typeof claims.role === 'string') {
     return [claims.role];
   }
   
-  // Проверяем claim с префиксом role или http://schemas.microsoft.com/ws/2008/06/identity/claims/role
-  const roleClaim = claims['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-  if (Array.isArray(roleClaim)) {
-    return roleClaim;
-  }
-  if (typeof roleClaim === 'string') {
-    return [roleClaim];
+  // Проверяем массив "roles" (на случай другого формата)
+  if (Array.isArray(claims.roles)) {
+    return claims.roles;
   }
   
   return [];
@@ -115,6 +125,7 @@ export function getUserRoles(token: string | null | undefined): string[] {
 
 /**
  * Извлекает email пользователя из токена
+ * Email добавляется через JwtRegisteredClaimNames.Email
  */
 export function getUserEmail(token: string | null | undefined): string | null {
   if (!token) {
@@ -122,11 +133,13 @@ export function getUserEmail(token: string | null | undefined): string | null {
   }
   
   const claims = parseJWT(token);
-  return claims?.email || claims?.sub || null;
+  // Email хранится в claim "email" (JwtRegisteredClaimNames.Email)
+  return claims?.email || null;
 }
 
 /**
  * Извлекает ID пользователя из токена
+ * ID добавляется через JwtRegisteredClaimNames.NameId
  */
 export function getUserId(token: string | null | undefined): string | null {
   if (!token) {
@@ -134,6 +147,7 @@ export function getUserId(token: string | null | undefined): string | null {
   }
   
   const claims = parseJWT(token);
-  return claims?.sub || null;
+  // ID хранится в claim "nameid" (JwtRegisteredClaimNames.NameId)
+  return claims?.nameid || claims?.sub || null;
 }
 
