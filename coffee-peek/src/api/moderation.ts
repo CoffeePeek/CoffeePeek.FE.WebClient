@@ -2,22 +2,28 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 import { ApiResponse } from './auth';
 
+export interface ModerationShopPhoto {
+  fileName: string;
+  storageKey: string;
+  fullUrl: string;
+}
+
 export interface ModerationShop {
   id: string;
   name: string;
   notValidatedAddress?: string;
   description?: string;
-  priceRange?: string;
+  priceRange?: number | string; // Может быть числом (enum) или строкой
   cityId?: string;
   userId: string;
-  moderationStatus: string;
-  status: string;
+  moderationStatus: number | string; // Может быть числом (enum) или строкой
+  status: number | string; // Может быть числом (enum) или строкой
   shopContact?: {
     phone?: string;
     email?: string;
     website?: string;
     instagram?: string;
-  };
+  } | null; // Может быть null
   schedules?: Array<{
     dayOfWeek: number;
     openTime?: string;
@@ -27,7 +33,7 @@ export interface ModerationShop {
   coffeeBeanIds?: string[];
   roasterIds?: string[];
   brewMethodIds?: string[];
-  shopPhotos?: string[];
+  shopPhotos?: ModerationShopPhoto[]; // Новый формат - массив объектов с fullUrl
 }
 
 export interface UpdateModerationShopRequest {
@@ -35,7 +41,7 @@ export interface UpdateModerationShopRequest {
   name?: string;
   notValidatedAddress?: string;
   description?: string;
-  priceRange?: string;
+  priceRange?: number | string; // Может быть числом (enum) или строкой
   cityId?: string;
   shopContact?: {
     phone?: string;
@@ -52,7 +58,7 @@ export interface UpdateModerationShopRequest {
   coffeeBeanIds?: string[];
   roasterIds?: string[];
   brewMethodIds?: string[];
-  shopPhotos?: string[];
+  shopPhotos?: (string | ModerationShopPhoto)[]; // Может быть массивом строк (старый формат) или объектов (новый формат)
 }
 
 export interface UpdateModerationStatusRequest {
@@ -127,11 +133,17 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   }
 
   // Нормализуем ответ к единому формату
+  // Если данные приходят в формате { data: { moderationShop: [...] } }, извлекаем moderationShop
+  let normalizedData = apiResponse.data;
+  if (normalizedData && typeof normalizedData === 'object' && 'moderationShop' in normalizedData) {
+    normalizedData = (normalizedData as any).moderationShop;
+  }
+  
   return {
     success: true,
     isSuccess: true,
     message: apiResponse.message || '',
-    data: apiResponse.data,
+    data: normalizedData,
   } as ApiResponse<T>;
 }
 

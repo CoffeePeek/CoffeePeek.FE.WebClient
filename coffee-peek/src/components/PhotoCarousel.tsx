@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 interface PhotoCarouselProps {
-  images: string[];
+  images: (string | { fullUrl: string })[];
   shopName: string;
   isCardView?: boolean; // Optional prop to indicate if used in card view
 }
@@ -30,25 +30,23 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
   }
 
   // Фильтруем валидные URL (API уже возвращает готовые URL)
+  // Поддерживаем как строки (старый формат), так и объекты с fullUrl (новый формат)
   const validImages = images
-    .filter(img => {
-      if (!img || img.trim().length === 0) {
-        console.warn('PhotoCarousel: пустой URL изображения для', shopName);
-        return false;
+    .map(img => {
+      // Если это объект с fullUrl (новый формат PhotoMetadataDto)
+      if (img && typeof img === 'object' && 'fullUrl' in img) {
+        return (img as any).fullUrl;
       }
-      // Проверяем, что это похоже на валидный URL
-      const trimmed = img.trim();
-      if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:')) {
-        console.warn('PhotoCarousel: подозрительный URL (не начинается с http/https/data):', trimmed, 'для', shopName);
+      // Если это строка (старый формат)
+      if (typeof img === 'string') {
+        return img.trim();
       }
-      return true;
+      // Если это что-то другое, пытаемся преобразовать в строку
+      return img ? String(img).trim() : '';
     })
-    .map(img => img.trim());
-  
-  console.log(`PhotoCarousel: Валидные изображения для ${shopName}:`, validImages);
+    .filter(url => url && url.length > 0);
   
   if (validImages.length === 0) {
-    console.warn(`PhotoCarousel: Нет валидных изображений для ${shopName}, исходные images:`, images);
     return null;
   }
 
@@ -59,36 +57,23 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
           className="flex transition-transform duration-300 ease-in-out h-full"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
-          {validImages.map((image, index) => {
-            console.log(`PhotoCarousel: Загрузка изображения ${index + 1} для ${shopName}:`, image);
-            return (
-              <div key={index} className="w-full flex-shrink-0">
-                <img
-                  src={image}
-                  alt={`${shopName} - ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    console.error('Ошибка загрузки изображения:', {
-                      url: image,
-                      shopName: shopName,
-                      index: index,
-                      currentSrc: target.src,
-                      error: e
-                    });
-                    // Показываем placeholder только если это не уже placeholder
-                    if (!target.src.includes('placeholder')) {
-                      target.src = 'https://via.placeholder.com/800x600/1A1412/FFFFFF?text=Image+Not+Found';
-                    }
-                  }}
-                  onLoad={() => {
-                    console.log(`PhotoCarousel: Изображение ${index + 1} успешно загружено для ${shopName}`);
-                  }}
-                  loading="lazy"
-                />
-              </div>
-            );
-          })}
+          {validImages.map((image, index) => (
+            <div key={index} className="w-full flex-shrink-0">
+              <img
+                src={image}
+                alt={`${shopName} - ${index + 1}`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  // Показываем placeholder только если это не уже placeholder
+                  if (!target.src.includes('placeholder')) {
+                    target.src = 'https://via.placeholder.com/800x600/1A1412/FFFFFF?text=Image+Not+Found';
+                  }
+                }}
+                loading="lazy"
+              />
+            </div>
+          ))}
         </div>
       </div>
 

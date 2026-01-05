@@ -2,12 +2,29 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 import { ApiResponse } from "./auth";
 
+// DTO для фотографий
+export interface ShortPhotoMetadataDto {
+  fileName: string;
+  storageKey: string;
+  fullUrl: string;
+}
+
+export interface PhotoMetadataDto {
+  fileName: string;
+  contentType: string;
+  storageKey: string;
+  fullUrl: string;
+  sizeBytes: number;
+  ownerId: string;
+  uploadedAt: string; // ISO date string
+}
+
 export interface CoffeeShop {
   id: string;
   name: string;
   address?: string;
   description?: string;
-  priceRange?: string;
+  priceRange?: number | string; // Может быть числом (enum) или строкой
   cityId?: string;
   cityName?: string;
   shopContact?: {
@@ -25,11 +42,17 @@ export interface CoffeeShop {
   coffeeBeanIds?: string[];
   roasterIds?: string[];
   brewMethodIds?: string[];
-  shopPhotos?: string[];
+  equipments?: Array<{
+    id: string;
+    name: string;
+  }>; // Может приходить уже развернутый массив
+  photos?: ShortPhotoMetadataDto[]; // Новое поле вместо shopPhotos
+  shopPhotos?: string[]; // Оставляем для обратной совместимости
   rating?: number;
   reviewCount?: number;
   isOpen?: boolean;
   location?: {
+    address?: string; // Может быть в location
     latitude?: number;
     longitude?: number;
   };
@@ -55,11 +78,12 @@ export interface DetailedCoffeeShop {
   cityId: string;
   name: string;
   description?: string;
-  imageUrls?: string[];
+  photos?: PhotoMetadataDto[]; // Новое поле вместо imageUrls
+  imageUrls?: string[]; // Оставляем для обратной совместимости
   rating: number;
   reviewCount: number;
   isOpen: boolean;
-  priceRange: string;
+  priceRange: number | string; // Может быть числом (enum) или строкой
   location?: {
     address?: string;
     latitude?: number;
@@ -80,13 +104,13 @@ export interface DetailedCoffeeShop {
   brewMethods?: Array<{
     id: string;
     name: string;
-  }>;
+  }> | null; // Может быть null
   shopContact?: {
     phone?: string;
     email?: string;
     website?: string;
     instagram?: string;
-  };
+  } | null; // Может быть null
   schedules?: Array<{
     dayOfWeek: number;
     openTime?: string;
@@ -103,12 +127,20 @@ export interface CoffeeShopFilters {
   priceRange?: string;
 }
 
+// ShortShopDto соответствует структуре из бэкенда
+export interface ShortShopDto {
+  id: string;
+  name: string;
+  photos?: ShortPhotoMetadataDto[];
+}
+
 export interface GetCoffeeShopsResponse {
-  items: CoffeeShop[];
-  totalItems: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
+  coffeeShops?: ShortShopDto[]; // Новое поле из бэкенда
+  items?: CoffeeShop[]; // Оставляем для обратной совместимости
+  totalItems?: number;
+  totalPages?: number;
+  currentPage?: number;
+  pageSize?: number;
 }
 
 export interface City {
@@ -162,6 +194,12 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   const apiResponse = (await response.json()) as any;
 
   if (!response.ok) {
+    console.error('API Error Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      apiResponse: apiResponse,
+      url: response.url
+    });
     throw new Error(
       apiResponse.message || `HTTP error! status: ${response.status}`
     );
@@ -177,11 +215,31 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   }
 
   // Нормализуем ответ к единому формату
+  // Если данные приходят в формате { data: { shopDto: {...} } }, извлекаем shopDto
+  // Если данные приходят в формате { data: { brewMethods: [...] } }, извлекаем brewMethods
+  // Аналогично для других справочных данных (cities, equipments, coffeeBeans, roasters)
+  let normalizedData = apiResponse.data;
+  if (normalizedData && typeof normalizedData === 'object') {
+    if ('shopDto' in normalizedData) {
+      normalizedData = (normalizedData as any).shopDto;
+    } else if ('brewMethods' in normalizedData && Array.isArray((normalizedData as any).brewMethods)) {
+      normalizedData = (normalizedData as any).brewMethods;
+    } else if ('cities' in normalizedData && Array.isArray((normalizedData as any).cities)) {
+      normalizedData = (normalizedData as any).cities;
+    } else if ('equipments' in normalizedData && Array.isArray((normalizedData as any).equipments)) {
+      normalizedData = (normalizedData as any).equipments;
+    } else if ('coffeeBeans' in normalizedData && Array.isArray((normalizedData as any).coffeeBeans)) {
+      normalizedData = (normalizedData as any).coffeeBeans;
+    } else if ('roasters' in normalizedData && Array.isArray((normalizedData as any).roasters)) {
+      normalizedData = (normalizedData as any).roasters;
+    }
+  }
+  
   return {
     success: true,
     isSuccess: true,
     message: apiResponse.message || "",
-    data: apiResponse.data,
+    data: normalizedData,
   } as ApiResponse<T>;
 }
 
@@ -195,7 +253,7 @@ export async function getCoffeeShops(
 ): Promise<ApiResponse<GetCoffeeShopsResponse>> {
   const params = new URLSearchParams();
 
-  // Use the filters object which should include cityId
+  // Use the filters object (cityId is optional now)
   if (filters) {
     if (filters.cityId) params.append("cityId", filters.cityId);
     if (filters.priceRange) params.append("priceRange", filters.priceRange);
@@ -222,6 +280,10 @@ export async function getCoffeeShops(
     queryString ? `?${queryString}` : ""
   }`;
 
+  console.log('getCoffeeShops: Request URL:', url);
+  console.log('getCoffeeShops: Filters:', filters);
+  console.log('getCoffeeShops: Query params:', queryString);
+
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -246,7 +308,7 @@ export async function getCoffeeShopsByCity(
   params.append("pageSize", pageSize.toString());
 
   const queryString = params.toString();
-  const url = `${API_BASE_URL}/api/CoffeeShop?${queryString}`;
+  const url = `${API_BASE_URL}/api/CoffeeShop${queryString ? `?${queryString}` : ""}`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -293,7 +355,7 @@ export async function getCoffeeShopsByMapBounds(
 export async function getCities(): Promise<ApiResponse<City[]>> {
   // Если данные уже в кэше, возвращаем их
   if (referenceDataCache.cities?.data) {
-    return { success: true, data: referenceDataCache.cities.data };
+    return { success: true, message: '', data: referenceDataCache.cities.data };
   }
   
   // Если запрос уже выполняется, возвращаем тот же промис
@@ -324,7 +386,7 @@ export async function getCities(): Promise<ApiResponse<City[]>> {
   })();
   
   // Сохраняем промис в кэш
-  referenceDataCache.cities = { promise };
+        referenceDataCache.cities = { data: [], promise };
   
   return promise;
 }
@@ -335,7 +397,7 @@ export async function getCities(): Promise<ApiResponse<City[]>> {
 export async function getEquipments(): Promise<ApiResponse<Equipment[]>> {
   // Если данные уже в кэше, возвращаем их
   if (referenceDataCache.equipments?.data) {
-    return { success: true, data: referenceDataCache.equipments.data };
+    return { success: true, message: '', data: referenceDataCache.equipments.data };
   }
   
   // Если запрос уже выполняется, возвращаем тот же промис
@@ -366,7 +428,7 @@ export async function getEquipments(): Promise<ApiResponse<Equipment[]>> {
   })();
   
   // Сохраняем промис в кэш
-  referenceDataCache.equipments = { promise };
+        referenceDataCache.equipments = { data: [], promise };
   
   return promise;
 }
@@ -377,7 +439,7 @@ export async function getEquipments(): Promise<ApiResponse<Equipment[]>> {
 export async function getCoffeeBeans(): Promise<ApiResponse<CoffeeBean[]>> {
   // Если данные уже в кэше, возвращаем их
   if (referenceDataCache.coffeeBeans?.data) {
-    return { success: true, data: referenceDataCache.coffeeBeans.data };
+    return { success: true, message: '', data: referenceDataCache.coffeeBeans.data };
   }
   
   // Если запрос уже выполняется, возвращаем тот же промис
@@ -408,7 +470,7 @@ export async function getCoffeeBeans(): Promise<ApiResponse<CoffeeBean[]>> {
   })();
   
   // Сохраняем промис в кэш
-  referenceDataCache.coffeeBeans = { promise };
+        referenceDataCache.coffeeBeans = { data: [], promise };
   
   return promise;
 }
@@ -419,7 +481,7 @@ export async function getCoffeeBeans(): Promise<ApiResponse<CoffeeBean[]>> {
 export async function getRoasters(): Promise<ApiResponse<Roaster[]>> {
   // Если данные уже в кэше, возвращаем их
   if (referenceDataCache.roasters?.data) {
-    return { success: true, data: referenceDataCache.roasters.data };
+    return { success: true, message: '', data: referenceDataCache.roasters.data };
   }
   
   // Если запрос уже выполняется, возвращаем тот же промис
@@ -450,7 +512,7 @@ export async function getRoasters(): Promise<ApiResponse<Roaster[]>> {
   })();
   
   // Сохраняем промис в кэш
-  referenceDataCache.roasters = { promise };
+        referenceDataCache.roasters = { data: [], promise };
   
   return promise;
 }
@@ -461,7 +523,7 @@ export async function getRoasters(): Promise<ApiResponse<Roaster[]>> {
 export async function getBrewMethods(): Promise<ApiResponse<BrewMethod[]>> {
   // Если данные уже в кэше, возвращаем их
   if (referenceDataCache.brewMethods?.data) {
-    return { success: true, data: referenceDataCache.brewMethods.data };
+    return { success: true, message: '', data: referenceDataCache.brewMethods.data };
   }
   
   // Если запрос уже выполняется, возвращаем тот же промис
@@ -492,7 +554,7 @@ export async function getBrewMethods(): Promise<ApiResponse<BrewMethod[]>> {
   })();
   
   // Сохраняем промис в кэш
-  referenceDataCache.brewMethods = { promise };
+        referenceDataCache.brewMethods = { data: [], promise };
   
   return promise;
 }

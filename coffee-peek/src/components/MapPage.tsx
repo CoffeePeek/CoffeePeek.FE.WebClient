@@ -382,26 +382,37 @@ const MapPage: React.FC = () => {
                 <div className="flex gap-4">
                   {/* Изображение слева */}
                   <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-200">
-                    {selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0 ? (
-                      <img
-                        src={selectedShopDetails.imageUrls[0]}
-                        alt={selectedShop.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          console.warn('Ошибка загрузки изображения кофейни:', selectedShopDetails.imageUrls?.[0]);
-                          target.style.display = 'none';
-                          const parent = target.parentElement;
-                          if (parent) {
-                            parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><span class="text-3xl">☕</span></div>';
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                        <span className="text-3xl">☕</span>
-                      </div>
-                    )}
+                    {(() => {
+                      // Получаем URL изображений из photos (новый формат) или imageUrls (старый формат)
+                      const imageUrls = selectedShopDetails?.photos && Array.isArray(selectedShopDetails.photos) && selectedShopDetails.photos.length > 0
+                        ? selectedShopDetails.photos.map((p: any) => p.fullUrl || p)
+                        : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
+                          ? selectedShopDetails.imageUrls
+                          : [];
+                      
+                      const firstImageUrl = imageUrls.length > 0 ? imageUrls[0] : null;
+                      
+                      return firstImageUrl ? (
+                        <img
+                          src={firstImageUrl}
+                          alt={selectedShop.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            console.warn('Ошибка загрузки изображения кофейни:', firstImageUrl);
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><span class="text-3xl">☕</span></div>';
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                          <span className="text-3xl">☕</span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Информация справа */}

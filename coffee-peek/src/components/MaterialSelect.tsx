@@ -51,6 +51,7 @@ const MaterialSelect: React.FC<MaterialSelectProps> = ({
       <div
         className={`
           relative ${themeClasses.bg.input} border-2 rounded-2xl transition-all duration-200 cursor-pointer
+          min-h-[56px] flex items-center
           ${isFocused || isOpen
             ? 'border-[#EAB308] shadow-lg shadow-[#EAB308]/10'
             : `${themeClasses.border.default} ${theme === 'dark' ? 'hover:border-[#4A3D35]' : 'hover:border-gray-300'}`
@@ -76,21 +77,6 @@ const MaterialSelect: React.FC<MaterialSelectProps> = ({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
-        {/* Floating Label */}
-        <label
-          className={`
-            absolute left-4 transition-all duration-200 pointer-events-none
-            ${isFocused || isOpen || hasValue
-              ? 'top-2 text-xs text-[#EAB308]'
-              : `top-1/2 -translate-y-1/2 text-base ${themeClasses.text.secondary}`
-            }
-            ${icon ? 'left-12' : ''}
-          `}
-        >
-          {label}
-          {required && <span className="text-[#EAB308] ml-1">*</span>}
-        </label>
-
         {/* Icon */}
         {icon && (
           <div className={`
@@ -103,6 +89,21 @@ const MaterialSelect: React.FC<MaterialSelectProps> = ({
             {icon}
           </div>
         )}
+
+        {/* Floating Label */}
+        <label
+          className={`
+            absolute transition-all duration-200 pointer-events-none
+            ${isFocused || isOpen || hasValue
+              ? 'top-2 text-xs text-[#EAB308]'
+              : `top-1/2 -translate-y-1/2 text-base ${themeClasses.text.secondary}`
+            }
+            ${icon ? 'left-12' : 'left-4'}
+          `}
+        >
+          {label}
+          {required && <span className="text-[#EAB308] ml-1">*</span>}
+        </label>
 
         {/* Selected Value or Placeholder */}
         {hasValue ? (

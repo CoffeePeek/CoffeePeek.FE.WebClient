@@ -18,6 +18,7 @@ const ModeratorPanel: React.FC = () => {
   const [editForm, setEditForm] = useState<Partial<ModerationShop>>({});
   const [statusFilter, setStatusFilter] = useState<string>('Pending'); // По умолчанию показываем только кофейни на модерации
   const [viewMode, setViewMode] = useState<'list' | 'edit'>('list'); // Режим просмотра: список или редактирование
+  const [updatingShopId, setUpdatingShopId] = useState<string | null>(null); // ID кофейни, для которой выполняется обновление статуса
   
   // Reference data for caching
   const [cities, setCities] = useState<City[]>([]);
@@ -137,11 +138,22 @@ const ModeratorPanel: React.FC = () => {
       }
 
       const response = await getModerationShops(token);
+      console.log('ModeratorPanel: Получен ответ от API модерации:', response);
+      
       // API может возвращать данные в разных форматах
       let shopsData: any = response.data;
+      console.log('ModeratorPanel: Структура response.data:', shopsData);
+      console.log('ModeratorPanel: Тип response.data:', typeof shopsData);
+      console.log('ModeratorPanel: Ключи в response.data:', shopsData && typeof shopsData === 'object' ? Object.keys(shopsData) : 'не объект');
+      
+      // Проверяем, есть ли вложенный объект moderationShop
+      if (shopsData && typeof shopsData === 'object' && 'moderationShop' in shopsData) {
+        console.log('ModeratorPanel: Найден формат moderationShop, количество:', Array.isArray(shopsData.moderationShop) ? shopsData.moderationShop.length : 'не массив');
+        shopsData = shopsData.moderationShop;
+      }
       
       // Отладочная информация для первой кофейни и проверка сопоставления
-      if (shopsData && shopsData.length > 0) {
+      if (shopsData && Array.isArray(shopsData) && shopsData.length > 0) {
         const firstShop = shopsData[0];
         console.log('Sample shop data from ModerationShop API:', {
           id: firstShop.id,
@@ -183,14 +195,11 @@ const ModeratorPanel: React.FC = () => {
         }, 1000);
       }
       
-      // Проверяем, есть ли вложенный объект moderationShop
-      if (shopsData && typeof shopsData === 'object' && shopsData.moderationShop) {
-        shopsData = shopsData.moderationShop;
-      }
-      
       if (Array.isArray(shopsData)) {
+        console.log('ModeratorPanel: Установлено кофеен:', shopsData.length);
         setShops(shopsData as ModerationShop[]);
       } else {
+        console.warn('ModeratorPanel: shopsData не является массивом:', shopsData);
         setShops([]);
       }
       setError(null);
@@ -202,8 +211,16 @@ const ModeratorPanel: React.FC = () => {
     }
   };
 
-  const handleApprove = async (shopId: string) => {
+  const handleApprove = async (shopId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     try {
+      setUpdatingShopId(shopId);
+      setError(null);
+      
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('Не авторизован');
@@ -211,14 +228,29 @@ const ModeratorPanel: React.FC = () => {
 
       await updateModerationStatus(token, shopId, 'Approved');
       await loadShops();
+      
+      // Сбрасываем выбранную кофейню, если она была одобрена
+      if (selectedShop?.id === shopId) {
+        setSelectedShop(null);
+      }
     } catch (err: any) {
       setError(err.message || 'Ошибка при одобрении');
       console.error('Error approving shop:', err);
+    } finally {
+      setUpdatingShopId(null);
     }
   };
 
-  const handleReject = async (shopId: string) => {
+  const handleReject = async (shopId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     try {
+      setUpdatingShopId(shopId);
+      setError(null);
+      
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('Не авторизован');
@@ -226,14 +258,29 @@ const ModeratorPanel: React.FC = () => {
 
       await updateModerationStatus(token, shopId, 'Rejected');
       await loadShops();
+      
+      // Сбрасываем выбранную кофейню, если она была отклонена
+      if (selectedShop?.id === shopId) {
+        setSelectedShop(null);
+      }
     } catch (err: any) {
       setError(err.message || 'Ошибка при отклонении');
       console.error('Error rejecting shop:', err);
+    } finally {
+      setUpdatingShopId(null);
     }
   };
 
-  const handleReturnToModeration = async (shopId: string) => {
+  const handleReturnToModeration = async (shopId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     try {
+      setUpdatingShopId(shopId);
+      setError(null);
+      
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('Не авторизован');
@@ -244,6 +291,8 @@ const ModeratorPanel: React.FC = () => {
     } catch (err: any) {
       setError(err.message || 'Ошибка при возврате в модерацию');
       console.error('Error returning shop to moderation:', err);
+    } finally {
+      setUpdatingShopId(null);
     }
   };
 
@@ -748,9 +797,12 @@ const ModeratorPanel: React.FC = () => {
                               <Button
                                 variant="primary"
                                 className="py-1.5 px-3 text-xs whitespace-nowrap"
+                                disabled={updatingShopId === shop.id}
+                                isLoading={updatingShopId === shop.id}
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
-                                  handleApprove(shop.id);
+                                  handleApprove(shop.id, e);
                                 }}
                               >
                                 Одобрить
@@ -758,9 +810,12 @@ const ModeratorPanel: React.FC = () => {
                               <Button
                                 variant="secondary"
                                 className="py-1.5 px-3 text-xs whitespace-nowrap"
+                                disabled={updatingShopId === shop.id}
+                                isLoading={updatingShopId === shop.id}
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
-                                  handleReject(shop.id);
+                                  handleReject(shop.id, e);
                                 }}
                               >
                                 Отклонить
@@ -772,9 +827,12 @@ const ModeratorPanel: React.FC = () => {
                               <Button
                                 variant="primary"
                                 className="py-1.5 px-3 text-xs whitespace-nowrap"
+                                disabled={updatingShopId === shop.id}
+                                isLoading={updatingShopId === shop.id}
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
-                                  handleReturnToModeration(shop.id);
+                                  handleReturnToModeration(shop.id, e);
                                 }}
                               >
                                 Вернуть в модерацию
@@ -889,22 +947,44 @@ const ModeratorPanel: React.FC = () => {
                   
                   <div className="space-y-4">
                     {/* Фотографии кофейни */}
-                    {selectedShop.shopPhotos && selectedShop.shopPhotos.length > 0 && (
-                      <div className="mb-4">
-                        <label className={`${themeClasses.text.secondary} text-sm`}>Фотографии</label>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          {selectedShop.shopPhotos.map((photo, index) => (
-                            <div key={index} className={`aspect-square ${themeClasses.bg.input} rounded-xl overflow-hidden`}>
-                              <img
-                                src={photo}
-                                alt={`Фото кофейни ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ))}
+                    {(() => {
+                      // Получаем URL изображений из shopPhotos (новый формат - массив объектов с fullUrl)
+                      const photos = selectedShop.shopPhotos && Array.isArray(selectedShop.shopPhotos) && selectedShop.shopPhotos.length > 0
+                        ? selectedShop.shopPhotos.map((p: any) => {
+                            // Если это объект с fullUrl (новый формат)
+                            if (p && typeof p === 'object' && 'fullUrl' in p) {
+                              return p.fullUrl;
+                            }
+                            // Если это уже строка (старый формат)
+                            if (typeof p === 'string') {
+                              return p;
+                            }
+                            // Иначе пытаемся преобразовать в строку
+                            return p ? String(p) : '';
+                          }).filter((url: string) => url && url.length > 0)
+                        : [];
+                      
+                      return photos.length > 0 ? (
+                        <div className="mb-4">
+                          <label className={`${themeClasses.text.secondary} text-sm`}>Фотографии</label>
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            {photos.map((photoUrl, index) => (
+                              <div key={index} className={`aspect-square ${themeClasses.bg.input} rounded-xl overflow-hidden`}>
+                                <img
+                                  src={photoUrl}
+                                  alt={`Фото кофейни ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ) : null;
+                    })()}
 
                     <div>
                       <label className={`${themeClasses.text.secondary} text-sm`}>Название</label>
@@ -1065,7 +1145,12 @@ const ModeratorPanel: React.FC = () => {
                           <Button
                             variant="primary"
                             className="flex-1"
-                            onClick={() => handleReturnToModeration(selectedShop.id)}
+                            disabled={updatingShopId === selectedShop.id}
+                            isLoading={updatingShopId === selectedShop.id}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleReturnToModeration(selectedShop.id, e);
+                            }}
                           >
                             Вернуть в модерацию
                           </Button>

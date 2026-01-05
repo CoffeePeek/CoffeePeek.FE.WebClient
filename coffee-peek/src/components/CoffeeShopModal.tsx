@@ -52,11 +52,31 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
 
           {/* Main shop info */}
           <div className="mb-6">
-            {shop.imageUrls && shop.imageUrls.length > 0 && (
-              <div className="mb-4">
-                <PhotoCarousel images={shop.imageUrls} shopName={shop.name} isCardView={false} />
-              </div>
-            )}
+            {(() => {
+              // Получаем URL изображений из photos (новый формат) или imageUrls (старый формат)
+              const imageUrls = (shop as any).photos && Array.isArray((shop as any).photos) && (shop as any).photos.length > 0
+                ? (shop as any).photos.map((p: any) => {
+                    // Если это объект с fullUrl, извлекаем URL
+                    if (p && typeof p === 'object' && 'fullUrl' in p) {
+                      return p.fullUrl;
+                    }
+                    // Если это уже строка, возвращаем как есть
+                    if (typeof p === 'string') {
+                      return p;
+                    }
+                    // Иначе пытаемся преобразовать в строку
+                    return p ? String(p) : '';
+                  }).filter((url: string) => url && url.length > 0)
+                : shop.imageUrls && shop.imageUrls.length > 0
+                  ? shop.imageUrls.filter((p: any) => p && (typeof p === 'string' ? p.trim().length > 0 : true))
+                  : [];
+              
+              return imageUrls.length > 0 ? (
+                <div className="mb-4">
+                  <PhotoCarousel images={imageUrls} shopName={shop.name} isCardView={false} />
+                </div>
+              ) : null;
+            })()}
 
             {/* Header info with rating, price, status */}
             <div className="flex flex-wrap items-center gap-3 mb-4">

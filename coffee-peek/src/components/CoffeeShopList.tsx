@@ -25,7 +25,7 @@ const CoffeeShopList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedCity, setSelectedCity] = useState<string>(''); // Скрыто от пользователя, но используется для API
   const [selectedEquipment, setSelectedEquipment] = useState<string>('');
   const [selectedBeans, setSelectedBeans] = useState<string>('');
   const [selectedRoasters, setSelectedRoasters] = useState<string>('');
@@ -43,6 +43,7 @@ const CoffeeShopList: React.FC = () => {
   }, []);
   
   // Set default city when cities are loaded and no city is selected yet
+  // Автоматически выбираем первый город при загрузке (скрыто от пользователя)
   useEffect(() => {
     if (cities.length > 0 && !selectedCity && initialDataLoaded) {
       setSelectedCity(cities[0].id);
@@ -66,7 +67,7 @@ const CoffeeShopList: React.FC = () => {
   useEffect(() => {
     // Update filters with selected items
     const updatedFilters: CoffeeShopFilters = {
-      cityId: selectedCity || undefined, // Always set cityId, required
+      cityId: selectedCity || undefined, // Обязательный параметр, но скрыт от пользователя
       equipmentIds: selectedEquipment ? [selectedEquipment] : undefined,
       coffeeBeanIds: selectedBeans ? [selectedBeans] : undefined,
       roasterIds: selectedRoasters ? [selectedRoasters] : undefined,
@@ -151,29 +152,74 @@ const CoffeeShopList: React.FC = () => {
     try {
       setIsLoading(true);
       const response = await getCoffeeShops(filters, currentPage, pageSize);
-      console.log('Coffee shops response:', response);
-      
-      // Логируем структуру данных для отладки
-      if (response.data) {
-        const responseData: any = response.data;
-        const shopsList = responseData.items || responseData.content || [];
-        console.log('Coffee shops list:', shopsList);
-        shopsList.forEach((shop: any) => {
-          if (shop.shopPhotos || shop.imageUrls) {
-            console.log(`Shop ${shop.name} photos:`, {
-              shopPhotos: shop.shopPhotos,
-              imageUrls: shop.imageUrls,
-              allFields: Object.keys(shop)
-            });
-          }
-        });
-      }
+      console.log('CoffeeShopList: Получен ответ от API:', response);
         
       // Handle different response formats
       if (response.data && typeof response.data === 'object') {
         const responseData: any = response.data;
-        // Check if it's the pagination format
-        if ('items' in responseData) {
+        console.log('CoffeeShopList: Структура response.data:', responseData);
+        console.log('CoffeeShopList: Ключи в response.data:', Object.keys(responseData));
+        
+        // Check if it's the new format with coffeeShops
+        if ('coffeeShops' in responseData && Array.isArray(responseData.coffeeShops)) {
+          console.log('CoffeeShopList: Найден формат coffeeShops, количество:', responseData.coffeeShops.length);
+          // Преобразуем ShortShopDto[] в CoffeeShop[]
+          const shops = responseData.coffeeShops.map((shop: any) => {
+            // Обрабатываем photos
+            const shopPhotos = shop.photos?.map((p: any) => {
+              // Если это объект с fullUrl, извлекаем URL
+              if (p && typeof p === 'object' && 'fullUrl' in p) {
+                return p.fullUrl;
+              }
+              // Если это уже строка, возвращаем как есть
+              if (typeof p === 'string') {
+                return p;
+              }
+              return '';
+            }).filter((url: string) => url && url.length > 0) || [];
+            
+            console.log(`CoffeeShopList: Обработка кофейни ${shop.name}:`, {
+              originalPhotos: shop.photos,
+              processedShopPhotos: shopPhotos,
+              photosCount: shop.photos?.length || 0,
+              shopPhotosCount: shopPhotos.length
+            });
+            
+            return {
+              id: shop.id,
+              name: shop.name,
+              description: shop.description,
+              priceRange: shop.priceRange,
+              cityId: shop.cityId,
+              cityName: shop.cityName,
+              address: shop.location?.address,
+              location: shop.location ? {
+                latitude: shop.location.latitude,
+                longitude: shop.location.longitude,
+              } : undefined,
+              rating: shop.rating,
+              reviewCount: shop.reviewCount,
+              isOpen: shop.isOpen,
+              // Преобразуем photos в массив URL для обратной совместимости
+              shopPhotos: shopPhotos,
+              photos: shop.photos, // Сохраняем оригинальный массив photos
+              // Сохраняем equipments если есть
+              equipments: shop.equipments,
+              equipmentIds: shop.equipmentIds,
+              coffeeBeanIds: shop.coffeeBeanIds,
+              roasterIds: shop.roasterIds,
+              brewMethodIds: shop.brewMethodIds,
+            };
+          });
+          console.log('CoffeeShopList: Преобразованные shops:', shops);
+          setShops(shops);
+          setTotalItems(responseData.totalItems || shops.length);
+          setTotalPages(responseData.totalPages || 1);
+          setCurrentPage(responseData.currentPage || 1);
+          setPageSize(responseData.pageSize || 10);
+        } else if ('items' in responseData) {
+          console.log('CoffeeShopList: Найден формат items, количество:', responseData.items?.length || 0);
+          // Check if it's the pagination format
           setShops(responseData.items || []);
           setTotalItems(responseData.totalItems || 0);
           setTotalPages(responseData.totalPages || 1);
@@ -214,7 +260,8 @@ const CoffeeShopList: React.FC = () => {
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Ошибка при загрузке кофеен');
-      console.error('Error loading coffee shops:', err);
+      console.error('CoffeeShopList: Ошибка при загрузке кофеен:', err);
+      console.error('CoffeeShopList: Stack trace:', err.stack);
       setShops([]); // Set empty array on error
       setTotalItems(0);
       setTotalPages(1);
@@ -270,6 +317,29 @@ const CoffeeShopList: React.FC = () => {
     );
   }
 
+  // Добавляем логирование для отладки
+  console.log('CoffeeShopList: Рендер компонента', {
+    isLoading,
+    shopsCount: shops.length,
+    totalItems,
+    error,
+    shops: shops.slice(0, 2), // Первые 2 элемента для отладки
+    isArray: Array.isArray(shops),
+    shopsType: typeof shops
+  });
+
+  // Проверяем, что shops - это массив
+  if (!Array.isArray(shops)) {
+    console.error('CoffeeShopList: shops не является массивом!', shops);
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${themeClasses.bg.primary}`}>
+        <div className={`${themeClasses.text.primary} text-xl`}>
+          Ошибка: данные не являются массивом
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
     <div className={`min-h-screen ${themeClasses.bg.primary} p-6`}>
@@ -312,23 +382,7 @@ const CoffeeShopList: React.FC = () => {
         {showFilters && (
           <div className={`mb-6 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-8 ${themeClasses.shadow} animate-in fade-in slide-in-from-top-4 duration-300`}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <MaterialSelect
-                label="Город"
-                  value={selectedCity}
-                onChange={(value) => setSelectedCity(value)}
-                options={[
-                  { value: '', label: 'Выберите город' },
-                  ...cities.map(city => ({ value: city.id, label: city.name }))
-                ]}
-                  required
-                icon={
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                }
-              />
-
+              {/* Фильтр по городу убран для пользователя */}
               <MaterialSelect
                 label="Ценовой диапазон"
                   value={filters.priceRange || ''}
@@ -414,7 +468,8 @@ const CoffeeShopList: React.FC = () => {
                 <button
                   onClick={() => {
                   clearFilters();
-                  if (cities.length > 0) {
+                  // Сохраняем выбранный город (скрыто от пользователя)
+                  if (cities.length > 0 && !selectedCity) {
                     setSelectedCity(cities[0].id);
                   }
                   setSelectedEquipment('');
@@ -446,22 +501,38 @@ const CoffeeShopList: React.FC = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {shops.map((shop) => {
-                // Get photos from shopPhotos or imageUrls (if available)
-                const photos = shop.shopPhotos && shop.shopPhotos.length > 0 
-                  ? shop.shopPhotos 
-                  : (shop as any).imageUrls && (shop as any).imageUrls.length > 0
-                    ? (shop as any).imageUrls
-                    : [];
+                // Get photos from photos array (new format) or shopPhotos/imageUrls (legacy)
+                // Приоритет: shopPhotos (уже обработанные URL) > photos (объекты) > imageUrls (legacy)
+                let photos: string[] = [];
                 
-                // Логируем для отладки
-                if (photos.length > 0) {
-                  console.log(`CoffeeShopList: Фото для кофейни ${shop.name}:`, photos);
-                } else {
-                  console.log(`CoffeeShopList: Нет фото для кофейни ${shop.name}`, {
-                    shopPhotos: shop.shopPhotos,
-                    imageUrls: (shop as any).imageUrls
-                  });
+                if (shop.shopPhotos && Array.isArray(shop.shopPhotos) && shop.shopPhotos.length > 0) {
+                  // Используем уже обработанные shopPhotos (массив строк URL)
+                  photos = shop.shopPhotos.filter((p: any) => p && typeof p === 'string' && p.trim().length > 0);
+                } else if ((shop as any).photos && Array.isArray((shop as any).photos) && (shop as any).photos.length > 0) {
+                  // Обрабатываем photos (массив объектов с fullUrl)
+                  photos = (shop as any).photos.map((p: any) => {
+                    // Если это объект с fullUrl, извлекаем URL
+                    if (p && typeof p === 'object' && 'fullUrl' in p) {
+                      return p.fullUrl;
+                    }
+                    // Если это уже строка, возвращаем как есть
+                    if (typeof p === 'string') {
+                      return p;
+                    }
+                    // Иначе пытаемся преобразовать в строку
+                    return p ? String(p) : '';
+                  }).filter((url: string) => url && url.length > 0);
+                } else if ((shop as any).imageUrls && Array.isArray((shop as any).imageUrls) && (shop as any).imageUrls.length > 0) {
+                  // Legacy формат
+                  photos = (shop as any).imageUrls.filter((p: any) => p && typeof p === 'string' && p.trim().length > 0);
                 }
+                
+                console.log(`CoffeeShopList: Фото для кофейни ${shop.name}:`, {
+                  shopPhotos: shop.shopPhotos,
+                  photos: (shop as any).photos,
+                  imageUrls: (shop as any).imageUrls,
+                  result: photos
+                });
                 
                 return (
                 <div
