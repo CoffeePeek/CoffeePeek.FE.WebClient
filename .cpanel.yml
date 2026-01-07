@@ -1,21 +1,25 @@
 ---
 deployment:
   tasks:
+    # Set deployment path (update 'coffeepeek' with your cPanel username)
     - export DEPLOYPATH=/home/coffeepeek/public_html/
     
+    # Save root directory (where .cpanel.yml is located)
+    - export REPO_ROOT=$(pwd)
+    
     # Navigate to project directory
-    - cd coffee-peek || cd .
+    - cd coffee-peek
     
     # Install dependencies
     - npm install
     
-    # Build the project
+    # Build the project (creates dist/ folder in coffee-peek/)
     - npm run build
     
-    # Copy built files to deployment directory
+    # Copy built files from coffee-peek/dist/ to deployment directory
     - /bin/cp -R dist/* $DEPLOYPATH
     
-    # Optional: Copy .htaccess if needed for SPA routing
+    # Create .htaccess for SPA routing (React Router)
     - echo "Creating .htaccess for SPA routing..."
     - echo "RewriteEngine On" > $DEPLOYPATH/.htaccess
     - echo "RewriteBase /" >> $DEPLOYPATH/.htaccess
@@ -23,4 +27,7 @@ deployment:
     - echo "RewriteCond %{REQUEST_FILENAME} !-f" >> $DEPLOYPATH/.htaccess
     - echo "RewriteCond %{REQUEST_FILENAME} !-d" >> $DEPLOYPATH/.htaccess
     - echo "RewriteRule . /index.html [L]" >> $DEPLOYPATH/.htaccess
+    
+    # Return to root directory
+    - cd $REPO_ROOT
 
