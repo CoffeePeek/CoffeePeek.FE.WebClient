@@ -33,6 +33,12 @@ export interface AuthData {
 
 export interface AuthResponse extends ApiResponse<AuthData> {}
 
+export interface CreateEntityResponse {
+  isSuccess: boolean;
+  message: string;
+  data?: any;
+}
+
 export interface CheckExistsData {
   exists: boolean;
 }
@@ -42,6 +48,30 @@ export interface CheckExistsResponse extends ApiResponse<CheckExistsData> {}
 export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;
+  status?: number;
+}
+
+/**
+ * Получает сообщение об ошибке на основе статус-кода
+ */
+function getErrorMessageByStatus(status: number): string {
+  if (status >= 500 && status < 600) {
+    if (status === 502) return 'Сервер временно недоступен. Пожалуйста, попробуйте позже.';
+    if (status === 503) return 'Сервис временно недоступен. Пожалуйста, попробуйте позже.';
+    if (status === 504) return 'Сервер не отвечает. Пожалуйста, попробуйте позже.';
+    if (status === 500) return 'Произошла внутренняя ошибка сервера. Мы уже работаем над её устранением.';
+    return 'Ошибка сервера. Пожалуйста, попробуйте позже.';
+  }
+  
+  if (status >= 400 && status < 500) {
+    if (status === 400) return 'Запрос содержит ошибки. Пожалуйста, проверьте введённые данные.';
+    if (status === 401) return 'Для доступа необходимо войти в систему.';
+    if (status === 403) return 'У вас нет прав для выполнения этого действия.';
+    if (status === 404) return 'Запрашиваемый ресурс не найден.';
+    return 'Ошибка запроса. Пожалуйста, проверьте введённые данные.';
+  }
+  
+  return 'Что-то пошло не так. Пожалуйста, попробуйте позже.';
 }
 
 /**
@@ -55,7 +85,13 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (response.ok) {
       return { success: true, message: '', data: {} as T };
     }
-    throw new Error(`HTTP error! status: ${response.status}`);
+    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
+    if (response.status >= 500 && response.status < 600) {
+      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
+        showServerErrorNotification();
+      });
+    }
+    throw new Error(getErrorMessageByStatus(response.status));
   }
 
   const apiResponse = await response.json() as any;
@@ -64,9 +100,18 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   console.log('API response:', apiResponse);
 
   if (!response.ok) {
+    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
+    if (response.status >= 500 && response.status < 600) {
+      // Динамический импорт, чтобы избежать циклических зависимостей
+      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
+        showServerErrorNotification();
+      });
+    }
+    
     const error: ApiError = {
       message: apiResponse.message || `HTTP error! status: ${response.status}`,
       errors: apiResponse.errors,
+      status: response.status,
     };
     throw error;
   }
@@ -76,8 +121,9 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   
   if (!isSuccess) {
     const error: ApiError = {
-      message: apiResponse.message || 'Request failed',
+      message: getErrorMessageByStatus(response.status) || 'Запрос не выполнен. Пожалуйста, попробуйте ещё раз.',
       errors: apiResponse.errors,
+      status: response.status,
     };
     throw error;
   }
@@ -123,8 +169,9 @@ export async function login(credentials: LoginRequest): Promise<AuthResponse> {
 
 /**
  * Регистрация нового пользователя
+ * Возвращает CreateEntityResponse с isSuccess и message
  */
-export async function register(userData: RegisterRequest): Promise<AuthResponse> {
+export async function register(userData: RegisterRequest): Promise<CreateEntityResponse> {
   const response = await fetch(`${API_BASE_URL}/api/Auth/register`, {
     method: 'POST',
     headers: {
@@ -134,7 +181,41 @@ export async function register(userData: RegisterRequest): Promise<AuthResponse>
     body: JSON.stringify(userData),
   });
 
-  return handleResponse<AuthData>(response);
+  const contentType = response.headers.get('content-type');
+  
+  if (!contentType?.includes('application/json')) {
+    if (response.ok) {
+      return { isSuccess: true, message: 'Регистрация успешна' };
+    }
+    throw new Error(getErrorMessageByStatus(response.status));
+  }
+
+  const apiResponse = await response.json() as any;
+  
+  console.log('Register API response:', apiResponse);
+
+  if (!response.ok) {
+    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
+    if (response.status >= 500 && response.status < 600) {
+      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
+        showServerErrorNotification();
+      });
+    }
+    
+    const error: ApiError = {
+      message: getErrorMessageByStatus(response.status),
+      errors: apiResponse.errors,
+      status: response.status,
+    };
+    throw error;
+  }
+
+  // CreateEntityResponse использует isSuccess
+  return {
+    isSuccess: apiResponse.isSuccess !== false,
+    message: apiResponse.message || 'Регистрация успешна',
+    data: apiResponse.data,
+  };
 }
 
 /**
@@ -181,6 +262,12 @@ export async function logout(accessToken: string): Promise<void> {
   });
 
   if (!response.ok) {
+    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
+    if (response.status >= 500 && response.status < 600) {
+      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
+        showServerErrorNotification();
+      });
+    }
     throw new Error(`Logout failed: ${response.status}`);
   }
 }

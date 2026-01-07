@@ -5,6 +5,7 @@ import Button from './Button';
 import MaterialSelect from './MaterialSelect';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { getErrorMessage } from '../utils/errorHandler';
 
 interface AddCoffeeShopModalProps {
   isOpen: boolean;
@@ -207,7 +208,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
         setError(response.message || 'Ошибка при отправке кофейни на модерацию');
       }
     } catch (err: any) {
-      setError(err.message || 'Ошибка при отправке кофейни на модерацию');
+      setError(getErrorMessage(err));
       console.error('Error submitting coffee shop:', err);
     } finally {
       setIsSubmitting(false);

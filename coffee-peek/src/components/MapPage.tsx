@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getCoffeeShopsByMapBounds, getCoffeeShopById, MapShop, DetailedCoffeeShop } from '../api/coffeeshop';
+import { getErrorMessage } from '../utils/errorHandler';
 
 declare global {
   interface Window {
@@ -96,7 +97,7 @@ const MapPage: React.FC = () => {
       return shopsList;
     } catch (err: any) {
       console.error('Ошибка при загрузке кофеен:', err);
-      setError('Ошибка при загрузке кофеен: ' + err.message);
+      setError('Ошибка при загрузке кофеен: ' + getErrorMessage(err));
       return [];
     }
   };
@@ -293,7 +294,7 @@ const MapPage: React.FC = () => {
         });
       });
     } catch (err: any) {
-      setError('Ошибка при инициализации карты: ' + err.message);
+      setError('Ошибка при инициализации карты: ' + getErrorMessage(err));
       setIsLoading(false);
     }
   };

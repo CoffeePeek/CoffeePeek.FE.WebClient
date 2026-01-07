@@ -4,6 +4,7 @@ import Button from '../components/Button';
 import { getProfile, updateProfile, UserProfile, UpdateProfileRequest } from '../api/auth';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const ProfilePage: React.FC = () => {
   const { user, isLoading: userLoading } = useUser();
@@ -31,7 +32,7 @@ const ProfilePage: React.FC = () => {
       setEditData(response.data);
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Не удалось загрузить профиль');
+      setError(getErrorMessage(err));
       console.error('Error loading profile:', err);
     } finally {
       setIsLoading(false);
@@ -71,7 +72,7 @@ const ProfilePage: React.FC = () => {
       setIsEditing(false);
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Не удалось обновить профиль');
+      setError(getErrorMessage(err));
       console.error('Error updating profile:', err);
     } finally {
       setIsLoading(false);

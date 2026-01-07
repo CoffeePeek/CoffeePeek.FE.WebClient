@@ -5,6 +5,7 @@ import Button from './Button';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const ModeratorPanel: React.FC = () => {
   const { user } = useUser();
@@ -204,7 +205,7 @@ const ModeratorPanel: React.FC = () => {
       }
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Ошибка при загрузке кофеен');
+      setError(getErrorMessage(err));
       console.error('Error loading moderation shops:', err);
     } finally {
       setIsLoading(false);
