@@ -2,19 +2,16 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/coffeepeek/public_html/
-
+    
     - cd coffee-peek
-
     - npm install
     - npm run build
-
-    - /bin/rm -rf $DEPLOYPATH/*
-
+    
+    - /bin/rm -f $DEPLOYPATH/index.php
     - /bin/cp -R dist/* $DEPLOYPATH
-
+    
     - /bin/echo "RewriteEngine On" > $DEPLOYPATH/.htaccess
     - /bin/echo "RewriteBase /" >> $DEPLOYPATH/.htaccess
-    - /bin/echo "RewriteRule ^index\.html$ - [L]" >> $DEPLOYPATH/.htaccess
     - /bin/echo "RewriteCond %{REQUEST_FILENAME} !-f" >> $DEPLOYPATH/.htaccess
     - /bin/echo "RewriteCond %{REQUEST_FILENAME} !-d" >> $DEPLOYPATH/.htaccess
     - /bin/echo "RewriteRule . /index.html [L]" >> $DEPLOYPATH/.htaccess
