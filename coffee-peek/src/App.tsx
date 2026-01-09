@@ -8,6 +8,7 @@ import OTPInput from './components/OTPInput';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ModeratorPanel from './components/ModeratorPanel';
+import AdminPanel from './components/AdminPanel';
 import CoffeeShopList from './components/CoffeeShopList';
 import MapPage from './components/MapPage';
 import Header from './components/Header';
@@ -171,6 +172,7 @@ const AppContent: React.FC = () => {
             <CoffeeShopList />
           ) : null}
           {currentPage === 'moderation' && user.isAdmin ? <ModeratorPanel /> : null}
+          {currentPage === 'admin' && user.isAdmin ? <AdminPanel /> : null}
           {currentPage === 'map' ? <MapPage /> : null}
           {currentPage === 'jobs' ? <div className={`p-6 ${textClass}`}>Работа (в разработке)</div> : null}
           {currentPage === 'profile' ? <ProfilePage /> : null}

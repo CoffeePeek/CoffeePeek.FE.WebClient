@@ -50,33 +50,51 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
             </button>
           </div>
 
+          {/* Фотографии кофейни */}
+          {(() => {
+            // Получаем URL изображений из photos (новый формат) или imageUrls (старый формат)
+            let photos: string[] = [];
+            
+            // Сначала проверяем новый формат (photos с fullUrl)
+            if (shop.photos && Array.isArray(shop.photos) && shop.photos.length > 0) {
+              photos = shop.photos
+                .map((p: any) => {
+                  // Если это объект с fullUrl (PhotoMetadataDto или ShortPhotoMetadataDto)
+                  if (p && typeof p === 'object' && 'fullUrl' in p) {
+                    return p.fullUrl;
+                  }
+                  // Если это уже строка, возвращаем как есть
+                  if (typeof p === 'string') {
+                    return p;
+                  }
+                  return null;
+                })
+                .filter((url: string | null): url is string => url !== null && url.length > 0);
+            }
+            // Если нет фотографий в новом формате, проверяем старый формат (imageUrls)
+            else if ((shop as any).imageUrls && Array.isArray((shop as any).imageUrls) && (shop as any).imageUrls.length > 0) {
+              photos = (shop as any).imageUrls
+                .map((p: any) => {
+                  if (typeof p === 'string') {
+                    return p.trim().length > 0 ? p : null;
+                  }
+                  if (p && typeof p === 'object' && 'fullUrl' in p) {
+                    return p.fullUrl;
+                  }
+                  return null;
+                })
+                .filter((url: string | null): url is string => url !== null && url.length > 0);
+            }
+            
+            return photos.length > 0 ? (
+              <div className="mb-6 rounded-xl overflow-hidden">
+                <PhotoCarousel images={photos} shopName={shop.name} isCardView={false} />
+              </div>
+            ) : null;
+          })()}
+
           {/* Main shop info */}
           <div className="mb-6">
-            {(() => {
-              // Получаем URL изображений из photos (новый формат) или imageUrls (старый формат)
-              const imageUrls = (shop as any).photos && Array.isArray((shop as any).photos) && (shop as any).photos.length > 0
-                ? (shop as any).photos.map((p: any) => {
-                    // Если это объект с fullUrl, извлекаем URL
-                    if (p && typeof p === 'object' && 'fullUrl' in p) {
-                      return p.fullUrl;
-                    }
-                    // Если это уже строка, возвращаем как есть
-                    if (typeof p === 'string') {
-                      return p;
-                    }
-                    // Иначе пытаемся преобразовать в строку
-                    return p ? String(p) : '';
-                  }).filter((url: string) => url && url.length > 0)
-                : shop.imageUrls && shop.imageUrls.length > 0
-                  ? shop.imageUrls.filter((p: any) => p && (typeof p === 'string' ? p.trim().length > 0 : true))
-                  : [];
-              
-              return imageUrls.length > 0 ? (
-                <div className="mb-4">
-                  <PhotoCarousel images={imageUrls} shopName={shop.name} isCardView={false} />
-                </div>
-              ) : null;
-            })()}
 
             {/* Header info with rating, price, status */}
             <div className="flex flex-wrap items-center gap-3 mb-4">

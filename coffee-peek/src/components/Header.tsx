@@ -71,16 +71,28 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
                 Кофейни
               </button>
               {user?.isAdmin && (
-                <button
-                  onClick={() => onNavigate('moderation')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    currentPage === 'moderation' 
-                      ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
-                      : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-                  }`}
-                >
-                  Модерация
-                </button>
+                <>
+                  <button
+                    onClick={() => onNavigate('moderation')}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      currentPage === 'moderation' 
+                        ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
+                        : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
+                    }`}
+                  >
+                    Модерация
+                  </button>
+                  <button
+                    onClick={() => onNavigate('admin')}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      currentPage === 'admin' 
+                        ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
+                        : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
+                    }`}
+                  >
+                    Админ панель
+                  </button>
+                </>
               )}
               <button
                 onClick={() => onNavigate('map')}
@@ -175,19 +187,34 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
               Кофейни
             </button>
               {user?.isAdmin && (
-                <button
-                  onClick={() => {
-                    onNavigate('moderation');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    currentPage === 'moderation' 
-                      ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
-                      : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-                  }`}
-                >
-                  Модерация
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      onNavigate('moderation');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      currentPage === 'moderation' 
+                        ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
+                        : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
+                    }`}
+                  >
+                    Модерация
+                  </button>
+                  <button
+                    onClick={() => {
+                      onNavigate('admin');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      currentPage === 'admin' 
+                        ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
+                        : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
+                    }`}
+                  >
+                    Админ панель
+                  </button>
+                </>
               )}
             <button
                 onClick={() => {
