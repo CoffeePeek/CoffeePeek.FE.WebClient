@@ -1,5 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
+import { getErrorMessageByStatus } from '../utils/errorHandler';
+
 import { ApiResponse } from './auth';
 
 export interface ModerationShopPhoto {
@@ -116,20 +118,32 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (response.ok) {
       return { success: true, message: '', data: {} as T };
     }
-    throw new Error(`HTTP error! status: ${response.status}`);
+    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
+    if (response.status >= 500 && response.status < 600) {
+      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
+        showServerErrorNotification();
+      });
+    }
+    throw new Error(getErrorMessageByStatus(response.status));
   }
 
   const apiResponse = await response.json() as any;
   
   if (!response.ok) {
-    throw new Error(apiResponse.message || `HTTP error! status: ${response.status}`);
+    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
+    if (response.status >= 500 && response.status < 600) {
+      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
+        showServerErrorNotification();
+      });
+    }
+    throw new Error(getErrorMessageByStatus(response.status));
   }
 
   // Проверяем успешность операции (API может использовать success или isSuccess)
   const isSuccess = apiResponse.success !== false && (apiResponse.isSuccess === true || apiResponse.success === true);
   
   if (!isSuccess) {
-    throw new Error(apiResponse.message || 'Request failed');
+    throw new Error(getErrorMessageByStatus(response.status) || 'Запрос не выполнен. Пожалуйста, попробуйте ещё раз.');
   }
 
   // Нормализуем ответ к единому формату

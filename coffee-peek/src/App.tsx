@@ -7,6 +7,7 @@ import Input from './components/Input';
 import OTPInput from './components/OTPInput';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ErrorPage from './pages/ErrorPage';
 import ModeratorPanel from './components/ModeratorPanel';
 import AdminPanel from './components/AdminPanel';
 import CoffeeShopList from './components/CoffeeShopList';
@@ -16,9 +17,10 @@ import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { ToastProvider, useToast } from './contexts/ToastContext';
 import { parseJWT, isTokenExpired } from './utils/jwt';
 
-type AppPage = 'landing' | 'login' | 'register' | 'verification' | 'dashboard' | 'coffeeshops' | 'moderation' | 'map' | 'jobs' | 'profile' | 'settings';
+type AppPage = 'landing' | 'login' | 'register' | 'verification' | 'dashboard' | 'coffeeshops' | 'moderation' | 'map' | 'jobs' | 'profile' | 'settings' | 'error';
 
 const AppContent: React.FC = () => {
   const { user, isLoading, updateUserFromToken, logout } = useUser();
@@ -31,6 +33,31 @@ const AppContent: React.FC = () => {
   
   // Add navigation state
   const [currentPage, setCurrentPage] = useState<string>('home');
+  
+  // Toast для уведомлений
+  const { showServerError } = useToast();
+  
+  // Инициализируем глобальный обработчик ошибок
+  useEffect(() => {
+    import('./utils/globalErrorHandler').then(({ setGlobalErrorHandler }) => {
+      setGlobalErrorHandler(() => {
+        showServerError();
+      });
+    });
+  }, [showServerError]);
+  
+  // Error state
+  const [errorCode, setErrorCode] = useState<number | string>(404);
+  const [errorTitle, setErrorTitle] = useState<string | undefined>(undefined);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+  
+  // Function to show error page
+  const showError = (code: number | string, title?: string, message?: string) => {
+    setErrorCode(code);
+    setErrorTitle(title);
+    setErrorMessage(message);
+    setPage('error');
+  };
   
   const handleNavigate = (pageName: string) => {
     setCurrentPage(pageName);
@@ -109,6 +136,8 @@ const AppContent: React.FC = () => {
         .catch(err => {
           console.error('Network error', err);
           setStep(VerificationStep.ERROR);
+          // Optionally show error page for critical errors
+          // showError(500, 'Ошибка сети', 'Не удалось подключиться к серверу. Проверьте подключение к интернету.');
         })
         .finally(() => setIsFormLoading(false));
     }
@@ -150,11 +179,6 @@ const AppContent: React.FC = () => {
     setPage('dashboard');
   };
 
-  const handleRegisterSuccess = (accessToken: string, refreshToken?: string) => {
-    updateUserFromToken(accessToken);
-    setPage('dashboard');
-  };
-
   // Если пользователь авторизован и на dashboard, показываем соответствующий контент
   if (page === 'dashboard' && user) {
     const bgClass = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-white';
@@ -182,13 +206,35 @@ const AppContent: React.FC = () => {
     );
   }
 
+  // Обработка страницы ошибки
+  if (page === 'error') {
+    return (
+      <ErrorPage 
+        errorCode={errorCode}
+        title={errorTitle}
+        message={errorMessage}
+        onGoHome={() => {
+          setPage('landing');
+          setErrorCode(404);
+          setErrorTitle(undefined);
+          setErrorMessage(undefined);
+        }}
+      />
+    );
+  }
+
   // Обработка страниц логина/регистрации
   if (page === 'login') {
     return <LoginPage onLoginSuccess={handleLoginSuccess} onSwitchToRegister={() => setPage('register')} />;
   }
 
   if (page === 'register') {
-    return <RegisterPage onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={() => setPage('login')} />;
+    return (
+      <RegisterPage 
+        onRegisterSuccess={() => setPage('login')} 
+        onSwitchToLogin={() => setPage('login')} 
+      />
+    );
   }
 
   const renderHeader = () => (
@@ -407,9 +453,11 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ThemeProvider>
-    <UserProvider>
-      <AppContent />
-    </UserProvider>
+      <UserProvider>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </UserProvider>
     </ThemeProvider>
   );
 };

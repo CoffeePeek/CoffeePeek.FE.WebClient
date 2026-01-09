@@ -1,28 +1,71 @@
 import React, { useState } from 'react';
-import { register } from '../api/auth';
-import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
+import { register, checkEmailExists } from '../api/auth';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { Icons } from '../constants';
+import { getErrorMessage } from '../utils/errorHandler';
 
 interface RegisterPageProps {
-  onRegisterSuccess: (accessToken: string, refreshToken?: string) => void;
+  onRegisterSuccess?: () => void;
   onSwitchToLogin: () => void;
 }
 
+type RegisterStep = 'email' | 'registration';
+
 const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitchToLogin }) => {
+  const [step, setStep] = useState<RegisterStep>('email');
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailCheck = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Валидация
+    if (!email) {
+      setError('Введите email');
+      return;
+    }
+
+    // Простая валидация email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Введите корректный email');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await checkEmailExists(email);
+      console.log('Email check response:', response);
+
+      if (response.data) {
+        setError(null);
+        setSuccessMessage('Пользователь с таким email уже существует. Перенаправление на страницу входа...');
+        setTimeout(() => {
+          onSwitchToLogin();
+        }, 1500);
+      } else {
+        setStep('registration');
+      }
+    } catch (err: any) {
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      console.error('Email check error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
     if (password !== confirmPassword) {
       setError('Пароли не совпадают');
       return;
@@ -42,41 +85,25 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitch
         userName: userName || undefined,
       });
       
-      // Логируем ответ для отладки
       console.log('Register response:', response);
       
-      // Проверяем наличие токена в ответе
-      if (!response.data?.accessToken) {
-        console.error('No accessToken in response:', response);
-        throw new Error('Токен не получен от сервера');
+      if (!response.isSuccess) {
+        throw new Error(response.message || 'Ошибка при регистрации');
       }
       
-      const { accessToken, refreshToken } = response.data;
+      console.log('Registration successful:', response.message);
+
+      setSuccessMessage(response.message || 'Регистрация успешна! Теперь вы можете войти в систему.');
       
-      // Проверяем токен перед сохранением
-      if (isTokenExpired(accessToken)) {
-        throw new Error('Токен истёк');
-      }
-
-      // Парсим claims из токена
-      const claims = parseJWT(accessToken);
-      const roles = getUserRoles(accessToken);
-      
-      console.log('Registration successful. Claims:', claims);
-      console.log('User roles:', roles);
-
-      // Сохраняем токены
-      localStorage.setItem('accessToken', accessToken);
-      if (refreshToken) {
-        localStorage.setItem('refreshToken', refreshToken);
-      }
-
-      // Вызываем callback для успешной регистрации
-      onRegisterSuccess(accessToken, refreshToken);
+      setTimeout(() => {
+        if (onRegisterSuccess) {
+          onRegisterSuccess();
+        } else {
+          onSwitchToLogin();
+        }
+      }, 2000);
     } catch (err: any) {
-      const errorMessage = err.errors 
-        ? Object.values(err.errors).flat().join(', ')
-        : err.message || 'Ошибка при регистрации. Попробуйте ещё раз.';
+      const errorMessage = getErrorMessage(err);
       setError(errorMessage);
       console.error('Registration error:', err);
     } finally {
@@ -108,8 +135,14 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitch
               {renderHeader()}
               
               <div className="text-center mb-10">
-                <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3 tracking-tight">Регистрация</h1>
-                <p className="text-[#A39E93] lg:text-lg">Создайте новый аккаунт</p>
+                <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3 tracking-tight">
+                  {step === 'email' ? 'Проверка email' : 'Регистрация'}
+                </h1>
+                <p className="text-[#A39E93] lg:text-lg">
+                  {step === 'email' 
+                    ? 'Введите email для проверки' 
+                    : 'Завершите регистрацию'}
+                </p>
               </div>
 
               {error && (
@@ -118,74 +151,113 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitch
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
-                <Input
-                  label="Имя пользователя"
-                  placeholder="John Doe"
-                  type="text"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  }
-                />
+              {successMessage && (
+                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-2xl">
+                  <p className="text-green-400 text-sm">{successMessage}</p>
+                  {step === 'email' && (
+                    <p className="text-green-400/70 text-xs mt-2">Перенаправление на страницу входа...</p>
+                  )}
+                  {step === 'registration' && (
+                    <p className="text-green-400/70 text-xs mt-2">Перенаправление на страницу входа...</p>
+                  )}
+                </div>
+              )}
 
-                <Input
-                  label="Email"
-                  placeholder="name@example.com"
-                  type="email"
-                  required
-                  autoFocus
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="20" height="16" x="2" y="4" rx="2" />
-                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                    </svg>
-                  }
-                />
-                
-                <Input
-                  label="Пароль"
-                  placeholder="••••••••"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  }
-                />
+              {step === 'email' ? (
+                <form onSubmit={handleEmailCheck} className="space-y-6 lg:space-y-8">
+                  <Input
+                    label="Email"
+                    placeholder="name@example.com"
+                    type="email"
+                    required
+                    autoFocus
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    icon={
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="20" height="16" x="2" y="4" rx="2" />
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      </svg>
+                    }
+                  />
 
-                <Input
-                  label="Подтвердите пароль"
-                  placeholder="••••••••"
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  }
-                />
+                  <div className="flex justify-center">
+                    <Button type="submit" isLoading={isLoading} className="lg:py-5 lg:text-lg">
+                      Продолжить
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleRegister} className="space-y-6 lg:space-y-8">
+                  <div className="mb-4">
+                    <p className="text-[#A39E93] text-sm mb-2">Email: <span className="text-white font-medium">{email}</span></p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStep('email');
+                        setError(null);
+                        setSuccessMessage(null);
+                      }}
+                      className="text-[#EAB308] text-sm hover:underline"
+                    >
+                      Изменить email
+                    </button>
+                  </div>
+                  <Input
+                    label="Имя пользователя"
+                    placeholder="John Doe"
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    icon={
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    }
+                  />
+                  
+                  <Input
+                    label="Пароль"
+                    placeholder="••••••••"
+                    type="password"
+                    required
+                    autoFocus
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    icon={
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    }
+                  />
 
-                <Button type="submit" isLoading={isLoading} className="lg:py-5 lg:text-lg">
-                  Зарегистрироваться
-                </Button>
-              </form>
+                  <Input
+                    label="Подтвердите пароль"
+                    placeholder="••••••••"
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    icon={
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    }
+                  />
+
+                  <div className="flex justify-center">
+                    <Button type="submit" isLoading={isLoading} className="lg:py-5 lg:text-lg">
+                      Зарегистрироваться
+                    </Button>
+                  </div>
+                </form>
+              )}
 
               <div className="mt-6 text-center">
-                <p className="text-[#A39E93] text-sm">
+                <p className="text-[#A39E93] text-sm flex items-center justify-center gap-2">
                   Уже есть аккаунт?{' '}
                   <button
                     type="button"

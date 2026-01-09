@@ -4,6 +4,7 @@ import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { Icons } from '../constants';
+import { getErrorMessage } from '../utils/errorHandler';
 
 interface LoginPageProps {
   onLoginSuccess: (accessToken: string, refreshToken?: string) => void;
@@ -57,7 +58,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onSwitchToRegiste
       // Обновляем контекст пользователя через window.location для перезагрузки
       onLoginSuccess(accessToken, refreshToken);
     } catch (err: any) {
-      setError(err.message || 'Ошибка при входе. Проверьте email и пароль.');
+      setError(getErrorMessage(err));
       console.error('Login error:', err);
     } finally {
       setIsLoading(false);
@@ -130,9 +131,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onSwitchToRegiste
                   }
                 />
 
-                <Button type="submit" isLoading={isLoading} className="lg:py-5 lg:text-lg">
-                  Войти
-                </Button>
+                <div className="flex justify-center">
+                  <Button type="submit" isLoading={isLoading} className="w-full sm:w-64 py-3 lg:py-4 lg:text-lg">
+                    Войти
+                  </Button>
+                </div>
               </form>
 
               <div className="mt-6 text-center">

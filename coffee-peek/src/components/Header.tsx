@@ -145,10 +145,10 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
               <Button 
                 variant="ghost" 
                 onClick={onLogout}
-                className="py-1.5 px-3 text-sm flex items-center space-x-1.5"
+                className="py-1.5 px-3 text-sm flex items-center gap-1.5"
               >
-                <Icons.Logout className="w-3.5 h-3.5" />
-                <span>Выйти</span>
+                <Icons.Logout className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="whitespace-nowrap">Выйти</span>
               </Button>
             )}
             

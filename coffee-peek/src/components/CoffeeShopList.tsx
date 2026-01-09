@@ -6,6 +6,7 @@ import PhotoCarousel from './PhotoCarousel';
 import MaterialSelect from './MaterialSelect';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const CoffeeShopList: React.FC = () => {
   const { theme } = useTheme();
@@ -259,7 +260,7 @@ const CoffeeShopList: React.FC = () => {
       }
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Ошибка при загрузке кофеен');
+      setError(getErrorMessage(err));
       console.error('CoffeeShopList: Ошибка при загрузке кофеен:', err);
       console.error('CoffeeShopList: Stack trace:', err.stack);
       setShops([]); // Set empty array on error
