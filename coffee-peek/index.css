@@ -76,3 +76,17 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Material Icons filled stars */
+.star-filled {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

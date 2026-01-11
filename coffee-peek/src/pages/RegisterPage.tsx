@@ -54,7 +54,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitch
         setStep('registration');
       }
     } catch (err: any) {
-      const errorMessage = getErrorMessage(err);
+      const errorMessage = getErrorMessage(err, 'register');
       setError(errorMessage);
       console.error('Email check error:', err);
     } finally {
@@ -103,7 +103,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitch
         }
       }, 2000);
     } catch (err: any) {
-      const errorMessage = getErrorMessage(err);
+      const errorMessage = getErrorMessage(err, 'register');
       setError(errorMessage);
       console.error('Registration error:', err);
     } finally {

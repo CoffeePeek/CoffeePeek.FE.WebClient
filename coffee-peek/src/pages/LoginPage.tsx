@@ -58,7 +58,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onSwitchToRegiste
       // Обновляем контекст пользователя через window.location для перезагрузки
       onLoginSuccess(accessToken, refreshToken);
     } catch (err: any) {
-      setError(getErrorMessage(err));
+      setError(getErrorMessage(err, 'login'));
       console.error('Login error:', err);
     } finally {
       setIsLoading(false);

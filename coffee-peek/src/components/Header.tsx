@@ -24,8 +24,8 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
         text: 'text-white',
         textSecondary: 'text-[#A39E93]',
         hoverBg: 'hover:bg-[#3D2F28]/50',
-        activeBg: 'bg-[#EAB308]/20',
-        activeBorder: 'border-[#EAB308]/30',
+        activeBg: 'bg-[#1A1412]',
+        activeBorder: 'border-[#EAB308]',
       }
     : {
         bg: 'bg-gray-50',
@@ -35,8 +35,8 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
         text: 'text-gray-900',
         textSecondary: 'text-gray-600',
         hoverBg: 'hover:bg-gray-100',
-        activeBg: 'bg-[#EAB308]/20',
-        activeBorder: 'border-[#EAB308]/30',
+        activeBg: 'bg-white',
+        activeBorder: 'border-[#EAB308]',
       };
 
   return (
@@ -59,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
               </span>
             </button>
             
-            <nav className="hidden md:ml-10 md:flex space-x-8">
+            <nav className="hidden lg:ml-10 lg:flex lg:space-x-4 xl:space-x-8">
               <button
                 onClick={() => onNavigate('coffeeshops')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -117,8 +117,8 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
             </nav>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <nav className="hidden md:flex space-x-4">
+          <div className="flex items-center space-x-2 lg:space-x-4">
+            <nav className="hidden lg:flex lg:space-x-2 xl:space-x-4">
               <button
                 onClick={() => onNavigate('profile')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -145,15 +145,15 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
               <Button 
                 variant="ghost" 
                 onClick={onLogout}
-                className="py-1.5 px-3 text-sm flex items-center gap-1.5"
+                className="py-1.5 px-2 lg:px-3 text-sm hidden lg:flex items-center gap-1.5"
               >
                 <Icons.Logout className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="whitespace-nowrap">Выйти</span>
+                <span className="whitespace-nowrap hidden xl:inline">Выйти</span>
               </Button>
             )}
             
             {/* Mobile menu button */}
-            <div className="md:hidden">
+            <div className="lg:hidden">
               <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className={`p-2 rounded-md ${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`}
@@ -171,7 +171,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
         
         {/* Mobile navigation */}
         {isMobileMenuOpen && (
-          <div className={`md:hidden py-4 border-t ${themeClasses.border}`}>
+          <div className={`lg:hidden py-4 border-t ${themeClasses.border}`}>
           <div className="grid grid-cols-3 gap-2">
             <button
                 onClick={() => {
@@ -268,6 +268,18 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
             >
               Настройки
             </button>
+              {user && (
+                <button
+                  onClick={() => {
+                    onLogout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`}
+                >
+                  <Icons.Logout className="w-4 h-4" />
+                  Выйти
+                </button>
+              )}
           </div>
         </div>
         )}

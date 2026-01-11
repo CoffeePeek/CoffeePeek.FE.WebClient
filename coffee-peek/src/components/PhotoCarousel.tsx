@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { getPhotoUrl, PhotoMetadataDto, ShortPhotoMetadataDto } from '../api/coffeeshop';
 
 interface PhotoCarouselProps {
-  images: (string | { fullUrl: string })[];
+  images: (string | PhotoMetadataDto | ShortPhotoMetadataDto)[];
   shopName: string;
   isCardView?: boolean; // Optional prop to indicate if used in card view
 }
@@ -29,13 +30,13 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
     return null;
   }
 
-  // Фильтруем валидные URL (API уже возвращает готовые URL)
-  // Поддерживаем как строки (старый формат), так и объекты с fullUrl (новый формат)
+  // Фильтруем валидные URL
+  // Поддерживаем как строки (старый формат), так и объекты PhotoMetadataDto (новый формат)
   const validImages = images
     .map(img => {
-      // Если это объект с fullUrl (новый формат PhotoMetadataDto)
-      if (img && typeof img === 'object' && 'fullUrl' in img) {
-        return (img as any).fullUrl;
+      // Если это объект PhotoMetadataDto или ShortPhotoMetadataDto
+      if (img && typeof img === 'object' && ('fullUrl' in img || 'storageKey' in img)) {
+        return getPhotoUrl(img as PhotoMetadataDto | ShortPhotoMetadataDto);
       }
       // Если это строка (старый формат)
       if (typeof img === 'string') {

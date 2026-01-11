@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { getCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, getCoffeeShopById, CoffeeShop, DetailedCoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters } from '../api/coffeeshop';
+import { getCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl, getAllFavorites } from '../api/coffeeshop';
 import Button from './Button';
-import CoffeeShopModal from './CoffeeShopModal';
 import PhotoCarousel from './PhotoCarousel';
 import MaterialSelect from './MaterialSelect';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUser } from '../contexts/UserContext';
 import { getThemeClasses } from '../utils/theme';
 import { getErrorMessage } from '../utils/errorHandler';
+import { COLORS, getThemeColors } from '../constants/colors';
 
-const CoffeeShopList: React.FC = () => {
+interface CoffeeShopListProps {
+  onShopSelect: (shopId: string) => void;
+}
+
+const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const { theme } = useTheme();
+  const { user } = useUser();
   const themeClasses = getThemeClasses(theme);
+  const colors = getThemeColors(theme);
   const [shops, setShops] = useState<CoffeeShop[]>([]);
   const [totalItems, setTotalItems] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -26,22 +33,29 @@ const CoffeeShopList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCity, setSelectedCity] = useState<string>(''); // Скрыто от пользователя, но используется для API
+  const [selectedCity, setSelectedCity] = useState<string>(''); // Фильтр по городу
   const [selectedEquipment, setSelectedEquipment] = useState<string>('');
   const [selectedBeans, setSelectedBeans] = useState<string>('');
   const [selectedRoasters, setSelectedRoasters] = useState<string>('');
   const [selectedBrewMethods, setSelectedBrewMethods] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilterTab, setActiveFilterTab] = useState<'open' | 'new' | 'favorite' | 'visited'>('open');
+  const [favoriteShopIds, setFavoriteShopIds] = useState<Set<string>>(new Set());
+  const [visitedShopIds, setVisitedShopIds] = useState<Set<string>>(new Set());
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
   
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
-  const [selectedShop, setSelectedShop] = useState<DetailedCoffeeShop | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loadingShopDetails, setLoadingShopDetails] = useState(false);
   
   useEffect(() => {
     loadInitialData().then(() => {
       setInitialDataLoaded(true);
     });
-  }, []);
+    
+    // Загружаем избранные кофейни, если пользователь авторизован
+    if (user) {
+      loadFavorites();
+    }
+  }, [user]);
   
   // Set default city when cities are loaded and no city is selected yet
   // Автоматически выбираем первый город при загрузке (скрыто от пользователя)
@@ -68,7 +82,7 @@ const CoffeeShopList: React.FC = () => {
   useEffect(() => {
     // Update filters with selected items
     const updatedFilters: CoffeeShopFilters = {
-      cityId: selectedCity || undefined, // Обязательный параметр, но скрыт от пользователя
+      cityId: selectedCity || undefined, // Фильтр по городу
       equipmentIds: selectedEquipment ? [selectedEquipment] : undefined,
       coffeeBeanIds: selectedBeans ? [selectedBeans] : undefined,
       roasterIds: selectedRoasters ? [selectedRoasters] : undefined,
@@ -99,6 +113,10 @@ const CoffeeShopList: React.FC = () => {
     filters.coffeeBeanIds?.length ?? 0,
     filters.roasterIds?.length ?? 0,
     filters.brewMethodIds?.length ?? 0,
+    activeFilterTab, // Добавили зависимость от активного фильтра
+    searchQuery, // Добавили зависимость от поискового запроса
+    favoriteShopIds.size, // Обновляем при изменении избранных
+    visitedShopIds.size, // Обновляем при изменении посещённых
     initialDataLoaded, // This ensures the effect only runs after initial data is loaded
   ]);
 
@@ -109,6 +127,65 @@ const CoffeeShopList: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, initialDataLoaded]);
+
+  const filterShopsByActiveTab = (shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
+    let filtered = shopsToFilter;
+    
+    // Применяем фильтр по вкладке
+    switch (activeFilterTab) {
+      case 'open':
+        // Фильтр "Открыты" применяется на сервере через isOpen в filters
+        break;
+      
+      case 'new':
+        // Фильтр "Новые" - сортируем по дате создания (если есть поле)
+        // Пока просто возвращаем все, так как у нас нет поля createdAt
+        break;
+      
+      case 'favorite':
+        // Фильтр "Избранные" - только кофейни из favoriteShopIds
+        filtered = filtered.filter(shop => favoriteShopIds.has(shop.id));
+        break;
+      
+      case 'visited':
+        // Фильтр "Посещённые" - только кофейни из visitedShopIds
+        filtered = filtered.filter(shop => visitedShopIds.has(shop.id));
+        break;
+    }
+    
+    // Применяем поиск
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(shop => 
+        shop.name.toLowerCase().includes(query) ||
+        shop.description?.toLowerCase().includes(query) ||
+        shop.address?.toLowerCase().includes(query) ||
+        shop.cityName?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  };
+
+  const loadFavorites = async () => {
+    if (!user) return;
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+      
+      const response = await getAllFavorites(token);
+      if (response.isSuccess && response.data && response.data.data) {
+        const favoriteIds = new Set(response.data.data.map((shop: CoffeeShop) => shop.id));
+        setFavoriteShopIds(favoriteIds);
+      }
+    } catch (err) {
+      // Тихо игнорируем ошибки для избранных (не критично)
+      if (import.meta.env.DEV) {
+        console.info('Could not load favorites:', err);
+      }
+    }
+  };
 
   const loadInitialData = async () => {
     try {
@@ -152,7 +229,15 @@ const CoffeeShopList: React.FC = () => {
   const loadShops = async () => {
     try {
       setIsLoading(true);
-      const response = await getCoffeeShops(filters, currentPage, pageSize);
+      
+      // Применяем фильтр статуса открытости только для вкладки "Открыты"
+      // Для остальных вкладок загружаем все и фильтруем на клиенте
+      const extendedFilters = {
+        ...filters,
+        isOpen: activeFilterTab === 'open' ? true : undefined,
+      };
+      
+      const response = await getCoffeeShops(extendedFilters, currentPage, pageSize);
       console.log('CoffeeShopList: Получен ответ от API:', response);
         
       // Handle different response formats
@@ -168,9 +253,9 @@ const CoffeeShopList: React.FC = () => {
           const shops = responseData.coffeeShops.map((shop: any) => {
             // Обрабатываем photos
             const shopPhotos = shop.photos?.map((p: any) => {
-              // Если это объект с fullUrl, извлекаем URL
-              if (p && typeof p === 'object' && 'fullUrl' in p) {
-                return p.fullUrl;
+              // Если это объект PhotoMetadataDto, используем getPhotoUrl
+              if (p && typeof p === 'object' && ('fullUrl' in p || 'storageKey' in p)) {
+                return getPhotoUrl(p);
               }
               // Если это уже строка, возвращаем как есть
               if (typeof p === 'string') {
@@ -213,8 +298,12 @@ const CoffeeShopList: React.FC = () => {
             };
           });
           console.log('CoffeeShopList: Преобразованные shops:', shops);
-          setShops(shops);
-          setTotalItems(responseData.totalItems || shops.length);
+          
+          // Применяем клиентскую фильтрацию
+          const filteredShops = filterShopsByActiveTab(shops);
+          
+          setShops(filteredShops);
+          setTotalItems(responseData.totalItems || filteredShops.length);
           setTotalPages(responseData.totalPages || 1);
           setCurrentPage(responseData.currentPage || 1);
           setPageSize(responseData.pageSize || 10);
@@ -290,30 +379,14 @@ const CoffeeShopList: React.FC = () => {
     setFilters({});
   };
   
-  const openShopDetails = async (shopId: string) => {
-    try {
-      setLoadingShopDetails(true);
-      const response = await getCoffeeShopById(shopId);
-      if (response.success && response.data) {
-        setSelectedShop(response.data);
-        setIsModalOpen(true);
-      }
-    } catch (error) {
-      console.error('Error loading shop details:', error);
-    } finally {
-      setLoadingShopDetails(false);
-    }
-  };
-  
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedShop(null);
+  const openShopDetails = (shopId: string) => {
+    onShopSelect(shopId);
   };
 
   if (isLoading && shops.length === 0) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${themeClasses.bg.primary}`}>
-        <div className="text-[#EAB308] text-xl">Загрузка...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.background }}>
+        <div className="text-xl" style={{ color: COLORS.primary }}>Загрузка...</div>
       </div>
     );
   }
@@ -333,8 +406,8 @@ const CoffeeShopList: React.FC = () => {
   if (!Array.isArray(shops)) {
     console.error('CoffeeShopList: shops не является массивом!', shops);
     return (
-      <div className={`min-h-screen flex items-center justify-center ${themeClasses.bg.primary}`}>
-        <div className={`${themeClasses.text.primary} text-xl`}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.background }}>
+        <div className="text-xl" style={{ color: colors.textPrimary }}>
           Ошибка: данные не являются массивом
         </div>
       </div>
@@ -343,47 +416,195 @@ const CoffeeShopList: React.FC = () => {
 
   return (
     <>
-    <div className={`min-h-screen ${themeClasses.bg.primary} p-6`}>
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className={`text-4xl font-bold ${themeClasses.text.primary} mb-2`}>Кофейни</h1>
-            <p className={themeClasses.text.secondary}>Найдите лучшие кофейни поблизости</p>
+    <div className="min-h-screen pt-6 pb-20" style={{ backgroundColor: colors.background }}>
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Search Section */}
+        <div className="mt-4 mb-8 flex flex-col items-center text-center">
+          <div className="w-full relative">
+            <div className="flex items-center w-full h-14 rounded-2xl shadow-xl p-2 transition-all border" 
+                 style={{ 
+                   backgroundColor: colors.surface, 
+                   borderColor: colors.border,
+                   boxShadow: `0 20px 25px -5px ${COLORS.primary}10, 0 10px 10px -5px ${COLORS.primary}05`
+                 }}>
+              <span className="material-symbols-outlined px-4" style={{ color: colors.textSecondary }}>search</span>
+              <input
+                className="flex-1 bg-transparent border-none focus:ring-0 text-base font-medium outline-none"
+                style={{ color: colors.textPrimary }}
+                placeholder="Поиск идеальной кофейни..."
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="h-10 px-5 rounded-xl text-white font-bold flex items-center gap-2 transition-colors text-sm"
+                style={{ backgroundColor: COLORS.primary }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.primaryDark}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.primary}
+              >
+                <span className="material-symbols-outlined text-[18px]">tune</span>
+                Фильтры
+              </button>
+            </div>
+            
+            {/* Filter Tags */}
+            <div className="flex flex-wrap justify-center gap-2 mt-4 text-xs">
+              {/* City selector - Custom Dropdown */}
+              {cities.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowCityDropdown(!showCityDropdown)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border font-semibold transition-all hover:scale-105 active:scale-95"
+                    style={{ 
+                      backgroundColor: colors.surface, 
+                      borderColor: colors.border,
+                      color: colors.textPrimary
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = COLORS.primary;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = colors.border;
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-[16px]" style={{ color: COLORS.primary }}>
+                      location_city
+                    </span>
+                    <span>{cities.find(c => c.id === selectedCity)?.name || 'Выбрать город'}</span>
+                    <span className="material-symbols-outlined text-[14px]" style={{ 
+                      color: colors.textSecondary,
+                      transform: showCityDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s'
+                    }}>
+                      expand_more
+                    </span>
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  {showCityDropdown && (
+                    <>
+                      {/* Backdrop */}
+                      <div 
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowCityDropdown(false)}
+                      />
+                      
+                      {/* Menu */}
+                      <div 
+                        className="absolute top-full left-0 mt-2 rounded-xl border shadow-xl z-20 overflow-hidden"
+                        style={{ 
+                          backgroundColor: colors.surface, 
+                          borderColor: colors.border,
+                          minWidth: '160px',
+                          maxHeight: '280px',
+                          overflowY: 'auto'
+                        }}
+                      >
+                        {cities.map((city) => (
+                          <button
+                            key={city.id}
+                            onClick={() => {
+                              setSelectedCity(city.id);
+                              setShowCityDropdown(false);
+                            }}
+                            className="w-full px-3 py-2 text-left text-xs font-semibold transition-colors flex items-center gap-2"
+                            style={{ 
+                              backgroundColor: selectedCity === city.id ? `${COLORS.primary}15` : 'transparent',
+                              color: selectedCity === city.id ? COLORS.primary : colors.textPrimary
+                            }}
+                            onMouseEnter={(e) => {
+                              if (selectedCity !== city.id) {
+                                e.currentTarget.style.backgroundColor = `${colors.border}`;
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (selectedCity !== city.id) {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              } else {
+                                e.currentTarget.style.backgroundColor = `${COLORS.primary}15`;
+                              }
+                            }}
+                          >
+                            {selectedCity === city.id && (
+                              <span className="material-symbols-outlined text-[14px] fill-1" style={{ color: COLORS.primary }}>
+                                check_circle
+                              </span>
+                            )}
+                            <span style={{ marginLeft: selectedCity === city.id ? '0' : '20px' }}>
+                              {city.name}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              
+              {[
+                { id: 'open' as const, label: 'Открыты', icon: 'schedule' },
+                { id: 'new' as const, label: 'Новые', icon: 'fiber_new' },
+                { id: 'favorite' as const, label: 'Избранные', icon: 'favorite' },
+                { id: 'visited' as const, label: 'Посещённые', icon: 'check_circle' },
+              ].map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setActiveFilterTab(filter.id)}
+                  className="px-4 py-2 rounded-full font-semibold transition-all hover:scale-105 active:scale-95 border flex items-center gap-1.5"
+                  style={
+                    activeFilterTab === filter.id
+                      ? {
+                          backgroundColor: COLORS.primary,
+                          color: 'white',
+                          borderColor: COLORS.primary,
+                          boxShadow: `0 4px 6px -1px ${COLORS.primary}30`,
+                        }
+                      : {
+                          backgroundColor: colors.surface,
+                          color: colors.textSecondary,
+                          borderColor: colors.border,
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (activeFilterTab !== filter.id) {
+                      e.currentTarget.style.borderColor = COLORS.primary;
+                      e.currentTarget.style.color = COLORS.primary;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeFilterTab !== filter.id) {
+                      e.currentTarget.style.borderColor = colors.border;
+                      e.currentTarget.style.color = colors.textSecondary;
+                    }
+                  }}
+                >
+                  <span className={`material-symbols-outlined text-[16px] ${activeFilterTab === filter.id ? 'fill-1' : ''}`}>
+                    {filter.icon}
+                  </span>
+                  {filter.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`px-6 py-3 ${themeClasses.bg.card} ${theme === 'dark' ? 'hover:bg-[#3D2F28]' : 'hover:bg-gray-100'} ${themeClasses.text.primary} rounded-2xl font-medium transition-all duration-200 active:scale-[0.98] flex items-center gap-2 ${themeClasses.shadow} border ${themeClasses.border.default} hover:border-[#EAB308]/30`}
-          >
-            {showFilters ? (
-              <>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-                Скрыть фильтры
-              </>
-            ) : (
-              <>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                </svg>
-                Показать фильтры
-              </>
-            )}
-          </button>
         </div>
 
         {error && (
-          <div className={`mb-6 p-4 ${theme === 'dark' ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'} border rounded-2xl`}>
-            <p className={`text-sm ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{error}</p>
+          <div className="mb-6 p-4 border rounded-2xl" style={{ 
+            backgroundColor: `${COLORS.error}10`, 
+            borderColor: `${COLORS.error}30` 
+          }}>
+            <p className="text-sm" style={{ color: COLORS.error }}>{error}</p>
           </div>
         )}
 
         {/* Фильтры */}
         {showFilters && (
-          <div className={`mb-6 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-8 ${themeClasses.shadow} animate-in fade-in slide-in-from-top-4 duration-300`}>
+          <div className="mb-6 rounded-3xl p-8 shadow-sm border" style={{ 
+            backgroundColor: colors.surface, 
+            borderColor: colors.border 
+          }}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Фильтр по городу убран для пользователя */}
               <MaterialSelect
                 label="Ценовой диапазон"
                   value={filters.priceRange || ''}
@@ -469,16 +690,16 @@ const CoffeeShopList: React.FC = () => {
                 <button
                   onClick={() => {
                   clearFilters();
-                  // Сохраняем выбранный город (скрыто от пользователя)
-                  if (cities.length > 0 && !selectedCity) {
-                    setSelectedCity(cities[0].id);
-                  }
+                  // Город не сбрасываем, так как он отображается в тегах
                   setSelectedEquipment('');
                   setSelectedBeans('');
                   setSelectedRoasters('');
                   setSelectedBrewMethods('');
                   }}
-                  className={`w-full py-3 px-6 ${themeClasses.bg.tertiary} ${theme === 'dark' ? 'hover:bg-[#4A3D35]' : 'hover:bg-gray-200'} ${themeClasses.text.primary} rounded-2xl font-medium transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${themeClasses.shadow}`}
+                  className="w-full py-3 px-6 rounded-2xl font-medium transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm"
+                  style={{ backgroundColor: colors.background, color: colors.textPrimary }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.border}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.background}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -493,14 +714,17 @@ const CoffeeShopList: React.FC = () => {
 
         {/* Список кофеен */}
         {!Array.isArray(shops) || shops.length === 0 ? (
-          <div className="bg-[#2D241F] border border-[#3D2F28] rounded-2xl p-8 text-center">
-            <p className="text-[#A39E93]">
+          <div className="rounded-2xl p-8 text-center border" style={{ 
+            backgroundColor: colors.surface, 
+            borderColor: colors.border 
+          }}>
+            <p style={{ color: colors.textSecondary }}>
               {!Array.isArray(shops) ? 'Ошибка загрузки данных' : 'Кофейни не найдены'}
             </p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <section className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {shops.map((shop) => {
                 // Get photos from photos array (new format) or shopPhotos/imageUrls (legacy)
                 // Приоритет: shopPhotos (уже обработанные URL) > photos (объекты) > imageUrls (legacy)
@@ -510,11 +734,11 @@ const CoffeeShopList: React.FC = () => {
                   // Используем уже обработанные shopPhotos (массив строк URL)
                   photos = shop.shopPhotos.filter((p: any) => p && typeof p === 'string' && p.trim().length > 0);
                 } else if ((shop as any).photos && Array.isArray((shop as any).photos) && (shop as any).photos.length > 0) {
-                  // Обрабатываем photos (массив объектов с fullUrl)
+                  // Обрабатываем photos (массив объектов PhotoMetadataDto)
                   photos = (shop as any).photos.map((p: any) => {
-                    // Если это объект с fullUrl, извлекаем URL
-                    if (p && typeof p === 'object' && 'fullUrl' in p) {
-                      return p.fullUrl;
+                    // Если это объект PhotoMetadataDto, используем getPhotoUrl
+                    if (p && typeof p === 'object' && ('fullUrl' in p || 'storageKey' in p)) {
+                      return getPhotoUrl(p);
                     }
                     // Если это уже строка, возвращаем как есть
                     if (typeof p === 'string') {
@@ -535,121 +759,216 @@ const CoffeeShopList: React.FC = () => {
                   result: photos
                 });
                 
+                const isTrending = shop.rating && shop.rating >= 4.7;
+                const isHiring = false; // TODO: Add hiring flag to API
+                
                 return (
                 <div
                   key={shop.id}
-                  className="bg-[#2D241F] border border-[#3D2F28] rounded-2xl p-6 hover:border-[#EAB308]/50 transition-all cursor-pointer"
+                  className="p-4 rounded-[1.5rem] shadow-sm border flex flex-col group hover:shadow-xl transition-all duration-300 cursor-pointer"
+                  style={{ 
+                    backgroundColor: colors.surface, 
+                    borderColor: colors.border 
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = `${COLORS.primary}50`}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.border}
                   onClick={() => openShopDetails(shop.id)}
                 >
-                  {photos.length > 0 ? (
-                    <div className="mb-4 rounded-xl overflow-hidden h-48">
-                      <PhotoCarousel
-                        images={photos}
-                        shopName={shop.name}
-                        isCardView={true}
-                        />
-                    </div>
-                  ) : (
-                    <div className="mb-4 rounded-xl overflow-hidden h-48 bg-[#1A1412] flex items-center justify-center">
-                      <div className="text-center text-[#A39E93]">
-                        <div className="text-4xl mb-2">☕</div>
-                        <div className="text-sm">Нет фото</div>
+                  {/* Image Section */}
+                  <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden shadow-lg mb-4">
+                    {photos.length > 0 ? (
+                      <>
+                        <div 
+                          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                          style={{ backgroundImage: `url("${photos[0]}")` }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br flex items-center justify-center" 
+                           style={{ 
+                             backgroundImage: `linear-gradient(to bottom right, ${COLORS.primary}20, ${COLORS.primaryDark}20)` 
+                           }}>
+                        <div className="text-center" style={{ color: colors.textSecondary }}>
+                          <div className="text-5xl mb-2">☕</div>
+                          <div className="text-sm font-medium">Нет фото</div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  <h3 className="text-xl font-bold text-white mb-2">{shop.name}</h3>
-
-                  {shop.address && (
-                    <p className="text-[#A39E93] text-sm mb-2">{shop.address}</p>
-                  )}
-
-                  {shop.cityName && (
-                    <p className="text-[#A39E93] text-sm mb-2">📍 {shop.cityName}</p>
-                  )}
-
-                  {shop.description && (
-                    <p className="text-[#A39E93] text-sm mb-4 line-clamp-2">{shop.description}</p>
-                  )}
-
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {shop.equipmentIds && shop.equipmentIds.length > 0 && (
-                      <span className="px-2 py-1 bg-[#3D2F28] text-[#EAB308] rounded-full text-xs">
-                        Оборудование: {shop.equipmentIds.length}
-                      </span>
                     )}
-                    {shop.coffeeBeanIds && shop.coffeeBeanIds.length > 0 && (
-                      <span className="px-2 py-1 bg-[#3D2F28] text-[#EAB308] rounded-full text-xs">
-                        Зёрна: {shop.coffeeBeanIds.length}
-                      </span>
-                    )}
-                    {shop.roasterIds && shop.roasterIds.length > 0 && (
-                      <span className="px-2 py-1 bg-[#3D2F28] text-[#EAB308] rounded-full text-xs">
-                        Обжарщики: {shop.roasterIds.length}
-                      </span>
-                    )}
-                    {typeof shop.isOpen !== 'undefined' && (
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        shop.isOpen 
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                      }`}>
-                        {shop.isOpen ? 'Открыто' : 'Закрыто'}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[#EAB308]">⭐</span>
-                      <span className="text-white">{(shop.rating || 0).toFixed(1)}</span>
-                      <span className="text-[#A39E93] text-sm">({shop.reviewCount || 0})</span>
+                    
+                    {/* Rating Badge */}
+                    <div className="absolute top-3 right-3 backdrop-blur-md px-2 py-1 rounded-xl flex items-center gap-1 shadow-sm border" 
+                         style={{ 
+                           backgroundColor: `${colors.surface}e6`, 
+                           borderColor: `${colors.surface}33` 
+                         }}>
+                      <span className="material-symbols-outlined text-[14px] fill-1" style={{ color: COLORS.primary }}>star</span>
+                      <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>{(shop.rating || 0).toFixed(1)}</span>
                     </div>
                     
-                    {shop.priceRange && (
-                      <span className="text-[#A39E93] text-sm">
-                        {shop.priceRange === 'Budget' ? '💰' : shop.priceRange === 'Moderate' ? '💰💰' : '💰💰💰'}
-                      </span>
+                    {/* Trending/Hiring Badge */}
+                    {(isTrending || isHiring) && (
+                      <div className="absolute bottom-3 left-3 px-2 py-1 rounded-lg shadow-lg border" 
+                           style={{ 
+                             backgroundColor: COLORS.primary, 
+                             borderColor: COLORS.primaryDark 
+                           }}>
+                        <span className="text-xs uppercase font-bold text-white tracking-widest flex items-center gap-1">
+                          {isTrending && (
+                            <>
+                              <span className="material-symbols-outlined text-[12px] fill-1">local_fire_department</span>
+                              Trending
+                            </>
+                          )}
+                          {isHiring && 'Hiring'}
+                        </span>
+                      </div>
                     )}
+                  </div>
+                  
+                  {/* Content Section */}
+                  <div className="flex-1 px-1">
+                    <h3 className="text-lg font-bold transition-colors mb-1" 
+                        style={{ color: colors.textPrimary }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = COLORS.primary}
+                        onMouseLeave={(e) => e.currentTarget.style.color = colors.textPrimary}>
+                      {shop.name}
+                    </h3>
+                    
+                    <div className="flex items-center gap-2 text-sm my-1" style={{ color: colors.textSecondary }}>
+                      <span className="material-symbols-outlined text-[16px]" style={{ color: COLORS.primary }}>location_on</span>
+                      {shop.address || shop.cityName || 'Адрес не указан'}
+                      {typeof shop.isOpen !== 'undefined' && (
+                        <span>{shop.isOpen ? ' • Открыто' : ' • Закрыто'}</span>
+                      )}
+                    </div>
+                    
+                    {shop.description && (
+                      <p className="text-sm mb-3 italic line-clamp-2" style={{ color: colors.textSecondary }}>
+                        "{shop.description}"
+                      </p>
+                    )}
+                    
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2">
+                      {shop.equipmentIds && shop.equipmentIds.length > 0 && (
+                        <span className="px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest" 
+                              style={{ 
+                                backgroundColor: colors.background, 
+                                borderColor: colors.border, 
+                                color: colors.textSecondary 
+                              }}>
+                          Оборудование: {shop.equipmentIds.length}
+                        </span>
+                      )}
+                      {shop.priceRange && (
+                        <span className="px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest" 
+                              style={{ 
+                                backgroundColor: colors.background, 
+                                borderColor: colors.border, 
+                                color: colors.textSecondary 
+                              }}>
+                          {shop.priceRange === 'Budget' ? '💰' : shop.priceRange === 'Moderate' ? '💰💰' : '💰💰💰'}
+                        </span>
+                      )}
+                      {shop.reviewCount > 0 && (
+                        <span className="px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest" 
+                              style={{ 
+                                backgroundColor: colors.background, 
+                                borderColor: colors.border, 
+                                color: colors.textSecondary 
+                              }}>
+                          {shop.reviewCount} отзывов
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
               })}
-            </div>
+            </section>
 
             {/* Пагинация */}
             {totalPages > 1 && (
-              <div className="mt-8 flex flex-col items-center">
-                <div className="flex items-center gap-2">
+              <div className="mt-12 flex flex-col items-center">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-xl ${currentPage === 1
-                      ? `${themeClasses.bg.tertiary} ${themeClasses.text.tertiary} cursor-not-allowed`
-                      : `${themeClasses.bg.tertiary} ${themeClasses.text.primary} hover:bg-[#EAB308]/20 hover:text-[#EAB308]`
-                      }`}
+                    className="px-6 py-3 rounded-xl font-semibold transition-all shadow-sm border"
+                    style={
+                      currentPage === 1
+                        ? {
+                            backgroundColor: colors.border,
+                            color: `${colors.textSecondary}80`,
+                            cursor: 'not-allowed',
+                            borderColor: colors.border,
+                          }
+                        : {
+                            backgroundColor: colors.surface,
+                            color: colors.textPrimary,
+                            borderColor: colors.border,
+                          }
+                    }
+                    onMouseEnter={(e) => {
+                      if (currentPage !== 1) {
+                        e.currentTarget.style.borderColor = COLORS.primary;
+                        e.currentTarget.style.color = COLORS.primary;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentPage !== 1) {
+                        e.currentTarget.style.borderColor = colors.border;
+                        e.currentTarget.style.color = colors.textPrimary;
+                      }
+                    }}
                   >
-                    Назад
+                    ← Назад
                   </button>
 
-                  <span className={`${themeClasses.text.secondary} mx-2`}>
-                    Страница {currentPage} из {totalPages}
+                  <span className="mx-4 font-medium" style={{ color: colors.textSecondary }}>
+                    Страница <span className="font-bold" style={{ color: COLORS.primary }}>{currentPage}</span> из {totalPages}
                   </span>
 
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-xl ${currentPage === totalPages
-                      ? `${themeClasses.bg.tertiary} ${themeClasses.text.tertiary} cursor-not-allowed`
-                      : `${themeClasses.bg.tertiary} ${themeClasses.text.primary} hover:bg-[#EAB308]/20 hover:text-[#EAB308]`
-                      }`}
+                    className="px-6 py-3 rounded-xl font-semibold transition-all shadow-sm border"
+                    style={
+                      currentPage === totalPages
+                        ? {
+                            backgroundColor: colors.border,
+                            color: `${colors.textSecondary}80`,
+                            cursor: 'not-allowed',
+                            borderColor: colors.border,
+                          }
+                        : {
+                            backgroundColor: colors.surface,
+                            color: colors.textPrimary,
+                            borderColor: colors.border,
+                          }
+                    }
+                    onMouseEnter={(e) => {
+                      if (currentPage !== totalPages) {
+                        e.currentTarget.style.borderColor = COLORS.primary;
+                        e.currentTarget.style.color = COLORS.primary;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentPage !== totalPages) {
+                        e.currentTarget.style.borderColor = colors.border;
+                        e.currentTarget.style.color = colors.textPrimary;
+                      }
+                    }}
                   >
-                    Вперед
+                    Вперед →
                   </button>
                 </div>
 
-                <p className={`${themeClasses.text.secondary} text-sm mt-2`}>
-                  Показано {shops.length} из {totalItems} кофеен
+                <p className="text-sm mt-4" style={{ color: colors.textSecondary }}>
+                  Показано <span className="font-semibold" style={{ color: colors.textPrimary }}>{shops.length}</span> из{' '}
+                  <span className="font-semibold" style={{ color: colors.textPrimary }}>{totalItems}</span> кофеен
                 </p>
               </div>
             )}
@@ -657,11 +976,6 @@ const CoffeeShopList: React.FC = () => {
         )}
       </div>
     </div>
-    <CoffeeShopModal
-      shop={selectedShop}
-      isOpen={isModalOpen}
-      onClose={closeModal}
-    />
     </>
   );
 };

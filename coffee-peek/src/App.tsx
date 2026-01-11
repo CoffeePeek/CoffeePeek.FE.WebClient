@@ -15,6 +15,9 @@ import MapPage from './components/MapPage';
 import Header from './components/Header';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import CoffeeShopPage from './pages/CoffeeShopPage';
+import UserProfilePage from './pages/UserProfilePage';
+import CreateReviewPage from './pages/CreateReviewPage';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
@@ -33,6 +36,9 @@ const AppContent: React.FC = () => {
   
   // Add navigation state
   const [currentPage, setCurrentPage] = useState<string>('home');
+  const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [creatingReviewForShopId, setCreatingReviewForShopId] = useState<string | null>(null);
   
   // Toast для уведомлений
   const { showServerError } = useToast();
@@ -61,6 +67,9 @@ const AppContent: React.FC = () => {
   
   const handleNavigate = (pageName: string) => {
     setCurrentPage(pageName);
+    setSelectedShopId(null); // Сбрасываем выбранную кофейню при навигации
+    setSelectedUserId(null); // Сбрасываем выбранного пользователя
+    setCreatingReviewForShopId(null); // Сбрасываем создание отзыва
     
     // Navigate to appropriate page
     if (['coffeeshops', 'moderation', 'map', 'jobs', 'profile', 'settings'].includes(pageName)) {
@@ -69,6 +78,43 @@ const AppContent: React.FC = () => {
         return;
       }
       setPage('dashboard');
+    }
+  };
+
+  const handleShopSelect = (shopId: string) => {
+    setSelectedShopId(shopId);
+    setSelectedUserId(null); // Сбрасываем выбранного пользователя
+  };
+
+  const handleBackToShops = () => {
+    setSelectedShopId(null);
+    setSelectedUserId(null);
+  };
+
+  const handleUserSelect = (userId: string) => {
+    setSelectedUserId(userId);
+    setSelectedShopId(null); // Сбрасываем выбранную кофейню
+  };
+
+  const handleBackFromUser = () => {
+    setSelectedUserId(null);
+  };
+
+  const handleCreateReview = (shopId: string) => {
+    setCreatingReviewForShopId(shopId);
+    setSelectedShopId(null);
+    setSelectedUserId(null);
+  };
+
+  const handleBackFromCreateReview = () => {
+    setCreatingReviewForShopId(null);
+  };
+
+  const handleReviewCreated = () => {
+    const shopId = creatingReviewForShopId;
+    setCreatingReviewForShopId(null);
+    if (shopId) {
+      setSelectedShopId(shopId); // Вернуться к странице кофейни
     }
   };
   
@@ -192,15 +238,38 @@ const AppContent: React.FC = () => {
           onLogout={handleLogout} 
         />
         <div className={`pt-16 min-h-screen ${bgClass}`}>
-          {currentPage === 'coffeeshops' || currentPage === 'home' ? (
-            <CoffeeShopList />
-          ) : null}
-          {currentPage === 'moderation' && user.isAdmin ? <ModeratorPanel /> : null}
-          {currentPage === 'admin' && user.isAdmin ? <AdminPanel /> : null}
-          {currentPage === 'map' ? <MapPage /> : null}
-          {currentPage === 'jobs' ? <div className={`p-6 ${textClass}`}>Работа (в разработке)</div> : null}
-          {currentPage === 'profile' ? <ProfilePage /> : null}
-          {currentPage === 'settings' ? <SettingsPage /> : null}
+          {creatingReviewForShopId ? (
+            <CreateReviewPage
+              shopId={creatingReviewForShopId}
+              onBack={handleBackFromCreateReview}
+              onReviewCreated={handleReviewCreated}
+            />
+          ) : selectedUserId ? (
+            <UserProfilePage 
+              userId={selectedUserId} 
+              onBack={handleBackFromUser}
+              onShopSelect={handleShopSelect}
+            />
+          ) : selectedShopId ? (
+            <CoffeeShopPage 
+              shopId={selectedShopId} 
+              onBack={handleBackToShops}
+              onUserSelect={handleUserSelect}
+              onCreateReview={handleCreateReview}
+            />
+          ) : (
+            <>
+              {currentPage === 'coffeeshops' || currentPage === 'home' ? (
+                <CoffeeShopList onShopSelect={handleShopSelect} />
+              ) : null}
+              {currentPage === 'moderation' && user.isAdmin ? <ModeratorPanel /> : null}
+              {currentPage === 'admin' && user.isAdmin ? <AdminPanel /> : null}
+              {currentPage === 'map' ? <MapPage /> : null}
+              {currentPage === 'jobs' ? <div className={`p-6 ${textClass}`}>Работа (в разработке)</div> : null}
+              {currentPage === 'profile' ? <ProfilePage /> : null}
+              {currentPage === 'settings' ? <SettingsPage /> : null}
+            </>
+          )}
         </div>
       </div>
     );

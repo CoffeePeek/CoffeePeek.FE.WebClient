@@ -134,11 +134,15 @@ export function isAuthError(error: any): boolean {
  * Получает сообщение об ошибке из объекта ошибки
  * Использует статус-код для определения сообщения, игнорируя сообщения с бэкенда
  */
-export function getErrorMessage(error: any): string {
+export function getErrorMessage(error: any, context?: 'login' | 'register'): string {
   // Проверяем статус в разных местах объекта ошибки
   const status = error?.status || error?.response?.status;
   
   if (status) {
+    // Для 401 в контексте логина/регистрации используем специальное сообщение
+    if (status === 401 && (context === 'login' || context === 'register')) {
+      return 'Неверный email или пароль.';
+    }
     return getErrorMessageByStatus(status);
   }
   

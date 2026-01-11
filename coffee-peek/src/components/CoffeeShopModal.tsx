@@ -15,6 +15,56 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
   const themeClasses = getThemeClasses(theme);
   if (!isOpen || !shop) return null;
 
+  // Функция для извлечения URL фотографий из различных форматов
+  const extractPhotoUrls = (): string[] => {
+    const urls: string[] = [];
+    
+    // Проверяем shop.photos (новый формат - PhotoMetadataDto[])
+    if (shop.photos && Array.isArray(shop.photos)) {
+      shop.photos.forEach((photo: any) => {
+        if (photo && typeof photo === 'object') {
+          // Если это объект с fullUrl
+          if ('fullUrl' in photo && typeof photo.fullUrl === 'string' && photo.fullUrl.trim()) {
+            urls.push(photo.fullUrl.trim());
+          }
+        } else if (typeof photo === 'string' && photo.trim()) {
+          // Если это уже строка
+          urls.push(photo.trim());
+        }
+      });
+    }
+    
+    // Проверяем shop.imageUrls (старый формат)
+    if ((shop as any).imageUrls && Array.isArray((shop as any).imageUrls)) {
+      (shop as any).imageUrls.forEach((url: any) => {
+        if (typeof url === 'string' && url.trim()) {
+          urls.push(url.trim());
+        } else if (url && typeof url === 'object' && 'fullUrl' in url && typeof url.fullUrl === 'string' && url.fullUrl.trim()) {
+          urls.push(url.fullUrl.trim());
+        }
+      });
+    }
+    
+    // Удаляем дубликаты
+    return [...new Set(urls)];
+  };
+
+  const photoUrls = extractPhotoUrls();
+  
+  // Отладочная информация
+  if (process.env.NODE_ENV === 'development') {
+    console.log('CoffeeShopModal - Shop data:', {
+      shopName: shop.name,
+      hasPhotos: !!shop.photos,
+      photosCount: shop.photos?.length || 0,
+      photosData: shop.photos,
+      hasImageUrls: !!(shop as any).imageUrls,
+      imageUrlsCount: (shop as any).imageUrls?.length || 0,
+      extractedUrls: photoUrls,
+      extractedUrlsCount: photoUrls.length
+    });
+  }
+
   const formatPriceRange = (priceRange: string) => {
     switch (priceRange) {
       case 'Budget':
@@ -51,47 +101,29 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
           </div>
 
           {/* Фотографии кофейни */}
-          {(() => {
-            // Получаем URL изображений из photos (новый формат) или imageUrls (старый формат)
-            let photos: string[] = [];
-            
-            // Сначала проверяем новый формат (photos с fullUrl)
-            if (shop.photos && Array.isArray(shop.photos) && shop.photos.length > 0) {
-              photos = shop.photos
-                .map((p: any) => {
-                  // Если это объект с fullUrl (PhotoMetadataDto или ShortPhotoMetadataDto)
-                  if (p && typeof p === 'object' && 'fullUrl' in p) {
-                    return p.fullUrl;
-                  }
-                  // Если это уже строка, возвращаем как есть
-                  if (typeof p === 'string') {
-                    return p;
-                  }
-                  return null;
-                })
-                .filter((url: string | null): url is string => url !== null && url.length > 0);
-            }
-            // Если нет фотографий в новом формате, проверяем старый формат (imageUrls)
-            else if ((shop as any).imageUrls && Array.isArray((shop as any).imageUrls) && (shop as any).imageUrls.length > 0) {
-              photos = (shop as any).imageUrls
-                .map((p: any) => {
-                  if (typeof p === 'string') {
-                    return p.trim().length > 0 ? p : null;
-                  }
-                  if (p && typeof p === 'object' && 'fullUrl' in p) {
-                    return p.fullUrl;
-                  }
-                  return null;
-                })
-                .filter((url: string | null): url is string => url !== null && url.length > 0);
-            }
-            
-            return photos.length > 0 ? (
-              <div className="mb-6 rounded-xl overflow-hidden">
-                <PhotoCarousel images={photos} shopName={shop.name} isCardView={false} />
+          {photoUrls.length > 0 ? (
+            <div className="mb-6">
+              <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-3 flex items-center gap-2`}>
+                <span>📸</span>
+                <span>Фотографии кофейни</span>
+                <span className={`text-sm font-normal ${themeClasses.text.secondary}`}>
+                  ({photoUrls.length} {photoUrls.length === 1 ? 'фото' : photoUrls.length < 5 ? 'фото' : 'фотографий'})
+                </span>
+              </h3>
+              <div className={`rounded-xl overflow-hidden border ${themeClasses.border.default} bg-gray-900 min-h-[300px]`}>
+                <PhotoCarousel images={photoUrls} shopName={shop.name} isCardView={false} />
               </div>
-            ) : null;
-          })()}
+            </div>
+          ) : (
+            // Показываем сообщение, если фотографий нет (для отладки)
+            process.env.NODE_ENV === 'development' && (
+              <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <p className="text-yellow-500 text-sm">
+                  ⚠️ Фотографии не найдены. Проверьте консоль для отладки.
+                </p>
+              </div>
+            )
+          )}
 
           {/* Main shop info */}
           <div className="mb-6">

@@ -31,7 +31,7 @@ const Button: React.FC<ButtonProps> = ({
       disabled={isLoading || props.disabled}
       {...props}
     >
-      <span className={isLoading ? 'opacity-0' : ''}>
+      <span className={`flex items-center gap-2 ${isLoading ? 'opacity-0' : ''}`}>
         {children}
       </span>
       {isLoading && (

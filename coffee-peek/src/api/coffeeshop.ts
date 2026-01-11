@@ -3,18 +3,44 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 import { ApiResponse } from "./auth";
 import { getErrorMessageByStatus } from "../utils/errorHandler";
 
+/**
+ * Формирует полный URL фотографии из storageKey
+ * 
+ * Если в объекте фото уже есть fullUrl, используется он.
+ * Иначе формируется URL по шаблону: GET /api/Photo/{storageKey}
+ * 
+ * @param photo - объект фотографии (PhotoMetadataDto или ShortPhotoMetadataDto)
+ * @returns полный URL для загрузки фотографии
+ */
+export function getPhotoUrl(photo: PhotoMetadataDto | ShortPhotoMetadataDto): string {
+  // Если fullUrl уже есть, используем его
+  if (photo.fullUrl) {
+    return photo.fullUrl;
+  }
+  
+  // Validate storageKey exists before constructing URL
+  if (!photo.storageKey) {
+    console.warn('[getPhotoUrl] Missing both fullUrl and storageKey for photo:', photo);
+    return ''; // Return empty string to avoid /api/Photo/null requests
+  }
+  
+  // Иначе формируем URL из storageKey
+  // Эндпоинт: GET /api/Photo/{storageKey}
+  return `${API_BASE_URL}/api/Photo/${photo.storageKey}`;
+}
+
 // DTO для фотографий
 export interface ShortPhotoMetadataDto {
   fileName: string;
   storageKey: string;
-  fullUrl: string;
+  fullUrl: string | null;
 }
 
 export interface PhotoMetadataDto {
   fileName: string;
   contentType: string;
   storageKey: string;
-  fullUrl: string;
+  fullUrl: string | null;
   sizeBytes: number;
   ownerId: string;
   uploadedAt: string; // ISO date string
@@ -126,6 +152,7 @@ export interface CoffeeShopFilters {
   roasterIds?: string[];
   brewMethodIds?: string[];
   priceRange?: string;
+  isOpen?: boolean;
 }
 
 // ShortShopDto соответствует структуре из бэкенда
@@ -230,11 +257,14 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   // Нормализуем ответ к единому формату
   // Если данные приходят в формате { data: { shopDto: {...} } }, извлекаем shopDto
   // Если данные приходят в формате { data: { brewMethods: [...] } }, извлекаем brewMethods
-  // Аналогично для других справочных данных (cities, equipments, coffeeBeans, roasters)
+  // Аналогично для других справочных данных (cities, equipments, coffeeBeans, roasters, reviews)
   let normalizedData = apiResponse.data;
   if (normalizedData && typeof normalizedData === 'object') {
     if ('shopDto' in normalizedData) {
       normalizedData = (normalizedData as any).shopDto;
+    } else if ('reviews' in normalizedData && Array.isArray((normalizedData as any).reviews)) {
+      // Для отзывов оставляем объект как есть, так как там может быть пагинация
+      normalizedData = normalizedData;
     } else if ('brewMethods' in normalizedData && Array.isArray((normalizedData as any).brewMethods)) {
       normalizedData = (normalizedData as any).brewMethods;
     } else if ('cities' in normalizedData && Array.isArray((normalizedData as any).cities)) {
@@ -584,4 +614,287 @@ export async function getCoffeeShopById(id: string): Promise<ApiResponse<Detaile
   });
 
   return handleResponse<DetailedCoffeeShop>(response);
+}
+
+// Интерфейсы для отзывов
+export interface Review {
+  id: string;
+  coffeeShopId: string;
+  userId: string;
+  userName?: string;
+  userAvatar?: string;
+  header: string;
+  comment: string;
+  ratingCoffee: number;
+  ratingService: number;
+  ratingPlace: number;
+  rating?: number; // Средний рейтинг (для обратной совместимости)
+  createdAt: string; // ISO date string
+  updatedAt?: string; // ISO date string
+}
+
+export interface GetReviewsResponse {
+  reviews: Review[];
+  totalCount: number;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
+}
+
+/**
+ * Получает все отзывы текущего пользователя с пагинацией
+ */
+export async function getCoffeeShopReviews(
+  coffeeShopId: string,
+  page: number = 1,
+  pageSize: number = 10
+): Promise<ApiResponse<GetReviewsResponse>> {
+  const token = localStorage.getItem('accessToken');
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    "X-Page-Number": page.toString(),
+    "X-Page-Size": pageSize.toString(),
+  };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop`, {
+    method: "GET",
+    headers,
+  });
+
+  return handleResponse<GetReviewsResponse>(response);
+}
+
+/**
+ * Получает отзывы пользователя по ID
+ */
+export async function getReviewsByUserId(
+  userId: string,
+  page: number = 1,
+  pageSize: number = 10
+): Promise<ApiResponse<GetReviewsResponse>> {
+  const token = localStorage.getItem('accessToken');
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    "X-Page-Number": page.toString(),
+    "X-Page-Size": pageSize.toString(),
+  };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop/user/${userId}`, {
+    method: "GET",
+    headers,
+  });
+
+  return handleResponse<GetReviewsResponse>(response);
+}
+
+/**
+ * Получает отзыв по ID
+ */
+export async function getReviewById(
+  reviewId: string
+): Promise<ApiResponse<Review>> {
+  const token = localStorage.getItem('accessToken');
+  const headers: HeadersInit = {
+    Accept: "application/json",
+  };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop/${reviewId}`, {
+    method: "GET",
+    headers,
+  });
+
+  return handleResponse<Review>(response);
+}
+
+// Интерфейсы для создания отзыва
+export interface CreateReviewRequest {
+  shopId: string;
+  header: string;
+  comment: string;
+  ratingCoffee: number;
+  ratingService: number;
+  ratingPlace: number;
+}
+
+// Интерфейсы для чекина
+export interface CreateCheckInRequest {
+  coffeeShopId: string;
+}
+
+// Интерфейсы для избранного
+export interface FavoriteResponse {
+  isFavorite: boolean;
+}
+
+export interface GetAllFavoritesResponse {
+  data: CoffeeShop[];
+  totalItems: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
+ * Создает отзыв для кофейни
+ */
+export async function createReview(
+  request: CreateReviewRequest,
+  token: string
+): Promise<ApiResponse<Review>> {
+  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(request),
+  });
+
+  return handleResponse<Review>(response);
+}
+
+/**
+ * Обновляет отзыв
+ */
+export async function updateReview(
+  request: CreateReviewRequest & { id: string },
+  token: string
+): Promise<ApiResponse<Review>> {
+  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(request),
+  });
+
+  return handleResponse<Review>(response);
+}
+
+/**
+ * Создает чекин для кофейни
+ */
+export async function createCheckIn(
+  coffeeShopId: string,
+  token: string
+): Promise<ApiResponse<any>> {
+  const response = await fetch(`${API_BASE_URL}/api/CheckIn`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ coffeeShopId }),
+  });
+
+  return handleResponse<any>(response);
+}
+
+/**
+ * Получает все избранные кофейни пользователя
+ */
+export async function getAllFavorites(
+  token: string
+): Promise<ApiResponse<GetAllFavoritesResponse>> {
+  const response = await fetch(`${API_BASE_URL}/api/FavoriteShop/all`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return handleResponse<GetAllFavoritesResponse>(response);
+}
+
+/**
+ * Добавляет кофейню в избранное
+ */
+export async function addToFavorite(
+  coffeeShopId: string,
+  token: string
+): Promise<ApiResponse<{ id: string }>> {
+  const response = await fetch(`${API_BASE_URL}/api/FavoriteShop`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(coffeeShopId),
+  });
+
+  return handleResponse<{ id: string }>(response);
+}
+
+/**
+ * Удаляет кофейню из избранного
+ */
+export async function removeFromFavorite(
+  coffeeShopId: string,
+  token: string
+): Promise<ApiResponse<{ id: string }>> {
+  const response = await fetch(`${API_BASE_URL}/api/FavoriteShop?id=${coffeeShopId}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return handleResponse<{ id: string }>(response);
+}
+
+/**
+ * @deprecated Используйте addToFavorite и removeFromFavorite
+ * Добавляет/удаляет кофейню из избранного
+ */
+export async function toggleFavorite(
+  coffeeShopId: string,
+  token: string
+): Promise<ApiResponse<FavoriteResponse>> {
+  const response = await fetch(`${API_BASE_URL}/api/Favorite/${coffeeShopId}`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return handleResponse<FavoriteResponse>(response);
+}
+
+/**
+ * @deprecated Используйте getAllFavorites
+ * Проверяет, находится ли кофейня в избранном
+ */
+export async function checkFavorite(
+  coffeeShopId: string,
+  token: string
+): Promise<ApiResponse<FavoriteResponse>> {
+  const response = await fetch(`${API_BASE_URL}/api/Favorite/${coffeeShopId}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return handleResponse<FavoriteResponse>(response);
 }
