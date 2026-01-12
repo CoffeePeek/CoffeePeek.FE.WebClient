@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   // Normalize API URL - convert https://localhost to http://localhost for local dev
-  let apiBaseUrl = normalizeBaseUrl(env.VITE_API_BASE_URL || 'https://gateway-dev-1b7e.up.railway.app');
+  let apiBaseUrl = normalizeBaseUrl(env.VITE_API_BASE_URL);
   if (apiBaseUrl.includes('localhost') && apiBaseUrl.startsWith('https://')) {
     apiBaseUrl = apiBaseUrl.replace('https://', 'http://');
     console.log('⚠️  Converted HTTPS localhost to HTTP for proxy:', apiBaseUrl);

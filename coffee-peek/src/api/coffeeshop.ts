@@ -660,7 +660,7 @@ export async function getCoffeeShopReviews(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop`, {
+  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop?shopId=${coffeeShopId}`, {
     method: "GET",
     headers,
   });
