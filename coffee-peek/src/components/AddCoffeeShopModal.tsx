@@ -32,6 +32,18 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
+  
+  // Дефолтное расписание: Пн-Пт 8:00-22:00, Сб-Вс 10:00-22:00
+  const getDefaultSchedules = () => [
+    { dayOfWeek: 0, openTime: '08:00', closeTime: '22:00' }, // Понедельник
+    { dayOfWeek: 1, openTime: '08:00', closeTime: '22:00' }, // Вторник
+    { dayOfWeek: 2, openTime: '08:00', closeTime: '22:00' }, // Среда
+    { dayOfWeek: 3, openTime: '08:00', closeTime: '22:00' }, // Четверг
+    { dayOfWeek: 4, openTime: '08:00', closeTime: '22:00' }, // Пятница
+    { dayOfWeek: 5, openTime: '10:00', closeTime: '22:00' }, // Суббота
+    { dayOfWeek: 6, openTime: '10:00', closeTime: '22:00' }, // Воскресенье
+  ];
+
   const [formData, setFormData] = useState<Omit<SendCoffeeShopToModerationRequest, 'priceRange'> & { priceRange?: string }>({
     name: '',
     notValidatedAddress: '',
@@ -44,7 +56,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
       website: '',
       instagram: '',
     },
-    schedules: [],
+    schedules: getDefaultSchedules(),
     equipmentIds: [],
     coffeeBeanIds: [],
     roasterIds: [],
@@ -73,6 +85,43 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
       },
     }));
   };
+
+  const handleScheduleChange = (dayOfWeek: number, field: 'openTime' | 'closeTime', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      schedules: prev.schedules.map(schedule =>
+        schedule.dayOfWeek === dayOfWeek
+          ? { ...schedule, [field]: value }
+          : schedule
+      ),
+    }));
+  };
+
+  const toggleScheduleDay = (dayOfWeek: number) => {
+    setFormData(prev => {
+      const existingSchedule = prev.schedules.find(s => s.dayOfWeek === dayOfWeek);
+      if (existingSchedule) {
+        // Удаляем расписание для этого дня
+        return {
+          ...prev,
+          schedules: prev.schedules.filter(s => s.dayOfWeek !== dayOfWeek),
+        };
+      } else {
+        // Добавляем дефолтное расписание для этого дня
+        const defaultTime = dayOfWeek >= 5 ? '10:00' : '08:00'; // Сб-Вс: 10:00, Пн-Пт: 08:00
+        return {
+          ...prev,
+          schedules: [
+            ...prev.schedules,
+            { dayOfWeek, openTime: defaultTime, closeTime: '22:00' },
+          ].sort((a, b) => a.dayOfWeek - b.dayOfWeek),
+        };
+      }
+    });
+  };
+
+  const dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+  const dayNamesShort = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -166,6 +215,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
         ...formData,
         priceRange: formData.priceRange ? priceRangeMap[formData.priceRange] : undefined,
         shopPhotos: uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
+        schedules: formData.schedules && formData.schedules.length > 0 ? formData.schedules : undefined,
         equipmentIds: formData.equipmentIds && formData.equipmentIds.length > 0 ? formData.equipmentIds : undefined,
         coffeeBeanIds: formData.coffeeBeanIds && formData.coffeeBeanIds.length > 0 ? formData.coffeeBeanIds : undefined,
         roasterIds: formData.roasterIds && formData.roasterIds.length > 0 ? formData.roasterIds : undefined,
@@ -196,7 +246,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
             website: '',
             instagram: '',
           },
-          schedules: [],
+          schedules: getDefaultSchedules(),
           equipmentIds: [],
           coffeeBeanIds: [],
           roasterIds: [],
@@ -568,6 +618,77 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                   ) : null;
                 })}
               </div>
+            </div>
+
+            {/* Расписание работы */}
+            <div className="space-y-4">
+              <h3 className={`text-xl font-semibold ${themeClasses.text.primary} mb-4`}>Расписание работы</h3>
+              
+              <div className="space-y-3">
+                {dayNames.map((dayName, index) => {
+                  const schedule = formData.schedules.find(s => s.dayOfWeek === index);
+                  const isEnabled = !!schedule;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                        isEnabled
+                          ? `${themeClasses.bg.input} ${themeClasses.border.default}`
+                          : `${themeClasses.bg.tertiary} ${themeClasses.border.default} opacity-60`
+                      }`}
+                    >
+                      {/* Чекбокс для включения/выключения дня */}
+                      <div className="flex items-center gap-2 min-w-[140px]">
+                        <input
+                          type="checkbox"
+                          checked={isEnabled}
+                          onChange={() => toggleScheduleDay(index)}
+                          className="w-5 h-5 rounded border-2 border-[#EAB308] text-[#EAB308] focus:ring-[#EAB308] focus:ring-offset-0 cursor-pointer"
+                        />
+                        <label className={`${themeClasses.text.primary} font-medium cursor-pointer`}>
+                          {dayName}
+                        </label>
+                      </div>
+
+                      {/* Время работы */}
+                      {isEnabled && schedule && (
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="flex-1">
+                            <label className={`${themeClasses.text.secondary} text-xs mb-1 block`}>Открытие</label>
+                            <input
+                              type="time"
+                              value={schedule.openTime}
+                              onChange={(e) => handleScheduleChange(index, 'openTime', e.target.value)}
+                              className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-xl py-2 px-3 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all`}
+                            />
+                          </div>
+                          <span className={`${themeClasses.text.secondary} mt-6`}>—</span>
+                          <div className="flex-1">
+                            <label className={`${themeClasses.text.secondary} text-xs mb-1 block`}>Закрытие</label>
+                            <input
+                              type="time"
+                              value={schedule.closeTime}
+                              onChange={(e) => handleScheduleChange(index, 'closeTime', e.target.value)}
+                              className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-xl py-2 px-3 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all`}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {!isEnabled && (
+                        <div className={`flex-1 ${themeClasses.text.secondary} text-sm italic`}>
+                          Выходной
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p className={`${themeClasses.text.secondary} text-xs mt-2`}>
+                💡 По умолчанию: Пн-Пт 8:00-22:00, Сб-Вс 10:00-22:00
+              </p>
             </div>
 
             {/* Кнопки */}

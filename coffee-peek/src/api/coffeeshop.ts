@@ -77,7 +77,11 @@ export interface CoffeeShop {
   shopPhotos?: string[]; // Оставляем для обратной совместимости
   rating?: number;
   reviewCount?: number;
+  // Флаги статуса кофейни
   isOpen?: boolean;
+  isFavorite?: boolean;
+  isVisited?: boolean;
+  isNew?: boolean;
   location?: {
     address?: string; // Может быть в location
     latitude?: number;
@@ -109,7 +113,11 @@ export interface DetailedCoffeeShop {
   imageUrls?: string[]; // Оставляем для обратной совместимости
   rating: number;
   reviewCount: number;
+  // Флаги статуса кофейни
   isOpen: boolean;
+  isFavorite?: boolean;
+  isVisited?: boolean;
+  isNew?: boolean;
   priceRange: number | string; // Может быть числом (enum) или строкой
   location?: {
     address?: string;
@@ -158,8 +166,49 @@ export interface CoffeeShopFilters {
 // ShortShopDto соответствует структуре из бэкенда
 export interface ShortShopDto {
   id: string;
+  cityId: string;
   name: string;
-  photos?: ShortPhotoMetadataDto[];
+  photos: ShortPhotoMetadataDto[];
+  rating: number;
+  reviewCount: number;
+  // Флаги статуса кофейни
+  isFavorite: boolean;
+  isVisited: boolean;
+  isNew: boolean;
+  isOpen: boolean;
+  priceRange: number | string; // PriceRange enum
+  location?: {
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  beans?: Array<{
+    id: string;
+    name: string;
+  }>;
+  roasters?: Array<{
+    id: string;
+    name: string;
+  }>;
+  equipments?: Array<{
+    id: string;
+    name: string;
+  }>;
+  brewMethods?: Array<{
+    id: string;
+    name: string;
+  }>;
+  shopContact?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+    instagram?: string;
+  };
+  schedules?: Array<{
+    dayOfWeek: number;
+    openTime?: string;
+    closeTime?: string;
+  }>;
 }
 
 export interface GetCoffeeShopsResponse {
@@ -327,11 +376,88 @@ export async function getCoffeeShops(
   console.log('getCoffeeShops: Filters:', filters);
   console.log('getCoffeeShops: Query params:', queryString);
 
+  // Получаем токен если пользователь авторизован
+  const token = localStorage.getItem('accessToken');
+  const headers: HeadersInit = {
+    Accept: "application/json",
+  };
+  
+  // Добавляем токен для персонализации данных (isFavorite, isVisited и т.д.)
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
     method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
+    headers,
+  });
+
+  return handleResponse<GetCoffeeShopsResponse>(response);
+}
+
+/**
+ * Поиск кофеен с фильтрами
+ */
+export async function searchCoffeeShops(
+  searchQuery?: string,
+  filters?: CoffeeShopFilters,
+  page: number = 1,
+  pageSize: number = 10,
+  minRating?: number
+): Promise<ApiResponse<GetCoffeeShopsResponse>> {
+  const params = new URLSearchParams();
+
+  // Добавляем поисковый запрос
+  if (searchQuery && searchQuery.trim()) {
+    params.append("q", searchQuery.trim());
+  }
+
+  // Добавляем фильтры
+  if (filters) {
+    if (filters.cityId) params.append("cityId", filters.cityId);
+    if (filters.priceRange) params.append("priceRange", filters.priceRange);
+    if (filters.equipmentIds) {
+      filters.equipmentIds.forEach((id) => params.append("equipments", id));
+    }
+    if (filters.coffeeBeanIds) {
+      filters.coffeeBeanIds.forEach((id) => params.append("beans", id));
+    }
+    if (filters.roasterIds) {
+      filters.roasterIds.forEach((id) => params.append("roasters", id));
+    }
+    if (filters.brewMethodIds) {
+      filters.brewMethodIds.forEach((id) => params.append("brewMethods", id));
+    }
+  }
+
+  // Добавляем минимальный рейтинг
+  if (minRating !== undefined && minRating > 0) {
+    params.append("minRating", minRating.toString());
+  }
+
+  const queryString = params.toString();
+  const url = `${API_BASE_URL}/api/CoffeeShop/search${queryString ? `?${queryString}` : ""}`;
+
+  console.log('searchCoffeeShops: Request URL:', url);
+  console.log('searchCoffeeShops: Search query:', searchQuery);
+  console.log('searchCoffeeShops: Filters:', filters);
+
+  // Получаем токен если пользователь авторизован
+  const token = localStorage.getItem('accessToken');
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    "X-Page-Number": page.toString(),
+    "X-Page-Size": pageSize.toString(),
+  };
+  
+  // Добавляем токен для персонализации данных (isFavorite, isVisited и т.д.)
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
   });
 
   return handleResponse<GetCoffeeShopsResponse>(response);
@@ -353,11 +479,20 @@ export async function getCoffeeShopsByCity(
   const queryString = params.toString();
   const url = `${API_BASE_URL}/api/CoffeeShop${queryString ? `?${queryString}` : ""}`;
 
+  // Получаем токен если пользователь авторизован
+  const token = localStorage.getItem('accessToken');
+  const headers: HeadersInit = {
+    Accept: "application/json",
+  };
+  
+  // Добавляем токен для персонализации данных
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
     method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
+    headers,
   });
 
   return handleResponse<GetCoffeeShopsResponse>(response);
@@ -382,11 +517,20 @@ export async function getCoffeeShopsByMapBounds(
   const queryString = params.toString();
   const url = `${API_BASE_URL}/api/CoffeeShop/map${queryString ? `?${queryString}` : ""}`;
 
+  // Получаем токен если пользователь авторизован
+  const token = localStorage.getItem('accessToken');
+  const headers: HeadersInit = {
+    Accept: "application/json",
+  };
+  
+  // Добавляем токен для персонализации данных
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
     method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
+    headers,
   });
 
   return handleResponse<GetShopsInBoundsResponse>(response);

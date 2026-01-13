@@ -14,6 +14,7 @@ import {
   getPhotoUrl
 } from '../api/coffeeshop';
 import { getUsersPublicProfiles, PublicUserProfile } from '../api/user';
+import { ShopDetailSkeleton, ReviewCardSkeleton } from '../components/skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
@@ -344,11 +345,7 @@ const CoffeeShopPage: React.FC<CoffeeShopPageProps> = ({ shopId, onBack, onUserS
   };
 
   if (isLoading) {
-    return (
-      <div className={`min-h-screen ${bgClass} flex items-center justify-center`}>
-        <div className="w-12 h-12 border-4 border-[#B48C4B] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <ShopDetailSkeleton />;
   }
 
   if (error || !shop) {
@@ -682,9 +679,7 @@ const CoffeeShopPage: React.FC<CoffeeShopPageProps> = ({ shopId, onBack, onUserS
             </div>
 
             {isLoadingReviews ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-8 h-8 border-4 border-[#B48C4B] border-t-transparent rounded-full animate-spin" />
-              </div>
+              <ReviewCardSkeleton count={3} />
             ) : reviews.length > 0 ? (
               <div className="space-y-6">
                 {reviews.map((review) => {

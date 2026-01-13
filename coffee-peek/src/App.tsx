@@ -13,17 +13,16 @@ import AdminPanel from './components/AdminPanel';
 import CoffeeShopList from './components/CoffeeShopList';
 import MapPage from './components/MapPage';
 import Header from './components/Header';
-import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import CoffeeShopPage from './pages/CoffeeShopPage';
-import UserProfilePage from './pages/UserProfilePage';
 import CreateReviewPage from './pages/CreateReviewPage';
+import CreateCoffeeShopPage from './pages/CreateCoffeeShopPage';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 import { parseJWT, isTokenExpired } from './utils/jwt';
 
-type AppPage = 'landing' | 'login' | 'register' | 'verification' | 'dashboard' | 'coffeeshops' | 'moderation' | 'map' | 'jobs' | 'profile' | 'settings' | 'error';
+type AppPage = 'landing' | 'login' | 'register' | 'verification' | 'dashboard' | 'coffeeshops' | 'moderation' | 'map' | 'jobs' | 'settings' | 'error';
 
 const AppContent: React.FC = () => {
   const { user, isLoading, updateUserFromToken, logout } = useUser();
@@ -39,6 +38,7 @@ const AppContent: React.FC = () => {
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [creatingReviewForShopId, setCreatingReviewForShopId] = useState<string | null>(null);
+  const [isCreatingCoffeeShop, setIsCreatingCoffeeShop] = useState(false);
   
   // Toast для уведомлений
   const { showServerError } = useToast();
@@ -72,7 +72,7 @@ const AppContent: React.FC = () => {
     setCreatingReviewForShopId(null); // Сбрасываем создание отзыва
     
     // Navigate to appropriate page
-    if (['coffeeshops', 'moderation', 'map', 'jobs', 'profile', 'settings'].includes(pageName)) {
+    if (['coffeeshops', 'moderation', 'map', 'jobs', 'settings'].includes(pageName)) {
       if (!user) {
         setPage('login');
         return;
@@ -116,6 +116,17 @@ const AppContent: React.FC = () => {
     if (shopId) {
       setSelectedShopId(shopId); // Вернуться к странице кофейни
     }
+  };
+
+  const handleCreateCoffeeShop = () => {
+    setIsCreatingCoffeeShop(true);
+    setSelectedShopId(null);
+    setSelectedUserId(null);
+    setCreatingReviewForShopId(null);
+  };
+
+  const handleBackFromCreateCoffeeShop = () => {
+    setIsCreatingCoffeeShop(false);
   };
   
   const handleLogout = () => {
@@ -238,18 +249,17 @@ const AppContent: React.FC = () => {
           onLogout={handleLogout} 
         />
         <div className={`pt-16 min-h-screen ${bgClass}`}>
-          {creatingReviewForShopId ? (
+          {isCreatingCoffeeShop ? (
+            <CreateCoffeeShopPage
+              onBack={handleBackFromCreateCoffeeShop}
+            />
+          ) : creatingReviewForShopId ? (
             <CreateReviewPage
               shopId={creatingReviewForShopId}
               onBack={handleBackFromCreateReview}
               onReviewCreated={handleReviewCreated}
             />
-          ) : selectedUserId ? (
-            <UserProfilePage 
-              userId={selectedUserId} 
-              onBack={handleBackFromUser}
-              onShopSelect={handleShopSelect}
-            />
+        
           ) : selectedShopId ? (
             <CoffeeShopPage 
               shopId={selectedShopId} 
@@ -266,8 +276,12 @@ const AppContent: React.FC = () => {
               {currentPage === 'admin' && user.isAdmin ? <AdminPanel /> : null}
               {currentPage === 'map' ? <MapPage /> : null}
               {currentPage === 'jobs' ? <div className={`p-6 ${textClass}`}>Работа (в разработке)</div> : null}
-              {currentPage === 'profile' ? <ProfilePage /> : null}
-              {currentPage === 'settings' ? <SettingsPage /> : null}
+              {currentPage === 'settings' ? (
+                <SettingsPage 
+                  onCreateCoffeeShop={handleCreateCoffeeShop}
+                  onLogout={handleLogout}
+                />
+              ) : null}
             </>
           )}
         </div>

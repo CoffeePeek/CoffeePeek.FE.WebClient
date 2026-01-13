@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { getCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl, getAllFavorites } from '../api/coffeeshop';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getCoffeeShops, searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl, getAllFavorites } from '../api/coffeeshop';
 import Button from './Button';
 import PhotoCarousel from './PhotoCarousel';
 import MaterialSelect from './MaterialSelect';
+import { ShopCardSkeleton } from './skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { getThemeClasses } from '../utils/theme';
@@ -18,7 +19,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const { user } = useUser();
   const themeClasses = getThemeClasses(theme);
   const colors = getThemeColors(theme);
-  const [shops, setShops] = useState<CoffeeShop[]>([]);
+  const [allShops, setAllShops] = useState<CoffeeShop[]>([]); // Все кофейни с сервера (нефильтрованные)
+  const [shops, setShops] = useState<CoffeeShop[]>([]); // Отфильтрованные кофейни для отображения
   const [totalItems, setTotalItems] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -39,6 +41,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [selectedRoasters, setSelectedRoasters] = useState<string>('');
   const [selectedBrewMethods, setSelectedBrewMethods] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(''); // Debounced версия для запросов
   const [activeFilterTab, setActiveFilterTab] = useState<'open' | 'new' | 'favorite' | 'visited'>('open');
   const [favoriteShopIds, setFavoriteShopIds] = useState<Set<string>>(new Set());
   const [visitedShopIds, setVisitedShopIds] = useState<Set<string>>(new Set());
@@ -75,8 +78,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     }
   }, [initialDataLoaded, selectedCity]);
   
+  // Debouncing для поискового запроса (задержка 600ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 600); // Запрос отправится через 600ms после последнего ввода
 
-  
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
 
   useEffect(() => {
@@ -113,11 +122,9 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     filters.coffeeBeanIds?.length ?? 0,
     filters.roasterIds?.length ?? 0,
     filters.brewMethodIds?.length ?? 0,
-    activeFilterTab, // Добавили зависимость от активного фильтра
-    searchQuery, // Добавили зависимость от поискового запроса
-    favoriteShopIds.size, // Обновляем при изменении избранных
-    visitedShopIds.size, // Обновляем при изменении посещённых
+    debouncedSearchQuery, // Загружаем данные при изменении debounced поискового запроса
     initialDataLoaded, // This ensures the effect only runs after initial data is loaded
+    // activeFilterTab НЕ добавлен - фильтрация происходит на клиенте без перезагрузки
   ]);
 
   useEffect(() => {
@@ -128,41 +135,44 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, initialDataLoaded]);
 
+  // Применяем клиентскую фильтрацию при изменении вкладки
+  useEffect(() => {
+    if (allShops.length > 0) {
+      const filtered = filterShopsByActiveTab(allShops);
+      setShops(filtered);
+      setTotalItems(filtered.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilterTab, allShops.length]);
+
   const filterShopsByActiveTab = (shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
     let filtered = shopsToFilter;
     
-    // Применяем фильтр по вкладке
+    // Применяем фильтр по вкладке (только клиентская фильтрация)
     switch (activeFilterTab) {
       case 'open':
-        // Фильтр "Открыты" применяется на сервере через isOpen в filters
+        // Фильтр "Открыты" - используем флаг isOpen из API
+        filtered = filtered.filter(shop => shop.isOpen === true);
         break;
       
       case 'new':
-        // Фильтр "Новые" - сортируем по дате создания (если есть поле)
-        // Пока просто возвращаем все, так как у нас нет поля createdAt
+        // Фильтр "Новые" - используем флаг isNew из API
+        filtered = filtered.filter(shop => shop.isNew === true);
         break;
       
       case 'favorite':
-        // Фильтр "Избранные" - только кофейни из favoriteShopIds
-        filtered = filtered.filter(shop => favoriteShopIds.has(shop.id));
+        // Фильтр "Избранные" - используем флаг isFavorite из API
+        filtered = filtered.filter(shop => shop.isFavorite === true);
         break;
       
       case 'visited':
-        // Фильтр "Посещённые" - только кофейни из visitedShopIds
-        filtered = filtered.filter(shop => visitedShopIds.has(shop.id));
+        // Фильтр "Посещённые" - используем флаг isVisited из API
+        filtered = filtered.filter(shop => shop.isVisited === true);
         break;
     }
     
-    // Применяем поиск
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(shop => 
-        shop.name.toLowerCase().includes(query) ||
-        shop.description?.toLowerCase().includes(query) ||
-        shop.address?.toLowerCase().includes(query) ||
-        shop.cityName?.toLowerCase().includes(query)
-      );
-    }
+    // Поиск теперь происходит на сервере через searchCoffeeShops endpoint
+    // Клиентская фильтрация по searchQuery НЕ нужна
     
     return filtered;
   };
@@ -230,15 +240,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     try {
       setIsLoading(true);
       
-      // Применяем фильтр статуса открытости только для вкладки "Открыты"
-      // Для остальных вкладок загружаем все и фильтруем на клиенте
-      const extendedFilters = {
-        ...filters,
-        isOpen: activeFilterTab === 'open' ? true : undefined,
-      };
+      // Используем поиск если есть запрос, иначе обычную загрузку
+      // Фильтрация по статусу (открыты/новые/избранные/посещённые) происходит на клиенте
+      const response = debouncedSearchQuery.trim()
+        ? await searchCoffeeShops(debouncedSearchQuery, filters, currentPage, pageSize)
+        : await getCoffeeShops(filters, currentPage, pageSize);
       
-      const response = await getCoffeeShops(extendedFilters, currentPage, pageSize);
       console.log('CoffeeShopList: Получен ответ от API:', response);
+      console.log('CoffeeShopList: Используется поиск:', !!debouncedSearchQuery.trim());
         
       // Handle different response formats
       if (response.data && typeof response.data === 'object') {
@@ -285,7 +294,11 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               } : undefined,
               rating: shop.rating,
               reviewCount: shop.reviewCount,
+              // Флаги статуса из backend
               isOpen: shop.isOpen,
+              isFavorite: shop.isFavorite,
+              isVisited: shop.isVisited,
+              isNew: shop.isNew,
               // Преобразуем photos в массив URL для обратной совместимости
               shopPhotos: shopPhotos,
               photos: shop.photos, // Сохраняем оригинальный массив photos
@@ -299,37 +312,48 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           });
           console.log('CoffeeShopList: Преобразованные shops:', shops);
           
+          // Сохраняем все кофейни (нефильтрованные)
+          setAllShops(shops);
+          
           // Применяем клиентскую фильтрацию
           const filteredShops = filterShopsByActiveTab(shops);
-          
           setShops(filteredShops);
-          setTotalItems(responseData.totalItems || filteredShops.length);
+          setTotalItems(filteredShops.length);
+          
+          // Пагинация с сервера (для общего количества страниц)
           setTotalPages(responseData.totalPages || 1);
           setCurrentPage(responseData.currentPage || 1);
           setPageSize(responseData.pageSize || 10);
         } else if ('items' in responseData) {
           console.log('CoffeeShopList: Найден формат items, количество:', responseData.items?.length || 0);
-          // Check if it's the pagination format
-          setShops(responseData.items || []);
-          setTotalItems(responseData.totalItems || 0);
+          const items = responseData.items || [];
+          setAllShops(items);
+          const filteredShops = filterShopsByActiveTab(items);
+          setShops(filteredShops);
+          setTotalItems(filteredShops.length);
           setTotalPages(responseData.totalPages || 1);
           setCurrentPage(responseData.currentPage || 1);
           setPageSize(responseData.pageSize || 10);
         } else if ('content' in responseData) {
           // Handle the content array format
-          setShops(responseData.content || []);
-          // Try to get pagination info from response data or calculate from content
-          setTotalItems(responseData.totalItems || responseData.content?.length || 0);
+          const content = responseData.content || [];
+          setAllShops(content);
+          const filteredShops = filterShopsByActiveTab(content);
+          setShops(filteredShops);
+          setTotalItems(filteredShops.length);
           setTotalPages(responseData.totalPages || 1);
           setCurrentPage(responseData.currentPage || 1);
           setPageSize(responseData.pageSize || 10);
         } else {
           // Fallback for direct array
           if (Array.isArray(responseData)) {
-            setShops(responseData);
-            setTotalItems(responseData.length);
+            setAllShops(responseData);
+            const filteredShops = filterShopsByActiveTab(responseData);
+            setShops(filteredShops);
+            setTotalItems(filteredShops.length);
             setTotalPages(1);
           } else {
+            setAllShops([]);
             setShops([]);
             setTotalItems(0);
             setTotalPages(1);
@@ -338,10 +362,13 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       } else {
         // Fallback for old response format
         if (Array.isArray(response.data)) {
-          setShops(response.data);
-          setTotalItems(response.data.length);
+          setAllShops(response.data);
+          const filteredShops = filterShopsByActiveTab(response.data);
+          setShops(filteredShops);
+          setTotalItems(filteredShops.length);
           setTotalPages(1);
         } else {
+          setAllShops([]);
           setShops([]);
           setTotalItems(0);
           setTotalPages(1);
@@ -352,7 +379,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       setError(getErrorMessage(err));
       console.error('CoffeeShopList: Ошибка при загрузке кофеен:', err);
       console.error('CoffeeShopList: Stack trace:', err.stack);
-      setShops([]); // Set empty array on error
+      setAllShops([]);
+      setShops([]);
       setTotalItems(0);
       setTotalPages(1);
     } finally {
@@ -382,14 +410,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const openShopDetails = (shopId: string) => {
     onShopSelect(shopId);
   };
-
-  if (isLoading && shops.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.background }}>
-        <div className="text-xl" style={{ color: COLORS.primary }}>Загрузка...</div>
-      </div>
-    );
-  }
 
   // Добавляем логирование для отладки
   console.log('CoffeeShopList: Рендер компонента', {
@@ -713,19 +733,23 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         )}
 
         {/* Список кофеен */}
-        {!Array.isArray(shops) || shops.length === 0 ? (
-          <div className="rounded-2xl p-8 text-center border" style={{ 
-            backgroundColor: colors.surface, 
-            borderColor: colors.border 
-          }}>
-            <p style={{ color: colors.textSecondary }}>
-              {!Array.isArray(shops) ? 'Ошибка загрузки данных' : 'Кофейни не найдены'}
-            </p>
-          </div>
-        ) : (
-          <>
-            <section className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {shops.map((shop) => {
+        <section className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {isLoading ? (
+            // Показываем shimmer во время загрузки
+            <ShopCardSkeleton count={6} />
+          ) : !Array.isArray(shops) || shops.length === 0 ? (
+            // Показываем сообщение если нет данных
+            <div className="col-span-full rounded-2xl p-8 text-center border" style={{ 
+              backgroundColor: colors.surface, 
+              borderColor: colors.border 
+            }}>
+              <p style={{ color: colors.textSecondary }}>
+                {!Array.isArray(shops) ? 'Ошибка загрузки данных' : 'Кофейни не найдены'}
+              </p>
+            </div>
+          ) : (
+            // Показываем кофейни
+            shops.map((shop) => {
                 // Get photos from photos array (new format) or shopPhotos/imageUrls (legacy)
                 // Приоритет: shopPhotos (уже обработанные URL) > photos (объекты) > imageUrls (legacy)
                 let photos: string[] = [];
@@ -886,11 +910,12 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                   </div>
                 </div>
               );
-              })}
-            </section>
+            })
+          )}
+        </section>
 
-            {/* Пагинация */}
-            {totalPages > 1 && (
+        {/* Пагинация */}
+        {!isLoading && shops.length > 0 && totalPages > 1 && (
               <div className="mt-12 flex flex-col items-center">
                 <div className="flex items-center gap-3">
                   <button
@@ -972,8 +997,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                 </p>
               </div>
             )}
-          </>
-        )}
       </div>
     </div>
     </>

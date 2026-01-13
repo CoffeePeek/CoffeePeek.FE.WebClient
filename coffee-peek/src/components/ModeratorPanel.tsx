@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getModerationShops, updateModerationStatus, ModerationShop, UpdateModerationShopRequest, updateModerationShop } from '../api/moderation';
 import { getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, City, Equipment, CoffeeBean, Roaster, BrewMethod } from '../api/coffeeshop';
 import Button from './Button';
+import { ModerationSkeleton } from './skeletons';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
@@ -478,11 +479,7 @@ const ModeratorPanel: React.FC = () => {
   });
 
   if (isLoading) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${themeClasses.bg.primary}`}>
-        <div className="text-[#EAB308] text-xl">Загрузка...</div>
-      </div>
-    );
+    return <ModerationSkeleton />;
   }
 
   return (

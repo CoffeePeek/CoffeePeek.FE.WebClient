@@ -120,16 +120,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
           <div className="flex items-center space-x-2 lg:space-x-4">
             <nav className="hidden lg:flex lg:space-x-2 xl:space-x-4">
               <button
-                onClick={() => onNavigate('profile')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  currentPage === 'profile' 
-                    ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
-                    : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-                }`}
-              >
-                Профиль
-              </button>
-              <button
                 onClick={() => onNavigate('settings')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   currentPage === 'settings' 
@@ -140,17 +130,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
                 Настройки
               </button>
             </nav>
-            
-            {user && (
-              <Button 
-                variant="ghost" 
-                onClick={onLogout}
-                className="py-1.5 px-2 lg:px-3 text-sm hidden lg:flex items-center gap-1.5"
-              >
-                <Icons.Logout className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="whitespace-nowrap hidden xl:inline">Выйти</span>
-              </Button>
-            )}
             
             {/* Mobile menu button */}
             <div className="lg:hidden">
@@ -242,19 +221,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
             >
               Работа
             </button>
-            <button
-                onClick={() => {
-                  onNavigate('profile');
-                  setIsMobileMenuOpen(false);
-                }}
-              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPage === 'profile' 
-                    ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
-                    : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-              }`}
-            >
-              Профиль
-            </button>
+          
             <button
                 onClick={() => {
                   onNavigate('settings');
@@ -268,18 +235,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
             >
               Настройки
             </button>
-              {user && (
-                <button
-                  onClick={() => {
-                    onLogout();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`}
-                >
-                  <Icons.Logout className="w-4 h-4" />
-                  Выйти
-                </button>
-              )}
           </div>
         </div>
         )}
