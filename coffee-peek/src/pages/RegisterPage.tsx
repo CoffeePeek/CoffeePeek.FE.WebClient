@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { register, checkEmailExists } from '../api/auth';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { Icons } from '../constants';
 import { getErrorMessage } from '../utils/errorHandler';
 
-interface RegisterPageProps {
-  onRegisterSuccess?: () => void;
-  onSwitchToLogin: () => void;
-}
-
 type RegisterStep = 'email' | 'registration';
 
-const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitchToLogin }) => {
+const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState<RegisterStep>('email');
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
@@ -48,7 +45,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitch
         setError(null);
         setSuccessMessage('Пользователь с таким email уже существует. Перенаправление на страницу входа...');
         setTimeout(() => {
-          onSwitchToLogin();
+          navigate('/login');
         }, 1500);
       } else {
         setStep('registration');
@@ -96,11 +93,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitch
       setSuccessMessage(response.message || 'Регистрация успешна! Теперь вы можете войти в систему.');
       
       setTimeout(() => {
-        if (onRegisterSuccess) {
-          onRegisterSuccess();
-        } else {
-          onSwitchToLogin();
-        }
+        navigate('/login');
       }, 2000);
     } catch (err: any) {
       const errorMessage = getErrorMessage(err, 'register');
@@ -261,7 +254,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onSwitch
                   Уже есть аккаунт?{' '}
                   <button
                     type="button"
-                    onClick={onSwitchToLogin}
+                    onClick={() => navigate('/login')}
                     className="text-[#EAB308] font-medium hover:underline"
                   >
                     Войти

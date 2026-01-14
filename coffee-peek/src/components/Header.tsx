@@ -1,19 +1,50 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Button from './Button';
 import { Icons } from '../constants';
 
-interface HeaderProps {
-  currentPage: string;
-  onNavigate: (page: string) => void;
-  onLogout: () => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) => {
-  const { user } = useUser();
+const Header: React.FC = () => {
+  const { user, logout } = useUser();
   const { theme } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Determine current page from URL
+  const getCurrentPage = () => {
+    const path = location.pathname;
+    if (path.startsWith('/shops')) return 'coffeeshops';
+    if (path.startsWith('/dashboard')) return 'dashboard';
+    if (path.includes('moderation')) return 'moderation';
+    if (path.includes('admin')) return 'admin';
+    if (path.includes('map')) return 'map';
+    if (path.includes('jobs')) return 'jobs';
+    if (path.includes('settings')) return 'settings';
+    return 'home';
+  };
+  
+  const currentPage = getCurrentPage();
+  
+  const handleNavigate = (page: string) => {
+    const routes: Record<string, string> = {
+      'home': '/shops',
+      'coffeeshops': '/shops',
+      'moderation': '/dashboard?page=moderation',
+      'admin': '/dashboard?page=admin',
+      'map': '/dashboard?page=map',
+      'jobs': '/dashboard?page=jobs',
+      'settings': '/dashboard?page=settings',
+    };
+    const route = routes[page] || '/shops';
+    navigate(route);
+  };
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const themeClasses = theme === 'dark' 
     ? {
@@ -45,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <button 
-              onClick={() => onNavigate('home')}
+              onClick={() => handleNavigate('home')}
               className="flex items-center space-x-2"
             >
               <div className={`w-10 h-10 ${themeClasses.logoBg} rounded-xl flex items-center justify-center border ${themeClasses.logoBorder}`}>
@@ -61,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
             
             <nav className="hidden lg:ml-10 lg:flex lg:space-x-4 xl:space-x-8">
               <button
-                onClick={() => onNavigate('coffeeshops')}
+                onClick={() => handleNavigate('coffeeshops')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   currentPage === 'coffeeshops' 
                     ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
@@ -73,7 +104,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
               {user?.isAdmin && (
                 <>
                   <button
-                    onClick={() => onNavigate('moderation')}
+                    onClick={() => handleNavigate('moderation')}
                     className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       currentPage === 'moderation' 
                         ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
@@ -83,7 +114,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
                     Модерация
                   </button>
                   <button
-                    onClick={() => onNavigate('admin')}
+                    onClick={() => handleNavigate('admin')}
                     className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       currentPage === 'admin' 
                         ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
@@ -95,7 +126,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
                 </>
               )}
               <button
-                onClick={() => onNavigate('map')}
+                onClick={() => handleNavigate('map')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   currentPage === 'map' 
                     ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
@@ -105,7 +136,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
                 Карта
               </button>
               <button
-                onClick={() => onNavigate('jobs')}
+                onClick={() => handleNavigate('jobs')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   currentPage === 'jobs' 
                     ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
@@ -120,7 +151,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
           <div className="flex items-center space-x-2 lg:space-x-4">
             <nav className="hidden lg:flex lg:space-x-2 xl:space-x-4">
               <button
-                onClick={() => onNavigate('settings')}
+                onClick={() => handleNavigate('settings')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   currentPage === 'settings' 
                     ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
@@ -154,7 +185,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
           <div className="grid grid-cols-3 gap-2">
             <button
                 onClick={() => {
-                  onNavigate('coffeeshops');
+                  handleNavigate('coffeeshops');
                   setIsMobileMenuOpen(false);
                 }}
               className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -169,7 +200,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
                 <>
                   <button
                     onClick={() => {
-                      onNavigate('moderation');
+                      handleNavigate('moderation');
                       setIsMobileMenuOpen(false);
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -182,7 +213,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
                   </button>
                   <button
                     onClick={() => {
-                      onNavigate('admin');
+                      handleNavigate('admin');
                       setIsMobileMenuOpen(false);
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -197,7 +228,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
               )}
             <button
                 onClick={() => {
-                  onNavigate('map');
+                  handleNavigate('map');
                   setIsMobileMenuOpen(false);
                 }}
               className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -210,7 +241,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
             </button>
             <button
                 onClick={() => {
-                  onNavigate('jobs');
+                  handleNavigate('jobs');
                   setIsMobileMenuOpen(false);
                 }}
               className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -224,7 +255,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, onLogout }) =>
           
             <button
                 onClick={() => {
-                  onNavigate('settings');
+                  handleNavigate('settings');
                   setIsMobileMenuOpen(false);
                 }}
               className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${

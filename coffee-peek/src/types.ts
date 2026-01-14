@@ -1,4 +1,3 @@
-
 export enum VerificationStep {
   LANDING = 'LANDING',
   ENTER_EMAIL = 'ENTER_EMAIL',
@@ -15,3 +14,4 @@ export interface UserState {
   token?: string;
   userId?: string;
 }
+

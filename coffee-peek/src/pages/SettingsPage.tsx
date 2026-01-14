@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import Button from '../components/Button';
 import { getProfile, updateProfile, UserProfile, UpdateProfileRequest } from '../api/auth';
@@ -7,13 +8,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getErrorMessage } from '../utils/errorHandler';
 
-interface SettingsPageProps {
-  onCreateCoffeeShop?: () => void;
-  onLogout?: () => void;
-}
-
-const SettingsPage: React.FC<SettingsPageProps> = ({ onCreateCoffeeShop, onLogout }) => {
+const SettingsPage: React.FC = () => {
   const { user, isLoading: userLoading, logout } = useUser();
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -137,20 +134,19 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onCreateCoffeeShop, onLogou
         </div>
 
         {/* Добавить кофейню */}
-        {onCreateCoffeeShop && (
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 mb-6`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className={`text-xl font-bold ${themeClasses.text.primary} mb-2`}>Добавить кофейню</h3>
-                <p className={`${themeClasses.text.secondary} text-sm`}>
-                  Отправьте новую кофейню на модерацию. После проверки она появится в каталоге.
-                </p>
-              </div>
-              <Button
-                variant="primary"
-                onClick={() => onCreateCoffeeShop()}
-                className="w-auto flex items-center gap-2"
-              >
+        <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 mb-6`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className={`text-xl font-bold ${themeClasses.text.primary} mb-2`}>Добавить кофейню</h3>
+              <p className={`${themeClasses.text.secondary} text-sm`}>
+                Отправьте новую кофейню на модерацию. После проверки она появится в каталоге.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              onClick={() => navigate('/coffee-shops/new')}
+              className="w-auto flex items-center gap-2"
+            >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -159,7 +155,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onCreateCoffeeShop, onLogou
               </Button>
             </div>
           </div>
-        )}
 
         {/* Настройки приложения */}
         <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 mb-6`}>
@@ -187,11 +182,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onCreateCoffeeShop, onLogou
             <Button
               variant="secondary"
               onClick={() => {
-                if (onLogout) {
-                  onLogout();
-                } else {
-                  logout();
-                }
+                logout();
+                navigate('/');
               }}
               className="w-auto flex items-center gap-2"
             >

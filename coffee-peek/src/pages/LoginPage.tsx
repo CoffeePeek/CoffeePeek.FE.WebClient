@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../api/auth';
 import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
+import { useUser } from '../contexts/UserContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { Icons } from '../constants';
 import { getErrorMessage } from '../utils/errorHandler';
 
-interface LoginPageProps {
-  onLoginSuccess: (accessToken: string, refreshToken?: string) => void;
-  onSwitchToRegister: () => void;
-}
-
-const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onSwitchToRegister }) => {
+const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { updateUserFromToken } = useUser();
+  const from = (location.state as any)?.from?.pathname || '/shops';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -54,9 +55,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onSwitchToRegiste
         localStorage.setItem('refreshToken', refreshToken);
       }
 
-      // Вызываем callback для успешного входа
-      // Обновляем контекст пользователя через window.location для перезагрузки
-      onLoginSuccess(accessToken, refreshToken);
+      // Обновляем контекст пользователя
+      updateUserFromToken(accessToken);
+      
+      // Перенаправляем на страницу, с которой пришли, или на shops
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError(getErrorMessage(err, 'login'));
       console.error('Login error:', err);
@@ -143,7 +146,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onSwitchToRegiste
                   Нет аккаунта?{' '}
                   <button
                     type="button"
-                    onClick={onSwitchToRegister}
+                    onClick={() => navigate('/register')}
                     className="text-[#EAB308] font-medium hover:underline"
                   >
                     Зарегистрироваться

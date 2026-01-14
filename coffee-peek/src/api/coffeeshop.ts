@@ -515,7 +515,7 @@ export async function getCoffeeShopsByMapBounds(
   if (maxLon !== undefined) params.append("maxLon", maxLon.toString());
 
   const queryString = params.toString();
-  const url = `${API_BASE_URL}/api/CoffeeShop/map${queryString ? `?${queryString}` : ""}`;
+  const url = `${API_BASE_URL}/api/Map${queryString ? `?${queryString}` : ""}`;
 
   // Получаем токен если пользователь авторизован
   const token = localStorage.getItem('accessToken');
@@ -552,7 +552,7 @@ export async function getCities(): Promise<ApiResponse<City[]>> {
   
   // Создаем новый запрос
   const promise = (async () => {
-    const response = await fetch(`${API_BASE_URL}/api/Internal/cities`, {
+    const response = await fetch(`${API_BASE_URL}/api/Catalogs/cities`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -594,7 +594,7 @@ export async function getEquipments(): Promise<ApiResponse<Equipment[]>> {
   
   // Создаем новый запрос
   const promise = (async () => {
-    const response = await fetch(`${API_BASE_URL}/api/Internal/equipments`, {
+    const response = await fetch(`${API_BASE_URL}/api/Catalogs/equipments`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -636,7 +636,7 @@ export async function getCoffeeBeans(): Promise<ApiResponse<CoffeeBean[]>> {
   
   // Создаем новый запрос
   const promise = (async () => {
-    const response = await fetch(`${API_BASE_URL}/api/Internal/beans`, {
+    const response = await fetch(`${API_BASE_URL}/api/Catalogs/beans`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -678,7 +678,7 @@ export async function getRoasters(): Promise<ApiResponse<Roaster[]>> {
   
   // Создаем новый запрос
   const promise = (async () => {
-    const response = await fetch(`${API_BASE_URL}/api/Internal/roasters`, {
+    const response = await fetch(`${API_BASE_URL}/api/Catalogs/roasters`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -720,7 +720,7 @@ export async function getBrewMethods(): Promise<ApiResponse<BrewMethod[]>> {
   
   // Создаем новый запрос
   const promise = (async () => {
-    const response = await fetch(`${API_BASE_URL}/api/Internal/brew-methods`, {
+    const response = await fetch(`${API_BASE_URL}/api/Catalogs/brew-methods`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -814,6 +814,9 @@ export async function getCoffeeShopReviews(
 
 /**
  * Получает отзывы пользователя по ID
+ * 
+ * Использует альтернативный эндпоинт: GET /api/users/{userId}/reviews
+ * Также доступен: GET /api/ReviewCoffeeShop/user/{userId}
  */
 export async function getReviewsByUserId(
   userId: string,
@@ -831,7 +834,8 @@ export async function getReviewsByUserId(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop/user/${userId}`, {
+  // Используем новый эндпоинт /api/users/{userId}/reviews
+  const response = await fetch(`${API_BASE_URL}/api/users/${userId}/reviews?pageNumber=${page}&pageSize=${pageSize}`, {
     method: "GET",
     headers,
   });
@@ -860,6 +864,58 @@ export async function getReviewById(
   });
 
   return handleResponse<Review>(response);
+}
+
+/**
+ * Проверяет, может ли текущий пользователь создать отзыв для кофейни.
+ *
+ * Backend endpoint: GET /api/ReviewCoffeeShop/can-create?shopId={shopId}
+ *
+ * Ожидаемые варианты payload:
+ * - { canCreate: boolean, reviewId?: string | null }
+ * - boolean
+ */
+export async function canCreateCoffeeShopReview(
+  shopId: string
+): Promise<ApiResponse<{ canCreate: boolean; reviewId?: string | null }>> {
+  const token = localStorage.getItem('accessToken');
+  const headers: HeadersInit = {
+    Accept: "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop/can-create?shopId=${shopId}`, {
+    method: "GET",
+    headers,
+  });
+
+  const raw = await handleResponse<any>(response);
+  if (!raw.success) {
+    return raw as any;
+  }
+
+  const data = raw.data as any;
+  // Если backend вернул просто boolean
+  if (typeof data === 'boolean') {
+    return {
+      success: true,
+      message: raw.message,
+      data: { canCreate: data },
+    };
+  }
+
+  // Если backend вернул объект
+  const canCreate = Boolean(data?.canCreate ?? data?.isCanCreate ?? data?.allowed ?? false);
+  const reviewId = (data?.reviewId ?? data?.existingReviewId ?? null) as string | null;
+
+  return {
+    success: true,
+    message: raw.message,
+    data: { canCreate, reviewId: reviewId || null },
+  };
 }
 
 // Интерфейсы для создания отзыва
@@ -912,12 +968,13 @@ export async function createReview(
 
 /**
  * Обновляет отзыв
+ * Backend endpoint: PUT /api/ReviewCoffeeShop/{reviewId}
  */
 export async function updateReview(
   request: CreateReviewRequest & { id: string },
   token: string
 ): Promise<ApiResponse<Review>> {
-  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop`, {
+  const response = await fetch(`${API_BASE_URL}/api/ReviewCoffeeShop/${request.id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

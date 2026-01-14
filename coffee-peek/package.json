@@ -9,8 +9,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.17",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "react-hook-form": "^7.71.1",
+    "react-router-dom": "^6.30.3",
+    "ts-jest": "^29.4.6",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

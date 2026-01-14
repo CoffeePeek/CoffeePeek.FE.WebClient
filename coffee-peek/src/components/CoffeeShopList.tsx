@@ -277,7 +277,12 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               originalPhotos: shop.photos,
               processedShopPhotos: shopPhotos,
               photosCount: shop.photos?.length || 0,
-              shopPhotosCount: shopPhotos.length
+              shopPhotosCount: shopPhotos.length,
+              rating: shop.rating,
+              ratingType: typeof shop.rating,
+              averageRating: shop.averageRating,
+              reviewCount: shop.reviewCount,
+              allShopKeys: Object.keys(shop)
             });
             
             return {
@@ -292,7 +297,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                 latitude: shop.location.latitude,
                 longitude: shop.location.longitude,
               } : undefined,
-              rating: shop.rating,
+              rating: shop.rating ?? shop.averageRating ?? 0,
               reviewCount: shop.reviewCount,
               // Флаги статуса из backend
               isOpen: shop.isOpen,
@@ -302,12 +307,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               // Преобразуем photos в массив URL для обратной совместимости
               shopPhotos: shopPhotos,
               photos: shop.photos, // Сохраняем оригинальный массив photos
-              // Сохраняем equipments если есть
+              // Сохраняем equipments, beans, roasters если есть
               equipments: shop.equipments,
               equipmentIds: shop.equipmentIds,
               coffeeBeanIds: shop.coffeeBeanIds,
               roasterIds: shop.roasterIds,
               brewMethodIds: shop.brewMethodIds,
+              beans: shop.beans,
+              roasters: shop.roasters,
             };
           });
           console.log('CoffeeShopList: Преобразованные shops:', shops);
@@ -326,7 +333,10 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           setPageSize(responseData.pageSize || 10);
         } else if ('items' in responseData) {
           console.log('CoffeeShopList: Найден формат items, количество:', responseData.items?.length || 0);
-          const items = responseData.items || [];
+          const items = (responseData.items || []).map((shop: any) => ({
+            ...shop,
+            rating: shop.rating ?? shop.averageRating ?? 0
+          }));
           setAllShops(items);
           const filteredShops = filterShopsByActiveTab(items);
           setShops(filteredShops);
@@ -336,7 +346,10 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           setPageSize(responseData.pageSize || 10);
         } else if ('content' in responseData) {
           // Handle the content array format
-          const content = responseData.content || [];
+          const content = (responseData.content || []).map((shop: any) => ({
+            ...shop,
+            rating: shop.rating ?? shop.averageRating ?? 0
+          }));
           setAllShops(content);
           const filteredShops = filterShopsByActiveTab(content);
           setShops(filteredShops);
@@ -783,6 +796,17 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                   result: photos
                 });
                 
+                // Логирование для отладки рейтинга
+                if (import.meta.env.DEV) {
+                  console.log(`CoffeeShopList: Рейтинг для ${shop.name}:`, {
+                    rating: shop.rating,
+                    ratingType: typeof shop.rating,
+                    averageRating: (shop as any).averageRating,
+                    reviewCount: shop.reviewCount,
+                    fullShop: shop
+                  });
+                }
+                
                 const isTrending = shop.rating && shop.rating >= 4.7;
                 const isHiring = false; // TODO: Add hiring flag to API
                 
@@ -821,6 +845,19 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                       </div>
                     )}
                     
+                    {/* Favorite Badge (Top Left) */}
+                    {favoriteShopIds.has(shop.id) && (
+                      <div className="absolute top-3 left-3 backdrop-blur-md px-2 py-1.5 rounded-xl flex items-center gap-1 shadow-lg border" 
+                           style={{ 
+                             backgroundColor: `${colors.surface}e6`, 
+                             borderColor: `${COLORS.error}50` 
+                           }}>
+                        <span className="material-symbols-outlined text-[16px] fill-1" style={{ color: COLORS.error }}>
+                          favorite
+                        </span>
+                      </div>
+                    )}
+                    
                     {/* Rating Badge */}
                     <div className="absolute top-3 right-3 backdrop-blur-md px-2 py-1 rounded-xl flex items-center gap-1 shadow-sm border" 
                          style={{ 
@@ -828,7 +865,9 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                            borderColor: `${colors.surface}33` 
                          }}>
                       <span className="material-symbols-outlined text-[14px] fill-1" style={{ color: COLORS.primary }}>star</span>
-                      <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>{(shop.rating || 0).toFixed(1)}</span>
+                      <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
+                        {shop.rating && shop.rating > 0 ? shop.rating.toFixed(1) : '—'}
+                      </span>
                     </div>
                     
                     {/* Trending/Hiring Badge */}
@@ -876,34 +915,68 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                     
                     {/* Tags */}
                     <div className="flex flex-wrap gap-2">
-                      {shop.equipmentIds && shop.equipmentIds.length > 0 && (
-                        <span className="px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest" 
-                              style={{ 
-                                backgroundColor: colors.background, 
-                                borderColor: colors.border, 
-                                color: colors.textSecondary 
-                              }}>
-                          Оборудование: {shop.equipmentIds.length}
-                        </span>
-                      )}
+                      {/* Price Range */}
                       {shop.priceRange && (
-                        <span className="px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest" 
+                        <span className="px-2.5 py-1 rounded-full border text-[11px] font-bold tracking-wide" 
                               style={{ 
-                                backgroundColor: colors.background, 
-                                borderColor: colors.border, 
-                                color: colors.textSecondary 
+                                backgroundColor: `${COLORS.primary}10`, 
+                                borderColor: `${COLORS.primary}30`, 
+                                color: COLORS.primary 
                               }}>
-                          {shop.priceRange === 'Budget' ? '💰' : shop.priceRange === 'Moderate' ? '💰💰' : '💰💰💰'}
+                          {shop.priceRange === 'Budget' || shop.priceRange === 1 ? '$' : 
+                           shop.priceRange === 'Moderate' || shop.priceRange === 2 ? '$$' : '$$$'}
                         </span>
                       )}
-                      {shop.reviewCount > 0 && (
+                      
+                      {/* Coffee Beans Tags (first 2) */}
+                      {(shop as any).beans && Array.isArray((shop as any).beans) && (shop as any).beans.slice(0, 2).map((bean: any) => (
+                        <span 
+                          key={bean.id}
+                          className="px-2.5 py-1 rounded-full border text-[10px] font-semibold tracking-wide" 
+                          style={{ 
+                            backgroundColor: colors.background, 
+                            borderColor: colors.border, 
+                            color: colors.textSecondary 
+                          }}>
+                          ☕ {bean.name}
+                        </span>
+                      ))}
+                      
+                      {/* Roaster Tag (first 1) */}
+                      {(shop as any).roasters && Array.isArray((shop as any).roasters) && (shop as any).roasters.length > 0 && (
+                        <span 
+                          className="px-2.5 py-1 rounded-full border text-[10px] font-semibold tracking-wide" 
+                          style={{ 
+                            backgroundColor: colors.background, 
+                            borderColor: colors.border, 
+                            color: colors.textSecondary 
+                          }}>
+                          🔥 {(shop as any).roasters[0].name}
+                        </span>
+                      )}
+                      
+                      {/* Equipment Tag (first 1) */}
+                      {(shop as any).equipments && Array.isArray((shop as any).equipments) && (shop as any).equipments.length > 0 && (
+                        <span 
+                          className="px-2.5 py-1 rounded-full border text-[10px] font-semibold tracking-wide" 
+                          style={{ 
+                            backgroundColor: colors.background, 
+                            borderColor: colors.border, 
+                            color: colors.textSecondary 
+                          }}>
+                          ⚙️ {(shop as any).equipments[0].name}
+                        </span>
+                      )}
+                      
+                      {/* Review Count */}
+                      {shop.reviewCount !== undefined && shop.reviewCount > 0 && (
                         <span className="px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest" 
                               style={{ 
                                 backgroundColor: colors.background, 
                                 borderColor: colors.border, 
                                 color: colors.textSecondary 
                               }}>
-                          {shop.reviewCount} отзывов
+                          {shop.reviewCount} {shop.reviewCount === 1 ? 'ОТЗЫВ' : 'ОТЗЫВОВ'}
                         </span>
                       )}
                     </div>

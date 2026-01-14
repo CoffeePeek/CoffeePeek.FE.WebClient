@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { DetailedCoffeeShop, getCoffeeShopById, createReview, CreateReviewRequest } from '../api/coffeeshop';
+import { useParams, useNavigate } from 'react-router-dom';
+import { DetailedCoffeeShop, getCoffeeShopById, createReview, CreateReviewRequest, getReviewById, updateReview } from '../api/coffeeshop';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 
-interface CreateReviewPageProps {
-  shopId: string;
-  onBack: () => void;
-  onReviewCreated?: () => void;
-}
-
-const CreateReviewPage: React.FC<CreateReviewPageProps> = ({ shopId, onBack, onReviewCreated }) => {
+const CreateReviewPage: React.FC = () => {
+  const { shopId, reviewId } = useParams<{ shopId: string; reviewId?: string }>();
+  const navigate = useNavigate();
+  
+  if (!shopId) {
+    navigate('/shops');
+    return null;
+  }
+  
+  const isEditMode = !!reviewId;
   const { theme } = useTheme();
   const { user } = useUser();
   const { showToast } = useToast();
@@ -25,6 +29,7 @@ const CreateReviewPage: React.FC<CreateReviewPageProps> = ({ shopId, onBack, onR
   const [ratingService, setRatingService] = useState(5);
   const [ratingPlace, setRatingPlace] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingExistingReview, setIsLoadingExistingReview] = useState(false);
 
   const isDark = theme === 'dark';
 
@@ -59,6 +64,48 @@ const CreateReviewPage: React.FC<CreateReviewPageProps> = ({ shopId, onBack, onR
       loadShop();
     }
   }, [shopId]);
+
+  // Если редактируем — подгружаем отзыв и префилим поля
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadExistingReview = async () => {
+      if (!reviewId) return;
+      if (!user) return;
+
+      try {
+        setIsLoadingExistingReview(true);
+        const response = await getReviewById(reviewId);
+        if (cancelled) return;
+
+        if (response.success && response.data) {
+          const r = response.data;
+          setHeader(r.header || '');
+          setDescription(r.comment || '');
+          setRatingCoffee(r.ratingCoffee || 5);
+          setRatingService(r.ratingService || 5);
+          setRatingPlace(r.ratingPlace || 5);
+        } else {
+          showToast('Не удалось загрузить отзыв для редактирования', 'error');
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Error loading review to edit:', err);
+          showToast('Не удалось загрузить отзыв для редактирования', 'error');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingExistingReview(false);
+        }
+      }
+    };
+
+    loadExistingReview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reviewId, user?.id]);
 
   const getAverageRating = () => {
     return ((ratingCoffee + ratingService + ratingPlace) / 3).toFixed(1);
@@ -98,24 +145,22 @@ const CreateReviewPage: React.FC<CreateReviewPageProps> = ({ shopId, onBack, onR
         ratingPlace,
       };
 
-      const response = await createReview(request, token);
+      const response = reviewId
+        ? await updateReview({ ...request, id: reviewId }, token)
+        : await createReview(request, token);
       if (response.success) {
-        showToast('Отзыв успешно опубликован!', 'success');
-        if (onReviewCreated) {
-          onReviewCreated();
-        } else {
-          onBack();
-        }
+        showToast(reviewId ? 'Отзыв успешно обновлён!' : 'Отзыв успешно опубликован!', 'success');
+        navigate(`/shops/${shopId}`);
       }
     } catch (err) {
       console.error('Error submitting review:', err);
-      showToast('Не удалось опубликовать отзыв', 'error');
+      showToast(reviewId ? 'Не удалось обновить отзыв' : 'Не удалось опубликовать отзыв', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingExistingReview) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
         <div className="w-12 h-12 border-4 border-[#C69546] border-t-transparent rounded-full animate-spin" />
@@ -139,19 +184,21 @@ const CreateReviewPage: React.FC<CreateReviewPageProps> = ({ shopId, onBack, onR
         <div className="mb-12 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: colors.textMain }}>
-              Поделиться впечатлением
+              {reviewId ? 'Редактировать отзыв' : 'Поделиться впечатлением'}
             </h1>
             <p className="mt-1" style={{ color: colors.textMuted }}>
-              Расскажите сообществу о вашем последнем визите в {shop.name}
+              {reviewId
+                ? `Обновите ваш отзыв о ${shop.name}`
+                : `Расскажите сообществу о вашем последнем визите в ${shop.name}`}
             </p>
           </div>
           <button
-            onClick={onBack}
+            onClick={() => navigate(`/shops/${shopId}`)}
             className="flex items-center gap-2 font-semibold hover:opacity-70 transition-opacity"
             style={{ color: colors.textMuted }}
           >
             <span className="material-symbols-outlined">arrow_back</span>
-            Отменить
+            Назад
           </button>
         </div>
 
@@ -351,7 +398,7 @@ const CreateReviewPage: React.FC<CreateReviewPageProps> = ({ shopId, onBack, onR
                 disabled={isSubmitting}
                 className="px-10 py-5 bg-[#C69546] hover:bg-[#A87D39] text-white rounded-2xl font-bold text-lg flex items-center gap-3 shadow-lg shadow-[#C69546]/20 transition-all active:scale-95 group disabled:opacity-50"
               >
-                {isSubmitting ? 'Публикация...' : 'Опубликовать отзыв'}
+                {isSubmitting ? (reviewId ? 'Сохранение...' : 'Публикация...') : (reviewId ? 'Сохранить изменения' : 'Опубликовать отзыв')}
                 <span className="material-symbols-outlined group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
                   send
                 </span>

@@ -2,21 +2,17 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 import { ApiResponse } from "./auth";
 
-// Публичный профиль пользователя (минимальная информация)
 export interface PublicUserProfile {
   id: string;
   userName: string;
   nickname?: string;
   avatarUrl?: string;
   about?: string;
-  createdAt?: string;
+  createdAtUtc?: string;
   reviewCount?: number;
   checkInCount?: number;
 }
 
-/**
- * Получает публичную информацию о пользователе по ID
- */
 export async function getUserPublicProfile(
   userId: string
 ): Promise<ApiResponse<PublicUserProfile | null>> {
@@ -58,7 +54,7 @@ export async function getUserPublicProfile(
             nickname: undefined,
             avatarUrl: undefined,
             about: undefined,
-            createdAt: undefined,
+            createdAtUtc: undefined,
             reviewCount: 0,
             checkInCount: 0,
           },
@@ -108,7 +104,7 @@ export async function getUserPublicProfile(
         nickname: userData.nickname,
         avatarUrl: userData.avatarUrl,
         about: userData.about,
-        createdAt: userData.createdAt,
+        createdAtUtc: userData.createdAt,
         reviewCount: userData.reviewCount,
         checkInCount: userData.checkInCount,
       },
