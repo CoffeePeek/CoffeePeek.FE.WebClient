@@ -123,15 +123,12 @@ export function useCreateReview() {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      // Invalidate reviews for this shop
       queryClient.invalidateQueries({
         queryKey: reviewKeys.list(variables.request.shopId),
       });
-      // Invalidate can-create check
       queryClient.invalidateQueries({
         queryKey: reviewKeys.canCreate(variables.request.shopId),
       });
-      // Invalidate shop detail to update review count
       queryClient.invalidateQueries({
         queryKey: ['coffeeShops', 'detail', variables.request.shopId],
       });

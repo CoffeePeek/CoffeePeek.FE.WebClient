@@ -53,11 +53,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     loadInitialData().then(() => {
       setInitialDataLoaded(true);
     });
-    
-    // Загружаем избранные кофейни, если пользователь авторизован
-    if (user) {
-      loadFavorites();
-    }
   }, [user]);
   
   // Set default city when cities are loaded and no city is selected yet
@@ -148,25 +143,20 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const filterShopsByActiveTab = (shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
     let filtered = shopsToFilter;
     
-    // Применяем фильтр по вкладке (только клиентская фильтрация)
     switch (activeFilterTab) {
       case 'open':
-        // Фильтр "Открыты" - используем флаг isOpen из API
         filtered = filtered.filter(shop => shop.isOpen === true);
         break;
       
       case 'new':
-        // Фильтр "Новые" - используем флаг isNew из API
         filtered = filtered.filter(shop => shop.isNew === true);
         break;
       
       case 'favorite':
-        // Фильтр "Избранные" - используем флаг isFavorite из API
         filtered = filtered.filter(shop => shop.isFavorite === true);
         break;
       
       case 'visited':
-        // Фильтр "Посещённые" - используем флаг isVisited из API
         filtered = filtered.filter(shop => shop.isVisited === true);
         break;
     }
@@ -175,26 +165,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     // Клиентская фильтрация по searchQuery НЕ нужна
     
     return filtered;
-  };
-
-  const loadFavorites = async () => {
-    if (!user) return;
-    
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-      
-      const response = await getAllFavorites(token);
-      if (response.isSuccess && response.data && response.data.data) {
-        const favoriteIds = new Set(response.data.data.map((shop: CoffeeShop) => shop.id));
-        setFavoriteShopIds(favoriteIds);
-      }
-    } catch (err) {
-      // Тихо игнорируем ошибки для избранных (не критично)
-      if (import.meta.env.DEV) {
-        console.info('Could not load favorites:', err);
-      }
-    }
   };
 
   const loadInitialData = async () => {
@@ -239,6 +209,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const loadShops = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       // Используем поиск если есть запрос, иначе обычную загрузку
       // Фильтрация по статусу (открыты/новые/избранные/посещённые) происходит на клиенте
@@ -273,51 +244,13 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               return '';
             }).filter((url: string) => url && url.length > 0) || [];
             
-            console.log(`CoffeeShopList: Обработка кофейни ${shop.name}:`, {
-              originalPhotos: shop.photos,
-              processedShopPhotos: shopPhotos,
-              photosCount: shop.photos?.length || 0,
-              shopPhotosCount: shopPhotos.length,
-              rating: shop.rating,
-              ratingType: typeof shop.rating,
-              averageRating: shop.averageRating,
-              reviewCount: shop.reviewCount,
-              allShopKeys: Object.keys(shop)
-            });
-            
             return {
-              id: shop.id,
-              name: shop.name,
-              description: shop.description,
-              priceRange: shop.priceRange,
-              cityId: shop.cityId,
-              cityName: shop.cityName,
-              address: shop.location?.address,
-              location: shop.location ? {
-                latitude: shop.location.latitude,
-                longitude: shop.location.longitude,
-              } : undefined,
-              rating: shop.rating ?? shop.averageRating ?? 0,
-              reviewCount: shop.reviewCount,
-              // Флаги статуса из backend
-              isOpen: shop.isOpen,
-              isFavorite: shop.isFavorite,
-              isVisited: shop.isVisited,
-              isNew: shop.isNew,
-              // Преобразуем photos в массив URL для обратной совместимости
+              ...shop,
               shopPhotos: shopPhotos,
-              photos: shop.photos, // Сохраняем оригинальный массив photos
-              // Сохраняем equipments, beans, roasters если есть
-              equipments: shop.equipments,
-              equipmentIds: shop.equipmentIds,
-              coffeeBeanIds: shop.coffeeBeanIds,
-              roasterIds: shop.roasterIds,
-              brewMethodIds: shop.brewMethodIds,
-              beans: shop.beans,
-              roasters: shop.roasters,
+              photos: shop.photos,
+              rating: shop.rating ?? 0
             };
           });
-          console.log('CoffeeShopList: Преобразованные shops:', shops);
           
           // Сохраняем все кофейни (нефильтрованные)
           setAllShops(shops);
@@ -331,9 +264,9 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           setTotalPages(responseData.totalPages || 1);
           setCurrentPage(responseData.currentPage || 1);
           setPageSize(responseData.pageSize || 10);
-        } else if ('items' in responseData) {
-          console.log('CoffeeShopList: Найден формат items, количество:', responseData.items?.length || 0);
-          const items = (responseData.items || []).map((shop: any) => ({
+        } else if ('items' in responseData && Array.isArray(responseData.items)) {
+          console.log('CoffeeShopList: Найден формат items, количество:', responseData.items.length);
+          const items = responseData.items.map((shop: any) => ({
             ...shop,
             rating: shop.rating ?? shop.averageRating ?? 0
           }));
@@ -344,9 +277,9 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           setTotalPages(responseData.totalPages || 1);
           setCurrentPage(responseData.currentPage || 1);
           setPageSize(responseData.pageSize || 10);
-        } else if ('content' in responseData) {
-          // Handle the content array format
-          const content = (responseData.content || []).map((shop: any) => ({
+        } else if ('content' in responseData && Array.isArray(responseData.content)) {
+          console.log('CoffeeShopList: Найден формат content, количество:', responseData.content.length);
+          const content = responseData.content.map((shop: any) => ({
             ...shop,
             rating: shop.rating ?? shop.averageRating ?? 0
           }));
@@ -387,9 +320,10 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           setTotalPages(1);
         }
       }
-      setError(null);
+      
     } catch (err: any) {
-      setError(getErrorMessage(err));
+      const errorMsg = getErrorMessage(err);
+      setError(errorMsg);
       console.error('CoffeeShopList: Ошибка при загрузке кофеен:', err);
       console.error('CoffeeShopList: Stack trace:', err.stack);
       setAllShops([]);

@@ -1,6 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+/**
+ * API модуль для работы с публичными профилями пользователей
+ */
 
-import { ApiResponse } from "./auth";
+import { httpClient } from './core/httpClient';
+import { API_ENDPOINTS } from './core/apiConfig';
+import { ApiResponse } from './core/types';
+
+// ==================== Types ====================
 
 export interface PublicUserProfile {
   id: string;
@@ -13,81 +19,33 @@ export interface PublicUserProfile {
   checkInCount?: number;
 }
 
+// ==================== API Functions ====================
+
+/**
+ * Получает публичный профиль пользователя по ID
+ */
 export async function getUserPublicProfile(
   userId: string
 ): Promise<ApiResponse<PublicUserProfile | null>> {
   try {
-    const token = localStorage.getItem('accessToken');
-    const headers: HeadersInit = {
-      Accept: "application/json",
-    };
-    
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
     if (import.meta.env.DEV) {
       console.log(`[getUserPublicProfile] Fetching user profile for ID: ${userId}`);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/User/${userId}`, {
-      method: "GET",
-      headers,
-    });
+    const response = await httpClient.get<PublicUserProfile>(
+      API_ENDPOINTS.USER.BY_ID(userId),
+      { requiresAuth: false }
+    );
 
     if (import.meta.env.DEV) {
-      console.log(`[getUserPublicProfile] Response status: ${response.status}`);
+      console.log(`[getUserPublicProfile] Response:`, response);
     }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[getUserPublicProfile] Error response:`, errorText);
-      
-      // Return fallback profile for 500 errors (backend token issue)
-      if (response.status === 500) {
-        return {
-          success: true,
-          message: "Using fallback profile",
-          data: {
-            id: userId,
-            userName: "Анонимный пользователь",
-            nickname: undefined,
-            avatarUrl: undefined,
-            about: undefined,
-            createdAtUtc: undefined,
-            reviewCount: 0,
-            checkInCount: 0,
-          },
-        };
-      }
-      
-      return {
-        success: false,
-        message: `Failed to fetch user profile: ${response.status} - ${errorText}`,
-        data: null,
-      };
-    }
-
-    const data = await response.json();
-    if (import.meta.env.DEV) {
-      console.log(`[getUserPublicProfile] Response data:`, data);
-    }
-    
-    // Проверяем, был ли запрос успешным
-    if (data.isSuccess === false || !data.data) {
-      console.warn(`[getUserPublicProfile] API returned isSuccess=false or no data`);
-      return {
-        success: false,
-        message: data.message || "User not found",
-        data: null,
-      };
-    }
-    
     // Нормализация данных в зависимости от структуры ответа
-    const userData = data.data || data;
+    const userData = response.data;
     
-    if (!userData.id) {
-      console.error(`[getUserPublicProfile] No user ID in response`);
+    if (!userData || !userData.id) {
+      console.warn(`[getUserPublicProfile] No user ID in response`);
       return {
         success: false,
         message: "Invalid user data: missing ID",
@@ -100,20 +58,39 @@ export async function getUserPublicProfile(
       message: "User profile loaded successfully",
       data: {
         id: userData.id,
-        userName: userData.userName || userData.name || "Unknown User",
+        userName: userData.userName || "Unknown User",
         nickname: userData.nickname,
         avatarUrl: userData.avatarUrl,
         about: userData.about,
-        createdAtUtc: userData.createdAt,
+        createdAtUtc: userData.createdAtUtc,
         reviewCount: userData.reviewCount,
         checkInCount: userData.checkInCount,
       },
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("[getUserPublicProfile] Exception:", error);
+    
+    // Возвращаем fallback профиль для 500 ошибок
+    if (error.status === 500) {
+      return {
+        success: true,
+        message: "Using fallback profile",
+        data: {
+          id: userId,
+          userName: "Анонимный пользователь",
+          nickname: undefined,
+          avatarUrl: undefined,
+          about: undefined,
+          createdAtUtc: undefined,
+          reviewCount: 0,
+          checkInCount: 0,
+        },
+      };
+    }
+    
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: error.message || "Unknown error",
       data: null,
     };
   }
@@ -121,7 +98,7 @@ export async function getUserPublicProfile(
 
 /**
  * Получает публичные профили нескольких пользователей (batch)
- * Для оптимизации - запрашивает по одному, но можно добавить кэширование
+ * Для оптимизации - запрашивает параллельно
  */
 export async function getUsersPublicProfiles(
   userIds: string[]
@@ -143,4 +120,3 @@ export async function getUsersPublicProfiles(
   
   return userMap;
 }
-

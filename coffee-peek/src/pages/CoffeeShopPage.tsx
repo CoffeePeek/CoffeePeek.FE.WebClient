@@ -14,8 +14,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { useShopData } from '../hooks/useShopData';
-import { useShopReviews } from '../hooks/useShopReviews';
-import { useFavoriteStatus } from '../hooks/useFavoriteStatus';
 import { useMyReview } from '../hooks/useMyReview';
 import { useUsersCache } from '../hooks/useUsersCache';
 
@@ -33,10 +31,7 @@ const CoffeeShopPage: React.FC = () => {
   
   // Custom hooks
   const { shop, isLoading, error, reloadShop } = useShopData(shopId);
-  const { reviews, isLoading: isLoadingReviews, totalCount: reviewsTotalCount, reloadReviews } = useShopReviews(shopId, 1, 10);
-  const { isFavorite, isChecking: isCheckingFavorite, toggleFavorite } = useFavoriteStatus(shopId);
   const { myReviewId, isChecking: isCheckingMyReview } = useMyReview(shopId);
-  const usersCache = useUsersCache(reviews);
   
   // Legacy modal state (for backward compatibility)
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -56,13 +51,28 @@ const CoffeeShopPage: React.FC = () => {
   const borderColor = isDark ? 'border-[#3D2F28]' : 'border-[#E8E4E1]';
   const primary = '#B48C4B';
   const primaryHover = '#8E6F3A';
+  
+  // Получаем отзывы из shop (приходят с бэкенда в CoffeeShopDetailsDto)
+  const reviews = shop?.reviews || [];
+  const reviewsTotalCount = shop?.reviewCount || 0;
+  const usersCache = useUsersCache(reviews);
+
 
   const handleWriteOrEditReview = () => {
-    if (!user || !shopId) return;
+    if (!user || !shopId || !shop) return;
+    
+    // Передаем минимальную информацию о кофейне через state
+    const shopBasicInfo = {
+      name: shop.name,
+      address: shop.location?.address || 'Адрес не указан',
+      photo: shop.photos && shop.photos.length > 0 ? shop.photos[0].fullUrl || '' : '',
+      averageRating: shop.rating
+    };
+    
     if (myReviewId) {
-      navigate(`/shops/${shopId}/reviews/${myReviewId}/edit`);
+      navigate(`/shops/${shopId}/reviews/${myReviewId}/edit`, { state: { shop: shopBasicInfo } });
     } else {
-      navigate(`/shops/${shopId}/reviews/new`);
+      navigate(`/shops/${shopId}/reviews/new`, { state: { shop: shopBasicInfo } });
     }
   };
 
@@ -101,9 +111,7 @@ const CoffeeShopPage: React.FC = () => {
         setReviewRatingService(5);
         setReviewRatingPlace(5);
         
-        // Перезагружаем данные
         await reloadShop();
-        await reloadReviews();
       }
     } catch (err: any) {
       console.error('Error submitting review:', err);
@@ -146,20 +154,14 @@ const CoffeeShopPage: React.FC = () => {
         </section>
       )}
 
-      {/* Основной контент */}
       {shop && (
         <section className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-12 gap-12">
-          {/* Левая колонка */}
           <div className="col-span-12 lg:col-span-8 space-y-12">
-            {/* Заголовок и действия */}
             <div>
               <ShopHeader
                 shop={shop}
                 avgRating={avgRating}
                 reviewsTotalCount={reviewsTotalCount}
-                isFavorite={isFavorite}
-                isCheckingFavorite={isCheckingFavorite}
-                onToggleFavorite={toggleFavorite}
                 textMain={textMain}
                 textMuted={textMuted}
                 borderColor={borderColor}
@@ -337,7 +339,7 @@ const CoffeeShopPage: React.FC = () => {
             <ReviewsSection
               reviews={reviews}
               usersCache={usersCache}
-              isLoading={isLoadingReviews}
+              isLoading={isLoading}
               myReviewId={myReviewId}
               isCheckingMyReview={isCheckingMyReview}
               onWriteOrEditReview={handleWriteOrEditReview}

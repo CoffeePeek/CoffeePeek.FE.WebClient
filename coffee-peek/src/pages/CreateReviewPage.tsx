@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { DetailedCoffeeShop, getCoffeeShopById, createReview, CreateReviewRequest, getReviewById, updateReview } from '../api/coffeeshop';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { createReview, CreateReviewRequest, getReviewById, updateReview } from '../api/coffeeshop';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 
+interface ShopBasicInfo {
+  name: string;
+  address: string;
+  photo: string;
+  averageRating?: number;
+}
+
 const CreateReviewPage: React.FC = () => {
   const { shopId, reviewId } = useParams<{ shopId: string; reviewId?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   
   if (!shopId) {
     navigate('/shops');
@@ -19,9 +27,16 @@ const CreateReviewPage: React.FC = () => {
   const { user } = useUser();
   const { showToast } = useToast();
 
-  const [shop, setShop] = useState<DetailedCoffeeShop | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Получаем данные о кофейне из navigation state
+  const shopFromState = (location.state as { shop?: ShopBasicInfo })?.shop;
   
+  // Если данных нет в state (прямой переход по URL), редиректим на страницу кофейни
+  useEffect(() => {
+    if (!shopFromState && !isEditMode) {
+      navigate(`/shops/${shopId}`);
+    }
+  }, [shopFromState, isEditMode, shopId, navigate]);
+
   // Review data
   const [header, setHeader] = useState('');
   const [description, setDescription] = useState('');
@@ -44,26 +59,6 @@ const CreateReviewPage: React.FC = () => {
     textMain: isDark ? '#FFFFFF' : '#2D2A26',
     textMuted: isDark ? '#A8A8A8' : '#75706B',
   };
-
-  useEffect(() => {
-    const loadShop = async () => {
-      try {
-        setIsLoading(true);
-        const response = await getCoffeeShopById(shopId);
-        if (response.success && response.data) {
-          setShop(response.data);
-        }
-      } catch (err) {
-        console.error('Error loading shop:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (shopId) {
-      loadShop();
-    }
-  }, [shopId]);
 
   // Если редактируем — подгружаем отзыв и префилим поля
   useEffect(() => {
@@ -105,7 +100,7 @@ const CreateReviewPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [reviewId, user?.id]);
+  }, [reviewId, user?.id, showToast]);
 
   const getAverageRating = () => {
     return ((ratingCoffee + ratingService + ratingPlace) / 3).toFixed(1);
@@ -160,7 +155,7 @@ const CreateReviewPage: React.FC = () => {
     }
   };
 
-  if (isLoading || isLoadingExistingReview) {
+  if (isLoadingExistingReview) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
         <div className="w-12 h-12 border-4 border-[#C69546] border-t-transparent rounded-full animate-spin" />
@@ -168,15 +163,17 @@ const CreateReviewPage: React.FC = () => {
     );
   }
 
-  if (!shop) {
+  // Если нет данных о кофейне при создании отзыва, показываем загрузку (редирект произойдет)
+  if (!shopFromState && !isEditMode) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-        <p style={{ color: colors.textMain }}>Кофейня не найдена</p>
+        <div className="w-12 h-12 border-4 border-[#C69546] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const shopImage = shop.photos && shop.photos.length > 0 ? shop.photos[0].fullUrl || '' : '';
+  const shop = shopFromState;
+  const shopImage = shop?.photo || '';
 
   return (
     <div className="min-h-screen pt-16" style={{ backgroundColor: '#FBFBFA' }}>
@@ -188,8 +185,8 @@ const CreateReviewPage: React.FC = () => {
             </h1>
             <p className="mt-1" style={{ color: colors.textMuted }}>
               {reviewId
-                ? `Обновите ваш отзыв о ${shop.name}`
-                : `Расскажите сообществу о вашем последнем визите в ${shop.name}`}
+                ? `Обновите ваш отзыв о ${shop?.name || 'кофейне'}`
+                : `Расскажите сообществу о вашем последнем визите в ${shop?.name || 'кофейне'}`}
             </p>
           </div>
           <button
@@ -212,7 +209,7 @@ const CreateReviewPage: React.FC = () => {
               <div className="relative w-32 h-32 mx-auto mb-6">
                 <div className="w-full h-full rounded-full overflow-hidden border-4 shadow-lg" style={{ borderColor: colors.primaryLight }}>
                   {shopImage ? (
-                    <img alt={shop.name} className="w-full h-full object-cover" src={shopImage} />
+                    <img alt={shop?.name || 'Кофейня'} className="w-full h-full object-cover" src={shopImage} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
                       <span className="material-symbols-outlined text-4xl" style={{ color: colors.textMuted }}>
@@ -227,13 +224,13 @@ const CreateReviewPage: React.FC = () => {
               </div>
 
               <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textMain }}>
-                {shop.name}
+                {shop?.name || 'Кофейня'}
               </h2>
 
               <div className="flex items-center justify-center gap-1.5 mb-8" style={{ color: colors.textMuted }}>
                 <span className="material-symbols-outlined text-[#C69546] text-lg">location_on</span>
                 <span className="text-sm font-medium">
-                  {shop.location?.address || shop.address || 'Адрес не указан'}
+                  {shop?.address || 'Адрес не указан'}
                 </span>
               </div>
 

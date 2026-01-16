@@ -1,4 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+/**
+ * API модуль для аутентификации и профиля пользователя
+ */
+
+import { httpClient, TokenManager } from './core/httpClient';
+import { API_ENDPOINTS } from './core/apiConfig';
+import { ApiResponse } from './core/types';
+
+// ==================== Request/Response Types ====================
 
 export interface LoginRequest {
   email: string;
@@ -9,17 +17,6 @@ export interface RegisterRequest {
   email: string;
   password: string;
   userName?: string;
-}
-
-/**
- * Базовый интерфейс ответа от API
- * API может возвращать либо success, либо isSuccess
- */
-export interface ApiResponse<TData> {
-  success?: boolean;
-  isSuccess?: boolean;
-  message: string;
-  data: TData;
 }
 
 /**
@@ -51,227 +48,6 @@ export interface ApiError {
   status?: number;
 }
 
-/**
- * Получает сообщение об ошибке на основе статус-кода
- */
-function getErrorMessageByStatus(status: number): string {
-  if (status >= 500 && status < 600) {
-    if (status === 502) return 'Сервер временно недоступен. Пожалуйста, попробуйте позже.';
-    if (status === 503) return 'Сервис временно недоступен. Пожалуйста, попробуйте позже.';
-    if (status === 504) return 'Сервер не отвечает. Пожалуйста, попробуйте позже.';
-    if (status === 500) return 'Произошла внутренняя ошибка сервера. Мы уже работаем над её устранением.';
-    return 'Ошибка сервера. Пожалуйста, попробуйте позже.';
-  }
-  
-  if (status >= 400 && status < 500) {
-    if (status === 400) return 'Запрос содержит ошибки. Пожалуйста, проверьте введённые данные.';
-    if (status === 401) return 'Для доступа необходимо войти в систему.';
-    if (status === 403) return 'У вас нет прав для выполнения этого действия.';
-    if (status === 404) return 'Запрашиваемый ресурс не найден.';
-    return 'Ошибка запроса. Пожалуйста, проверьте введённые данные.';
-  }
-  
-  return 'Что-то пошло не так. Пожалуйста, попробуйте позже.';
-}
-
-/**
- * Обрабатывает ответ от API
- * Все ответы приходят в формате Response<T> с полем data
- */
-async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-  const contentType = response.headers.get('content-type');
-  
-  if (!contentType?.includes('application/json')) {
-    if (response.ok) {
-      return { success: true, message: '', data: {} as T };
-    }
-    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
-    if (response.status >= 500 && response.status < 600) {
-      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
-        showServerErrorNotification();
-      });
-    }
-    throw new Error(getErrorMessageByStatus(response.status));
-  }
-
-  const apiResponse = await response.json() as any;
-  
-  // Логируем ответ для отладки
-  console.log('API response:', apiResponse);
-
-  if (!response.ok) {
-    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
-    if (response.status >= 500 && response.status < 600) {
-      // Динамический импорт, чтобы избежать циклических зависимостей
-      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
-        showServerErrorNotification();
-      });
-    }
-    
-    const error: ApiError = {
-      message: apiResponse.message || `HTTP error! status: ${response.status}`,
-      errors: apiResponse.errors,
-      status: response.status,
-    };
-    throw error;
-  }
-
-  // Проверяем успешность операции (API может использовать success или isSuccess)
-  const isSuccess = apiResponse.success !== false && (apiResponse.isSuccess === true || apiResponse.success === true);
-  
-  if (!isSuccess) {
-    const error: ApiError = {
-      message: getErrorMessageByStatus(response.status) || 'Запрос не выполнен. Пожалуйста, попробуйте ещё раз.',
-      errors: apiResponse.errors,
-      status: response.status,
-    };
-    throw error;
-  }
-
-  // Нормализуем ответ к единому формату
-  return {
-    success: true,
-    isSuccess: true,
-    message: apiResponse.message || '',
-    data: apiResponse.data,
-  } as ApiResponse<T>;
-}
-
-/**
- * Проверяет, существует ли пользователь с указанным email
- */
-export async function checkEmailExists(email: string): Promise<CheckExistsResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/Auth/check-exists?email=${encodeURIComponent(email)}`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-    },
-  });
-
-  return handleResponse<CheckExistsData>(response);
-}
-
-/**
- * Логин пользователя
- */
-export async function login(credentials: LoginRequest): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/Auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify(credentials),
-  });
-
-  return handleResponse<AuthData>(response);
-}
-
-/**
- * Регистрация нового пользователя
- * Возвращает CreateEntityResponse с isSuccess и message
- */
-export async function register(userData: RegisterRequest): Promise<CreateEntityResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/Auth/register`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify(userData),
-  });
-
-  const contentType = response.headers.get('content-type');
-  
-  if (!contentType?.includes('application/json')) {
-    if (response.ok) {
-      return { isSuccess: true, message: 'Регистрация успешна' };
-    }
-    throw new Error(getErrorMessageByStatus(response.status));
-  }
-
-  const apiResponse = await response.json() as any;
-  
-  console.log('Register API response:', apiResponse);
-
-  if (!response.ok) {
-    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
-    if (response.status >= 500 && response.status < 600) {
-      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
-        showServerErrorNotification();
-      });
-    }
-    
-    const error: ApiError = {
-      message: getErrorMessageByStatus(response.status),
-      errors: apiResponse.errors,
-      status: response.status,
-    };
-    throw error;
-  }
-
-  // CreateEntityResponse использует isSuccess
-  return {
-    isSuccess: apiResponse.isSuccess !== false,
-    message: apiResponse.message || 'Регистрация успешна',
-    data: apiResponse.data,
-  };
-}
-
-/**
- * Google OAuth логин
- */
-export async function googleLogin(googleToken?: string): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/Auth/google/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      ...(googleToken && { 'Authorization': `Bearer ${googleToken}` }),
-    },
-    ...(googleToken && { body: JSON.stringify({ token: googleToken }) }),
-  });
-
-  return handleResponse<AuthData>(response);
-}
-
-/**
- * Обновление access token с помощью refresh token
- */
-export async function refreshAccessToken(refreshToken: string): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/Auth/refresh?refreshToken=${encodeURIComponent(refreshToken)}`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-    },
-  });
-
-  return handleResponse<AuthData>(response);
-}
-
-/**
- * Выход из системы
- */
-export async function logout(accessToken: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/Auth/logout`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
-    if (response.status >= 500 && response.status < 600) {
-      import('../utils/globalErrorHandler').then(({ showServerErrorNotification }) => {
-        showServerErrorNotification();
-      });
-    }
-    throw new Error(`Logout failed: ${response.status}`);
-  }
-}
-
 // UserProfile interfaces
 export interface UserProfile {
   id?: string;
@@ -294,35 +70,141 @@ export interface UpdateProfileRequest {
   avatarUrl?: string;
 }
 
+// ==================== API Functions ====================
+
+/**
+ * Проверяет, существует ли пользователь с указанным email
+ */
+export async function checkEmailExists(email: string): Promise<CheckExistsResponse> {
+  return httpClient.get<CheckExistsData>(API_ENDPOINTS.AUTH.CHECK_EMAIL, {
+    params: { email },
+    requiresAuth: false,
+  });
+}
+
+/**
+ * Логин пользователя
+ */
+export async function login(credentials: LoginRequest): Promise<AuthResponse> {
+  const response = await httpClient.post<AuthData>(
+    API_ENDPOINTS.AUTH.LOGIN,
+    credentials,
+    { requiresAuth: false }
+  );
+
+  // Сохраняем токены после успешного логина
+  if (response.success && response.data.accessToken) {
+    TokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
+  }
+
+  return response;
+}
+
+/**
+ * Регистрация нового пользователя
+ * Возвращает CreateEntityResponse с isSuccess и message
+ */
+export async function register(userData: RegisterRequest): Promise<CreateEntityResponse> {
+  try {
+    const response = await httpClient.post<any>(
+      API_ENDPOINTS.AUTH.REGISTER,
+      userData,
+      { requiresAuth: false }
+    );
+
+    return {
+      isSuccess: response.data?.isSuccess !== false,
+      message: response.message || 'Регистрация успешна',
+      data: response.data,
+    };
+  } catch (error: any) {
+    // Специальная обработка ошибок регистрации
+    throw {
+      message: error.message || 'Ошибка регистрации',
+      errors: error.errors,
+      status: error.status,
+    } as ApiError;
+  }
+}
+
+/**
+ * Google OAuth логин
+ */
+export async function googleLogin(googleToken?: string): Promise<AuthResponse> {
+  const config = googleToken
+    ? {
+        headers: { Authorization: `Bearer ${googleToken}` },
+        requiresAuth: false,
+      }
+    : { requiresAuth: false };
+
+  const body = googleToken ? { token: googleToken } : undefined;
+
+  const response = await httpClient.post<AuthData>(
+    API_ENDPOINTS.AUTH.GOOGLE_LOGIN,
+    body,
+    config
+  );
+
+  // Сохраняем токены после успешного логина
+  if (response.success && response.data.accessToken) {
+    TokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
+  }
+
+  return response;
+}
+
+/**
+ * Обновление access token с помощью refresh token
+ */
+export async function refreshAccessToken(refreshToken: string): Promise<AuthResponse> {
+  const response = await httpClient.get<AuthData>(API_ENDPOINTS.AUTH.REFRESH, {
+    params: { refreshToken },
+    requiresAuth: false,
+  });
+
+  // Обновляем токены
+  if (response.success && response.data.accessToken) {
+    TokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
+  }
+
+  return response;
+}
+
+/**
+ * Выход из системы
+ */
+export async function logout(accessToken?: string): Promise<void> {
+  try {
+    await httpClient.post<void>(API_ENDPOINTS.AUTH.LOGOUT, undefined, {
+      requiresAuth: true,
+    });
+  } finally {
+    // Очищаем токены независимо от результата запроса
+    TokenManager.clearTokens();
+  }
+}
+
 /**
  * Получает профиль текущего пользователя
  */
-export async function getProfile(accessToken: string): Promise<ApiResponse<UserProfile>> {
-  const response = await fetch(`${API_BASE_URL}/api/User`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json',
-    },
+export async function getProfile(accessToken?: string): Promise<ApiResponse<UserProfile>> {
+  return httpClient.get<UserProfile>(API_ENDPOINTS.USER.BASE, {
+    requiresAuth: true,
   });
-
-  return handleResponse<UserProfile>(response);
 }
 
 /**
  * Обновляет профиль текущего пользователя
  */
-export async function updateProfile(accessToken: string, profileData: UpdateProfileRequest): Promise<ApiResponse<UserProfile>> {
-  const response = await fetch(`${API_BASE_URL}/api/User`, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify(profileData),
+export async function updateProfile(
+  accessToken: string,
+  profileData: UpdateProfileRequest
+): Promise<ApiResponse<UserProfile>> {
+  return httpClient.put<UserProfile>(API_ENDPOINTS.USER.BASE, profileData, {
+    requiresAuth: true,
   });
-
-  return handleResponse<UserProfile>(response);
 }
 
+// Экспортируем ApiResponse для обратной совместимости
+export type { ApiResponse };

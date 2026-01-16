@@ -1,13 +1,25 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+/**
+ * API модуль для администрирования
+ */
 
-import { ApiResponse } from './auth';
+import { httpClient } from './core/httpClient';
+import { API_ENDPOINTS } from './core/apiConfig';
+import { ApiResponse } from './core/types';
 
+// ==================== Types ====================
 
 export interface InvalidateCacheResponse {
   invalidatedCategories?: string[];
   allInvalidated?: boolean;
   message?: string;
 }
+
+/**
+ * Типы сервисов для работы с кэшем
+ */
+export type CacheService = 'account' | 'shops' | 'jobs';
+
+// ==================== API Functions ====================
 
 /**
  * Изменяет роль пользователя
@@ -20,47 +32,15 @@ export async function changeUserRole(
   userIdOfChange: string,
   roleId: string
 ): Promise<ApiResponse<void>> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/admin/account/role?userIdOfChange=${encodeURIComponent(userIdOfChange)}&roleId=${encodeURIComponent(roleId)}`,
+  return httpClient.put<void>(
+    API_ENDPOINTS.ADMIN.ACCOUNT_ROLE,
+    undefined,
     {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json',
-      },
+      params: { userIdOfChange, roleId },
+      requiresAuth: true,
     }
   );
-
-  if (!response.ok) {
-    const contentType = response.headers.get('content-type');
-    if (contentType?.includes('application/json')) {
-      const error = await response.json();
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const apiResponse = await response.json() as any;
-  
-  // Проверяем успешность операции
-  const isSuccess = apiResponse.success !== false && (apiResponse.isSuccess === true || apiResponse.success === true);
-  
-  if (!isSuccess) {
-    throw new Error(apiResponse.message || 'Request failed');
-  }
-
-  return {
-    success: true,
-    isSuccess: true,
-    message: apiResponse.message || '',
-    data: undefined as any,
-  } as ApiResponse<void>;
 }
-
-/**
- * Типы сервисов для работы с кэшем
- */
-export type CacheService = 'account' | 'shops' | 'jobs';
 
 /**
  * Инвалидирует кэш по категории или весь кэш
@@ -75,54 +55,22 @@ export async function invalidateCache(
   category?: string,
   all: boolean = false
 ): Promise<ApiResponse<InvalidateCacheResponse>> {
-  const params = new URLSearchParams();
+  const params: Record<string, any> = {};
+  
   if (category) {
-    params.append('category', category);
+    params.category = category;
   }
   if (all) {
-    params.append('all', 'true');
+    params.all = 'true';
   }
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/admin/${service}/cache?${params.toString()}`,
+  return httpClient.delete<InvalidateCacheResponse>(
+    API_ENDPOINTS.ADMIN.CACHE(service),
     {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json',
-      },
+      params,
+      requiresAuth: true,
     }
   );
-
-  const contentType = response.headers.get('content-type');
-  
-  if (!contentType?.includes('application/json')) {
-    if (response.ok) {
-      return { success: true, message: '', data: {} as InvalidateCacheResponse };
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const apiResponse = await response.json() as any;
-  
-  if (!response.ok) {
-    throw new Error(apiResponse.message || `HTTP error! status: ${response.status}`);
-  }
-
-  // Проверяем успешность операции
-  const isSuccess = apiResponse.success !== false && (apiResponse.isSuccess === true || apiResponse.success === true);
-  
-  if (!isSuccess) {
-    throw new Error(apiResponse.message || 'Request failed');
-  }
-
-  // Нормализуем ответ к единому формату
-  return {
-    success: true,
-    isSuccess: true,
-    message: apiResponse.message || '',
-    data: apiResponse.data || {},
-  } as ApiResponse<InvalidateCacheResponse>;
 }
 
 /**
@@ -134,41 +82,8 @@ export async function getCacheCategories(
   accessToken: string,
   service: CacheService
 ): Promise<ApiResponse<Record<string, string>>> {
-  const response = await fetch(`${API_BASE_URL}/api/admin/${service}/cache/categories`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json',
-    },
-  });
-
-  const contentType = response.headers.get('content-type');
-  
-  if (!contentType?.includes('application/json')) {
-    if (response.ok) {
-      return { success: true, message: '', data: {} };
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const apiResponse = await response.json() as any;
-  
-  if (!response.ok) {
-    throw new Error(apiResponse.message || `HTTP error! status: ${response.status}`);
-  }
-
-  // Проверяем успешность операции
-  const isSuccess = apiResponse.success !== false && (apiResponse.isSuccess === true || apiResponse.success === true);
-  
-  if (!isSuccess) {
-    throw new Error(apiResponse.message || 'Request failed');
-  }
-
-  // Нормализуем ответ к единому формату
-  return {
-    success: true,
-    isSuccess: true,
-    message: apiResponse.message || '',
-    data: apiResponse.data || {},
-  } as ApiResponse<Record<string, string>>;
+  return httpClient.get<Record<string, string>>(
+    API_ENDPOINTS.ADMIN.CACHE_CATEGORIES(service),
+    { requiresAuth: true }
+  );
 }

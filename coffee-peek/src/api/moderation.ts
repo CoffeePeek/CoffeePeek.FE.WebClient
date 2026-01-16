@@ -1,8 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+/**
+ * API модуль для модерации кофеен
+ */
 
-import { getErrorMessageByStatus } from "../utils/errorHandler";
+import { httpClient } from './core/httpClient';
+import { API_ENDPOINTS } from './core/apiConfig';
+import { ApiResponse } from './core/types';
 
-import { ApiResponse } from "./auth";
+// ==================== Types ====================
 
 export interface ModerationShopPhoto {
   fileName: string;
@@ -15,17 +19,17 @@ export interface ModerationShop {
   name: string;
   notValidatedAddress?: string;
   description?: string;
-  priceRange?: number | string; // Может быть числом (enum) или строкой
+  priceRange?: number;
   cityId?: string;
   userId: string;
-  moderationStatus: number | string; // Может быть числом (enum) или строкой
-  status: number | string; // Может быть числом (enum) или строкой
+  moderationStatus: number;
+  status: number;
   shopContact?: {
     phone?: string;
     email?: string;
     website?: string;
     instagram?: string;
-  } | null; // Может быть null
+  } | null;
   schedules?: Array<{
     dayOfWeek: number;
     openTime?: string;
@@ -35,7 +39,7 @@ export interface ModerationShop {
   coffeeBeanIds?: string[];
   roasterIds?: string[];
   brewMethodIds?: string[];
-  shopPhotos?: ModerationShopPhoto[]; // Новый формат - массив объектов с fullUrl
+  shopPhotos?: ModerationShopPhoto[];
 }
 
 export interface UpdateModerationShopRequest {
@@ -43,7 +47,7 @@ export interface UpdateModerationShopRequest {
   name?: string;
   notValidatedAddress?: string;
   description?: string;
-  priceRange?: number | string; // Может быть числом (enum) или строкой
+  priceRange?: number | string;
   cityId?: string;
   shopContact?: {
     phone?: string;
@@ -60,7 +64,7 @@ export interface UpdateModerationShopRequest {
   coffeeBeanIds?: string[];
   roasterIds?: string[];
   brewMethodIds?: string[];
-  shopPhotos?: (string | ModerationShopPhoto)[]; // Может быть массивом строк (старый формат) или объектов (новый формат)
+  shopPhotos?: (string | ModerationShopPhoto)[];
 }
 
 export interface UpdateModerationStatusRequest {
@@ -107,72 +111,7 @@ export interface SendCoffeeShopToModerationRequest {
   }>;
 }
 
-/**
- * Обрабатывает ответ от API
- * API может возвращать либо success, либо isSuccess
- */
-async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-  const contentType = response.headers.get("content-type");
-
-  if (!contentType?.includes("application/json")) {
-    if (response.ok) {
-      return { success: true, message: "", data: {} as T };
-    }
-    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
-    if (response.status >= 500 && response.status < 600) {
-      import("../utils/globalErrorHandler").then(
-        ({ showServerErrorNotification }) => {
-          showServerErrorNotification();
-        }
-      );
-    }
-    throw new Error(getErrorMessageByStatus(response.status));
-  }
-
-  const apiResponse = (await response.json()) as any;
-
-  if (!response.ok) {
-    // Показываем уведомление для ошибок сервера (500-599), включая 500, 502, 503, 504 и другие
-    if (response.status >= 500 && response.status < 600) {
-      import("../utils/globalErrorHandler").then(
-        ({ showServerErrorNotification }) => {
-          showServerErrorNotification();
-        }
-      );
-    }
-    throw new Error(getErrorMessageByStatus(response.status));
-  }
-
-  // Проверяем успешность операции (API может использовать success или isSuccess)
-  const isSuccess =
-    apiResponse.success !== false &&
-    (apiResponse.isSuccess === true || apiResponse.success === true);
-
-  if (!isSuccess) {
-    throw new Error(
-      getErrorMessageByStatus(response.status) ||
-        "Запрос не выполнен. Пожалуйста, попробуйте ещё раз."
-    );
-  }
-
-  // Нормализуем ответ к единому формату
-  // Если данные приходят в формате { data: { moderationShop: [...] } }, извлекаем moderationShop
-  let normalizedData = apiResponse.data;
-  if (
-    normalizedData &&
-    typeof normalizedData === "object" &&
-    "moderationShop" in normalizedData
-  ) {
-    normalizedData = (normalizedData as any).moderationShop;
-  }
-
-  return {
-    success: true,
-    isSuccess: true,
-    message: apiResponse.message || "",
-    data: normalizedData,
-  } as ApiResponse<T>;
-}
+// ==================== API Functions ====================
 
 /**
  * Получает все кофейни на модерации
@@ -180,15 +119,9 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
 export async function getModerationShops(
   accessToken: string
 ): Promise<ApiResponse<ModerationShop[]>> {
-  const response = await fetch(`${API_BASE_URL}/api/ModerationShop`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: "application/json",
-    },
+  return httpClient.get<ModerationShop[]>(API_ENDPOINTS.MODERATION.SHOP, {
+    requiresAuth: true,
   });
-
-  return handleResponse<ModerationShop[]>(response);
 }
 
 /**
@@ -198,6 +131,7 @@ export async function updateModerationShop(
   accessToken: string,
   shopData: UpdateModerationShopRequest
 ): Promise<ApiResponse<ModerationShop>> {
+  // Формируем FormData для отправки
   const formData = new FormData();
 
   Object.entries(shopData).forEach(([key, value]) => {
@@ -212,16 +146,11 @@ export async function updateModerationShop(
     }
   });
 
-  const response = await fetch(`${API_BASE_URL}/api/ModerationShop`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: "application/json",
-    },
-    body: formData,
-  });
-
-  return handleResponse<ModerationShop>(response);
+  return httpClient.put<ModerationShop>(
+    API_ENDPOINTS.MODERATION.SHOP,
+    formData,
+    { requiresAuth: true }
+  );
 }
 
 /**
@@ -232,20 +161,14 @@ export async function updateModerationStatus(
   id: string,
   status: "Approved" | "Rejected" | "Pending"
 ): Promise<ApiResponse<void>> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/ModerationShop/status?id=${encodeURIComponent(
-      id
-    )}&status=${encodeURIComponent(status)}`,
+  return httpClient.put<void>(
+    API_ENDPOINTS.MODERATION.SHOP_STATUS,
+    undefined,
     {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json",
-      },
+      params: { id, status },
+      requiresAuth: true,
     }
   );
-
-  return handleResponse<void>(response);
 }
 
 /**
@@ -255,17 +178,11 @@ export async function getUploadUrls(
   accessToken: string,
   requests: UploadUrlRequest[]
 ): Promise<ApiResponse<UploadUrlResponse[]>> {
-  const response = await fetch(`${API_BASE_URL}/api/Moderation/upload-urls`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(requests),
-  });
-
-  return handleResponse<UploadUrlResponse[]>(response);
+  return httpClient.post<UploadUrlResponse[]>(
+    API_ENDPOINTS.MODERATION.UPLOAD_URLS,
+    requests,
+    { requiresAuth: true }
+  );
 }
 
 /**
@@ -275,15 +192,9 @@ export async function sendCoffeeShopToModeration(
   accessToken: string,
   shopData: SendCoffeeShopToModerationRequest
 ): Promise<ApiResponse<ModerationShop>> {
-  const response = await fetch(`${API_BASE_URL}/api/ModerationShop`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(shopData),
-  });
-
-  return handleResponse<ModerationShop>(response);
+  return httpClient.post<ModerationShop>(
+    API_ENDPOINTS.MODERATION.SHOP,
+    shopData,
+    { requiresAuth: true }
+  );
 }
