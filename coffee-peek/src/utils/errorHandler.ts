@@ -143,6 +143,10 @@ export function getErrorMessage(error: any, context?: 'login' | 'register'): str
     if (status === 401 && (context === 'login' || context === 'register')) {
       return 'Неверный email или пароль.';
     }
+    // Для 404 в контексте логина/регистрации используем специальное сообщение
+    if (status === 404 && (context === 'login' || context === 'register')) {
+      return 'Пользователь с таким email не найден.';
+    }
     return getErrorMessageByStatus(status);
   }
   

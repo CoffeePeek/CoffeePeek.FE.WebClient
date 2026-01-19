@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { getModerationShops, updateModerationStatus, ModerationShop, UpdateModerationShopRequest, updateModerationShop } from '../api/moderation';
+import { 
+  getModerationShops, 
+  updateModerationStatus, 
+  ModerationShop, 
+  UpdateModerationShopRequest, 
+  updateModerationShop,
+  getModerationReviews,
+  updateReviewModerationStatus,
+  ModerationReviewDto,
+  ModerationStatus
+} from '../api/moderation';
 import { getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, City, Equipment, CoffeeBean, Roaster, BrewMethod } from '../api/coffeeshop';
 import Button from './Button';
 import { ModerationSkeleton } from './skeletons';
@@ -12,6 +22,11 @@ const ModeratorPanel: React.FC = () => {
   const { user } = useUser();
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
+  
+  // Tab state: 'shops' or 'reviews'
+  const [activeTab, setActiveTab] = useState<'shops' | 'reviews'>('shops');
+  
+  // Shops state
   const [shops, setShops] = useState<ModerationShop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +36,14 @@ const ModeratorPanel: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('Pending'); // По умолчанию показываем только кофейни на модерации
   const [viewMode, setViewMode] = useState<'list' | 'edit'>('list'); // Режим просмотра: список или редактирование
   const [updatingShopId, setUpdatingShopId] = useState<string | null>(null); // ID кофейни, для которой выполняется обновление статуса
+  
+  // Reviews state
+  const [reviews, setReviews] = useState<ModerationReviewDto[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [reviewStatusFilter, setReviewStatusFilter] = useState<string>('Pending');
+  const [updatingReviewId, setUpdatingReviewId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string>('');
+  const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
   
   // Reference data for caching
   const [cities, setCities] = useState<City[]>([]);
@@ -36,6 +59,12 @@ const ModeratorPanel: React.FC = () => {
     loadShops();
     loadReferenceData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'reviews') {
+      loadReviews();
+    }
+  }, [activeTab]);
   
   const loadReferenceData = async () => {
     try {
@@ -210,6 +239,78 @@ const ModeratorPanel: React.FC = () => {
       console.error('Error loading moderation shops:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadReviews = async () => {
+    try {
+      setIsLoadingReviews(true);
+      const response = await getModerationReviews();
+      console.log('ModeratorPanel: Получен ответ от API модерации отзывов:', response);
+      
+      if (response.success && response.data) {
+        let reviewsData = response.data;
+        
+        // Проверяем, есть ли вложенный объект (reviewDtos или reviews)
+        if (reviewsData && typeof reviewsData === 'object') {
+          if ('reviewDtos' in reviewsData) {
+            reviewsData = (reviewsData as any).reviewDtos;
+          } else if ('reviews' in reviewsData) {
+            reviewsData = (reviewsData as any).reviews;
+          }
+        }
+        
+        if (Array.isArray(reviewsData)) {
+          console.log('ModeratorPanel: Установлено отзывов:', reviewsData.length);
+          setReviews(reviewsData);
+        } else {
+          console.warn('ModeratorPanel: reviewsData не является массивом:', reviewsData);
+          setReviews([]);
+        }
+      } else {
+        console.warn('ModeratorPanel: Не удалось загрузить отзывы:', response);
+        setReviews([]);
+      }
+      setError(null);
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+      console.error('Error loading moderation reviews:', err);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
+
+  const handleApproveReview = async (reviewId: string) => {
+    try {
+      setUpdatingReviewId(reviewId);
+      const response = await updateReviewModerationStatus(reviewId, ModerationStatus.Approved);
+      if (response.success) {
+        await loadReviews();
+      } else {
+        setError('Не удалось одобрить отзыв');
+      }
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+    } finally {
+      setUpdatingReviewId(null);
+    }
+  };
+
+  const handleRejectReview = async (reviewId: string, reason: string) => {
+    try {
+      setUpdatingReviewId(reviewId);
+      const response = await updateReviewModerationStatus(reviewId, ModerationStatus.Rejected, reason);
+      if (response.success) {
+        await loadReviews();
+        setShowRejectModal(null);
+        setRejectionReason('');
+      } else {
+        setError('Не удалось отклонить отзыв');
+      }
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+    } finally {
+      setUpdatingReviewId(null);
     }
   };
 
@@ -487,7 +588,33 @@ const ModeratorPanel: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className={`text-4xl font-bold ${themeClasses.text.primary} mb-2`}>Панель модератора</h1>
-          <p className={themeClasses.text.secondary}>Управление кофейнями на модерации</p>
+          <p className={themeClasses.text.secondary}>Управление контентом на модерации</p>
+        </div>
+
+        {/* Tabs */}
+        <div className={`mb-6 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-2`}>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('shops')}
+              className={`flex-1 px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                activeTab === 'shops'
+                  ? 'bg-[#C69546] text-white shadow-lg'
+                  : `${themeClasses.text.secondary} hover:${themeClasses.bg.input}`
+              }`}
+            >
+              Кофейни ({shops.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`flex-1 px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                activeTab === 'reviews'
+                  ? 'bg-[#C69546] text-white shadow-lg'
+                  : `${themeClasses.text.secondary} hover:${themeClasses.bg.input}`
+              }`}
+            >
+              Отзывы ({reviews.length})
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -496,20 +623,23 @@ const ModeratorPanel: React.FC = () => {
           </div>
         )}
 
-        {/* Фильтр по статусу */}
-        <div className={`mb-6 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-6`}>
-          <div className="flex flex-wrap gap-3 items-center">
-            <span className={`${themeClasses.text.secondary} text-sm font-medium`}>Фильтр по статусу:</span>
-            <button
-              onClick={() => setStatusFilter('all')}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                statusFilter === 'all'
-                  ? 'bg-[#EAB308] text-[#1A1412] shadow-lg shadow-[#EAB308]/20'
-                  : `${themeClasses.bg.input} ${themeClasses.text.secondary} ${theme === 'dark' ? 'hover:bg-[#3D2F28]' : 'hover:bg-gray-100'} border ${themeClasses.border.default}`
-              }`}
-            >
-              Все ({shops.length})
-            </button>
+        {/* Shops Tab Content */}
+        {activeTab === 'shops' && (
+          <>
+            {/* Фильтр по статусу */}
+            <div className={`mb-6 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-6`}>
+              <div className="flex flex-wrap gap-3 items-center">
+                <span className={`${themeClasses.text.secondary} text-sm font-medium`}>Фильтр по статусу:</span>
+                <button
+                  onClick={() => setStatusFilter('all')}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    statusFilter === 'all'
+                      ? 'bg-[#EAB308] text-[#1A1412] shadow-lg shadow-[#EAB308]/20'
+                      : `${themeClasses.bg.input} ${themeClasses.text.secondary} ${theme === 'dark' ? 'hover:bg-[#3D2F28]' : 'hover:bg-gray-100'} border ${themeClasses.border.default}`
+                  }`}
+                >
+                  Все ({shops.length})
+                </button>
             <button
               onClick={() => setStatusFilter('Pending')}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
@@ -1160,6 +1290,218 @@ const ModeratorPanel: React.FC = () => {
               </div>
             )}
           </div>
+        )}
+          </>
+        )}
+
+        {/* Reviews Tab Content */}
+        {activeTab === 'reviews' && (
+          <>
+            {/* Фильтр по статусу отзывов */}
+            <div className={`mb-6 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-6`}>
+              <div className="flex flex-wrap gap-3 items-center">
+                <span className={`${themeClasses.text.secondary} text-sm font-medium`}>Фильтр по статусу:</span>
+                <button
+                  onClick={() => setReviewStatusFilter('all')}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    reviewStatusFilter === 'all'
+                      ? 'bg-[#EAB308] text-[#1A1412] shadow-lg shadow-[#EAB308]/20'
+                      : `${themeClasses.bg.input} ${themeClasses.text.secondary} ${theme === 'dark' ? 'hover:bg-[#3D2F28]' : 'hover:bg-gray-100'} border ${themeClasses.border.default}`
+                  }`}
+                >
+                  Все ({reviews.length})
+                </button>
+                <button
+                  onClick={() => setReviewStatusFilter('Pending')}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    reviewStatusFilter === 'Pending'
+                      ? 'bg-yellow-500/20 text-yellow-400 border-2 border-yellow-400'
+                      : `${themeClasses.bg.input} ${themeClasses.text.secondary} ${theme === 'dark' ? 'hover:bg-[#3D2F28]' : 'hover:bg-gray-100'} border ${themeClasses.border.default}`
+                  }`}
+                >
+                  На модерации ({reviews.filter(r => r.moderationStatus === ModerationStatus.Pending).length})
+                </button>
+                <button
+                  onClick={() => setReviewStatusFilter('Approved')}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    reviewStatusFilter === 'Approved'
+                      ? 'bg-green-500/20 text-green-400 border-2 border-green-400'
+                      : `${themeClasses.bg.input} ${themeClasses.text.secondary} ${theme === 'dark' ? 'hover:bg-[#3D2F28]' : 'hover:bg-gray-100'} border ${themeClasses.border.default}`
+                  }`}
+                >
+                  Одобрено ({reviews.filter(r => r.moderationStatus === ModerationStatus.Approved).length})
+                </button>
+                <button
+                  onClick={() => setReviewStatusFilter('Rejected')}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    reviewStatusFilter === 'Rejected'
+                      ? 'bg-red-500/20 text-red-400 border-2 border-red-400'
+                      : `${themeClasses.bg.input} ${themeClasses.text.secondary} ${theme === 'dark' ? 'hover:bg-[#3D2F28]' : 'hover:bg-gray-100'} border ${themeClasses.border.default}`
+                  }`}
+                >
+                  Отклонено ({reviews.filter(r => r.moderationStatus === ModerationStatus.Rejected).length})
+                </button>
+              </div>
+            </div>
+
+            {/* Reviews List */}
+            {isLoadingReviews ? (
+              <ModerationSkeleton />
+            ) : (
+              <div className="space-y-4">
+                {reviews
+                  .filter(review => {
+                    if (reviewStatusFilter === 'all') return true;
+                    if (reviewStatusFilter === 'Pending') return review.moderationStatus === ModerationStatus.Pending;
+                    if (reviewStatusFilter === 'Approved') return review.moderationStatus === ModerationStatus.Approved;
+                    if (reviewStatusFilter === 'Rejected') return review.moderationStatus === ModerationStatus.Rejected;
+                    return true;
+                  })
+                  .map((review) => {
+                    const statusInfo = {
+                      [ModerationStatus.Pending]: { label: 'На модерации', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
+                      [ModerationStatus.Approved]: { label: 'Одобрено', color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+                      [ModerationStatus.Rejected]: { label: 'Отклонено', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+                    }[review.moderationStatus];
+
+                    return (
+                      <div
+                        key={review.id}
+                        className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6`}
+                      >
+                        {/* Review Header */}
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className={`text-lg font-bold ${themeClasses.text.primary}`}>
+                                {review.header}
+                              </h3>
+                              <span className={`px-3 py-1 rounded-xl text-xs font-medium ${statusInfo?.bg} ${statusInfo?.color} border ${statusInfo?.border}`}>
+                                {statusInfo?.label}
+                              </span>
+                            </div>
+                            <div className={`${themeClasses.text.secondary} text-sm space-y-1`}>
+                              <p>Автор: {review.userName}</p>
+                              {review.shopName && <p>Кофейня: {review.shopName}</p>}
+                              {review.createdAt && <p>Дата: {new Date(review.createdAt).toLocaleDateString('ru-RU')}</p>}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Review Content */}
+                        <p className={`${themeClasses.text.primary} mb-4`}>{review.comment}</p>
+
+                        {/* Ratings */}
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <div className={`${themeClasses.bg.tertiary} rounded-xl p-3`}>
+                            <p className={`${themeClasses.text.secondary} text-xs mb-1`}>Кофе</p>
+                            <div className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[#C69546] text-sm">star</span>
+                              <span className={`${themeClasses.text.primary} font-bold`}>{review.ratingCoffee}</span>
+                            </div>
+                          </div>
+                          <div className={`${themeClasses.bg.tertiary} rounded-xl p-3`}>
+                            <p className={`${themeClasses.text.secondary} text-xs mb-1`}>Сервис</p>
+                            <div className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[#C69546] text-sm">star</span>
+                              <span className={`${themeClasses.text.primary} font-bold`}>{review.ratingService}</span>
+                            </div>
+                          </div>
+                          <div className={`${themeClasses.bg.tertiary} rounded-xl p-3`}>
+                            <p className={`${themeClasses.text.secondary} text-xs mb-1`}>Место</p>
+                            <div className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[#C69546] text-sm">star</span>
+                              <span className={`${themeClasses.text.primary} font-bold`}>{review.ratingPlace}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Rejected Reason */}
+                        {review.rejectedReason && (
+                          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                            <p className="text-red-400 text-sm">
+                              <strong>Причина отклонения:</strong> {review.rejectedReason}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        {review.moderationStatus === ModerationStatus.Pending && (
+                          <div className="flex gap-2 pt-4 border-t" style={{ borderColor: themeClasses.border.default }}>
+                            <Button
+                              variant="primary"
+                              className="flex-1"
+                              onClick={() => handleApproveReview(review.id)}
+                              disabled={updatingReviewId === review.id}
+                              isLoading={updatingReviewId === review.id}
+                            >
+                              Одобрить
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              className="flex-1"
+                              onClick={() => setShowRejectModal(review.id)}
+                              disabled={updatingReviewId === review.id}
+                            >
+                              Отклонить
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                {reviews.filter(review => {
+                  if (reviewStatusFilter === 'all') return true;
+                  if (reviewStatusFilter === 'Pending') return review.moderationStatus === ModerationStatus.Pending;
+                  if (reviewStatusFilter === 'Approved') return review.moderationStatus === ModerationStatus.Approved;
+                  if (reviewStatusFilter === 'Rejected') return review.moderationStatus === ModerationStatus.Rejected;
+                  return true;
+                }).length === 0 && (
+                  <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-12 text-center`}>
+                    <p className={themeClasses.text.secondary}>Нет отзывов для отображения</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Reject Modal */}
+            {showRejectModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-6 max-w-md w-full`}>
+                  <h3 className={`text-xl font-bold ${themeClasses.text.primary} mb-4`}>
+                    Причина отклонения
+                  </h3>
+                  <textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Укажите причину отклонения отзыва..."
+                    className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl p-4 ${themeClasses.text.primary} placeholder:${themeClasses.text.secondary} resize-none h-32 mb-4`}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="primary"
+                      className="flex-1"
+                      onClick={() => handleRejectReview(showRejectModal, rejectionReason)}
+                      disabled={!rejectionReason.trim()}
+                    >
+                      Отклонить
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      className="flex-1"
+                      onClick={() => {
+                        setShowRejectModal(null);
+                        setRejectionReason('');
+                      }}
+                    >
+                      Отмена
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

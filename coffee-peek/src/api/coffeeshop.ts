@@ -227,6 +227,7 @@ export interface Review {
   rating?: number;
   createdAt: string;
   updatedAt?: string;
+  photos?: ShortPhotoMetadataDto[];
 }
 
 export interface GetReviewsResponse {
@@ -244,6 +245,12 @@ export interface CreateReviewRequest {
   ratingCoffee: number;
   ratingService: number;
   ratingPlace: number;
+  photos?: Array<{
+    fileName: string;
+    contentType: string;
+    storageKey: string;
+    size: number;
+  }>;
 }
 
 export interface FavoriteResponse {
@@ -600,14 +607,11 @@ export async function canCreateCoffeeShopReview(
   };
 }
 
-/**
- * Создает отзыв для кофейни
- */
 export async function createReview(
   request: CreateReviewRequest,
   token: string
 ): Promise<ApiResponse<Review>> {
-  return httpClient.post<Review>(API_ENDPOINTS.REVIEW.BASE, request, {
+  return httpClient.post<Review>(API_ENDPOINTS.MODERATION.REVIEWS, request, {
     requiresAuth: true,
   });
 }
@@ -619,7 +623,7 @@ export async function updateReview(
   request: CreateReviewRequest & { id: string },
   token: string
 ): Promise<ApiResponse<Review>> {
-  return httpClient.put<Review>(API_ENDPOINTS.REVIEW.BY_ID(request.id), request, {
+  return httpClient.put<Review>(API_ENDPOINTS.MODERATION.REVIEW_UPDATE(request.id), request, {
     requiresAuth: true,
   });
 }

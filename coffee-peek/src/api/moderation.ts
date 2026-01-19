@@ -8,6 +8,62 @@ import { ApiResponse } from './core/types';
 
 // ==================== Types ====================
 
+export enum ModerationStatus {
+  Pending = 0,
+  Approved = 1,
+  Rejected = 2,
+}
+
+export interface ModerationReviewDto {
+  id: string;
+  header: string;
+  comment: string;
+  userId: string;
+  userName: string;
+  shopId: string;
+  shopName?: string;
+  ratingCoffee: number;
+  ratingPlace: number;
+  ratingService: number;
+  rejectedReason?: string | null;
+  moderatedBy?: string | null;
+  moderatedAt?: string | null;
+  moderationStatus: ModerationStatus;
+  createdAt?: string;
+}
+
+export interface UpdateReviewModerationStatusRequest {
+  moderationReviewId: string;
+  moderationStatus: ModerationStatus;
+  rejectReason?: string | null;
+}
+
+export interface SendReviewToModerationRequest {
+  shopId: string;
+  header: string;
+  comment: string;
+  ratingService: number;
+  ratingPlace: number;
+  ratingCoffee: number;
+}
+
+export interface UpdateCoffeeShopReviewRequest {
+  header: string;
+  comment: string;
+  ratingCoffee: number;
+  ratingService: number;
+  ratingPlace: number;
+}
+
+export interface CreateEntityResponse {
+  id: string;
+}
+
+export interface UpdateEntityResponse<T> {
+  id: string;
+  data: T;
+}
+
 export interface ModerationShopPhoto {
   fileName: string;
   storageKey: string;
@@ -196,5 +252,68 @@ export async function sendCoffeeShopToModeration(
     API_ENDPOINTS.MODERATION.SHOP,
     shopData,
     { requiresAuth: true }
+  );
+}
+
+/**
+ * Получает все отзывы на модерации
+ */
+export async function getModerationReviews(): Promise<ApiResponse<ModerationReviewDto[]>> {
+  return httpClient.get<ModerationReviewDto[]>(API_ENDPOINTS.MODERATION.REVIEWS, {
+    requiresAuth: true,
+  });
+}
+
+/**
+ * Обновляет статус модерации отзыва
+ */
+export async function updateReviewModerationStatus(
+  moderationReviewId: string,
+  moderationStatus: ModerationStatus,
+  rejectReason?: string | null
+): Promise<ApiResponse<UpdateEntityResponse<ModerationStatus>>> {
+  const request: UpdateReviewModerationStatusRequest = {
+    moderationReviewId,
+    moderationStatus,
+    rejectReason: rejectReason || null,
+  };
+  
+  return httpClient.put<UpdateEntityResponse<ModerationStatus>>(
+    API_ENDPOINTS.MODERATION.REVIEW_STATUS,
+    request,
+    {
+      requiresAuth: true,
+    }
+  );
+}
+
+/**
+ * Отправляет отзыв на модерацию
+ */
+export async function sendReviewToModeration(
+  reviewData: SendReviewToModerationRequest
+): Promise<ApiResponse<CreateEntityResponse>> {
+  return httpClient.post<CreateEntityResponse>(
+    API_ENDPOINTS.MODERATION.REVIEWS,
+    reviewData,
+    {
+      requiresAuth: true,
+    }
+  );
+}
+
+/**
+ * Обновляет отзыв на модерации
+ */
+export async function updateCoffeeShopReview(
+  reviewId: string,
+  reviewData: UpdateCoffeeShopReviewRequest
+): Promise<ApiResponse<any>> {
+  return httpClient.put<any>(
+    API_ENDPOINTS.MODERATION.REVIEW_UPDATE(reviewId),
+    reviewData,
+    {
+      requiresAuth: true,
+    }
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { createReview, CreateReviewRequest, getReviewById, updateReview } from '../api/coffeeshop';
+import { createReview, CreateReviewRequest, getReviewById, updateReview, ShortPhotoMetadataDto, getPhotoUrl } from '../api/coffeeshop';
+import { getUploadUrls } from '../api/moderation';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
@@ -45,6 +46,12 @@ const CreateReviewPage: React.FC = () => {
   const [ratingPlace, setRatingPlace] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingExistingReview, setIsLoadingExistingReview] = useState(false);
+  
+  // Photo states
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [reviewPhotos, setReviewPhotos] = useState<ShortPhotoMetadataDto[]>([]);
+  const [removedPhotoKeys, setRemovedPhotoKeys] = useState<string[]>([]);
 
   const isDark = theme === 'dark';
 
@@ -80,6 +87,7 @@ const CreateReviewPage: React.FC = () => {
           setRatingCoffee(r.ratingCoffee || 5);
           setRatingService(r.ratingService || 5);
           setRatingPlace(r.ratingPlace || 5);
+          setReviewPhotos(r.photos || []);
         } else {
           showToast('Не удалось загрузить отзыв для редактирования', 'error');
         }
@@ -115,6 +123,66 @@ const CreateReviewPage: React.FC = () => {
     return 'Needs Improvement';
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...files]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeReviewPhoto = (storageKey: string) => {
+    setReviewPhotos(prev => prev.filter(photo => photo.storageKey !== storageKey));
+    setRemovedPhotoKeys(prev => [...prev, storageKey]);
+  };
+
+  const uploadPhotos = async (): Promise<Array<{ fileName: string; contentType: string; storageKey: string; size: number }>> => {
+    if (selectedFiles.length === 0) return [];
+
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('Не авторизован');
+    }
+
+    const uploadRequests = selectedFiles.map(file => ({
+      fileName: file.name,
+      contentType: file.type,
+    }));
+
+    const uploadUrlsResponse = await getUploadUrls(token, uploadRequests);
+    if (!uploadUrlsResponse.success || !uploadUrlsResponse.data) {
+      throw new Error('Ошибка при получении URL для загрузки');
+    }
+
+    const uploadPromises = selectedFiles.map(async (file, index) => {
+      const { uploadUrl, storageKey } = uploadUrlsResponse.data[index];
+      
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Ошибка загрузки файла ${file.name}`);
+      }
+
+      return {
+        fileName: file.name,
+        contentType: file.type,
+        storageKey: storageKey,
+        size: file.size,
+      };
+    });
+
+    return Promise.all(uploadPromises);
+  };
+
   const handleSubmit = async () => {
     if (!user) {
       showToast('Необходимо войти в систему', 'error');
@@ -131,6 +199,37 @@ const CreateReviewPage: React.FC = () => {
 
     try {
       setIsSubmitting(true);
+      setUploadingPhotos(true);
+      
+      // Загружаем новые фотографии
+      const uploadedPhotos = await uploadPhotos();
+      setUploadingPhotos(false);
+      
+      // Формируем список фотографий: существующие (не удаленные) + новые
+      const existingPhotos = reviewPhotos
+        .filter(photo => !removedPhotoKeys.includes(photo.storageKey))
+        .map(photo => {
+          // Определяем contentType по расширению файла
+          const extension = photo.fileName.split('.').pop()?.toLowerCase();
+          const contentTypeMap: Record<string, string> = {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'webp': 'image/webp',
+          };
+          const contentType = extension ? (contentTypeMap[extension] || 'image/jpeg') : 'image/jpeg';
+          
+          return {
+            fileName: photo.fileName,
+            contentType: contentType,
+            storageKey: photo.storageKey,
+            size: 0, // размер не критичен для существующих фото
+          };
+        });
+      
+      const allPhotos = [...existingPhotos, ...uploadedPhotos];
+      
       const request: CreateReviewRequest = {
         shopId,
         header: header.trim(),
@@ -138,6 +237,7 @@ const CreateReviewPage: React.FC = () => {
         ratingCoffee,
         ratingService,
         ratingPlace,
+        photos: allPhotos.length > 0 ? allPhotos : undefined,
       };
 
       const response = reviewId
@@ -149,6 +249,7 @@ const CreateReviewPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Error submitting review:', err);
+      setUploadingPhotos(false);
       showToast(reviewId ? 'Не удалось обновить отзыв' : 'Не удалось опубликовать отзыв', 'error');
     } finally {
       setIsSubmitting(false);
@@ -176,7 +277,7 @@ const CreateReviewPage: React.FC = () => {
   const shopImage = shop?.photo || '';
 
   return (
-    <div className="min-h-screen pt-16" style={{ backgroundColor: '#FBFBFA' }}>
+    <div className="min-h-screen pt-16" style={{ backgroundColor: colors.surface }}>
       <main className="max-w-6xl mx-auto px-8 py-12">
         <div className="mb-12 flex items-center justify-between">
           <div>
@@ -386,6 +487,109 @@ const CreateReviewPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </section>
+
+            {/* Photos section */}
+            <section
+              className="rounded-3xl p-8 border shadow-soft space-y-6"
+              style={{ backgroundColor: colors.base, borderColor: colors.borderSubtle }}
+            >
+              <div className="space-y-2">
+                <label className="block text-sm font-bold" style={{ color: colors.textMain }}>
+                  Фотографии
+                </label>
+                <p className="text-sm" style={{ color: colors.textMuted }}>
+                  Добавьте фотографии к вашему отзыву (необязательно)
+                </p>
+              </div>
+
+              {/* File input */}
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label
+                  htmlFor="photo-upload"
+                  className="block w-full border-2 border-dashed rounded-2xl py-8 px-4 text-center cursor-pointer hover:border-[#C69546] transition-all"
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderColor: colors.borderSubtle,
+                  }}
+                >
+                  <svg className="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: colors.textMuted }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span style={{ color: colors.textMuted }}>Нажмите для выбора фотографий</span>
+                </label>
+              </div>
+
+              {/* Existing photos (edit mode) */}
+              {reviewPhotos.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold mb-3" style={{ color: colors.textMain }}>
+                    Существующие фотографии:
+                  </p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {reviewPhotos.map((photo, index) => (
+                      <div key={photo.storageKey || index} className="relative group">
+                        <img
+                          src={getPhotoUrl(photo)}
+                          alt={`Review photo ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-xl"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeReviewPhoto(photo.storageKey)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New selected photos preview */}
+              {selectedFiles.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold mb-3" style={{ color: colors.textMain }}>
+                    Новые фотографии:
+                  </p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-xl"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {uploadingPhotos && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-8 h-8 border-4 border-[#C69546] border-t-transparent rounded-full animate-spin" />
+                  <span className="ml-3 text-sm" style={{ color: colors.textMuted }}>
+                    Загрузка фотографий...
+                  </span>
+                </div>
+              )}
             </section>
 
             {/* Submit button */}
