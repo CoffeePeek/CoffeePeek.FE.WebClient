@@ -41,7 +41,7 @@ const RegisterPage: React.FC = () => {
       const response = await checkEmailExists(email);
       console.log('Email check response:', response);
 
-      if (response.data) {
+      if (!response.data) {
         setError(null);
         setSuccessMessage('Пользователь с таким email уже существует. Перенаправление на страницу входа...');
         setTimeout(() => {
