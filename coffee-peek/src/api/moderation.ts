@@ -70,6 +70,65 @@ export interface ModerationShopPhoto {
   fullUrl: string;
 }
 
+// ==================== Backend DTO Types ====================
+
+/**
+ * Интервал работы кофейни (соответствует ShopScheduleIntervalDto на бэкенде)
+ */
+export interface ShopScheduleIntervalDto {
+  openTime: string; // TimeSpan в формате "HH:mm:ss" или "HH:mm"
+  closeTime: string; // TimeSpan в формате "HH:mm:ss" или "HH:mm"
+}
+
+/**
+ * Расписание работы кофейни (соответствует ScheduleDto на бэкенде)
+ */
+export interface ScheduleDto {
+  dayOfWeek: number; // 0 = Monday, 6 = Sunday
+  isClosed: boolean;
+  intervals: ShopScheduleIntervalDto[] | null;
+}
+
+/**
+ * Контакты кофейни (соответствует ShopContactDto на бэкенде)
+ */
+export interface ShopContactDto {
+  instagramLink?: string | null;
+  email?: string | null;
+  siteLink?: string | null;
+  phoneNumber?: string | null;
+}
+
+/**
+ * Фото кофейни (соответствует ShortPhotoMetadataDto на бэкенде)
+ */
+export interface ShortPhotoMetadataDto {
+  fileName: string;
+  storageKey: string;
+  fullUrl: string;
+}
+
+// ==================== Frontend Types ====================
+
+/**
+ * Упрощенный формат расписания для работы на фронтенде
+ */
+export interface FrontendSchedule {
+  dayOfWeek: number;
+  openTime: string; // "HH:mm"
+  closeTime: string; // "HH:mm"
+}
+
+/**
+ * Упрощенный формат контактов для работы на фронтенде
+ */
+export interface FrontendShopContact {
+  phone?: string;
+  email?: string;
+  website?: string;
+  instagram?: string;
+}
+
 export interface ModerationShop {
   id: string;
   name: string;
@@ -167,6 +226,98 @@ export interface SendCoffeeShopToModerationRequest {
   }>;
 }
 
+// ==================== Transformation Functions ====================
+
+/**
+ * Преобразует время из формата "HH:mm" в формат "HH:mm:ss" для TimeSpan
+ */
+function formatTimeForTimeSpan(time: string): string {
+  if (time.includes(':')) {
+    const parts = time.split(':');
+    if (parts.length === 2) {
+      return `${time}:00`;
+    }
+  }
+  return time;
+}
+
+/**
+ * Преобразует расписание из фронтенд формата в бэкенд формат
+ */
+export function transformSchedulesToBackend(
+  schedules: FrontendSchedule[]
+): ScheduleDto[] {
+  return schedules.map(schedule => ({
+    dayOfWeek: schedule.dayOfWeek,
+    isClosed: false,
+    intervals: [
+      {
+        openTime: formatTimeForTimeSpan(schedule.openTime),
+        closeTime: formatTimeForTimeSpan(schedule.closeTime),
+      },
+    ],
+  }));
+}
+
+/**
+ * Преобразует расписание из бэкенд формата в фронтенд формат
+ */
+export function transformSchedulesFromBackend(
+  schedules: ScheduleDto[]
+): FrontendSchedule[] {
+  return schedules
+    .filter(schedule => !schedule.isClosed && schedule.intervals && schedule.intervals.length > 0)
+    .map(schedule => {
+      const interval = schedule.intervals![0];
+      // Преобразуем "HH:mm:ss" в "HH:mm"
+      const openTime = interval.openTime.substring(0, 5);
+      const closeTime = interval.closeTime.substring(0, 5);
+      return {
+        dayOfWeek: schedule.dayOfWeek,
+        openTime,
+        closeTime,
+      };
+    });
+}
+
+/**
+ * Преобразует контакты из фронтенд формата в бэкенд формат
+ */
+export function transformContactToBackend(
+  contact: FrontendShopContact | undefined
+): ShopContactDto | undefined {
+  if (!contact) return undefined;
+  
+  const hasAnyValue = contact.phone || contact.email || contact.website || contact.instagram;
+  if (!hasAnyValue) return undefined;
+
+  return {
+    phoneNumber: contact.phone || null,
+    email: contact.email || null,
+    siteLink: contact.website || null,
+    instagramLink: contact.instagram || null,
+  };
+}
+
+/**
+ * Преобразует контакты из бэкенд формата в фронтенд формат
+ */
+export function transformContactFromBackend(
+  contact: ShopContactDto | null | undefined
+): FrontendShopContact | undefined {
+  if (!contact) return undefined;
+
+  const hasAnyValue = contact.phoneNumber || contact.email || contact.siteLink || contact.instagramLink;
+  if (!hasAnyValue) return undefined;
+
+  return {
+    phone: contact.phoneNumber || undefined,
+    email: contact.email || undefined,
+    website: contact.siteLink || undefined,
+    instagram: contact.instagramLink || undefined,
+  };
+}
+
 // ==================== API Functions ====================
 
 /**
@@ -187,13 +338,50 @@ export async function updateModerationShop(
   accessToken: string,
   shopData: UpdateModerationShopRequest
 ): Promise<ApiResponse<ModerationShop>> {
+  // Преобразуем данные в формат бэкенда
+  const backendData: any = {
+    id: shopData.id,
+    name: shopData.name,
+    address: shopData.notValidatedAddress, // На бэкенде поле называется Address
+    description: shopData.description,
+    priceRange: shopData.priceRange,
+    cityId: shopData.cityId,
+    shopContact: shopData.shopContact
+      ? transformContactToBackend(shopData.shopContact)
+      : undefined,
+    schedules: shopData.schedules
+      ? transformSchedulesToBackend(shopData.schedules)
+      : undefined,
+    equipmentIds: shopData.equipmentIds,
+    coffeeBeanIds: shopData.coffeeBeanIds,
+    roasterIds: shopData.roasterIds,
+    brewMethodIds: shopData.brewMethodIds,
+    shopPhotos: shopData.shopPhotos?.map(photo => {
+      if (typeof photo === 'string') {
+        return { fileName: '', storageKey: photo, fullUrl: '' };
+      }
+      return {
+        fileName: photo.fileName,
+        storageKey: photo.storageKey,
+        fullUrl: photo.fullUrl || '',
+      };
+    }),
+  };
+
   // Формируем FormData для отправки
   const formData = new FormData();
 
-  Object.entries(shopData).forEach(([key, value]) => {
+  Object.entries(backendData).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       if (Array.isArray(value)) {
-        value.forEach((item) => formData.append(key, String(item)));
+        // Для массивов примитивов добавляем каждый элемент отдельно
+        if (value.length > 0 && typeof value[0] === 'object') {
+          // Для массивов объектов сериализуем весь массив
+          formData.append(key, JSON.stringify(value));
+        } else {
+          // Для массивов примитивов добавляем каждый элемент
+          value.forEach((item) => formData.append(key, String(item)));
+        }
       } else if (typeof value === "object") {
         formData.append(key, JSON.stringify(value));
       } else {
@@ -248,9 +436,33 @@ export async function sendCoffeeShopToModeration(
   accessToken: string,
   shopData: SendCoffeeShopToModerationRequest
 ): Promise<ApiResponse<ModerationShop>> {
+  // Преобразуем данные в формат бэкенда
+  const backendData: any = {
+    name: shopData.name,
+    address: shopData.notValidatedAddress, // На бэкенде поле называется Address
+    description: shopData.description,
+    priceRange: shopData.priceRange,
+    cityId: shopData.cityId,
+    shopContact: shopData.shopContact
+      ? transformContactToBackend(shopData.shopContact)
+      : undefined,
+    schedules: shopData.schedules
+      ? transformSchedulesToBackend(shopData.schedules)
+      : undefined,
+    equipmentIds: shopData.equipmentIds,
+    coffeeBeanIds: shopData.coffeeBeanIds,
+    roasterIds: shopData.roasterIds,
+    brewMethodIds: shopData.brewMethodIds,
+    shopPhotos: shopData.shopPhotos?.map(photo => ({
+      fileName: photo.fileName,
+      storageKey: photo.storageKey,
+      fullUrl: '', // Бэкенд может заполнить это поле
+    })),
+  };
+
   return httpClient.post<ModerationShop>(
     API_ENDPOINTS.MODERATION.SHOP,
-    shopData,
+    backendData,
     { requiresAuth: true }
   );
 }

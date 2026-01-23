@@ -196,6 +196,13 @@ function normalizeCoffeeShopData(shop: any): any {
 
   const normalized: any = { ...shop };
 
+  // Нормализуем адрес: на бэкенде может быть "address" или "Address", на фронтенде для модерации используется "notValidatedAddress"
+  if ('address' in shop && !('notValidatedAddress' in shop)) {
+    normalized.notValidatedAddress = shop.address;
+  } else if ('Address' in shop && !('notValidatedAddress' in shop)) {
+    normalized.notValidatedAddress = shop.Address;
+  }
+
   // Переименовываем coffeeBeans в beans
   if ('coffeeBeans' in shop && Array.isArray(shop.coffeeBeans)) {
     normalized.beans = shop.coffeeBeans;
@@ -215,24 +222,40 @@ function normalizeCoffeeShopData(shop: any): any {
 
   // Нормализуем schedules
   if ('schedules' in shop && Array.isArray(shop.schedules)) {
-    normalized.schedules = shop.schedules.map((schedule: any) => {
-      if (schedule.intervals && Array.isArray(schedule.intervals) && schedule.intervals.length > 0) {
-        // Новый формат с intervals
-        const interval = schedule.intervals[0];
-        return {
-          dayOfWeek: schedule.dayOfWeek,
-          openTime: interval.openTime,
-          closeTime: interval.closeTime,
-        };
-      } else {
-        // Старый формат с прямыми полями
-        return {
-          dayOfWeek: schedule.dayOfWeek,
-          openTime: schedule.openTime,
-          closeTime: schedule.closeTime,
-        };
-      }
-    });
+    normalized.schedules = shop.schedules
+      .filter((schedule: any) => {
+        // Пропускаем закрытые дни
+        if (schedule.isClosed === true) return false;
+        // Проверяем наличие интервалов
+        if (schedule.intervals && Array.isArray(schedule.intervals) && schedule.intervals.length > 0) {
+          return true;
+        }
+        // Поддерживаем старый формат с прямыми полями
+        return schedule.openTime && schedule.closeTime;
+      })
+      .map((schedule: any) => {
+        if (schedule.intervals && Array.isArray(schedule.intervals) && schedule.intervals.length > 0) {
+          // Новый формат с intervals
+          const interval = schedule.intervals[0];
+          // Преобразуем "HH:mm:ss" в "HH:mm" для фронтенда
+          const openTime = interval.openTime ? interval.openTime.substring(0, 5) : '';
+          const closeTime = interval.closeTime ? interval.closeTime.substring(0, 5) : '';
+          return {
+            dayOfWeek: schedule.dayOfWeek,
+            openTime,
+            closeTime,
+          };
+        } else {
+          // Старый формат с прямыми полями
+          const openTime = schedule.openTime ? schedule.openTime.substring(0, 5) : '';
+          const closeTime = schedule.closeTime ? schedule.closeTime.substring(0, 5) : '';
+          return {
+            dayOfWeek: schedule.dayOfWeek,
+            openTime,
+            closeTime,
+          };
+        }
+      });
   }
 
   // Нормализуем reviews если они есть
