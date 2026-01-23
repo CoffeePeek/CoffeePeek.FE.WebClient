@@ -2,7 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import Button from '../components/Button';
-import { getProfile, updateProfile, UserProfile, UpdateProfileRequest } from '../api/auth';
+import { 
+  getProfile, 
+  UserProfile, 
+  updateUsername,
+  updateEmail,
+  updateAbout
+} from '../api/auth';
 import { ProfileCardSkeleton, PersonalInfoSkeleton } from '../components/skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
@@ -15,8 +21,9 @@ const SettingsPage: React.FC = () => {
   const themeClasses = getThemeClasses(theme);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<Partial<UserProfile>>({});
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
 
   const loadProfile = useCallback(async () => {
@@ -30,9 +37,8 @@ const SettingsPage: React.FC = () => {
         throw new Error('Токен доступа отсутствует');
       }
       
-      const response = await getProfile(token);
+      const response = await getProfile();
       setProfile(response.data);
-      setEditData(response.data);
       setError(null);
     } catch (err: any) {
       setError(getErrorMessage(err));
@@ -46,45 +52,78 @@ const SettingsPage: React.FC = () => {
     loadProfile();
   }, [loadProfile]);
 
-  const handleEditToggle = useCallback(() => {
-    if (isEditing && profile) {
-      setEditData(profile);
-    }
-    setIsEditing(prev => !prev);
+  const handleEditStart = useCallback((field: string, currentValue: string) => {
+    setEditingFields(prev => ({ ...prev, [field]: true }));
+    setEditValues(prev => ({ ...prev, [field]: currentValue }));
     setError(null);
-  }, [isEditing, profile]);
+  }, []);
 
-  const handleSave = useCallback(async () => {
+  const handleEditCancel = useCallback((field: string) => {
+    setEditingFields(prev => {
+      const newState = { ...prev };
+      delete newState[field];
+      return newState;
+    });
+    setEditValues(prev => {
+      const newState = { ...prev };
+      delete newState[field];
+      return newState;
+    });
+  }, []);
+
+  const handleSave = useCallback(async (field: string) => {
+    if (!profile) return;
+
+    const value = editValues[field];
+    if (!value || value.trim() === '') {
+      setError('Поле не может быть пустым');
+      return;
+    }
+
     try {
-      setIsLoading(true);
-      const token = localStorage.getItem('accessToken');
-      
-      if (!token) {
-        throw new Error('Токен доступа отсутствует');
-      }
-      
-      const updateRequest: UpdateProfileRequest = {
-        userName: editData.userName,
-        email: editData.email,
-        about: editData.about,
-      };
-      
-      const response = await updateProfile(token, updateRequest);
-      setProfile(response.data);
-      setEditData(response.data);
-      setIsEditing(false);
+      setSavingFields(prev => ({ ...prev, [field]: true }));
       setError(null);
+
+      let response;
+      switch (field) {
+        case 'userName':
+          response = await updateUsername({ username: value });
+          break;
+        case 'email':
+          response = await updateEmail({ email: value });
+          break;
+        case 'about':
+          response = await updateAbout({ about: value });
+          break;
+        default:
+          throw new Error('Неизвестное поле');
+      }
+
+      // Обновляем профиль после успешного сохранения
+      const updatedProfile = await getProfile();
+      setProfile(updatedProfile.data);
+      
+      setEditingFields(prev => {
+        const newState = { ...prev };
+        delete newState[field];
+        return newState;
+      });
+      setEditValues(prev => {
+        const newState = { ...prev };
+        delete newState[field];
+        return newState;
+      });
     } catch (err: any) {
       setError(getErrorMessage(err));
-      console.error('Error updating profile:', err);
+      console.error(`Error updating ${field}:`, err);
     } finally {
-      setIsLoading(false);
+      setSavingFields(prev => {
+        const newState = { ...prev };
+        delete newState[field];
+        return newState;
+      });
     }
-  }, [editData]);
-
-  const handleInputChange = useCallback((field: keyof UserProfile, value: any) => {
-    setEditData(prev => ({ ...prev, [field]: value }));
-  }, []);
+  }, [profile, editValues]);
 
   return (
     <div className={`min-h-screen ${themeClasses.bg.primary} p-6`}>
@@ -108,11 +147,6 @@ const SettingsPage: React.FC = () => {
         ) : (
           <ProfileCard
             profile={profile}
-            editData={editData}
-            isEditing={isEditing}
-            onEditToggle={handleEditToggle}
-            onSave={handleSave}
-            onInputChange={handleInputChange}
           />
         )}
 
@@ -124,9 +158,13 @@ const SettingsPage: React.FC = () => {
           ) : (
             <PersonalInformation
               profile={profile}
-              editData={editData}
-              isEditing={isEditing}
-              onInputChange={handleInputChange}
+              editingFields={editingFields}
+              editValues={editValues}
+              savingFields={savingFields}
+              onEditStart={handleEditStart}
+              onEditCancel={handleEditCancel}
+              onSave={handleSave}
+              onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
             />
           )}
           {/* Настройки аккаунта - статичные, показываем сразу */}
@@ -204,23 +242,14 @@ const SettingsPage: React.FC = () => {
 // Компонент карточки профиля
 interface ProfileCardProps {
   profile: UserProfile;
-  editData: Partial<UserProfile>;
-  isEditing: boolean;
-  onEditToggle: () => void;
-  onSave: () => void;
-  onInputChange: (field: keyof UserProfile, value: any) => void;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
   profile,
-  editData,
-  isEditing,
-  onEditToggle,
-  onSave,
-  onInputChange,
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
+
   return (
   <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 mb-6`}>
     <div className="flex flex-col md:flex-row gap-6">
@@ -244,30 +273,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
             <h2 className={`text-2xl font-bold ${themeClasses.text.primary} mb-1`}>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editData.userName || ''}
-                  onChange={(e) => onInputChange('userName', e.target.value)}
-                  className={`${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} w-full md:w-64`}
-                  placeholder="Имя пользователя"
-                />
-              ) : (
-                profile.userName
-              )}
+              {profile.userName}
             </h2>
             <p className={themeClasses.text.secondary}>{profile.email}</p>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant={isEditing ? "secondary" : "secondary"} onClick={onEditToggle}>
-              {isEditing ? 'Отмена' : 'Редактировать'}
-            </Button>
-            {isEditing && (
-              <Button variant="primary" onClick={onSave}>
-                Сохранить
-              </Button>
-            )}
           </div>
         </div>
 
@@ -303,15 +311,23 @@ const StatCard: React.FC<StatCardProps> = ({ label, value }) => {
 // Компонент личной информации
 interface PersonalInformationProps {
   profile: UserProfile;
-  editData: Partial<UserProfile>;
-  isEditing: boolean;
-  onInputChange: (field: keyof UserProfile, value: any) => void;
+  editingFields: Record<string, boolean>;
+  editValues: Record<string, string>;
+  savingFields: Record<string, boolean>;
+  onEditStart: (field: string, currentValue: string) => void;
+  onEditCancel: (field: string) => void;
+  onSave: (field: string) => void;
+  onInputChange: (field: string, value: string) => void;
 }
 
 const PersonalInformation: React.FC<PersonalInformationProps> = ({
   profile,
-  editData,
-  isEditing,
+  editingFields,
+  editValues,
+  savingFields,
+  onEditStart,
+  onEditCancel,
+  onSave,
   onInputChange,
 }) => {
   const { theme } = useTheme();
@@ -321,37 +337,52 @@ const PersonalInformation: React.FC<PersonalInformationProps> = ({
     <h3 className={`text-xl font-bold ${themeClasses.text.primary} mb-4`}>Личная информация</h3>
 
     <div className="space-y-4">
-      <InfoField
+      <EditableInfoField
+        field="userName"
         label="Имя пользователя"
-        value={profile.userName}
-        editValue={editData.userName || ''}
-        isEditing={isEditing}
-        onChange={(val) => onInputChange('userName', val)}
+        value={profile.userName || ''}
+        editingFields={editingFields}
+        editValues={editValues}
+        savingFields={savingFields}
+        onEditStart={onEditStart}
+        onEditCancel={onEditCancel}
+        onSave={onSave}
+        onInputChange={onInputChange}
       />
 
-      <InfoField
+      <EditableInfoField
+        field="email"
         label="Email"
         type="email"
-        value={profile.email}
-        editValue={editData.email || ''}
-        isEditing={isEditing}
-        onChange={(val) => onInputChange('email', val)}
+        value={profile.email || ''}
+        editingFields={editingFields}
+        editValues={editValues}
+        savingFields={savingFields}
+        onEditStart={onEditStart}
+        onEditCancel={onEditCancel}
+        onSave={onSave}
+        onInputChange={onInputChange}
       />
 
-      <InfoField
+      <EditableInfoField
+        field="about"
         label="О себе"
         type="textarea"
         value={profile.about || 'Информация не указана'}
-        editValue={editData.about || ''}
-        isEditing={isEditing}
-        onChange={(val) => onInputChange('about', val)}
+        editingFields={editingFields}
+        editValues={editValues}
+        savingFields={savingFields}
+        onEditStart={onEditStart}
+        onEditCancel={onEditCancel}
+        onSave={onSave}
+        onInputChange={onInputChange}
         placeholder="Расскажите немного о себе..."
       />
 
       <div>
         <label className={`${themeClasses.text.secondary} text-sm mb-1 block`}>Дата регистрации</label>
         <p className={themeClasses.text.primary}>
-          {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
+          {profile.createdAtUtc ? new Date(profile.createdAtUtc).toLocaleDateString('ru-RU') : 'Неизвестно'}
         </p>
       </div>
     </div>
@@ -359,52 +390,96 @@ const PersonalInformation: React.FC<PersonalInformationProps> = ({
   );
 };
 
-// Компонент поля информации
-interface InfoFieldProps {
+// Компонент редактируемого поля информации
+interface EditableInfoFieldProps {
+  field: string;
   label: string;
   value: string;
-  editValue: string;
-  isEditing: boolean;
-  onChange: (value: string) => void;
+  editingFields: Record<string, boolean>;
+  editValues: Record<string, string>;
+  savingFields: Record<string, boolean>;
+  onEditStart: (field: string, currentValue: string) => void;
+  onEditCancel: (field: string) => void;
+  onSave: (field: string) => void;
+  onInputChange: (field: string, value: string) => void;
   type?: 'text' | 'email' | 'textarea';
   placeholder?: string;
 }
 
-const InfoField: React.FC<InfoFieldProps> = ({
+const EditableInfoField: React.FC<EditableInfoFieldProps> = ({
+  field,
   label,
   value,
-  editValue,
-  isEditing,
-  onChange,
+  editingFields,
+  editValues,
+  savingFields,
+  onEditStart,
+  onEditCancel,
+  onSave,
+  onInputChange,
   type = 'text',
   placeholder,
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
+  const isEditing = editingFields[field] || false;
+  const isSaving = savingFields[field] || false;
+  const editValue = editValues[field] !== undefined ? editValues[field] : value;
+
   return (
-  <div>
-    <label className={`${themeClasses.text.secondary} text-sm mb-1 block`}>{label}</label>
-    {isEditing ? (
-      type === 'textarea' ? (
-        <textarea
-          value={editValue}
-          onChange={(e) => onChange(e.target.value)}
-          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} min-h-[100px]`}
-          placeholder={placeholder}
-        />
+    <div>
+      <label className={`${themeClasses.text.secondary} text-sm mb-1 block`}>{label}</label>
+      {isEditing ? (
+        <div className="space-y-2">
+          {type === 'textarea' ? (
+            <textarea
+              value={editValue}
+              onChange={(e) => onInputChange(field, e.target.value)}
+              className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} min-h-[100px]`}
+              placeholder={placeholder}
+              disabled={isSaving}
+            />
+          ) : (
+            <input
+              type={type}
+              value={editValue}
+              onChange={(e) => onInputChange(field, e.target.value)}
+              className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
+              placeholder={placeholder}
+              disabled={isSaving}
+            />
+          )}
+          <div className="flex gap-2">
+            <Button 
+              variant="secondary" 
+              onClick={() => onEditCancel(field)}
+              disabled={isSaving}
+            >
+              Отмена
+            </Button>
+            <Button 
+              variant="primary" 
+              onClick={() => onSave(field)}
+              disabled={isSaving}
+              isLoading={isSaving}
+            >
+              Сохранить
+            </Button>
+          </div>
+        </div>
       ) : (
-        <input
-          type={type}
-          value={editValue}
-          onChange={(e) => onChange(e.target.value)}
-          className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
-          placeholder={placeholder}
-        />
-      )
-    ) : (
-      <p className={themeClasses.text.primary}>{value}</p>
-    )}
-  </div>
+        <div className="flex items-center justify-between">
+          <p className={themeClasses.text.primary}>{value}</p>
+          <Button 
+            variant="secondary" 
+            onClick={() => onEditStart(field, value)}
+            className="ml-2"
+          >
+            Редактировать
+          </Button>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -421,18 +496,6 @@ const AccountSettings: React.FC = () => {
         title="Изменить пароль"
         description="Обновите свой пароль для безопасности аккаунта"
         buttonText="Изменить"
-      />
-
-      <SettingItem
-        title="Уведомления"
-        description="Управляйте настройками уведомлений"
-        buttonText="Настроить"
-      />
-
-      <SettingItem
-        title="Конфиденциальность"
-        description="Управляйте настройками приватности"
-        buttonText="Настроить"
       />
     </div>
   </div>

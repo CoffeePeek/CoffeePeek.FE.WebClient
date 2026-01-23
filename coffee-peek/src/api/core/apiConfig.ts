@@ -4,20 +4,31 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL;
  * Все эндпоинты API
  */
 export const API_ENDPOINTS = {
+  TOKEN: {
+    BASE: "/api/tokens",
+    GOOGLE_LOGIN: "/api/tokens/google/login",
+  },
+
   AUTH: {
-    BASE: "/api/Auth",
-    LOGIN: "/api/Auth/login",
-    REGISTER: "/api/Auth/register",
-    LOGOUT: "/api/Auth/logout",
-    REFRESH: "/api/Auth/refresh",
-    CHECK_EMAIL: "/api/Auth/check-exists",
-    GOOGLE_LOGIN: "/api/Auth/google/login",
+    LOGIN: "/api/tokens",
+    GOOGLE_LOGIN: "/api/tokens/google/login",
+    REFRESH: "/api/tokens",
+    CHECK_EMAIL: "/api/users/exists",
+    REGISTER: "/api/users",
   },
 
   USER: {
-    BASE: "/api/Users",
-    BY_ID: (userId: string) => `/api/Users/${userId}`,
-    REVIEWS: (userId: string) => `/api/users/${userId}/reviews`,
+    BASE: "/api/users",
+    BY_ID: (id: string) => `/api/users/${id}`,
+    PROFILE: "/api/users/me",
+    EMAIL_EXISTS: "/api/users/exists",
+    UPDATE_ABOUT: "/api/users/me/about",
+    UPDATE_EMAIL: "/api/users/me/email",
+    UPDATE_PHONE_NUMBER: "/api/users/me/phone-number",
+    UPDATE_AVATAR: "/api/users/me/avatar",
+    UPDATE_USERNAME: "/api/users/me/username",
+    DELETE: "/api/users/me",
+    EMAIL_CONFIRMATION: "/api/users/me/email-confirmation",
   },
 
   COFFEE_SHOP: {

@@ -138,7 +138,7 @@ export function normalizeResponseData<T>(data: any): T {
   }
 
   if ('shopDto' in data) {
-    return data.shopDto;
+    return normalizeCoffeeShopData(data.shopDto) as T;
   }
   
   if ('moderationShop' in data) {
@@ -171,10 +171,88 @@ export function normalizeResponseData<T>(data: any): T {
   }
 
   if ('coffeeShops' in data && Array.isArray(data.coffeeShops)) {
-    return data;
+    // Нормализуем каждый элемент массива
+    return {
+      ...data,
+      coffeeShops: data.coffeeShops.map((shop: any) => normalizeCoffeeShopData(shop))
+    } as T;
+  }
+
+  // Если это объект кофейни напрямую (без shopDto обертки)
+  if ('id' in data && 'name' in data && ('coffeeBeans' in data || 'shopContact' in data || 'schedules' in data)) {
+    return normalizeCoffeeShopData(data) as T;
   }
 
   return data;
+}
+
+/**
+ * Нормализует данные кофейни из формата API в формат, ожидаемый фронтендом
+ */
+function normalizeCoffeeShopData(shop: any): any {
+  if (!shop || typeof shop !== 'object') {
+    return shop;
+  }
+
+  const normalized: any = { ...shop };
+
+  // Переименовываем coffeeBeans в beans
+  if ('coffeeBeans' in shop && Array.isArray(shop.coffeeBeans)) {
+    normalized.beans = shop.coffeeBeans;
+    delete normalized.coffeeBeans;
+  }
+
+  // Нормализуем shopContact
+  if ('shopContact' in shop && shop.shopContact) {
+    const contact = shop.shopContact;
+    normalized.shopContact = {
+      phone: contact.phoneNumber || contact.phone,
+      email: contact.email,
+      website: contact.siteLink || contact.website,
+      instagram: contact.instagramLink || contact.instagram,
+    };
+  }
+
+  // Нормализуем schedules
+  if ('schedules' in shop && Array.isArray(shop.schedules)) {
+    normalized.schedules = shop.schedules.map((schedule: any) => {
+      if (schedule.intervals && Array.isArray(schedule.intervals) && schedule.intervals.length > 0) {
+        // Новый формат с intervals
+        const interval = schedule.intervals[0];
+        return {
+          dayOfWeek: schedule.dayOfWeek,
+          openTime: interval.openTime,
+          closeTime: interval.closeTime,
+        };
+      } else {
+        // Старый формат с прямыми полями
+        return {
+          dayOfWeek: schedule.dayOfWeek,
+          openTime: schedule.openTime,
+          closeTime: schedule.closeTime,
+        };
+      }
+    });
+  }
+
+  // Нормализуем reviews если они есть
+  if ('reviews' in shop && Array.isArray(shop.reviews)) {
+    normalized.reviews = shop.reviews.map((review: any) => ({
+      ...review,
+      username: review.username || null,
+    }));
+  }
+
+  // Нормализуем photos
+  if ('photos' in shop && Array.isArray(shop.photos)) {
+    normalized.photos = shop.photos;
+    // Также создаем imageUrls для обратной совместимости
+    if (!normalized.imageUrls) {
+      normalized.imageUrls = shop.photos.map((photo: any) => photo.url || photo.thumbnailUrl || '');
+    }
+  }
+
+  return normalized;
 }
 
 function handleServerError(): void {
