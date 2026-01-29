@@ -1,16 +1,10 @@
 
 import React from 'react';
-
-export const COLORS = {
-  primary: '#EAB308', // Warm Golden Yellow
-  background: '#1A1412', // Deep Dark Brown
-  surface: '#2D241F', // Medium Brown for inputs/cards
-  textSecondary: '#A39E93', // Muted beige-grey
-};
+import { COLORS } from './constants/colors';
 
 export const Icons = {
   Coffee: ({ className }: { className?: string }) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className || "text-[#EAB308]"}>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className || `text-[${COLORS.primary}]`}>
       <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
       <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
       <line x1="6" y1="1" x2="6" y2="4" />
@@ -19,7 +13,7 @@ export const Icons = {
     </svg>
   ),
   Check: ({ className }: { className?: string }) => (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className || "text-[#EAB308]"}>
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className || `text-[${COLORS.primary}]`}>
       <polyline points="20 6 9 17 4 12" />
     </svg>
   ),

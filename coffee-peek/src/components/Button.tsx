@@ -19,7 +19,7 @@ const Button: React.FC<ButtonProps> = ({
   const baseStyles = "py-2.5 px-4 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
   
   const variants = {
-    primary: "bg-[#EAB308] text-[#1A1412] hover:bg-[#FACC15] shadow-lg shadow-yellow-900/10",
+    primary: `${themeClasses.primary.bg} ${themeClasses.text.inverse} ${themeClasses.primary.bgHover} shadow-lg ${themeClasses.primary.shadow}`,
     secondary: themeClasses.button.secondary,
     ghost: themeClasses.button.ghost
   };

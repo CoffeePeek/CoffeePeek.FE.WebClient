@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getUserPublicProfile, PublicUserProfile } from '../api/user';
 import { getReviewsByUserId, Review } from '../api/coffeeshop';
 import { useTheme } from '../contexts/ThemeContext';
+import { getThemeClasses } from '../utils/theme';
 import Button from '../components/Button';
 import { useUsersCache } from '../hooks/useUsersCache';
 
@@ -10,6 +11,7 @@ const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
   
   const [profile, setProfile] = React.useState<PublicUserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = React.useState(true);
@@ -111,16 +113,16 @@ const UserProfilePage: React.FC = () => {
     navigate(`/shops/${shopId}`);
   };
 
-  const bgClass = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-stone-50/50';
-  const bgSurface = theme === 'dark' ? 'bg-[#2D241F]' : 'bg-white';
-  const borderClass = theme === 'dark' ? 'border-[#3D2F28]' : 'border-stone-200';
-  const textMain = theme === 'dark' ? 'text-white' : 'text-[#2C241E]';
-  const textMuted = theme === 'dark' ? 'text-[#A39E93]' : 'text-[#7C746E]';
+  const bgClass = themeClasses.bg.primary;
+  const bgSurface = theme === 'dark' ? themeClasses.bg.secondary : themeClasses.bg.card;
+  const borderClass = themeClasses.border.default;
+  const textMain = themeClasses.text.primary;
+  const textMuted = themeClasses.text.secondary;
 
   if (isLoadingProfile) {
     return (
       <div className={`min-h-screen ${bgClass} flex items-center justify-center`}>
-        <div className="w-12 h-12 border-4 border-[#EAB308] border-t-transparent rounded-full animate-spin" />
+        <div className={`w-12 h-12 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
       </div>
     );
   }
@@ -159,7 +161,7 @@ const UserProfilePage: React.FC = () => {
         <div className="max-w-6xl mx-auto flex items-end justify-between">
           <div className="flex items-center gap-8">
             <div className="relative">
-              <div className={`w-32 h-32 rounded-full border-4 ${theme === 'dark' ? 'border-[#3D2F28]' : 'border-white'} shadow-xl overflow-hidden ring-1 ${theme === 'dark' ? 'ring-[#3D2F28]' : 'ring-stone-200'}`}>
+              <div className={`w-32 h-32 rounded-full border-4 ${theme === 'dark' ? themeClasses.border.default : 'border-white'} shadow-xl overflow-hidden ring-1 ${theme === 'dark' ? themeClasses.border.default.replace('border-', 'ring-') : 'ring-stone-200'}`}>
                 {profile.avatarUrl ? (
                   <img 
                     src={profile.avatarUrl} 
@@ -167,7 +169,7 @@ const UserProfilePage: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-[#D4A373] flex items-center justify-center">
+                  <div className={`w-full h-full ${themeClasses.primary.bg} flex items-center justify-center`}>
                     <span className="text-5xl font-bold text-white">
                       {profile.userName.charAt(0).toUpperCase()}
                     </span>
@@ -181,9 +183,9 @@ const UserProfilePage: React.FC = () => {
               </h1>
               <div className="flex items-center gap-2">
                 {profile.nickname && (
-                  <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full ${theme === 'dark' ? 'bg-[#EAB308]/10 border-[#EAB308]/20' : 'bg-[#FAC638]/10 border-[#FAC638]/20'} border`}>
-                    <span className="material-symbols-outlined text-lg text-[#D4A373]">verified</span>
-                    <span className={`${theme === 'dark' ? 'text-[#D4A373]' : 'text-[#A67F48]'} text-xs font-bold uppercase tracking-widest`}>
+                  <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full ${themeClasses.primary.bgLight} ${themeClasses.primary.borderLighter} border`}>
+                    <span className={`material-symbols-outlined text-lg ${themeClasses.primary.text}`}>verified</span>
+                    <span className={`${themeClasses.primary.text} text-xs font-bold uppercase tracking-widest`}>
                       @{profile.nickname}
                     </span>
                   </div>
@@ -209,8 +211,8 @@ const UserProfilePage: React.FC = () => {
         {/* Statistics */}
         <section>
           <div className="grid grid-cols-3 gap-6">
-            <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group hover:border-[#D4A373]/30 transition-all`}>
-              <div className={`w-12 h-12 rounded-2xl ${theme === 'dark' ? 'bg-[#D4A373]/10' : 'bg-[#D4A373]/10'} text-[#D4A373] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+            <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group ${themeClasses.border.activeHover} transition-all`}>
+              <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} ${themeClasses.primary.text} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                 <span className="material-symbols-outlined text-3xl">shopping_cart_checkout</span>
               </div>
               <span className={`text-4xl font-bold ${textMain}`}>
@@ -220,8 +222,8 @@ const UserProfilePage: React.FC = () => {
                 ПОСЕЩЕНИЯ
               </span>
             </div>
-            <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group hover:border-[#D4A373]/30 transition-all`}>
-              <div className={`w-12 h-12 rounded-2xl ${theme === 'dark' ? 'bg-[#D4A373]/10' : 'bg-[#D4A373]/10'} text-[#D4A373] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+            <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group ${themeClasses.border.activeHover} transition-all`}>
+              <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} ${themeClasses.primary.text} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                 <span className="material-symbols-outlined text-3xl">rate_review</span>
               </div>
               <span className={`text-4xl font-bold ${textMain}`}>
@@ -231,8 +233,8 @@ const UserProfilePage: React.FC = () => {
                 ОТЗЫВОВ
               </span>
             </div>
-            <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group hover:border-[#D4A373]/30 transition-all`}>
-              <div className={`w-12 h-12 rounded-2xl ${theme === 'dark' ? 'bg-[#D4A373]/10' : 'bg-[#D4A373]/10'} text-[#D4A373] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+            <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group ${themeClasses.border.activeHover} transition-all`}>
+              <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} ${themeClasses.primary.text} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                 <span className="material-symbols-outlined text-3xl fill-1">star</span>
               </div>
               <span className={`text-4xl font-bold ${textMain}`}>
@@ -258,7 +260,7 @@ const UserProfilePage: React.FC = () => {
 
           {isLoadingReviews ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-12 h-12 border-4 border-[#EAB308] border-t-transparent rounded-full animate-spin" />
+              <div className={`w-12 h-12 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
             </div>
           ) : reviews.length > 0 ? (
             <>
@@ -277,8 +279,8 @@ const UserProfilePage: React.FC = () => {
                       key={review.id}
                       className={`${bgSurface} p-6 rounded-2xl border ${borderClass} shadow-sm flex items-start gap-4 hover:shadow-md transition-all`}
                     >
-                      <div className={`w-12 h-12 rounded-full ${theme === 'dark' ? 'bg-[#2D241F]' : 'bg-stone-100'} flex items-center justify-center shrink-0`}>
-                        <span className="material-symbols-outlined text-[#D4A373]">edit_square</span>
+                      <div className={`w-12 h-12 rounded-full ${theme === 'dark' ? themeClasses.bg.secondary : 'bg-stone-100'} flex items-center justify-center shrink-0`}>
+                        <span className={`material-symbols-outlined ${themeClasses.primary.text}`}>edit_square</span>
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start mb-2">
@@ -301,8 +303,8 @@ const UserProfilePage: React.FC = () => {
                                 key={star}
                                 className={`material-symbols-outlined text-sm ${
                                   star <= Math.round(parseFloat(avgRating))
-                                    ? 'text-[#FAC638] fill-1'
-                                    : theme === 'dark' ? 'text-[#3D2F28]' : 'text-stone-300'
+                                    ? `${themeClasses.primary.text} fill-1`
+                                    : theme === 'dark' ? themeClasses.border.default : 'text-stone-300'
                                 }`}
                               >
                                 star
@@ -311,7 +313,7 @@ const UserProfilePage: React.FC = () => {
                           </div>
                           <button
                             onClick={() => handleShopSelect(review.coffeeShopId)}
-                            className="text-xs text-[#D4A373] hover:text-[#A67F48] font-medium transition-colors flex items-center gap-1"
+                            className={`text-xs ${themeClasses.primary.text} ${themeClasses.primary.hover} font-medium transition-colors flex items-center gap-1`}
                           >
                             <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             Перейти к кофейне
@@ -350,7 +352,7 @@ const UserProfilePage: React.FC = () => {
             </>
           ) : (
             <div className={`${bgSurface} p-12 rounded-2xl border ${borderClass} text-center`}>
-              <div className={`w-16 h-16 rounded-full ${theme === 'dark' ? 'bg-[#2D241F]' : 'bg-stone-100'} ${textMuted} flex items-center justify-center mx-auto mb-4`}>
+              <div className={`w-16 h-16 rounded-full ${theme === 'dark' ? themeClasses.bg.secondary : 'bg-stone-100'} ${textMuted} flex items-center justify-center mx-auto mb-4`}>
                 <span className="material-symbols-outlined text-4xl">rate_review</span>
               </div>
               <p className={`${textMuted} text-lg`}>

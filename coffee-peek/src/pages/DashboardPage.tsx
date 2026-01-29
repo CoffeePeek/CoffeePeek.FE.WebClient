@@ -2,6 +2,7 @@ import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { getThemeClasses } from '../utils/theme';
 import CoffeeShopList from '../components/CoffeeShopList';
 import ModeratorPanel from '../components/ModeratorPanel';
 import AdminPanel from '../components/AdminPanel';
@@ -11,12 +12,11 @@ import SettingsPage from '../pages/SettingsPage';
 const DashboardPage: React.FC = () => {
   const { user } = useUser();
   const { theme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
   const page = searchParams.get('page') || 'coffeeshops';
-  const bgClass = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-white';
-  const textClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
 
   const handleNavigate = (pageName: string) => {
     if (pageName === 'coffeeshops' || pageName === 'home') {
@@ -30,16 +30,9 @@ const DashboardPage: React.FC = () => {
     navigate(`/shops/${shopId}`);
   };
 
-  const handleCreateCoffeeShop = () => {
-    navigate('/coffee-shops/new');
-  };
-
-  const handleLogout = () => {
-    // Logout handled by Header component
-  };
 
   return (
-    <div className={`min-h-screen ${bgClass}`}>
+    <div className={`min-h-screen ${themeClasses.bg.primary}`}>
       {page === 'coffeeshops' || page === 'home' ? (
         <CoffeeShopList onShopSelect={handleShopSelect} />
       ) : page === 'moderation' && user?.isAdmin ? (
@@ -48,8 +41,6 @@ const DashboardPage: React.FC = () => {
         <AdminPanel />
       ) : page === 'map' ? (
         <MapPage />
-      ) : page === 'jobs' ? (
-        <div className={`p-6 ${textClass}`}>Работа (в разработке)</div>
       ) : page === 'settings' ? (
         <SettingsPage />
       ) : (

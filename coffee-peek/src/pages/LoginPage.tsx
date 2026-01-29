@@ -7,11 +7,15 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import { Icons } from '../constants';
 import { getErrorMessage } from '../utils/errorHandler';
+import { useTheme } from '../contexts/ThemeContext';
+import { getThemeClasses } from '../utils/theme';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { updateUserFromToken } = useUser();
+  const { theme, toggleTheme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
   const from = (location.state as any)?.from?.pathname || '/shops';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -68,32 +72,67 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const bgPrimary = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-white';
+  const bgCard = theme === 'dark' ? 'bg-[#1A1412]/80' : 'bg-white/90';
+  const borderCard = theme === 'dark' ? 'border-[#3D2F28]' : 'border-gray-200';
+  const textPrimary = theme === 'dark' ? 'text-white' : 'text-gray-900';
+  const textSecondary = theme === 'dark' ? 'text-[#A39E93]' : 'text-gray-600';
+  const glowBg = theme === 'dark' ? 'bg-[#EAB308]/5' : 'bg-[#EAB308]/10';
+  const shadowCard = theme === 'dark' ? 'shadow-black/50' : 'shadow-gray-200/50';
+  const headerBg = theme === 'dark' ? 'bg-[#2D241F]' : 'bg-gray-100';
+  const headerBorder = theme === 'dark' ? 'border-[#3D2F28]' : 'border-gray-200';
+
   const renderHeader = () => (
     <div className="flex flex-col items-center mb-8 lg:mb-12">
-      <div className="w-16 h-16 lg:w-20 lg:h-20 bg-[#2D241F] rounded-2xl flex items-center justify-center mb-6 border border-[#3D2F28] shadow-inner transform transition-transform hover:scale-105 duration-300">
+      <div className={`w-16 h-16 lg:w-20 lg:h-20 ${headerBg} rounded-2xl flex items-center justify-center mb-6 border ${headerBorder} shadow-inner transform transition-transform hover:scale-105 duration-300`}>
         <Icons.Coffee />
       </div>
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-xl lg:text-2xl font-bold tracking-tight text-white">Coffee</span>
+        <span className={`text-xl lg:text-2xl font-bold tracking-tight ${textPrimary}`}>Coffee</span>
         <span className="text-xl lg:text-2xl font-bold tracking-tight text-[#EAB308]">Peek</span>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 lg:p-8 bg-[#1A1412] relative overflow-hidden">
+    <div className={`min-h-screen flex flex-col items-center justify-center p-4 lg:p-8 ${bgPrimary} relative overflow-hidden`}>
       <div className="absolute inset-0 bg-pattern opacity-20 pointer-events-none hidden lg:block" />
-      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#EAB308]/5 blur-[120px] rounded-full hidden lg:block" />
+      <div className={`absolute top-[-10%] left-[-10%] w-[60%] h-[60%] ${glowBg} blur-[120px] rounded-full hidden lg:block`} />
+
+      {/* Кнопка переключения темы */}
+      <button
+        onClick={toggleTheme}
+        className={`absolute top-6 right-6 z-20 ${themeClasses.bg.card} ${themeClasses.border.default} border rounded-full p-3 transition-all hover:scale-110 ${textPrimary}`}
+        aria-label="Переключить тему"
+      >
+        {theme === 'dark' ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        )}
+      </button>
 
       <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto z-10">
-        <div className="relative bg-[#1A1412]/80 backdrop-blur-xl border-0 lg:border lg:border-[#3D2F28] lg:rounded-[32px] lg:p-12 lg:shadow-2xl lg:shadow-black/50 transition-all duration-500">
+        <div className={`relative ${bgCard} backdrop-blur-xl border-0 lg:border lg:${borderCard} lg:rounded-[32px] lg:p-12 lg:shadow-2xl lg:${shadowCard} transition-all duration-500`}>
           <div className="pt-8 lg:pt-0">
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               {renderHeader()}
               
               <div className="text-center mb-10">
-                <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3 tracking-tight">Вход</h1>
-                <p className="text-[#A39E93] lg:text-lg">Войдите в свой аккаунт</p>
+                <h1 className={`text-3xl lg:text-4xl font-bold ${textPrimary} mb-3 tracking-tight`}>Вход</h1>
+                <p className={`${textSecondary} lg:text-lg`}>Войдите в свой аккаунт</p>
               </div>
 
               {error && (
@@ -142,7 +181,7 @@ const LoginPage: React.FC = () => {
               </form>
 
               <div className="mt-6 text-center">
-                <p className="text-[#A39E93] text-sm">
+                <p className={`${textSecondary} text-sm`}>
                   Нет аккаунта?{' '}
                   <button
                     type="button"

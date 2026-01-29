@@ -20,7 +20,6 @@ const Header: React.FC = () => {
     if (path.includes('moderation')) return 'moderation';
     if (path.includes('admin')) return 'admin';
     if (path.includes('map')) return 'map';
-    if (path.includes('jobs')) return 'jobs';
     if (path.includes('settings')) return 'settings';
     return 'home';
   };
@@ -34,7 +33,6 @@ const Header: React.FC = () => {
       'moderation': '/dashboard?page=moderation',
       'admin': '/dashboard?page=admin',
       'map': '/dashboard?page=map',
-      'jobs': '/dashboard?page=jobs',
       'settings': '/dashboard?page=settings',
     };
     const route = routes[page] || '/shops';
@@ -135,16 +133,6 @@ const Header: React.FC = () => {
               >
                 Карта
               </button>
-              <button
-                onClick={() => handleNavigate('jobs')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  currentPage === 'jobs' 
-                    ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
-                    : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-                }`}
-              >
-                Работа
-              </button>
             </nav>
           </div>
           
@@ -238,19 +226,6 @@ const Header: React.FC = () => {
               }`}
             >
               Карта
-            </button>
-            <button
-                onClick={() => {
-                  handleNavigate('jobs');
-                  setIsMobileMenuOpen(false);
-                }}
-              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPage === 'jobs' 
-                    ? `${themeClasses.activeBg} text-[#EAB308] border ${themeClasses.activeBorder}` 
-                    : `${themeClasses.textSecondary} ${themeClasses.hoverBg} ${theme === 'light' ? 'hover:text-gray-900' : 'hover:text-white'}`
-              }`}
-            >
-              Работа
             </button>
           
             <button

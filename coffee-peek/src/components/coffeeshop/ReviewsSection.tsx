@@ -2,6 +2,8 @@ import React from 'react';
 import { Review } from '../../api/coffeeshop';
 import { PublicUserProfile } from '../../api/user';
 import { ReviewCardSkeleton } from '../skeletons';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeClasses } from '../../utils/theme';
 
 interface ReviewsSectionProps {
   reviews: Review[];
@@ -16,7 +18,6 @@ interface ReviewsSectionProps {
   textMuted: string;
   cardBg: string;
   borderColor: string;
-  primary: string;
 }
 
 export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
@@ -32,8 +33,9 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   textMuted,
   cardBg,
   borderColor,
-  primary,
 }) => {
+  const { theme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
   const handleNavigateToUserProfile = (userId: string) => {
     if (onUserSelect) {
       onUserSelect(userId);
@@ -44,14 +46,14 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     <div className="pt-8 border-t border-[#E8E4E1]">
       <div className="flex items-center justify-between mb-8">
         <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3`}>
-          <span className="w-1.5 h-8 bg-[#B48C4B] rounded-full" />
+          <span className={`w-1.5 h-8 ${themeClasses.primary.bg} rounded-full`} />
           Отзывы клиентов
         </h2>
         {user && (
           <button
             onClick={onWriteOrEditReview}
             disabled={isCheckingMyReview}
-            className="bg-[#F5EFE6] text-[#B48C4B] font-bold px-6 py-2.5 rounded-xl hover:bg-[#B48C4B] hover:text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className={`${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-6 py-2.5 rounded-xl ${themeClasses.primary.bg.replace('bg-', 'hover:bg-')} ${themeClasses.text.inverse.replace('text-', 'hover:text-')} transition-all disabled:opacity-60 disabled:cursor-not-allowed`}
           >
             {myReviewId ? 'Изменить отзыв' : 'Написать отзыв'}
           </button>
@@ -81,7 +83,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     onClick={() => handleNavigateToUserProfile(review.userId)}
                     className="flex items-center gap-4 hover:opacity-80 transition-opacity"
                   >
-                    <div className="w-12 h-12 rounded-full border-2 border-[#B48C4B]/20 overflow-hidden">
+                    <div className={`w-12 h-12 rounded-full border-2 ${themeClasses.primary.borderLighter} overflow-hidden`}>
                       {avatarUrl ? (
                         <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                       ) : (
@@ -98,7 +100,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     </div>
                   </button>
                   <div className="flex items-center gap-2">
-                    <div className="flex text-[#B48C4B]">
+                    <div className={`flex ${themeClasses.primary.text}`}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span key={star} className={`material-symbols-outlined ${star <= avgReviewRating ? 'fill-1' : ''}`}>
                           star

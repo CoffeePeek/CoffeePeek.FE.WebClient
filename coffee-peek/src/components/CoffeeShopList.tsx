@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getCoffeeShops, searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl, getAllFavorites } from '../api/coffeeshop';
+import { getCoffeeShops, searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl } from '../api/coffeeshop';
 import Button from './Button';
 import PhotoCarousel from './PhotoCarousel';
 import MaterialSelect from './MaterialSelect';
@@ -42,7 +42,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [selectedBrewMethods, setSelectedBrewMethods] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(''); // Debounced версия для запросов
-  const [activeFilterTab, setActiveFilterTab] = useState<'open' | 'new' | 'favorite' | 'visited'>('open');
+  const [activeFilterTabs, setActiveFilterTabs] = useState<Set<'open' | 'new' | 'favorite' | 'visited'>>(new Set());
   const [favoriteShopIds, setFavoriteShopIds] = useState<Set<string>>(new Set());
   const [visitedShopIds, setVisitedShopIds] = useState<Set<string>>(new Set());
   const [showCityDropdown, setShowCityDropdown] = useState(false);
@@ -133,38 +133,56 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   // Применяем клиентскую фильтрацию при изменении вкладки
   useEffect(() => {
     if (allShops.length > 0) {
-      const filtered = filterShopsByActiveTab(allShops);
+      const filtered = filterShopsByActiveTabs(allShops);
       setShops(filtered);
       setTotalItems(filtered.length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilterTab, allShops.length]);
+  }, [activeFilterTabs, allShops.length]);
 
-  const filterShopsByActiveTab = (shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
+  const filterShopsByActiveTabs = (shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
     let filtered = shopsToFilter;
     
-    switch (activeFilterTab) {
-      case 'open':
-        filtered = filtered.filter(shop => shop.isOpen === true);
-        break;
-      
-      case 'new':
-        filtered = filtered.filter(shop => shop.isNew === true);
-        break;
-      
-      case 'favorite':
-        filtered = filtered.filter(shop => shop.isFavorite === true);
-        break;
-      
-      case 'visited':
-        filtered = filtered.filter(shop => shop.isVisited === true);
-        break;
+    // Если нет активных фильтров, показываем все кофейни
+    if (activeFilterTabs.size === 0) {
+      return filtered;
+    }
+    
+    // Применяем все активные фильтры (AND логика - кофейня должна соответствовать всем выбранным фильтрам)
+    if (activeFilterTabs.has('open')) {
+      filtered = filtered.filter(shop => shop.isOpen === true);
+    }
+    
+    if (activeFilterTabs.has('new')) {
+      filtered = filtered.filter(shop => shop.isNew === true);
+    }
+    
+    if (activeFilterTabs.has('favorite')) {
+      filtered = filtered.filter(shop => shop.isFavorite === true);
+    }
+    
+    if (activeFilterTabs.has('visited')) {
+      filtered = filtered.filter(shop => shop.isVisited === true);
     }
     
     // Поиск теперь происходит на сервере через searchCoffeeShops endpoint
     // Клиентская фильтрация по searchQuery НЕ нужна
     
     return filtered;
+  };
+  
+  const toggleFilterTab = (filterId: 'open' | 'new' | 'favorite' | 'visited') => {
+    setActiveFilterTabs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(filterId)) {
+        // Если фильтр уже активен, снимаем его
+        newSet.delete(filterId);
+      } else {
+        // Если фильтр не активен, добавляем его
+        newSet.add(filterId);
+      }
+      return newSet;
+    });
   };
 
   const loadInitialData = async () => {
@@ -256,7 +274,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           setAllShops(shops);
           
           // Применяем клиентскую фильтрацию
-          const filteredShops = filterShopsByActiveTab(shops);
+          const filteredShops = filterShopsByActiveTabs(shops);
           setShops(filteredShops);
           setTotalItems(filteredShops.length);
           
@@ -271,7 +289,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             rating: shop.rating ?? shop.averageRating ?? 0
           }));
           setAllShops(items);
-          const filteredShops = filterShopsByActiveTab(items);
+          const filteredShops = filterShopsByActiveTabs(items);
           setShops(filteredShops);
           setTotalItems(filteredShops.length);
           setTotalPages(responseData.totalPages || 1);
@@ -284,7 +302,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             rating: shop.rating ?? shop.averageRating ?? 0
           }));
           setAllShops(content);
-          const filteredShops = filterShopsByActiveTab(content);
+          const filteredShops = filterShopsByActiveTabs(content);
           setShops(filteredShops);
           setTotalItems(filteredShops.length);
           setTotalPages(responseData.totalPages || 1);
@@ -294,7 +312,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           // Fallback for direct array
           if (Array.isArray(responseData)) {
             setAllShops(responseData);
-            const filteredShops = filterShopsByActiveTab(responseData);
+            const filteredShops = filterShopsByActiveTabs(responseData);
             setShops(filteredShops);
             setTotalItems(filteredShops.length);
             setTotalPages(1);
@@ -309,7 +327,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         // Fallback for old response format
         if (Array.isArray(response.data)) {
           setAllShops(response.data);
-          const filteredShops = filterShopsByActiveTab(response.data);
+          const filteredShops = filterShopsByActiveTabs(response.data);
           setShops(filteredShops);
           setTotalItems(filteredShops.length);
           setTotalPages(1);
@@ -514,44 +532,47 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                 { id: 'new' as const, label: 'Новые', icon: 'fiber_new' },
                 { id: 'favorite' as const, label: 'Избранные', icon: 'favorite' },
                 { id: 'visited' as const, label: 'Посещённые', icon: 'check_circle' },
-              ].map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => setActiveFilterTab(filter.id)}
-                  className="px-4 py-2 rounded-full font-semibold transition-all hover:scale-105 active:scale-95 border flex items-center gap-1.5"
-                  style={
-                    activeFilterTab === filter.id
-                      ? {
-                          backgroundColor: COLORS.primary,
-                          color: 'white',
-                          borderColor: COLORS.primary,
-                          boxShadow: `0 4px 6px -1px ${COLORS.primary}30`,
-                        }
-                      : {
-                          backgroundColor: colors.surface,
-                          color: colors.textSecondary,
-                          borderColor: colors.border,
-                        }
-                  }
-                  onMouseEnter={(e) => {
-                    if (activeFilterTab !== filter.id) {
-                      e.currentTarget.style.borderColor = COLORS.primary;
-                      e.currentTarget.style.color = COLORS.primary;
+              ].map((filter) => {
+                const isActive = activeFilterTabs.has(filter.id);
+                return (
+                  <button
+                    key={filter.id}
+                    onClick={() => toggleFilterTab(filter.id)}
+                    className="px-4 py-2 rounded-full font-semibold transition-all hover:scale-105 active:scale-95 border flex items-center gap-1.5"
+                    style={
+                      isActive
+                        ? {
+                            backgroundColor: COLORS.primary,
+                            color: 'white',
+                            borderColor: COLORS.primary,
+                            boxShadow: `0 4px 6px -1px ${COLORS.primary}30`,
+                          }
+                        : {
+                            backgroundColor: colors.surface,
+                            color: colors.textSecondary,
+                            borderColor: colors.border,
+                          }
                     }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeFilterTab !== filter.id) {
-                      e.currentTarget.style.borderColor = colors.border;
-                      e.currentTarget.style.color = colors.textSecondary;
-                    }
-                  }}
-                >
-                  <span className={`material-symbols-outlined text-[16px] ${activeFilterTab === filter.id ? 'fill-1' : ''}`}>
-                    {filter.icon}
-                  </span>
-                  {filter.label}
-                </button>
-              ))}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.borderColor = COLORS.primary;
+                        e.currentTarget.style.color = COLORS.primary;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.borderColor = colors.border;
+                        e.currentTarget.style.color = colors.textSecondary;
+                      }
+                    }}
+                  >
+                    <span className={`material-symbols-outlined text-[16px] ${isActive ? 'fill-1' : ''}`}>
+                      {filter.icon}
+                    </span>
+                    {filter.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

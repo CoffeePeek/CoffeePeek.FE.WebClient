@@ -13,7 +13,6 @@ export const API_ENDPOINTS = {
     LOGIN: "/api/tokens",
     GOOGLE_LOGIN: "/api/tokens/google/login",
     REFRESH: "/api/tokens",
-    CHECK_EMAIL: "/api/users/exists",
     REGISTER: "/api/users",
   },
 
@@ -59,9 +58,7 @@ export const API_ENDPOINTS = {
   },
 
   FAVORITE: {
-    BASE: "/api/FavoriteShops",
-    ALL: "/api/FavoriteShops/all",
-    TOGGLE: (shopId: string) => `/api/FavoriteShops/${shopId}`,
+    BASE: "/api/FavoriteCoffeeShops",
   },
 
   PHOTO: {

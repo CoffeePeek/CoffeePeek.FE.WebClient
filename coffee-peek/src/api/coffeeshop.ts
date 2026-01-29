@@ -225,6 +225,7 @@ export interface Review {
   ratingService: number;
   ratingPlace: number;
   rating?: number;
+  visitedAt?: string; // ISO date string
   createdAt: string;
   updatedAt?: string;
   photos?: ShortPhotoMetadataDto[];
@@ -245,6 +246,7 @@ export interface CreateReviewRequest {
   ratingCoffee: number;
   ratingService: number;
   ratingPlace: number;
+  visitedAt?: string; // ISO date string
   photos?: Array<{
     fileName: string;
     contentType: string;
@@ -253,16 +255,28 @@ export interface CreateReviewRequest {
   }>;
 }
 
-export interface FavoriteResponse {
-  isFavorite: boolean;
+export interface RatingDto {
+  place: number;
+  service: number;
+  coffee: number;
 }
 
-export interface GetAllFavoritesResponse {
-  data: CoffeeShop[];
-  totalItems: number;
-  currentPage: number;
-  pageSize: number;
-  totalPages: number;
+export interface CreateCheckInRequest {
+  coffeeShopId: string;
+  isPublic: boolean;
+  visitedAt: string; // ISO date string, required
+  note?: string; // Optional, but required if isPublic = true
+  photos?: Array<{
+    fileName: string;
+    contentType: string;
+    storageKey: string;
+    size: number;
+  }>;
+  rating?: RatingDto; // Optional, but required if isPublic = true
+}
+
+export interface FavoriteResponse {
+  isFavorite: boolean;
 }
 
 // ==================== Кэш для справочных данных ====================
@@ -560,8 +574,10 @@ export async function getReviewsByUserId(
   page: number = 1,
   pageSize: number = 10
 ): Promise<ApiResponse<GetReviewsResponse>> {
-  return httpClient.get<GetReviewsResponse>(API_ENDPOINTS.USER.REVIEWS(userId), {
-    params: { pageNumber: page, pageSize },
+  // Используем REVIEW эндпоинт с фильтрацией по userId, если такой эндпоинт существует
+  // Или можно использовать REVIEW.BASE с параметрами
+  return httpClient.get<GetReviewsResponse>(API_ENDPOINTS.REVIEW.BASE, {
+    params: { userId, pageNumber: page, pageSize },
     requiresAuth: false,
   });
 }
@@ -632,76 +648,43 @@ export async function updateReview(
  * Создает чекин для кофейни
  */
 export async function createCheckIn(
-  coffeeShopId: string,
-  token: string
+  request: CreateCheckInRequest
 ): Promise<ApiResponse<any>> {
   return httpClient.post<any>(
     API_ENDPOINTS.CHECK_IN.BASE,
-    { coffeeShopId },
+    request,
     { requiresAuth: true }
   );
 }
 
 /**
- * Получает все избранные кофейни пользователя
- */
-export async function getAllFavorites(
-  token: string
-): Promise<ApiResponse<GetAllFavoritesResponse>> {
-  return httpClient.get<GetAllFavoritesResponse>(API_ENDPOINTS.FAVORITE.ALL, {
-    requiresAuth: true,
-  });
-}
-
-/**
  * Добавляет кофейню в избранное
+ * POST /api/FavoriteCoffeeShops?id={coffeeShopId}
  */
 export async function addToFavorite(
   coffeeShopId: string,
   token: string
-): Promise<ApiResponse<{ id: string }>> {
-  return httpClient.post<{ id: string }>(
+): Promise<ApiResponse<{ entityId: string }>> {
+  return httpClient.post<{ entityId: string }>(
     API_ENDPOINTS.FAVORITE.BASE,
-    coffeeShopId,
-    { requiresAuth: true }
+    undefined, // Тело запроса не требуется, используется query параметр
+    {
+      params: { id: coffeeShopId },
+      requiresAuth: true,
+    }
   );
 }
 
 /**
  * Удаляет кофейню из избранного
+ * DELETE /api/FavoriteCoffeeShops?id={coffeeShopId}
  */
 export async function removeFromFavorite(
   coffeeShopId: string,
   token: string
-): Promise<ApiResponse<{ id: string }>> {
-  return httpClient.delete<{ id: string }>(API_ENDPOINTS.FAVORITE.BASE, {
+): Promise<ApiResponse<void>> {
+  return httpClient.delete<void>(API_ENDPOINTS.FAVORITE.BASE, {
     params: { id: coffeeShopId },
-    requiresAuth: true,
-  });
-}
-
-/**
- * @deprecated Используйте addToFavorite и removeFromFavorite
- */
-export async function toggleFavorite(
-  coffeeShopId: string,
-  token: string
-): Promise<ApiResponse<FavoriteResponse>> {
-  return httpClient.post<FavoriteResponse>(
-    API_ENDPOINTS.FAVORITE.TOGGLE(coffeeShopId),
-    undefined,
-    { requiresAuth: true }
-  );
-}
-
-/**
- * @deprecated Используйте getAllFavorites
- */
-export async function checkFavorite(
-  coffeeShopId: string,
-  token: string
-): Promise<ApiResponse<FavoriteResponse>> {
-  return httpClient.get<FavoriteResponse>(API_ENDPOINTS.FAVORITE.TOGGLE(coffeeShopId), {
     requiresAuth: true,
   });
 }

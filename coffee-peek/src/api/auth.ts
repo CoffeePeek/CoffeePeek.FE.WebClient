@@ -96,12 +96,34 @@ export interface UpdateAvatarRequest {
 
 /**
  * Проверяет, существует ли пользователь с указанным email
+ * @returns Promise с данными о существовании пользователя
+ * - 200 OK: пользователь существует (data.exists = true)
+ * - 404 NotFound: пользователь не существует (data.exists = false)
  */
 export async function checkEmailExists(email: string): Promise<CheckExistsResponse> {
-  return httpClient.get<CheckExistsData>(API_ENDPOINTS.AUTH.CHECK_EMAIL, {
-    params: { email },
-    requiresAuth: false,
-  });
+  try {
+    const response = await httpClient.get<CheckExistsData>(API_ENDPOINTS.USER.EMAIL_EXISTS, {
+      params: { email },
+      requiresAuth: false,
+    });
+    // 200 OK - пользователь существует
+    return {
+      ...response,
+      data: { exists: true },
+    };
+  } catch (error: any) {
+    // 404 NotFound - пользователь не существует (это нормальная ситуация)
+    if (error.status === 404) {
+      return {
+        success: true,
+        isSuccess: true,
+        message: 'Пользователь не найден',
+        data: { exists: false },
+      };
+    }
+    // Другие ошибки пробрасываем дальше
+    throw error;
+  }
 }
 
 /**

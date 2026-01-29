@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  createReview,
-  CreateReviewRequest,
-} from '../api/coffeeshop';
+import { createReview,CreateReviewRequest } from '../api/coffeeshop';
 import { ShopDetailSkeleton } from '../components/skeletons';
 import { PhotoGallery } from '../components/coffeeshop/PhotoGallery';
 import { ShopHeader } from '../components/coffeeshop/ShopHeader';
 import { ContactButtons } from '../components/coffeeshop/ContactButtons';
 import { ReviewsSection } from '../components/coffeeshop/ReviewsSection';
 import { ShopSidebar } from '../components/coffeeshop/ShopSidebar';
+import CheckInModal from '../components/CheckInModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { useShopData } from '../hooks/useShopData';
 import { useMyReview } from '../hooks/useMyReview';
 import { useUsersCache } from '../hooks/useUsersCache';
+import { useToggleFavorite } from '../hooks/queries/useFavorites';
 
 const CoffeeShopPage: React.FC = () => {
   const { shopId } = useParams<{ shopId: string }>();
@@ -33,6 +32,32 @@ const CoffeeShopPage: React.FC = () => {
   const { shop, isLoading, error, reloadShop } = useShopData(shopId);
   const { myReviewId, isChecking: isCheckingMyReview } = useMyReview(shopId);
   
+  // Favorite logic
+  const token = user ? localStorage.getItem('accessToken') : null;
+  const { toggle, isLoading: isTogglingFavorite } = useToggleFavorite();
+  const isFavorite = shop?.isFavorite ?? false;
+  
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      showToast('Необходимо войти в систему', 'error');
+      return;
+    }
+
+    if (!shopId || !token) return;
+
+    try {
+      await toggle({ shopId, isFavorite, token });
+      showToast(
+        isFavorite ? 'Удалено из избранного' : 'Добавлено в избранное',
+        'success'
+      );
+      await reloadShop();
+    } catch (err: any) {
+      console.error('Error toggling favorite:', err);
+      showToast('Не удалось изменить статус избранного', 'error');
+    }
+  };
+  
   // Legacy modal state (for backward compatibility)
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewHeader, setReviewHeader] = useState('');
@@ -41,6 +66,9 @@ const CoffeeShopPage: React.FC = () => {
   const [reviewRatingService, setReviewRatingService] = useState(5);
   const [reviewRatingPlace, setReviewRatingPlace] = useState(5);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  
+  // Check-in modal state
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
 
   // Цветовая схема
   const isDark = theme === 'dark';
@@ -49,8 +77,6 @@ const CoffeeShopPage: React.FC = () => {
   const textMuted = isDark ? 'text-gray-400' : 'text-[#6B6661]';
   const cardBg = isDark ? 'bg-[#2D241F]' : 'bg-white';
   const borderColor = isDark ? 'border-[#3D2F28]' : 'border-[#E8E4E1]';
-  const primary = '#B48C4B';
-  const primaryHover = '#8E6F3A';
   
   // Получаем отзывы из shop (приходят с бэкенда в CoffeeShopDetailsDto)
   const reviews = shop?.reviews || [];
@@ -61,7 +87,6 @@ const CoffeeShopPage: React.FC = () => {
   const handleWriteOrEditReview = () => {
     if (!user || !shopId || !shop) return;
     
-    // Передаем минимальную информацию о кофейне через state
     const shopBasicInfo = {
       name: shop.name,
       address: shop.location?.address || 'Адрес не указан',
@@ -74,6 +99,24 @@ const CoffeeShopPage: React.FC = () => {
     } else {
       navigate(`/shops/${shopId}/reviews/new`, { state: { shop: shopBasicInfo } });
     }
+  };
+
+  const handleCheckIn = () => {
+    if (!shopId || !shop) return;
+    
+    // Если пользователь неавторизован, редиректим на регистрацию
+    if (!user) {
+      navigate('/register');
+      return;
+    }
+    
+    // Если авторизован, открываем модальное окно
+    setShowCheckInModal(true);
+  };
+
+  const handleCheckInSuccess = async () => {
+    // Обновляем данные кофейни после успешного чекина
+    await reloadShop();
   };
 
   const handleSubmitReview = async () => {
@@ -146,7 +189,7 @@ const CoffeeShopPage: React.FC = () => {
   return (
     <div className={`min-h-screen ${bgClass} font-body`}>
       {/* Галерея фотографий */}
-      {shop && (
+      {shop && shop.photos && shop.photos.length > 0 && (
         <section className="max-w-7xl mx-auto px-6 py-8">
           <div className="grid grid-cols-12 grid-rows-2 gap-4 h-[500px]">
             <PhotoGallery shop={shop} cardBg={cardBg} borderColor={borderColor} textMuted={textMuted} />
@@ -162,10 +205,13 @@ const CoffeeShopPage: React.FC = () => {
                 shop={shop}
                 avgRating={avgRating}
                 reviewsTotalCount={reviewsTotalCount}
+                isFavorite={isFavorite}
+                isCheckingFavorite={isTogglingFavorite}
+                onToggleFavorite={handleToggleFavorite}
+                onCheckIn={handleCheckIn}
                 textMain={textMain}
                 textMuted={textMuted}
                 borderColor={borderColor}
-                primary={primary}
               />
 
               <ContactButtons
@@ -173,8 +219,6 @@ const CoffeeShopPage: React.FC = () => {
                 cardBg={cardBg}
                 borderColor={borderColor}
                 textMain={textMain}
-                primary={primary}
-                primaryHover={primaryHover}
               />
             </div>
 
@@ -349,7 +393,6 @@ const CoffeeShopPage: React.FC = () => {
               textMuted={textMuted}
               cardBg={cardBg}
               borderColor={borderColor}
-              primary={primary}
             />
           </div>
 
@@ -361,7 +404,6 @@ const CoffeeShopPage: React.FC = () => {
               textMuted={textMuted}
               cardBg={cardBg}
               borderColor={borderColor}
-              primary={primary}
             />
           </div>
         </section>
@@ -463,6 +505,14 @@ const CoffeeShopPage: React.FC = () => {
           Назад
         </button>
       </div>
+
+      {/* Check-in Modal */}
+      <CheckInModal
+        isOpen={showCheckInModal}
+        onClose={() => setShowCheckInModal(false)}
+        shop={shop || null}
+        onSuccess={handleCheckInSuccess}
+      />
     </div>
   );
 };

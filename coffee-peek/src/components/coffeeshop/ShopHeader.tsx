@@ -1,6 +1,8 @@
 import React from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { getCurrentStatus } from '../../utils/shopUtils';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeClasses } from '../../utils/theme';
 
 interface ShopHeaderProps {
   shop: DetailedCoffeeShop;
@@ -9,10 +11,10 @@ interface ShopHeaderProps {
   isFavorite: boolean;
   isCheckingFavorite: boolean;
   onToggleFavorite: () => void;
+  onCheckIn?: () => void;
   textMain: string;
   textMuted: string;
   borderColor: string;
-  primary: string;
 }
 
 export const ShopHeader: React.FC<ShopHeaderProps> = ({
@@ -22,11 +24,13 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   isFavorite,
   isCheckingFavorite,
   onToggleFavorite,
+  onCheckIn,
   textMain,
   textMuted,
   borderColor,
-  primary,
 }) => {
+  const { theme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
   const status = getCurrentStatus(shop);
 
   return (
@@ -35,8 +39,8 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
         <h1 className={`text-5xl font-display font-bold ${textMain} mb-2 tracking-tight`}>
           {shop.name}
         </h1>
-        <div className="flex items-center gap-3 text-sm">
-          <span className={`bg-[${primary}]/10 text-[${primary}] font-bold px-3 py-1 rounded-lg flex items-center gap-1`}>
+        <div className="flex items-center gap-3 text-sm flex-wrap">
+          <span className={`${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-3 py-1 rounded-lg flex items-center gap-1`}>
             <span className="material-symbols-outlined text-sm fill-1">star</span>
             {avgRating.toFixed(1)}
           </span>
@@ -44,10 +48,18 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
             {shop.reviewCount || reviewsTotalCount} отзывов
           </span>
           <span className={textMuted}>•</span>
-          {status && (
+          {shop.isNew && (
             <>
-              <span className={`${status.isOpen ? 'text-green-600' : 'text-red-600'} font-bold uppercase tracking-wider text-xs`}>
-                {status.isOpen ? 'Открыто' : 'Закрыто'}
+              <span className="bg-green-500/20 text-green-400 font-bold px-2 py-1 rounded-lg text-xs uppercase tracking-wider">
+                Новая
+              </span>
+              <span className={textMuted}>•</span>
+            </>
+          )}
+          {shop.isOpen && (
+            <>
+              <span className="bg-green-500/20 text-green-400 font-bold px-2 py-1 rounded-lg text-xs uppercase tracking-wider">
+                Открыта
               </span>
               <span className={textMuted}>•</span>
             </>
@@ -58,14 +70,27 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
       
       {/* Кнопки действий */}
       <div className="flex gap-3">
+        {onCheckIn && (
+          <button
+            onClick={onCheckIn}
+            className={`px-4 py-2 rounded-2xl border ${borderColor} flex items-center justify-center gap-2 ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} transition-all ${themeClasses.primary.text} font-semibold text-sm`}
+          >
+            <span className="material-symbols-outlined text-lg">check_circle</span>
+            Чекиниться
+          </button>
+        )}
         <button
           onClick={onToggleFavorite}
           disabled={isCheckingFavorite}
-          className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center hover:bg-[#F5EFE6] hover:border-[${primary}]/30 transition-all ${textMuted} hover:text-[${primary}] ${isFavorite ? 'bg-[#F5EFE6] text-[${primary}]' : ''}`}
+          className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} transition-all ${
+            isFavorite 
+              ? `${themeClasses.primary.bgLight} ${themeClasses.primary.text} ${themeClasses.primary.borderLight}` 
+              : `${textMuted} ${themeClasses.primary.hover} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')}`
+          }`}
         >
           <span className={`material-symbols-outlined ${isFavorite ? 'fill-1' : ''}`}>favorite</span>
         </button>
-        <button className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center hover:bg-[#F5EFE6] hover:border-[${primary}]/30 transition-all ${textMuted} hover:text-[${primary}]`}>
+        <button className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} transition-all ${textMuted} ${themeClasses.primary.hover}`}>
           <span className="material-symbols-outlined">share</span>
         </button>
       </div>

@@ -1,9 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getAllFavorites,
   addToFavorite,
   removeFromFavorite,
-  GetAllFavoritesResponse,
 } from '../../api/coffeeshop';
 
 /**
@@ -15,40 +13,11 @@ export const favoriteKeys = {
   list: () => [...favoriteKeys.lists()] as const,
 };
 
-/**
- * Hook to fetch all favorite coffee shops
- */
-export function useFavorites(token: string | null, enabled: boolean = true) {
-  return useQuery({
-    queryKey: favoriteKeys.list(),
-    queryFn: async () => {
-      if (!token) throw new Error('Token is required');
-      const response = await getAllFavorites(token);
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch favorites');
-      }
-      return response.data;
-    },
-    enabled: enabled && !!token,
-  });
-}
-
-/**
- * Hook to check if a shop is favorite
- */
-export function useIsFavorite(shopId: string | null, token: string | null, enabled: boolean = true) {
-  const { data: favorites, isLoading } = useFavorites(token, enabled);
-
-  return {
-    isFavorite: favorites?.data?.some((shop) => shop.id === shopId) ?? false,
-    isLoading,
-  };
-}
 
 /**
  * Hook to add a shop to favorites
  */
-export function useAddToFavorite() {
+export function useAddToFavorite() {  
   const queryClient = useQueryClient();
 
   return useMutation({

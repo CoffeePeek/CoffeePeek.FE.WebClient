@@ -3,6 +3,8 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { createReview, CreateReviewRequest, getReviewById, updateReview, ShortPhotoMetadataDto, getPhotoUrl } from '../api/coffeeshop';
 import { getUploadUrls } from '../api/moderation';
 import { useTheme } from '../contexts/ThemeContext';
+import { getThemeClasses } from '../utils/theme';
+import { getThemeColors, COLORS } from '../constants/colors';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -25,6 +27,7 @@ const CreateReviewPage: React.FC = () => {
   
   const isEditMode = !!reviewId;
   const { theme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
   const { user } = useUser();
   const { showToast } = useToast();
 
@@ -44,6 +47,13 @@ const CreateReviewPage: React.FC = () => {
   const [ratingCoffee, setRatingCoffee] = useState(5);
   const [ratingService, setRatingService] = useState(5);
   const [ratingPlace, setRatingPlace] = useState(5);
+  const [visitedDate, setVisitedDate] = useState(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingExistingReview, setIsLoadingExistingReview] = useState(false);
   
@@ -53,18 +63,17 @@ const CreateReviewPage: React.FC = () => {
   const [reviewPhotos, setReviewPhotos] = useState<ShortPhotoMetadataDto[]>([]);
   const [removedPhotoKeys, setRemovedPhotoKeys] = useState<string[]>([]);
 
-  const isDark = theme === 'dark';
-
-  // Color scheme from the design
+  // Color values for inline styles (based on theme constants)
+  const themeColors = getThemeColors(theme);
   const colors = {
-    primary: '#C69546',
-    primaryHover: '#A87D39',
-    primaryLight: '#FDF8EF',
-    base: isDark ? '#1A1412' : '#FFFFFF',
-    surface: isDark ? '#2D241F' : '#F9F8F6',
-    borderSubtle: isDark ? '#3D2F28' : '#E5E1DA',
-    textMain: isDark ? '#FFFFFF' : '#2D2A26',
-    textMuted: isDark ? '#A8A8A8' : '#75706B',
+    primary: COLORS.primary,
+    primaryHover: COLORS.primaryDark,
+    primaryLight: COLORS.primaryLight,
+    base: themeColors.background,
+    surface: themeColors.surface,
+    borderSubtle: themeColors.border,
+    textMain: themeColors.textPrimary,
+    textMuted: themeColors.textSecondary,
   };
 
   // Если редактируем — подгружаем отзыв и префилим поля
@@ -88,6 +97,14 @@ const CreateReviewPage: React.FC = () => {
           setRatingService(r.ratingService || 5);
           setRatingPlace(r.ratingPlace || 5);
           setReviewPhotos(r.photos || []);
+          // Загружаем дату посещения, если есть
+          if (r.visitedAt) {
+            const date = new Date(r.visitedAt);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            setVisitedDate(`${year}-${month}-${day}`);
+          }
         } else {
           showToast('Не удалось загрузить отзыв для редактирования', 'error');
         }
@@ -230,6 +247,10 @@ const CreateReviewPage: React.FC = () => {
       
       const allPhotos = [...existingPhotos, ...uploadedPhotos];
       
+      // Преобразуем дату в ISO строку (используем начало дня 00:00:00)
+      const dateTimeString = `${visitedDate}T00:00:00`;
+      const visitedAtISO = new Date(dateTimeString).toISOString();
+      
       const request: CreateReviewRequest = {
         shopId,
         header: header.trim(),
@@ -237,6 +258,7 @@ const CreateReviewPage: React.FC = () => {
         ratingCoffee,
         ratingService,
         ratingPlace,
+        visitedAt: visitedAtISO,
         photos: allPhotos.length > 0 ? allPhotos : undefined,
       };
 
@@ -259,7 +281,7 @@ const CreateReviewPage: React.FC = () => {
   if (isLoadingExistingReview) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-        <div className="w-12 h-12 border-4 border-[#C69546] border-t-transparent rounded-full animate-spin" />
+        <div className={`w-12 h-12 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
       </div>
     );
   }
@@ -268,7 +290,7 @@ const CreateReviewPage: React.FC = () => {
   if (!shopFromState && !isEditMode) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-        <div className="w-12 h-12 border-4 border-[#C69546] border-t-transparent rounded-full animate-spin" />
+        <div className={`w-12 h-12 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
       </div>
     );
   }
@@ -319,7 +341,7 @@ const CreateReviewPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="absolute -bottom-2 -right-2 bg-[#C69546] text-white p-2 rounded-full shadow-lg">
+                <div className={`absolute -bottom-2 -right-2 ${themeClasses.primary.bg} text-white p-2 rounded-full shadow-lg`}>
                   <span className="material-symbols-outlined text-sm block">verified</span>
                 </div>
               </div>
@@ -329,7 +351,7 @@ const CreateReviewPage: React.FC = () => {
               </h2>
 
               <div className="flex items-center justify-center gap-1.5 mb-8" style={{ color: colors.textMuted }}>
-                <span className="material-symbols-outlined text-[#C69546] text-lg">location_on</span>
+                <span className={`material-symbols-outlined ${themeClasses.primary.text} text-lg`}>location_on</span>
                 <span className="text-sm font-medium">
                   {shop?.address || 'Адрес не указан'}
                 </span>
@@ -344,16 +366,44 @@ const CreateReviewPage: React.FC = () => {
                     <span
                       key={star}
                       className={`material-symbols-outlined text-[32px] ${
-                        star <= parseFloat(getAverageRating()) ? 'star-filled text-[#C69546]' : 'text-[#C69546]/30'
+                        star <= parseFloat(getAverageRating()) ? `star-filled ${themeClasses.primary.text}` : ''
                       }`}
+                      style={star > parseFloat(getAverageRating()) ? { color: `${colors.primary}30` } : undefined}
                     >
                       star
                     </span>
                   ))}
                 </div>
-                <p className="text-[#C69546] font-bold text-base">
+                <p className={`${themeClasses.primary.text} font-bold text-base mb-6`}>
                   {getAverageRating()} {getRatingText()}
                 </p>
+
+                {/* Date picker */}
+                <div className="pt-6 border-t" style={{ borderColor: `${colors.borderSubtle}80` }}>
+                  <label className={`block text-xs ${themeClasses.text.secondary} mb-2 text-left`} htmlFor="visitedDate">
+                    Дата посещения
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg pointer-events-none" style={{ color: colors.textMuted }}>
+                      calendar_today
+                    </span>
+                    <input
+                      type="date"
+                      id="visitedDate"
+                      value={visitedDate}
+                      onChange={(e) => setVisitedDate(e.target.value)}
+                      className={`
+                        w-full ${themeClasses.bg.input} ${themeClasses.border.default} rounded-2xl py-3 pl-12 pr-4 
+                        ${themeClasses.text.primary} 
+                        focus:outline-none ${themeClasses.primary.ring.replace('focus:', 'focus:ring-2 focus:')} ${themeClasses.border.focus}
+                        transition-all duration-200 text-sm
+                      `}
+                      style={{
+                        colorScheme: theme === 'dark' ? 'dark' : 'light',
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </aside>
@@ -382,8 +432,9 @@ const CreateReviewPage: React.FC = () => {
                         >
                           <span
                             className={`material-symbols-outlined text-[28px] ${
-                              star <= ratingCoffee ? 'star-filled text-[#C69546]' : 'text-[#C69546]/20'
+                              star <= ratingCoffee ? `star-filled ${themeClasses.primary.text}` : ''
                             }`}
+                            style={star > ratingCoffee ? { color: `${colors.primary}20` } : undefined}
                           >
                             star
                           </span>
@@ -406,8 +457,9 @@ const CreateReviewPage: React.FC = () => {
                         >
                           <span
                             className={`material-symbols-outlined text-[28px] ${
-                              star <= ratingService ? 'star-filled text-[#C69546]' : 'text-[#C69546]/20'
+                              star <= ratingService ? `star-filled ${themeClasses.primary.text}` : ''
                             }`}
+                            style={star > ratingService ? { color: `${colors.primary}20` } : undefined}
                           >
                             star
                           </span>
@@ -430,8 +482,9 @@ const CreateReviewPage: React.FC = () => {
                         >
                           <span
                             className={`material-symbols-outlined text-[28px] ${
-                              star <= ratingPlace ? 'star-filled text-[#C69546]' : 'text-[#C69546]/20'
+                              star <= ratingPlace ? `star-filled ${themeClasses.primary.text}` : ''
                             }`}
+                            style={star > ratingPlace ? { color: `${colors.primary}20` } : undefined}
                           >
                             star
                           </span>
@@ -453,7 +506,7 @@ const CreateReviewPage: React.FC = () => {
                     type="text"
                     value={header}
                     onChange={(e) => setHeader(e.target.value)}
-                    className="w-full border rounded-xl px-5 py-4 placeholder:opacity-40 focus:ring-4 focus:ring-[#C69546]/5 focus:border-[#C69546] outline-none transition-all font-semibold"
+                    className={`w-full border rounded-xl px-5 py-4 placeholder:opacity-40 ${themeClasses.primary.ringFocus} ${themeClasses.border.focus} outline-none transition-all font-semibold`}
                     style={{
                       backgroundColor: colors.surface,
                       borderColor: colors.borderSubtle,
@@ -473,7 +526,7 @@ const CreateReviewPage: React.FC = () => {
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full border rounded-xl p-5 placeholder:opacity-40 focus:ring-4 focus:ring-[#C69546]/5 focus:border-[#C69546] outline-none transition-all resize-none h-40"
+                      className={`w-full border rounded-xl p-5 placeholder:opacity-40 ${themeClasses.primary.ringFocus} ${themeClasses.border.focus} outline-none transition-all resize-none h-40`}
                       style={{
                         backgroundColor: colors.surface,
                         borderColor: colors.borderSubtle,
@@ -515,7 +568,7 @@ const CreateReviewPage: React.FC = () => {
                 />
                 <label
                   htmlFor="photo-upload"
-                  className="block w-full border-2 border-dashed rounded-2xl py-8 px-4 text-center cursor-pointer hover:border-[#C69546] transition-all"
+                  className={`block w-full border-2 border-dashed rounded-2xl py-8 px-4 text-center cursor-pointer ${themeClasses.primary.borderHover} transition-all`}
                   style={{
                     backgroundColor: colors.surface,
                     borderColor: colors.borderSubtle,
@@ -584,7 +637,7 @@ const CreateReviewPage: React.FC = () => {
 
               {uploadingPhotos && (
                 <div className="flex items-center justify-center py-4">
-                  <div className="w-8 h-8 border-4 border-[#C69546] border-t-transparent rounded-full animate-spin" />
+                  <div className={`w-8 h-8 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
                   <span className="ml-3 text-sm" style={{ color: colors.textMuted }}>
                     Загрузка фотографий...
                   </span>
@@ -597,7 +650,7 @@ const CreateReviewPage: React.FC = () => {
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="px-10 py-5 bg-[#C69546] hover:bg-[#A87D39] text-white rounded-2xl font-bold text-lg flex items-center gap-3 shadow-lg shadow-[#C69546]/20 transition-all active:scale-95 group disabled:opacity-50"
+                className={`px-10 py-5 ${themeClasses.primary.bg} ${themeClasses.primary.bgHover} text-white rounded-2xl font-bold text-lg flex items-center gap-3 shadow-lg ${themeClasses.primary.shadow} transition-all active:scale-95 group disabled:opacity-50`}
               >
                 {isSubmitting ? (reviewId ? 'Сохранение...' : 'Публикация...') : (reviewId ? 'Сохранить изменения' : 'Опубликовать отзыв')}
                 <span className="material-symbols-outlined group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">

@@ -26,6 +26,12 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
   // Определяем заголовок и сообщение по коду ошибки
   const getErrorContent = () => {
     switch (errorCode) {
+      case 403:
+        return {
+          title: title || 'Доступ запрещён',
+          message: message || 'У вас нет прав для доступа к этой странице.',
+          icon: <Icons.Alert className="text-orange-500" />
+        };
       case 404:
         return {
           title: title || 'Страница не найдена',
@@ -37,12 +43,6 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
           title: title || 'Ошибка сервера',
           message: message || 'Произошла внутренняя ошибка сервера. Мы уже работаем над её устранением.',
           icon: <Icons.Alert className="text-red-500" />
-        };
-      case 403:
-        return {
-          title: title || 'Доступ запрещён',
-          message: message || 'У вас нет прав для доступа к этой странице.',
-          icon: <Icons.Alert className="text-orange-500" />
         };
       default:
         return {

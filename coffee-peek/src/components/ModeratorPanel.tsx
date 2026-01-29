@@ -598,7 +598,7 @@ const ModeratorPanel: React.FC = () => {
               onClick={() => setActiveTab('shops')}
               className={`flex-1 px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
                 activeTab === 'shops'
-                  ? 'bg-[#C69546] text-white shadow-lg'
+                  ? `${themeClasses.primary.bg} ${themeClasses.text.inverse} shadow-lg`
                   : `${themeClasses.text.secondary} hover:${themeClasses.bg.input}`
               }`}
             >
@@ -608,7 +608,7 @@ const ModeratorPanel: React.FC = () => {
               onClick={() => setActiveTab('reviews')}
               className={`flex-1 px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
                 activeTab === 'reviews'
-                  ? 'bg-[#C69546] text-white shadow-lg'
+                  ? `${themeClasses.primary.bg} ${themeClasses.text.inverse} shadow-lg`
                   : `${themeClasses.text.secondary} hover:${themeClasses.bg.input}`
               }`}
             >
@@ -1396,21 +1396,21 @@ const ModeratorPanel: React.FC = () => {
                           <div className={`${themeClasses.bg.tertiary} rounded-xl p-3`}>
                             <p className={`${themeClasses.text.secondary} text-xs mb-1`}>Кофе</p>
                             <div className="flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[#C69546] text-sm">star</span>
+                              <span className={`material-symbols-outlined ${themeClasses.primary.text} text-sm`}>star</span>
                               <span className={`${themeClasses.text.primary} font-bold`}>{review.ratingCoffee}</span>
                             </div>
                           </div>
                           <div className={`${themeClasses.bg.tertiary} rounded-xl p-3`}>
                             <p className={`${themeClasses.text.secondary} text-xs mb-1`}>Сервис</p>
                             <div className="flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[#C69546] text-sm">star</span>
+                              <span className={`material-symbols-outlined ${themeClasses.primary.text} text-sm`}>star</span>
                               <span className={`${themeClasses.text.primary} font-bold`}>{review.ratingService}</span>
                             </div>
                           </div>
                           <div className={`${themeClasses.bg.tertiary} rounded-xl p-3`}>
                             <p className={`${themeClasses.text.secondary} text-xs mb-1`}>Место</p>
                             <div className="flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[#C69546] text-sm">star</span>
+                              <span className={`material-symbols-outlined ${themeClasses.primary.text} text-sm`}>star</span>
                               <span className={`${themeClasses.text.primary} font-bold`}>{review.ratingPlace}</span>
                             </div>
                           </div>
