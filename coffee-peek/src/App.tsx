@@ -8,6 +8,7 @@ import { AppRoutes } from './routes/AppRoutes';
 import { useToast } from './contexts/ToastContext';
 import { queryClient } from './lib/queryClient';
 import CookieBanner from './components/CookieBanner';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Component to initialize global error handler
 const GlobalErrorHandler: React.FC = () => {
@@ -47,6 +48,7 @@ const AppContent: React.FC = () => {
       <AuthRedirect />
       <AppRoutes />
       <CookieBanner />
+      <SpeedInsights />
     </>
   );
 };
