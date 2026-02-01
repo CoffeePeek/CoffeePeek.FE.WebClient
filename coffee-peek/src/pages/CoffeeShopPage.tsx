@@ -15,6 +15,9 @@ import { useShopData } from '../hooks/useShopData';
 import { useMyReview } from '../hooks/useMyReview';
 import { useUsersCache } from '../hooks/useUsersCache';
 import { useToggleFavorite } from '../hooks/queries/useFavorites';
+import { TokenManager } from '../api/core/httpClient';
+import { logger } from '../utils/logger';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const CoffeeShopPage: React.FC = () => {
   const { shopId } = useParams<{ shopId: string }>();
@@ -32,8 +35,11 @@ const CoffeeShopPage: React.FC = () => {
   const { shop, isLoading, error, reloadShop } = useShopData(shopId);
   const { myReviewId, isChecking: isCheckingMyReview } = useMyReview(shopId);
   
+  // Устанавливаем title с названием кофейни
+  usePageTitle(shop?.name || 'Кофейня');
+  
   // Favorite logic
-  const token = user ? localStorage.getItem('accessToken') : null;
+  const token = user ? TokenManager.getAccessToken() : null;
   const { toggle, isLoading: isTogglingFavorite } = useToggleFavorite();
   const isFavorite = shop?.isFavorite ?? false;
   
@@ -53,7 +59,7 @@ const CoffeeShopPage: React.FC = () => {
       );
       await reloadShop();
     } catch (err: any) {
-      console.error('Error toggling favorite:', err);
+      logger.error('Error toggling favorite:', err);
       showToast('Не удалось изменить статус избранного', 'error');
     }
   };
@@ -130,7 +136,7 @@ const CoffeeShopPage: React.FC = () => {
       return;
     }
 
-    const token = localStorage.getItem('accessToken');
+    const token = TokenManager.getAccessToken();
     if (!token) return;
 
     try {
@@ -157,7 +163,7 @@ const CoffeeShopPage: React.FC = () => {
         await reloadShop();
       }
     } catch (err: any) {
-      console.error('Error submitting review:', err);
+      logger.error('Error submitting review:', err);
       showToast('Не удалось отправить отзыв', 'error');
     } finally {
       setIsSubmittingReview(false);

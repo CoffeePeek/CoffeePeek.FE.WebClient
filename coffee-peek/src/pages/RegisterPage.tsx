@@ -7,10 +7,13 @@ import { Icons } from '../constants';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { logger } from '../utils/logger';
 
 type RegisterStep = 'email' | 'registration';
 
 const RegisterPage: React.FC = () => {
+  usePageTitle('Регистрация');
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const themeClasses = getThemeClasses(theme);
@@ -22,6 +25,7 @@ const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [agreeToPrivacy, setAgreeToPrivacy] = useState(false);
 
   const handleEmailCheck = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +47,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       const response = await checkEmailExists(email);
-      console.log('Email check response:', response);
+      logger.log('Email check response:', response);
 
       // Если пользователь существует (200 OK) - переходим на логин
       if (response.data?.exists) {
@@ -59,7 +63,7 @@ const RegisterPage: React.FC = () => {
     } catch (err: any) {
       const errorMessage = getErrorMessage(err, 'register');
       setError(errorMessage);
-      console.error('Email check error:', err);
+      logger.error('Email check error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +72,11 @@ const RegisterPage: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!agreeToPrivacy) {
+      setError('Необходимо согласиться с Политикой конфиденциальности');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Пароли не совпадают');
@@ -82,19 +91,23 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // Сохраняем согласие на обработку данных
+      localStorage.setItem('privacyConsent', 'accepted');
+      localStorage.setItem('privacyConsentDate', new Date().toISOString());
+
       const response = await register({ 
         email, 
         password,
         userName: userName || undefined,
       });
       
-      console.log('Register response:', response);
+      logger.log('Register response:', response);
       
       if (!response.isSuccess) {
         throw new Error(response.message || 'Ошибка при регистрации');
       }
       
-      console.log('Registration successful:', response.message);
+      logger.log('Registration successful:', response.message);
 
       setSuccessMessage(response.message || 'Регистрация успешна! Теперь вы можете войти в систему.');
       
@@ -104,7 +117,7 @@ const RegisterPage: React.FC = () => {
     } catch (err: any) {
       const errorMessage = getErrorMessage(err, 'register');
       setError(errorMessage);
-      console.error('Registration error:', err);
+      logger.error('Registration error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -282,8 +295,42 @@ const RegisterPage: React.FC = () => {
                     }
                   />
 
+                  <div className="space-y-4">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={agreeToPrivacy}
+                        onChange={(e) => setAgreeToPrivacy(e.target.checked)}
+                        required
+                        className={`mt-1 w-5 h-5 rounded border-2 ${
+                          theme === 'dark' 
+                            ? 'border-[#3D2F28] bg-transparent text-[#EAB308] focus:ring-[#EAB308] focus:ring-offset-[#1A1412]' 
+                            : 'border-gray-300 bg-transparent text-[#EAB308] focus:ring-[#EAB308] focus:ring-offset-white'
+                        } focus:ring-2 focus:ring-offset-2 cursor-pointer transition-all`}
+                      />
+                      <span className={`text-sm ${textSecondary} leading-relaxed`}>
+                        Я согласен с{' '}
+                        <a
+                          href="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#EAB308] hover:text-[#FACC15] underline font-medium transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Политикой конфиденциальности
+                        </a>
+                        {' '}и даю согласие на обработку персональных данных
+                      </span>
+                    </label>
+                  </div>
+
                   <div className="flex justify-center">
-                    <Button type="submit" isLoading={isLoading} className="lg:py-5 lg:text-lg">
+                    <Button 
+                      type="submit" 
+                      isLoading={isLoading} 
+                      className="lg:py-5 lg:text-lg"
+                      disabled={!agreeToPrivacy}
+                    >
                       Зарегистрироваться
                     </Button>
                   </div>

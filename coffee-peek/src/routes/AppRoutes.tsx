@@ -14,7 +14,10 @@ const CoffeeShopDetailPage = lazy(() => import('../pages/CoffeeShopPage'));
 const CreateReviewPage = lazy(() => import('../pages/CreateReviewPage'));
 const UserProfilePage = lazy(() => import('../pages/UserProfilePage'));
 const CreateCoffeeShopPage = lazy(() => import('../pages/CreateCoffeeShopPage'));
+const CreateCheckInPage = lazy(() => import('../pages/CreateCheckInPage'));
+const AIVideoModelsPage = lazy(() => import('../pages/AIVideoModelsPage'));
 const ErrorPage = lazy(() => import('../pages/ErrorPage'));
+const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-[#1A1412]">
@@ -30,6 +33,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/error" element={<ErrorPage />} />
 
         {/* Protected routes */}
@@ -106,6 +110,28 @@ export const AppRoutes: React.FC = () => {
             <ProtectedRoute>
               <AuthenticatedLayout>
                 <CreateCoffeeShopPage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/shops/:shopId/checkin"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <CreateCheckInPage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/ai-video-models"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <AIVideoModelsPage />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

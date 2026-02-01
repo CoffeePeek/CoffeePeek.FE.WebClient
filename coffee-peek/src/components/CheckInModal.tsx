@@ -7,6 +7,7 @@ import { getThemeColors, COLORS } from '../constants/colors';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { Icons } from '../constants';
+import { TokenManager } from '../api/core/httpClient';
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -75,7 +76,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   const uploadPhotos = async (): Promise<Array<{ fileName: string; contentType: string; storageKey: string; size: number }>> => {
     if (selectedFiles.length === 0) return [];
 
-    const token = localStorage.getItem('accessToken');
+    const token = TokenManager.getAccessToken();
     if (!token) {
       throw new Error('Не авторизован');
     }

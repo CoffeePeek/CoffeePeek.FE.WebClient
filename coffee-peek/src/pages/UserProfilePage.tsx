@@ -6,6 +6,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import Button from '../components/Button';
 import { useUsersCache } from '../hooks/useUsersCache';
+import { logger } from '../utils/logger';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -23,6 +25,9 @@ const UserProfilePage: React.FC = () => {
   const [reviewsPage, setReviewsPage] = React.useState(1);
   const [reviewsTotalPages, setReviewsTotalPages] = React.useState(1);
   const usersCache = useUsersCache(reviews);
+
+  // Устанавливаем title с именем пользователя
+  usePageTitle(profile?.userName || 'Профиль пользователя');
 
   // Load profile
   React.useEffect(() => {
@@ -45,7 +50,7 @@ const UserProfilePage: React.FC = () => {
         }
       } catch (err) {
         if (!cancelled) {
-          console.error('Error loading profile:', err);
+          logger.error('Error loading profile:', err);
           setError('Произошла ошибка при загрузке профиля');
         }
       } finally {
@@ -81,7 +86,7 @@ const UserProfilePage: React.FC = () => {
         }
       } catch (err) {
         if (!cancelled) {
-          console.error('Error loading reviews:', err);
+          logger.error('Error loading reviews:', err);
         }
       } finally {
         if (!cancelled) {

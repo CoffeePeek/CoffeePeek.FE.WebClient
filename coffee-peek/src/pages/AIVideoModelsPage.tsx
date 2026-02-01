@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import ModelCard from '../components/ai-video/ModelCard';
 import { aiVideoModels, type AIVideoModel } from '../data/aiVideoModels';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const AIVideoModelsPage: React.FC = () => {
+    usePageTitle('AI Видео Модели');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [selectedSort, setSelectedSort] = useState<string>('name');
@@ -131,8 +133,8 @@ const AIVideoModelsPage: React.FC = () => {
                                     onChange={(e) => setSelectedSort(e.target.value)}
                                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                                 >
-                                    {sortOptions => (
-                                        <option key={opt.map((opt).id} value={opt.id}>{opt.label}</option>
+                                    {sortOptions.map((opt) => (
+                                        <option key={opt.id} value={opt.id}>{opt.label}</option>
                                     ))}
                                 </select>
                             </div>

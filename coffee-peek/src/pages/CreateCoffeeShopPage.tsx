@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { sendCoffeeShopToModeration, getUploadUrls, SendCoffeeShopToModerationRequest } from '../api/moderation';
+import { sendCoffeeShopToModeration, SendCoffeeShopToModerationRequest } from '../api/moderation';
 import { getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, City, Equipment, CoffeeBean, Roaster, BrewMethod } from '../api/coffeeshop';
 import Button from '../components/Button';
 import MaterialSelect from '../components/MaterialSelect';
@@ -8,12 +8,18 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { getThemeClasses } from '../utils/theme';
 import { getErrorMessage } from '../utils/errorHandler';
+import { getDefaultSchedules } from '../utils/shopUtils';
+import { usePhotoUpload } from '../hooks/usePhotoUpload';
+import { TokenManager } from '../api/core/httpClient';
+import { logger } from '../utils/logger';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 interface CreateCoffeeShopPageProps {
   onBack: () => void;
 }
 
 const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) => {
+  usePageTitle('Добавить кофейню');
   const { theme } = useTheme();
   const { showToast } = useToast();
   const themeClasses = getThemeClasses(theme);
@@ -26,17 +32,6 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
   const [brewMethods, setBrewMethods] = useState<BrewMethod[]>([]);
   const [referenceDataLoaded, setReferenceDataLoaded] = useState(false);
   const [isLoadingReferenceData, setIsLoadingReferenceData] = useState(true);
-
-  // Дефолтное расписание: Пн-Пт 8:00-22:00, Сб-Вс 10:00-22:00
-  const getDefaultSchedules = () => [
-    { dayOfWeek: 0, openTime: '08:00', closeTime: '22:00' }, // Понедельник
-    { dayOfWeek: 1, openTime: '08:00', closeTime: '22:00' }, // Вторник
-    { dayOfWeek: 2, openTime: '08:00', closeTime: '22:00' }, // Среда
-    { dayOfWeek: 3, openTime: '08:00', closeTime: '22:00' }, // Четверг
-    { dayOfWeek: 4, openTime: '08:00', closeTime: '22:00' }, // Пятница
-    { dayOfWeek: 5, openTime: '10:00', closeTime: '22:00' }, // Суббота
-    { dayOfWeek: 6, openTime: '10:00', closeTime: '22:00' }, // Воскресенье
-  ];
 
   const [formData, setFormData] = useState<Omit<SendCoffeeShopToModerationRequest, 'priceRange'> & { priceRange?: string }>({
     name: '',
@@ -58,8 +53,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
     shopPhotos: [],
   });
 
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos, clearFiles } = usePhotoUpload();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,17 +71,11 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
         ]);
 
         // Handle different possible response structures
-        const citiesResponse: any = citiesRes;
-        const equipmentsResponse: any = equipmentsRes;
-        const beansResponse: any = beansRes;
-        const roastersResponse: any = roastersRes;
-        const methodsResponse: any = methodsRes;
-
-        const citiesData = citiesResponse.data?.cities || citiesResponse.data || [];
-        const equipmentsData = equipmentsResponse.data?.equipments || equipmentsResponse.data || [];
-        const beansData = beansResponse.data?.beans || beansResponse.data || [];
-        const roastersData = roastersResponse.data?.roasters || roastersResponse.data || [];
-        const methodsData = methodsResponse.data?.methods || methodsResponse.data || [];
+        const citiesData = (citiesRes.data as { cities?: City[] } | City[])?.cities || (citiesRes.data as City[]) || [];
+        const equipmentsData = (equipmentsRes.data as { equipments?: Equipment[] } | Equipment[])?.equipments || (equipmentsRes.data as Equipment[]) || [];
+        const beansData = (beansRes.data as { beans?: CoffeeBean[] } | CoffeeBean[])?.beans || (beansRes.data as CoffeeBean[]) || [];
+        const roastersData = (roastersRes.data as { roasters?: Roaster[] } | Roaster[])?.roasters || (roastersRes.data as Roaster[]) || [];
+        const methodsData = (methodsRes.data as { methods?: BrewMethod[] } | BrewMethod[])?.methods || (methodsRes.data as BrewMethod[]) || [];
 
         setCities(Array.isArray(citiesData) ? citiesData : []);
         setEquipments(Array.isArray(equipmentsData) ? equipmentsData : []);
@@ -96,7 +84,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
         setBrewMethods(Array.isArray(methodsData) ? methodsData : []);
         setReferenceDataLoaded(true);
       } catch (err) {
-        console.error('Error loading reference data:', err);
+        logger.error('Error loading reference data:', err);
         setReferenceDataLoaded(true);
       } finally {
         setIsLoadingReferenceData(false);
@@ -106,7 +94,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
     loadReferenceData();
   }, []);
 
-  const handleInputChange = (field: keyof SendCoffeeShopToModerationRequest, value: any) => {
+  const handleInputChange = (field: keyof SendCoffeeShopToModerationRequest, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -157,61 +145,6 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
 
   const dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setSelectedFiles(prev => [...prev, ...files]);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const uploadPhotos = async (): Promise<Array<{ fileName: string; contentType: string; storageKey: string; size: number }>> => {
-    if (selectedFiles.length === 0) return [];
-
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
-    const uploadRequests = selectedFiles.map(file => ({
-      fileName: file.name,
-      contentType: file.type,
-    }));
-
-    const uploadUrlsResponse = await getUploadUrls(token, uploadRequests);
-    if (!uploadUrlsResponse.success || !uploadUrlsResponse.data) {
-      throw new Error('Ошибка при получении URL для загрузки');
-    }
-
-    const uploadPromises = selectedFiles.map(async (file, index) => {
-      const { uploadUrl, storageKey } = uploadUrlsResponse.data[index];
-      
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Ошибка загрузки файла ${file.name}`);
-      }
-
-      return {
-        fileName: file.name,
-        contentType: file.type,
-        storageKey: storageKey,
-        size: file.size,
-      };
-    });
-
-    return Promise.all(uploadPromises);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -223,12 +156,10 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
 
     try {
       setIsSubmitting(true);
-      setUploadingPhotos(true);
 
       const uploadedPhotos = await uploadPhotos();
-      setUploadingPhotos(false);
 
-      const token = localStorage.getItem('accessToken');
+      const token = TokenManager.getAccessToken();
       if (!token) {
         throw new Error('Не авторизован');
       }
@@ -280,17 +211,16 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           brewMethodIds: [],
           shopPhotos: [],
         });
-        setSelectedFiles([]);
+        clearFiles();
         onBack();
       } else {
         setError(response.message || 'Ошибка при отправке кофейни на модерацию');
       }
     } catch (err: any) {
       setError(getErrorMessage(err));
-      console.error('Error submitting coffee shop:', err);
+      logger.error('Error submitting coffee shop:', err);
     } finally {
       setIsSubmitting(false);
-      setUploadingPhotos(false);
     }
   };
 

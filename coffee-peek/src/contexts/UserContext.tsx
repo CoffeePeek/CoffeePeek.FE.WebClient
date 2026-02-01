@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { parseJWT, getUserRoles, getUserEmail, getUserId, isTokenExpired } from '../utils/jwt';
+import { TokenManager } from '../api/core/httpClient';
 
 interface UserContextType {
   user: {
@@ -62,13 +63,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    TokenManager.clearTokens();
     setUser(null);
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = TokenManager.getAccessToken();
     if (token) {
       updateUserFromToken(token);
     }

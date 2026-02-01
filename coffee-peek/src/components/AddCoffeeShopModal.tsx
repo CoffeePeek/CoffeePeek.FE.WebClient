@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { sendCoffeeShopToModeration, getUploadUrls, SendCoffeeShopToModerationRequest } from '../api/moderation';
+import { sendCoffeeShopToModeration, SendCoffeeShopToModerationRequest } from '../api/moderation';
 import { City, Equipment, CoffeeBean, Roaster, BrewMethod } from '../api/coffeeshop';
 import Button from './Button';
 import MaterialSelect from './MaterialSelect';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getErrorMessage } from '../utils/errorHandler';
+import { getDefaultSchedules } from '../utils/shopUtils';
+import { usePhotoUpload } from '../hooks/usePhotoUpload';
+import { TokenManager } from '../api/core/httpClient';
+import { logger } from '../utils/logger';
 
 interface AddCoffeeShopModalProps {
   isOpen: boolean;
@@ -32,17 +36,6 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  
-  // Дефолтное расписание: Пн-Пт 8:00-22:00, Сб-Вс 10:00-22:00
-  const getDefaultSchedules = () => [
-    { dayOfWeek: 0, openTime: '08:00', closeTime: '22:00' }, // Понедельник
-    { dayOfWeek: 1, openTime: '08:00', closeTime: '22:00' }, // Вторник
-    { dayOfWeek: 2, openTime: '08:00', closeTime: '22:00' }, // Среда
-    { dayOfWeek: 3, openTime: '08:00', closeTime: '22:00' }, // Четверг
-    { dayOfWeek: 4, openTime: '08:00', closeTime: '22:00' }, // Пятница
-    { dayOfWeek: 5, openTime: '10:00', closeTime: '22:00' }, // Суббота
-    { dayOfWeek: 6, openTime: '10:00', closeTime: '22:00' }, // Воскресенье
-  ];
 
   const [formData, setFormData] = useState<Omit<SendCoffeeShopToModerationRequest, 'priceRange'> & { priceRange?: string }>({
     name: '',
@@ -64,12 +57,11 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
     shopPhotos: [],
   });
 
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos, clearFiles } = usePhotoUpload();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (field: keyof SendCoffeeShopToModerationRequest, value: any) => {
+  const handleInputChange = (field: keyof SendCoffeeShopToModerationRequest, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -123,63 +115,6 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
   const dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
   const dayNamesShort = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setSelectedFiles(prev => [...prev, ...files]);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const uploadPhotos = async (): Promise<Array<{ fileName: string; contentType: string; storageKey: string; size: number }>> => {
-    if (selectedFiles.length === 0) return [];
-
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
-    // Получаем presigned URLs
-    const uploadRequests = selectedFiles.map(file => ({
-      fileName: file.name,
-      contentType: file.type,
-    }));
-
-    const uploadUrlsResponse = await getUploadUrls(token, uploadRequests);
-    if (!uploadUrlsResponse.success || !uploadUrlsResponse.data) {
-      throw new Error('Ошибка при получении URL для загрузки');
-    }
-
-    // Загружаем файлы на presigned URLs
-    const uploadPromises = selectedFiles.map(async (file, index) => {
-      const { uploadUrl, storageKey } = uploadUrlsResponse.data[index];
-      
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Ошибка загрузки файла ${file.name}`);
-      }
-
-      return {
-        fileName: file.name,
-        contentType: file.type,
-        storageKey: storageKey,
-        size: file.size,
-      };
-    });
-
-    return Promise.all(uploadPromises);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -191,14 +126,11 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
 
     try {
       setIsSubmitting(true);
-      setUploadingPhotos(true);
 
       // Загружаем фотографии
       const uploadedPhotos = await uploadPhotos();
-      
-      setUploadingPhotos(false);
 
-      const token = localStorage.getItem('accessToken');
+      const token = TokenManager.getAccessToken();
       if (!token) {
         throw new Error('Не авторизован');
       }
@@ -253,16 +185,15 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
           brewMethodIds: [],
           shopPhotos: [],
         });
-        setSelectedFiles([]);
+        clearFiles();
       } else {
         setError(response.message || 'Ошибка при отправке кофейни на модерацию');
       }
     } catch (err: any) {
       setError(getErrorMessage(err));
-      console.error('Error submitting coffee shop:', err);
+      logger.error('Error submitting coffee shop:', err);
     } finally {
       setIsSubmitting(false);
-      setUploadingPhotos(false);
     }
   };
 

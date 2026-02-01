@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import Button from '../components/Button';
 import { Icons } from '../constants';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 interface ErrorPageProps {
   errorCode?: number | string;
@@ -16,7 +18,10 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
   message,
   onGoHome 
 }) => {
+  const errorContent = getErrorContent();
+  usePageTitle(errorContent.title);
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const bgClass = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-white';
   const textClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
   const textSecondaryClass = theme === 'dark' ? 'text-[#A39E93]' : 'text-gray-600';
@@ -24,7 +29,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
   const borderClass = theme === 'dark' ? 'border-[#3D2F28]' : 'border-gray-200';
 
   // Определяем заголовок и сообщение по коду ошибки
-  const getErrorContent = () => {
+  const getErrorContent = (): { title: string; message: string; icon: React.ReactNode } => {
     switch (errorCode) {
       case 403:
         return {
@@ -53,14 +58,16 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
     }
   };
 
-  const errorContent = getErrorContent();
-
   const handleGoHome = () => {
     if (onGoHome) {
       onGoHome();
     } else {
-      window.location.href = '/';
+      navigate('/', { replace: true });
     }
+  };
+
+  const handleGoBack = () => {
+    navigate(-1);
   };
 
   return (
@@ -107,7 +114,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
           </Button>
           <Button 
             variant="secondary"
-            onClick={() => window.history.back()}
+            onClick={handleGoBack}
             className="sm:w-64 py-5 text-lg"
           >
             <Icons.Back className="w-5 h-5 inline mr-2" />

@@ -13,8 +13,12 @@ import { ProfileCardSkeleton, PersonalInfoSkeleton } from '../components/skeleto
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getErrorMessage } from '../utils/errorHandler';
+import { TokenManager } from '../api/core/httpClient';
+import { logger } from '../utils/logger';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const SettingsPage: React.FC = () => {
+  usePageTitle('Настройки');
   const { user, isLoading: userLoading, logout } = useUser();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -31,7 +35,7 @@ const SettingsPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('accessToken');
+      const token = TokenManager.getAccessToken();
       
       if (!token) {
         throw new Error('Токен доступа отсутствует');
@@ -42,7 +46,7 @@ const SettingsPage: React.FC = () => {
       setError(null);
     } catch (err: any) {
       setError(getErrorMessage(err));
-      console.error('Error loading profile:', err);
+      logger.error('Error loading profile:', err);
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +119,7 @@ const SettingsPage: React.FC = () => {
       });
     } catch (err: any) {
       setError(getErrorMessage(err));
-      console.error(`Error updating ${field}:`, err);
+      logger.error(`Error updating ${field}:`, err);
     } finally {
       setSavingFields(prev => {
         const newState = { ...prev };

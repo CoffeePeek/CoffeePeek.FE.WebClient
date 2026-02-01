@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { createCheckIn, CreateCheckInRequest } from '../api/coffeeshop';
-import { getUploadUrls } from '../api/moderation';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getThemeColors, COLORS } from '../constants/colors';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { Icons } from '../constants';
+import { usePhotoUpload } from '../hooks/usePhotoUpload';
+import { TokenManager } from '../api/core/httpClient';
+import { logger } from '../utils/logger';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 interface ShopBasicInfo {
   name: string;
@@ -33,6 +36,8 @@ const CreateCheckInPage: React.FC = () => {
   // Получаем данные о кофейне из navigation state
   const shopFromState = (location.state as { shop?: ShopBasicInfo })?.shop;
   
+  usePageTitle('Чекиниться');
+  
   // Если данных нет в state (прямой переход по URL), редиректим на страницу кофейни
   useEffect(() => {
     if (!shopFromState) {
@@ -57,9 +62,8 @@ const CreateCheckInPage: React.FC = () => {
   const [ratingService, setRatingService] = useState(5);
   const [ratingPlace, setRatingPlace] = useState(5);
   
-  // Photo states
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  // Photo upload hook
+  const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos } = usePhotoUpload();
 
   // Color values for inline styles (based on theme constants)
   const themeColors = getThemeColors(theme);
@@ -74,60 +78,6 @@ const CreateCheckInPage: React.FC = () => {
     textMuted: themeColors.textSecondary,
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setSelectedFiles(prev => [...prev, ...files]);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const uploadPhotos = async (): Promise<Array<{ fileName: string; contentType: string; storageKey: string; size: number }>> => {
-    if (selectedFiles.length === 0) return [];
-
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
-    const uploadRequests = selectedFiles.map(file => ({
-      fileName: file.name,
-      contentType: file.type,
-    }));
-
-    const uploadUrlsResponse = await getUploadUrls(token, uploadRequests);
-    if (!uploadUrlsResponse.success || !uploadUrlsResponse.data) {
-      throw new Error('Ошибка при получении URL для загрузки');
-    }
-
-    const uploadPromises = selectedFiles.map(async (file, index) => {
-      const { uploadUrl, storageKey } = uploadUrlsResponse.data[index];
-      
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Ошибка загрузки файла ${file.name}`);
-      }
-
-      return {
-        fileName: file.name,
-        contentType: file.type,
-        storageKey: storageKey,
-        size: file.size,
-      };
-    });
-
-    return Promise.all(uploadPromises);
-  };
 
   const handleSubmit = async () => {
     if (!user) {
@@ -147,16 +97,14 @@ const CreateCheckInPage: React.FC = () => {
       }
     }
 
-    const token = localStorage.getItem('accessToken');
+    const token = TokenManager.getAccessToken();
     if (!token) return;
 
     try {
       setIsSubmitting(true);
-      setUploadingPhotos(true);
       
       // Загружаем фотографии
       const uploadedPhotos = await uploadPhotos();
-      setUploadingPhotos(false);
       
       // Преобразуем дату в ISO строку (используем начало дня 00:00:00)
       const dateTimeString = `${visitedDate}T00:00:00`;
@@ -184,8 +132,7 @@ const CreateCheckInPage: React.FC = () => {
         navigate(`/shops/${shopId}`);
       }
     } catch (err) {
-      console.error('Error submitting check-in:', err);
-      setUploadingPhotos(false);
+      logger.error('Error submitting check-in:', err);
       showToast('Не удалось создать чекин', 'error');
     } finally {
       setIsSubmitting(false);

@@ -9,6 +9,7 @@ import { useUser } from '../contexts/UserContext';
 import { getThemeClasses } from '../utils/theme';
 import { getErrorMessage } from '../utils/errorHandler';
 import { COLORS, getThemeColors } from '../constants/colors';
+import { logger } from '../utils/logger';
 
 interface CoffeeShopListProps {
   onShopSelect: (shopId: string) => void;
@@ -214,7 +215,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       setRoasters(Array.isArray(roastersData) ? roastersData : []);
       setBrewMethods(Array.isArray(methodsData) ? methodsData : []);
     } catch (err) {
-      console.error('Error loading initial data:', err);
+      logger.error('Error loading initial data:', err);
       // Set empty arrays to prevent errors
       setCities([]);
       setEquipments([]);
@@ -235,18 +236,18 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         ? await searchCoffeeShops(debouncedSearchQuery, filters, currentPage, pageSize)
         : await getCoffeeShops(filters, currentPage, pageSize);
       
-      console.log('CoffeeShopList: Получен ответ от API:', response);
-      console.log('CoffeeShopList: Используется поиск:', !!debouncedSearchQuery.trim());
+      logger.log('CoffeeShopList: Получен ответ от API:', response);
+      logger.log('CoffeeShopList: Используется поиск:', !!debouncedSearchQuery.trim());
         
       // Handle different response formats
       if (response.data && typeof response.data === 'object') {
         const responseData: any = response.data;
-        console.log('CoffeeShopList: Структура response.data:', responseData);
-        console.log('CoffeeShopList: Ключи в response.data:', Object.keys(responseData));
+        logger.log('CoffeeShopList: Структура response.data:', responseData);
+        logger.log('CoffeeShopList: Ключи в response.data:', Object.keys(responseData));
         
         // Check if it's the new format with coffeeShops
         if ('coffeeShops' in responseData && Array.isArray(responseData.coffeeShops)) {
-          console.log('CoffeeShopList: Найден формат coffeeShops, количество:', responseData.coffeeShops.length);
+          logger.log('CoffeeShopList: Найден формат coffeeShops, количество:', responseData.coffeeShops.length);
           // Преобразуем ShortShopDto[] в CoffeeShop[]
           const shops = responseData.coffeeShops.map((shop: any) => {
             // Обрабатываем photos
@@ -283,7 +284,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           setCurrentPage(responseData.currentPage || 1);
           setPageSize(responseData.pageSize || 10);
         } else if ('items' in responseData && Array.isArray(responseData.items)) {
-          console.log('CoffeeShopList: Найден формат items, количество:', responseData.items.length);
+          logger.log('CoffeeShopList: Найден формат items, количество:', responseData.items.length);
           const items = responseData.items.map((shop: any) => ({
             ...shop,
             rating: shop.rating ?? shop.averageRating ?? 0
@@ -296,7 +297,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           setCurrentPage(responseData.currentPage || 1);
           setPageSize(responseData.pageSize || 10);
         } else if ('content' in responseData && Array.isArray(responseData.content)) {
-          console.log('CoffeeShopList: Найден формат content, количество:', responseData.content.length);
+          logger.log('CoffeeShopList: Найден формат content, количество:', responseData.content.length);
           const content = responseData.content.map((shop: any) => ({
             ...shop,
             rating: shop.rating ?? shop.averageRating ?? 0
@@ -342,8 +343,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     } catch (err: any) {
       const errorMsg = getErrorMessage(err);
       setError(errorMsg);
-      console.error('CoffeeShopList: Ошибка при загрузке кофеен:', err);
-      console.error('CoffeeShopList: Stack trace:', err.stack);
+      logger.error('CoffeeShopList: Ошибка при загрузке кофеен:', err);
+      logger.error('CoffeeShopList: Stack trace:', err.stack);
       setAllShops([]);
       setShops([]);
       setTotalItems(0);
@@ -744,7 +745,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                   photos = (shop as any).imageUrls.filter((p: any) => p && typeof p === 'string' && p.trim().length > 0);
                 }
                 
-                console.log(`CoffeeShopList: Фото для кофейни ${shop.name}:`, {
+                logger.log(`CoffeeShopList: Фото для кофейни ${shop.name}:`, {
                   shopPhotos: shop.shopPhotos,
                   photos: (shop as any).photos,
                   imageUrls: (shop as any).imageUrls,
@@ -753,7 +754,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                 
                 // Логирование для отладки рейтинга
                 if (import.meta.env.DEV) {
-                  console.log(`CoffeeShopList: Рейтинг для ${shop.name}:`, {
+                  logger.log(`CoffeeShopList: Рейтинг для ${shop.name}:`, {
                     rating: shop.rating,
                     ratingType: typeof shop.rating,
                     averageRating: (shop as any).averageRating,

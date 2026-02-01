@@ -5,6 +5,7 @@ import Input from './Input';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { TokenManager } from '../api/core/httpClient';
 
 const AdminPanel: React.FC = () => {
   const { user } = useUser();
@@ -39,7 +40,7 @@ const AdminPanel: React.FC = () => {
   }, [selectedService]);
 
   const getAccessToken = (): string => {
-    const token = localStorage.getItem('accessToken');
+    const token = TokenManager.getAccessToken();
     if (!token) {
       throw new Error('Токен доступа не найден');
     }

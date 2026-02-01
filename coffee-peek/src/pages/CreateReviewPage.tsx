@@ -7,6 +7,9 @@ import { getThemeClasses } from '../utils/theme';
 import { getThemeColors, COLORS } from '../constants/colors';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
+import { TokenManager } from '../api/core/httpClient';
+import { logger } from '../utils/logger';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 interface ShopBasicInfo {
   name: string;
@@ -26,6 +29,7 @@ const CreateReviewPage: React.FC = () => {
   }
   
   const isEditMode = !!reviewId;
+  usePageTitle(isEditMode ? 'Редактирование отзыва' : 'Создание отзыва');
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   const { user } = useUser();
@@ -110,7 +114,7 @@ const CreateReviewPage: React.FC = () => {
         }
       } catch (err) {
         if (!cancelled) {
-          console.error('Error loading review to edit:', err);
+          logger.error('Error loading review to edit:', err);
           showToast('Не удалось загрузить отзыв для редактирования', 'error');
         }
       } finally {
@@ -159,7 +163,7 @@ const CreateReviewPage: React.FC = () => {
   const uploadPhotos = async (): Promise<Array<{ fileName: string; contentType: string; storageKey: string; size: number }>> => {
     if (selectedFiles.length === 0) return [];
 
-    const token = localStorage.getItem('accessToken');
+    const token = TokenManager.getAccessToken();
     if (!token) {
       throw new Error('Не авторизован');
     }
@@ -211,7 +215,7 @@ const CreateReviewPage: React.FC = () => {
       return;
     }
 
-    const token = localStorage.getItem('accessToken');
+    const token = TokenManager.getAccessToken();
     if (!token) return;
 
     try {
@@ -270,7 +274,7 @@ const CreateReviewPage: React.FC = () => {
         navigate(`/shops/${shopId}`);
       }
     } catch (err) {
-      console.error('Error submitting review:', err);
+      logger.error('Error submitting review:', err);
       setUploadingPhotos(false);
       showToast(reviewId ? 'Не удалось обновить отзыв' : 'Не удалось опубликовать отзыв', 'error');
     } finally {

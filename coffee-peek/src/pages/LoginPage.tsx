@@ -9,14 +9,17 @@ import { Icons } from '../constants';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { logger } from '../utils/logger';
 
 const LoginPage: React.FC = () => {
+  usePageTitle('Вход');
   const navigate = useNavigate();
   const location = useLocation();
   const { updateUserFromToken } = useUser();
   const { theme, toggleTheme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const from = (location.state as any)?.from?.pathname || '/shops';
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/shops';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,11 +34,11 @@ const LoginPage: React.FC = () => {
       const response = await login({ email, password });
       
       // Логируем ответ для отладки
-      console.log('Login response:', response);
+      logger.log('Login response:', response);
       
       // Проверяем наличие токена в ответе
       if (!response.data?.accessToken) {
-        console.error('No accessToken in response:', response);
+        logger.error('No accessToken in response:', response);
         throw new Error('Токен не получен от сервера');
       }
       
@@ -50,8 +53,8 @@ const LoginPage: React.FC = () => {
       const claims = parseJWT(accessToken);
       const roles = getUserRoles(accessToken);
       
-      console.log('Login successful. Claims:', claims);
-      console.log('User roles:', roles);
+      logger.log('Login successful. Claims:', claims);
+      logger.log('User roles:', roles);
 
       // Сохраняем токены
       localStorage.setItem('accessToken', accessToken);
@@ -66,7 +69,7 @@ const LoginPage: React.FC = () => {
       navigate(from, { replace: true });
     } catch (err: any) {
       setError(getErrorMessage(err, 'login'));
-      console.error('Login error:', err);
+      logger.error('Login error:', err);
     } finally {
       setIsLoading(false);
     }

@@ -17,6 +17,8 @@ import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getErrorMessage } from '../utils/errorHandler';
+import { TokenManager } from '../api/core/httpClient';
+import { logger } from '../utils/logger';
 
 const ModeratorPanel: React.FC = () => {
   const { user } = useUser();
@@ -68,7 +70,7 @@ const ModeratorPanel: React.FC = () => {
   
   const loadReferenceData = async () => {
     try {
-      console.log('Loading reference data...');
+      logger.log('Loading reference data...');
       const [citiesRes, equipmentsRes, beansRes, roastersRes, methodsRes] = await Promise.all([
         getCities(),
         getEquipments(),
@@ -77,7 +79,7 @@ const ModeratorPanel: React.FC = () => {
         getBrewMethods(),
       ]);
       
-      console.log('Reference data responses:', { citiesRes, equipmentsRes, beansRes, roastersRes, methodsRes });
+      logger.log('Reference data responses:', { citiesRes, equipmentsRes, beansRes, roastersRes, methodsRes });
       
       // The API returns data in format { brewMethods: [...] }, { cities: [...] }, etc.
       // Need to cast to any to access nested properties
@@ -101,7 +103,7 @@ const ModeratorPanel: React.FC = () => {
       const methodsArray = Array.isArray(methodsData) ? methodsData : [];
       
       // Детальное логирование для отладки
-      console.log('Parsed reference data:', {
+      logger.log('Parsed reference data:', {
         cities: {
           count: citiesArray.length,
           sample: citiesArray.slice(0, 2),
@@ -142,7 +144,7 @@ const ModeratorPanel: React.FC = () => {
       // Устанавливаем loaded в true после попытки загрузки (даже если данные пустые)
       // Это позволяет различать "данные загружаются" от "данные загружены (но могут быть пустыми)"
       setReferenceDataLoaded(true);
-      console.log('Reference data loaded:', { 
+      logger.log('Reference data loaded:', { 
         cities: citiesArray.length, 
         equipments: equipmentsArray.length, 
         beans: beansArray.length, 
@@ -154,7 +156,7 @@ const ModeratorPanel: React.FC = () => {
         methodsSample: methodsArray.slice(0, 2)
       });
     } catch (err) {
-      console.error('Error loading reference data:', err);
+      logger.error('Error loading reference data:', err);
       // Устанавливаем loaded в true даже при ошибке, чтобы не показывать "Загрузка..." вечно
       setReferenceDataLoaded(true);
     }
@@ -163,30 +165,30 @@ const ModeratorPanel: React.FC = () => {
   const loadShops = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('accessToken');
+      const token = TokenManager.getAccessToken();
       if (!token) {
         throw new Error('Не авторизован');
       }
 
       const response = await getModerationShops(token);
-      console.log('ModeratorPanel: Получен ответ от API модерации:', response);
+      logger.log('ModeratorPanel: Получен ответ от API модерации:', response);
       
       // API может возвращать данные в разных форматах
       let shopsData: any = response.data;
-      console.log('ModeratorPanel: Структура response.data:', shopsData);
-      console.log('ModeratorPanel: Тип response.data:', typeof shopsData);
-      console.log('ModeratorPanel: Ключи в response.data:', shopsData && typeof shopsData === 'object' ? Object.keys(shopsData) : 'не объект');
+      logger.log('ModeratorPanel: Структура response.data:', shopsData);
+      logger.log('ModeratorPanel: Тип response.data:', typeof shopsData);
+      logger.log('ModeratorPanel: Ключи в response.data:', shopsData && typeof shopsData === 'object' ? Object.keys(shopsData) : 'не объект');
       
       // Проверяем, есть ли вложенный объект moderationShop
       if (shopsData && typeof shopsData === 'object' && 'moderationShop' in shopsData) {
-        console.log('ModeratorPanel: Найден формат moderationShop, количество:', Array.isArray(shopsData.moderationShop) ? shopsData.moderationShop.length : 'не массив');
+        logger.log('ModeratorPanel: Найден формат moderationShop, количество:', Array.isArray(shopsData.moderationShop) ? shopsData.moderationShop.length : 'не массив');
         shopsData = shopsData.moderationShop;
       }
       
       // Отладочная информация для первой кофейни и проверка сопоставления
       if (shopsData && Array.isArray(shopsData) && shopsData.length > 0) {
         const firstShop = shopsData[0];
-        console.log('Sample shop data from ModerationShop API:', {
+        logger.log('Sample shop data from ModerationShop API:', {
           id: firstShop.id,
           name: firstShop.name,
           equipmentIds: firstShop.equipmentIds,
@@ -207,7 +209,7 @@ const ModeratorPanel: React.FC = () => {
         // Это будет выполнено после того, как referenceDataLoaded станет true
         setTimeout(() => {
           if (referenceDataLoaded && firstShop.coffeeBeanIds && Array.isArray(firstShop.coffeeBeanIds) && firstShop.coffeeBeanIds.length > 0) {
-            console.log('ID Matching Test (after reference data loaded):', {
+            logger.log('ID Matching Test (after reference data loaded):', {
               shopBeanIds: firstShop.coffeeBeanIds.slice(0, 3),
               availableBeanIds: coffeeBeans.slice(0, 10).map(b => b.id),
               matchingResults: firstShop.coffeeBeanIds.slice(0, 3).map(id => {
@@ -227,16 +229,16 @@ const ModeratorPanel: React.FC = () => {
       }
       
       if (Array.isArray(shopsData)) {
-        console.log('ModeratorPanel: Установлено кофеен:', shopsData.length);
+        logger.log('ModeratorPanel: Установлено кофеен:', shopsData.length);
         setShops(shopsData as ModerationShop[]);
       } else {
-        console.warn('ModeratorPanel: shopsData не является массивом:', shopsData);
+        logger.warn('ModeratorPanel: shopsData не является массивом:', shopsData);
         setShops([]);
       }
       setError(null);
     } catch (err: any) {
       setError(getErrorMessage(err));
-      console.error('Error loading moderation shops:', err);
+      logger.error('Error loading moderation shops:', err);
     } finally {
       setIsLoading(false);
     }
@@ -246,7 +248,7 @@ const ModeratorPanel: React.FC = () => {
     try {
       setIsLoadingReviews(true);
       const response = await getModerationReviews();
-      console.log('ModeratorPanel: Получен ответ от API модерации отзывов:', response);
+      logger.log('ModeratorPanel: Получен ответ от API модерации отзывов:', response);
       
       if (response.success && response.data) {
         let reviewsData = response.data;
@@ -261,20 +263,20 @@ const ModeratorPanel: React.FC = () => {
         }
         
         if (Array.isArray(reviewsData)) {
-          console.log('ModeratorPanel: Установлено отзывов:', reviewsData.length);
+          logger.log('ModeratorPanel: Установлено отзывов:', reviewsData.length);
           setReviews(reviewsData);
         } else {
-          console.warn('ModeratorPanel: reviewsData не является массивом:', reviewsData);
+          logger.warn('ModeratorPanel: reviewsData не является массивом:', reviewsData);
           setReviews([]);
         }
       } else {
-        console.warn('ModeratorPanel: Не удалось загрузить отзывы:', response);
+        logger.warn('ModeratorPanel: Не удалось загрузить отзывы:', response);
         setReviews([]);
       }
       setError(null);
     } catch (err: any) {
       setError(getErrorMessage(err));
-      console.error('Error loading moderation reviews:', err);
+      logger.error('Error loading moderation reviews:', err);
     } finally {
       setIsLoadingReviews(false);
     }
@@ -324,7 +326,7 @@ const ModeratorPanel: React.FC = () => {
       setUpdatingShopId(shopId);
       setError(null);
       
-      const token = localStorage.getItem('accessToken');
+      const token = TokenManager.getAccessToken();
       if (!token) {
         throw new Error('Не авторизован');
       }
@@ -338,7 +340,7 @@ const ModeratorPanel: React.FC = () => {
       }
     } catch (err: any) {
       setError(err.message || 'Ошибка при одобрении');
-      console.error('Error approving shop:', err);
+      logger.error('Error approving shop:', err);
     } finally {
       setUpdatingShopId(null);
     }
@@ -354,7 +356,7 @@ const ModeratorPanel: React.FC = () => {
       setUpdatingShopId(shopId);
       setError(null);
       
-      const token = localStorage.getItem('accessToken');
+      const token = TokenManager.getAccessToken();
       if (!token) {
         throw new Error('Не авторизован');
       }
@@ -368,7 +370,7 @@ const ModeratorPanel: React.FC = () => {
       }
     } catch (err: any) {
       setError(err.message || 'Ошибка при отклонении');
-      console.error('Error rejecting shop:', err);
+      logger.error('Error rejecting shop:', err);
     } finally {
       setUpdatingShopId(null);
     }
@@ -384,7 +386,7 @@ const ModeratorPanel: React.FC = () => {
       setUpdatingShopId(shopId);
       setError(null);
       
-      const token = localStorage.getItem('accessToken');
+      const token = TokenManager.getAccessToken();
       if (!token) {
         throw new Error('Не авторизован');
       }
@@ -393,7 +395,7 @@ const ModeratorPanel: React.FC = () => {
       await loadShops();
     } catch (err: any) {
       setError(err.message || 'Ошибка при возврате в модерацию');
-      console.error('Error returning shop to moderation:', err);
+      logger.error('Error returning shop to moderation:', err);
     } finally {
       setUpdatingShopId(null);
     }
@@ -427,7 +429,7 @@ const ModeratorPanel: React.FC = () => {
 
   const saveEditedShop = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = TokenManager.getAccessToken();
       if (!token) {
         throw new Error('Не авторизован');
       }
@@ -458,7 +460,7 @@ const ModeratorPanel: React.FC = () => {
       setSelectedShop(null); // Reset selection to show updated data
     } catch (err: any) {
       setError(err.message || 'Ошибка при сохранении изменений');
-      console.error('Error saving edited shop:', err);
+      logger.error('Error saving edited shop:', err);
     }
   };
 
@@ -469,7 +471,7 @@ const ModeratorPanel: React.FC = () => {
     }));
   };
 
-  const handleNestedEditFormChange = (parentField: keyof ModerationShop, childField: string, value: any) => {
+  const handleNestedEditFormChange = (parentField: keyof ModerationShop, childField: string, value: unknown) => {
     setEditForm(prev => ({
       ...prev,
       [parentField]: {
@@ -488,7 +490,7 @@ const ModeratorPanel: React.FC = () => {
   
   const getEquipmentNamesByIds = (ids: string[]) => {
     if (!referenceDataLoaded || !Array.isArray(equipments) || !ids || !Array.isArray(ids)) {
-      console.log('getEquipmentNamesByIds: conditions not met', { referenceDataLoaded, equipments: equipments?.length, ids });
+      logger.log('getEquipmentNamesByIds: conditions not met', { referenceDataLoaded, equipments: equipments?.length, ids });
       return [];
     }
     const names = ids.map(id => {

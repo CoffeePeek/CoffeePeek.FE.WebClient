@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, useNavigate, useLocation } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -7,6 +7,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { useToast } from './contexts/ToastContext';
 import { queryClient } from './lib/queryClient';
+import CookieBanner from './components/CookieBanner';
 
 // Component to initialize global error handler
 const GlobalErrorHandler: React.FC = () => {
@@ -26,13 +27,15 @@ const GlobalErrorHandler: React.FC = () => {
 // Component to handle redirects based on auth state
 const AuthRedirect: React.FC = () => {
   const { user } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
   
   useEffect(() => {
     // If user is logged in and on landing page, redirect to shops
-    if (user && window.location.pathname === '/') {
-      window.history.replaceState(null, '', '/shops');
+    if (user && location.pathname === '/') {
+      navigate('/shops', { replace: true });
     }
-  }, [user]);
+  }, [user, location.pathname, navigate]);
   
   return null;
 };
@@ -43,6 +46,7 @@ const AppContent: React.FC = () => {
       <GlobalErrorHandler />
       <AuthRedirect />
       <AppRoutes />
+      <CookieBanner />
     </>
   );
 };

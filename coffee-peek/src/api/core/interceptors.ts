@@ -5,6 +5,7 @@
 
 import { ApiError } from './types';
 import { getErrorMessageByStatus } from '../../utils/errorHandler';
+import { logger } from '../../utils/logger';
 
 /**
  * Token Manager для работы с токенами аутентификации
@@ -62,12 +63,10 @@ export function requestInterceptor(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  if (import.meta.env.DEV) {
-    console.log(`[API Request] ${options.method || 'GET'} ${url}`, {
-      headers: Object.fromEntries(headers.entries()),
-      body: options.body,
-    });
-  }
+  logger.log(`[API Request] ${options.method || 'GET'} ${url}`, {
+    headers: Object.fromEntries(headers.entries()),
+    body: options.body,
+  });
 
   return {
     ...options,
@@ -81,12 +80,10 @@ export async function responseInterceptor<T>(
 ): Promise<T> {
   const contentType = response.headers.get('content-type');
 
-  if (import.meta.env.DEV) {
-    console.log(`[API Response] ${response.status} ${url}`, {
-      ok: response.ok,
-      contentType,
-    });
-  }
+  logger.log(`[API Response] ${response.status} ${url}`, {
+    ok: response.ok,
+    contentType,
+  });
 
   if (!contentType?.includes('application/json')) {
     if (response.ok) {
@@ -174,7 +171,7 @@ export function normalizeResponseData<T>(data: any): T {
     // Нормализуем каждый элемент массива
     return {
       ...data,
-      coffeeShops: data.coffeeShops.map((shop: any) => normalizeCoffeeShopData(shop))
+      coffeeShops: (data.coffeeShops as unknown[]).map((shop) => normalizeCoffeeShopData(shop))
     } as T;
   }
 
@@ -187,14 +184,51 @@ export function normalizeResponseData<T>(data: any): T {
 }
 
 /**
+ * Интерфейсы для нормализации данных API
+ */
+interface BackendSchedule {
+  dayOfWeek: number;
+  isClosed?: boolean;
+  intervals?: Array<{
+    openTime: string;
+    closeTime: string;
+  }>;
+  openTime?: string;
+  closeTime?: string;
+}
+
+interface BackendShopContact {
+  phoneNumber?: string;
+  phone?: string;
+  email?: string;
+  siteLink?: string;
+  website?: string;
+  instagramLink?: string;
+  instagram?: string;
+}
+
+interface BackendShopData {
+  id?: string;
+  name?: string;
+  address?: string;
+  Address?: string;
+  notValidatedAddress?: string;
+  coffeeBeans?: unknown[];
+  shopContact?: BackendShopContact | null;
+  schedules?: BackendSchedule[];
+  [key: string]: unknown;
+}
+
+/**
  * Нормализует данные кофейни из формата API в формат, ожидаемый фронтендом
  */
-function normalizeCoffeeShopData(shop: any): any {
+function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string, unknown> {
   if (!shop || typeof shop !== 'object') {
-    return shop;
+    return shop as Record<string, unknown>;
   }
 
-  const normalized: any = { ...shop };
+  const shopData = shop as BackendShopData;
+  const normalized: Record<string, unknown> = { ...shopData };
 
   // Нормализуем адрес: на бэкенде может быть "address" или "Address", на фронтенде для модерации используется "notValidatedAddress"
   if ('address' in shop && !('notValidatedAddress' in shop)) {
@@ -210,8 +244,8 @@ function normalizeCoffeeShopData(shop: any): any {
   }
 
   // Нормализуем shopContact
-  if ('shopContact' in shop && shop.shopContact) {
-    const contact = shop.shopContact;
+  if ('shopContact' in shopData && shopData.shopContact) {
+    const contact = shopData.shopContact as BackendShopContact;
     normalized.shopContact = {
       phone: contact.phoneNumber || contact.phone,
       email: contact.email,
@@ -221,9 +255,9 @@ function normalizeCoffeeShopData(shop: any): any {
   }
 
   // Нормализуем schedules
-  if ('schedules' in shop && Array.isArray(shop.schedules)) {
-    normalized.schedules = shop.schedules
-      .filter((schedule: any) => {
+  if ('schedules' in shopData && Array.isArray(shopData.schedules)) {
+    normalized.schedules = shopData.schedules
+      .filter((schedule: BackendSchedule) => {
         // Пропускаем закрытые дни
         if (schedule.isClosed === true) return false;
         // Проверяем наличие интервалов
@@ -233,7 +267,7 @@ function normalizeCoffeeShopData(shop: any): any {
         // Поддерживаем старый формат с прямыми полями
         return schedule.openTime && schedule.closeTime;
       })
-      .map((schedule: any) => {
+      .map((schedule: BackendSchedule) => {
         if (schedule.intervals && Array.isArray(schedule.intervals) && schedule.intervals.length > 0) {
           // Новый формат с intervals
           const interval = schedule.intervals[0];
@@ -284,7 +318,7 @@ function handleServerError(): void {
       showServerErrorNotification();
     })
     .catch((err) => {
-      console.error('[Interceptor] Failed to show server error notification:', err);
+      logger.error('[Interceptor] Failed to show server error notification:', err);
     });
 }
 

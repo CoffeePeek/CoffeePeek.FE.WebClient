@@ -380,7 +380,7 @@ export async function updateModerationShop(
           formData.append(key, JSON.stringify(value));
         } else {
           // Для массивов примитивов добавляем каждый элемент
-          value.forEach((item) => formData.append(key, String(item)));
+        value.forEach((item) => formData.append(key, String(item)));
         }
       } else if (typeof value === "object") {
         formData.append(key, JSON.stringify(value));

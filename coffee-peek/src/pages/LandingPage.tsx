@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { VerificationStep, UserState } from '../types';
 import { Icons } from '../constants';
 import Button from '../components/Button';
@@ -7,8 +7,11 @@ import Input from '../components/Input';
 import OTPInput from '../components/OTPInput';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { logger } from '../utils/logger';
 
 const LandingPage: React.FC = () => {
+  usePageTitle('Главная');
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const themeClasses = getThemeClasses(theme);
@@ -17,10 +20,11 @@ const LandingPage: React.FC = () => {
   const [isFormLoading, setIsFormLoading] = useState(false);
   const [timer, setTimer] = useState(59);
 
+  const [searchParams] = useSearchParams();
+  
   useEffect(() => {
     const API_BASE_URL = import.meta.env.VITE_API_URL;
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
+    const token = searchParams.get('token');
 
     if (token) {
       setUserState(prev => ({ ...prev, token }));
@@ -52,7 +56,7 @@ const LandingPage: React.FC = () => {
           }
         })
         .catch(err => {
-          console.error('Network error', err);
+          logger.error('Network error', err);
           setStep(VerificationStep.ERROR);
         })
         .finally(() => setIsFormLoading(false));
