@@ -7,8 +7,10 @@ import {
   UserProfile, 
   updateUsername,
   updateEmail,
-  updateAbout
+  updateAbout,
+  updateAvatar
 } from '../api/auth';
+import { getAvatarUploadUrl } from '../api/photos';
 import { ProfileCardSkeleton, PersonalInfoSkeleton } from '../components/skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
@@ -25,9 +27,12 @@ const SettingsPage: React.FC = () => {
   const themeClasses = getThemeClasses(theme);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+  const [isEditing, setIsEditing] = useState(false);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
-  const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadProfile = useCallback(async () => {
@@ -56,78 +61,161 @@ const SettingsPage: React.FC = () => {
     loadProfile();
   }, [loadProfile]);
 
-  const handleEditStart = useCallback((field: string, currentValue: string) => {
-    setEditingFields(prev => ({ ...prev, [field]: true }));
-    setEditValues(prev => ({ ...prev, [field]: currentValue }));
+  const handleEditStart = useCallback(() => {
+    if (!profile) return;
+    
+    // Сохраняем исходные значения
+    const original: Record<string, string> = {
+      userName: profile.userName || '',
+      email: profile.email || '',
+      about: profile.about || '',
+    };
+    setOriginalValues(original);
+    setEditValues(original);
+    setSelectedAvatarFile(null);
+    setAvatarPreview(null);
+    setIsEditing(true);
+    setError(null);
+  }, [profile]);
+
+  const handleEditCancel = useCallback(() => {
+    setEditValues({});
+    setOriginalValues({});
+    setSelectedAvatarFile(null);
+    setAvatarPreview(null);
+    setIsEditing(false);
     setError(null);
   }, []);
 
-  const handleEditCancel = useCallback((field: string) => {
-    setEditingFields(prev => {
-      const newState = { ...prev };
-      delete newState[field];
-      return newState;
-    });
-    setEditValues(prev => {
-      const newState = { ...prev };
-      delete newState[field];
-      return newState;
-    });
+  const handleAvatarSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Проверяем тип файла
+      if (!file.type.startsWith('image/')) {
+        setError('Выберите изображение');
+        return;
+      }
+      
+      // Проверяем размер (например, максимум 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Размер файла не должен превышать 5MB');
+        return;
+      }
+      
+      setSelectedAvatarFile(file);
+      
+      // Создаем preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   }, []);
 
-  const handleSave = useCallback(async (field: string) => {
+  const handleSave = useCallback(async () => {
     if (!profile) return;
 
-    const value = editValues[field];
-    if (!value || value.trim() === '') {
-      setError('Поле не может быть пустым');
+    // Валидация обязательных полей
+    const userName = editValues.userName?.trim() || '';
+    const email = editValues.email?.trim() || '';
+    
+    if (!userName) {
+      setError('Имя пользователя не может быть пустым');
+      return;
+    }
+    
+    if (!email) {
+      setError('Email не может быть пустым');
+      return;
+    }
+
+    // Проверяем email формат
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Введите корректный email');
       return;
     }
 
     try {
-      setSavingFields(prev => ({ ...prev, [field]: true }));
+      setIsSaving(true);
       setError(null);
 
-      let response;
-      switch (field) {
-        case 'userName':
-          response = await updateUsername({ username: value });
-          break;
-        case 'email':
-          response = await updateEmail({ email: value });
-          break;
-        case 'about':
-          response = await updateAbout({ about: value });
-          break;
-        default:
-          throw new Error('Неизвестное поле');
+      // Определяем измененные поля
+      const updates: Promise<any>[] = [];
+      
+      if (editValues.userName !== originalValues.userName) {
+        updates.push(updateUsername({ username: editValues.userName }));
+      }
+      
+      if (editValues.email !== originalValues.email) {
+        updates.push(updateEmail({ email: editValues.email }));
+      }
+      
+      if (editValues.about !== originalValues.about) {
+        updates.push(updateAbout({ about: editValues.about || '' }));
       }
 
-      // Обновляем профиль после успешного сохранения
-      const updatedProfile = await getProfile();
-      setProfile(updatedProfile.data);
+      // Загружаем аватар, если выбран новый файл
+      if (selectedAvatarFile) {
+        const uploadRequest = {
+          fileName: selectedAvatarFile.name,
+          contentType: selectedAvatarFile.type,
+          sizeBytes: selectedAvatarFile.size,
+        };
+
+        const uploadUrlResponse = await getAvatarUploadUrl(uploadRequest);
+        if (!uploadUrlResponse.success || !uploadUrlResponse.data) {
+          throw new Error('Ошибка при получении URL для загрузки аватара');
+        }
+
+        const { uploadUrl, storageKey } = uploadUrlResponse.data;
+
+        // Загружаем файл на S3
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: selectedAvatarFile,
+          headers: {
+            'Content-Type': selectedAvatarFile.type,
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Ошибка загрузки аватара');
+        }
+
+        // Отправляем полный объект UploadedPhotoDto
+        updates.push(updateAvatar({
+          uploadedPhoto: {
+            fileName: selectedAvatarFile.name,
+            contentType: selectedAvatarFile.type,
+            storageKey: storageKey,
+            size: selectedAvatarFile.size,
+          },
+        }));
+      }
+
+      // Отправляем только измененные поля
+      if (updates.length > 0) {
+        await Promise.all(updates);
+        
+        // Обновляем профиль после успешного сохранения
+        const updatedProfile = await getProfile();
+        setProfile(updatedProfile.data);
+      }
       
-      setEditingFields(prev => {
-        const newState = { ...prev };
-        delete newState[field];
-        return newState;
-      });
-      setEditValues(prev => {
-        const newState = { ...prev };
-        delete newState[field];
-        return newState;
-      });
+      setIsEditing(false);
+      setEditValues({});
+      setOriginalValues({});
+      setSelectedAvatarFile(null);
+      setAvatarPreview(null);
     } catch (err: any) {
       setError(getErrorMessage(err));
-      logger.error(`Error updating ${field}:`, err);
+      logger.error('Error updating profile:', err);
     } finally {
-      setSavingFields(prev => {
-        const newState = { ...prev };
-        delete newState[field];
-        return newState;
-      });
+      setIsSaving(false);
     }
-  }, [profile, editValues]);
+  }, [profile, editValues, originalValues, selectedAvatarFile]);
 
   return (
     <div className={`min-h-screen ${themeClasses.bg.primary} p-6`}>
@@ -151,6 +239,11 @@ const SettingsPage: React.FC = () => {
         ) : (
           <ProfileCard
             profile={profile}
+            isEditing={isEditing}
+            selectedAvatarFile={selectedAvatarFile}
+            avatarPreview={avatarPreview}
+            onAvatarSelect={handleAvatarSelect}
+            isSaving={isSaving}
           />
         )}
 
@@ -162,9 +255,9 @@ const SettingsPage: React.FC = () => {
           ) : (
             <PersonalInformation
               profile={profile}
-              editingFields={editingFields}
+              isEditing={isEditing}
               editValues={editValues}
-              savingFields={savingFields}
+              isSaving={isSaving}
               onEditStart={handleEditStart}
               onEditCancel={handleEditCancel}
               onSave={handleSave}
@@ -246,30 +339,61 @@ const SettingsPage: React.FC = () => {
 // Компонент карточки профиля
 interface ProfileCardProps {
   profile: UserProfile;
+  isEditing: boolean;
+  selectedAvatarFile: File | null;
+  avatarPreview: string | null;
+  onAvatarSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isSaving: boolean;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
   profile,
+  isEditing,
+  selectedAvatarFile,
+  avatarPreview,
+  onAvatarSelect,
+  isSaving,
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
+
+  const displayAvatar = avatarPreview || profile.avatarUrl;
 
   return (
   <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 mb-6`}>
     <div className="flex flex-col md:flex-row gap-6">
       {/* Avatar */}
       <div className="flex-shrink-0">
-        <div className={`w-32 h-32 ${themeClasses.bg.input} rounded-full border-2 ${themeClasses.border.default} flex items-center justify-center overflow-hidden`}>
-          {profile.avatarUrl ? (
-            <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            <div className={`w-16 h-16 ${themeClasses.bg.tertiary} rounded-full flex items-center justify-center`}>
-              <span className="text-[#EAB308] text-2xl font-bold">
-                {profile.userName?.charAt(0)?.toUpperCase() || 'U'}
-              </span>
-            </div>
+        <div className="relative">
+          <div className={`w-32 h-32 ${themeClasses.bg.input} rounded-full border-2 ${themeClasses.border.default} flex items-center justify-center overflow-hidden`}>
+            {displayAvatar ? (
+              <img src={displayAvatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <div className={`w-16 h-16 ${themeClasses.bg.tertiary} rounded-full flex items-center justify-center`}>
+                <span className="text-[#EAB308] text-2xl font-bold">
+                  {profile.userName?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+              </div>
+            )}
+          </div>
+          {isEditing && (
+            <label className="absolute bottom-0 right-0 bg-[#EAB308] text-white rounded-full p-2 cursor-pointer hover:bg-[#CA8A04] transition-colors shadow-lg">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onAvatarSelect}
+                disabled={isSaving}
+                className="hidden"
+              />
+              <span className="material-symbols-outlined text-lg">camera_alt</span>
+            </label>
           )}
         </div>
+        {isEditing && selectedAvatarFile && (
+          <p className={`text-xs mt-2 ${themeClasses.text.secondary} text-center`}>
+            {selectedAvatarFile.name}
+          </p>
+        )}
       </div>
 
       {/* Profile Info */}
@@ -315,20 +439,20 @@ const StatCard: React.FC<StatCardProps> = ({ label, value }) => {
 // Компонент личной информации
 interface PersonalInformationProps {
   profile: UserProfile;
-  editingFields: Record<string, boolean>;
+  isEditing: boolean;
   editValues: Record<string, string>;
-  savingFields: Record<string, boolean>;
-  onEditStart: (field: string, currentValue: string) => void;
-  onEditCancel: (field: string) => void;
-  onSave: (field: string) => void;
+  isSaving: boolean;
+  onEditStart: () => void;
+  onEditCancel: () => void;
+  onSave: () => void;
   onInputChange: (field: string, value: string) => void;
 }
 
 const PersonalInformation: React.FC<PersonalInformationProps> = ({
   profile,
-  editingFields,
+  isEditing,
   editValues,
-  savingFields,
+  isSaving,
   onEditStart,
   onEditCancel,
   onSave,
@@ -336,21 +460,50 @@ const PersonalInformation: React.FC<PersonalInformationProps> = ({
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
+  
   return (
   <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6`}>
-    <h3 className={`text-xl font-bold ${themeClasses.text.primary} mb-4`}>Личная информация</h3>
+    <div className="flex items-center justify-between mb-4">
+      <h3 className={`text-xl font-bold ${themeClasses.text.primary}`}>Личная информация</h3>
+      {!isEditing ? (
+        <Button 
+          variant="secondary" 
+          onClick={onEditStart}
+          className="w-auto"
+        >
+          Редактировать
+        </Button>
+      ) : (
+        <div className="flex gap-2">
+          <Button 
+            variant="secondary" 
+            onClick={onEditCancel}
+            disabled={isSaving}
+            className="w-auto"
+          >
+            Отмена
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={onSave}
+            disabled={isSaving}
+            isLoading={isSaving}
+            className="w-auto"
+          >
+            Сохранить
+          </Button>
+        </div>
+      )}
+    </div>
 
     <div className="space-y-4">
       <EditableInfoField
         field="userName"
         label="Имя пользователя"
         value={profile.userName || ''}
-        editingFields={editingFields}
-        editValues={editValues}
-        savingFields={savingFields}
-        onEditStart={onEditStart}
-        onEditCancel={onEditCancel}
-        onSave={onSave}
+        isEditing={isEditing}
+        editValue={editValues.userName}
+        isSaving={isSaving}
         onInputChange={onInputChange}
       />
 
@@ -359,12 +512,9 @@ const PersonalInformation: React.FC<PersonalInformationProps> = ({
         label="Email"
         type="email"
         value={profile.email || ''}
-        editingFields={editingFields}
-        editValues={editValues}
-        savingFields={savingFields}
-        onEditStart={onEditStart}
-        onEditCancel={onEditCancel}
-        onSave={onSave}
+        isEditing={isEditing}
+        editValue={editValues.email}
+        isSaving={isSaving}
         onInputChange={onInputChange}
       />
 
@@ -373,12 +523,9 @@ const PersonalInformation: React.FC<PersonalInformationProps> = ({
         label="О себе"
         type="textarea"
         value={profile.about || 'Информация не указана'}
-        editingFields={editingFields}
-        editValues={editValues}
-        savingFields={savingFields}
-        onEditStart={onEditStart}
-        onEditCancel={onEditCancel}
-        onSave={onSave}
+        isEditing={isEditing}
+        editValue={editValues.about}
+        isSaving={isSaving}
         onInputChange={onInputChange}
         placeholder="Расскажите немного о себе..."
       />
@@ -399,12 +546,9 @@ interface EditableInfoFieldProps {
   field: string;
   label: string;
   value: string;
-  editingFields: Record<string, boolean>;
-  editValues: Record<string, string>;
-  savingFields: Record<string, boolean>;
-  onEditStart: (field: string, currentValue: string) => void;
-  onEditCancel: (field: string) => void;
-  onSave: (field: string) => void;
+  isEditing: boolean;
+  editValue?: string;
+  isSaving: boolean;
   onInputChange: (field: string, value: string) => void;
   type?: 'text' | 'email' | 'textarea';
   placeholder?: string;
@@ -414,74 +558,41 @@ const EditableInfoField: React.FC<EditableInfoFieldProps> = ({
   field,
   label,
   value,
-  editingFields,
-  editValues,
-  savingFields,
-  onEditStart,
-  onEditCancel,
-  onSave,
+  isEditing,
+  editValue,
+  isSaving,
   onInputChange,
   type = 'text',
   placeholder,
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const isEditing = editingFields[field] || false;
-  const isSaving = savingFields[field] || false;
-  const editValue = editValues[field] !== undefined ? editValues[field] : value;
+  const displayValue = isEditing && editValue !== undefined ? editValue : value;
 
   return (
     <div>
       <label className={`${themeClasses.text.secondary} text-sm mb-1 block`}>{label}</label>
       {isEditing ? (
-        <div className="space-y-2">
-          {type === 'textarea' ? (
-            <textarea
-              value={editValue}
-              onChange={(e) => onInputChange(field, e.target.value)}
-              className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} min-h-[100px]`}
-              placeholder={placeholder}
-              disabled={isSaving}
-            />
-          ) : (
-            <input
-              type={type}
-              value={editValue}
-              onChange={(e) => onInputChange(field, e.target.value)}
-              className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
-              placeholder={placeholder}
-              disabled={isSaving}
-            />
-          )}
-          <div className="flex gap-2">
-            <Button 
-              variant="secondary" 
-              onClick={() => onEditCancel(field)}
-              disabled={isSaving}
-            >
-              Отмена
-            </Button>
-            <Button 
-              variant="primary" 
-              onClick={() => onSave(field)}
-              disabled={isSaving}
-              isLoading={isSaving}
-            >
-              Сохранить
-            </Button>
-          </div>
-        </div>
+        type === 'textarea' ? (
+          <textarea
+            value={displayValue}
+            onChange={(e) => onInputChange(field, e.target.value)}
+            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} min-h-[100px]`}
+            placeholder={placeholder}
+            disabled={isSaving}
+          />
+        ) : (
+          <input
+            type={type}
+            value={displayValue}
+            onChange={(e) => onInputChange(field, e.target.value)}
+            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
+            placeholder={placeholder}
+            disabled={isSaving}
+          />
+        )
       ) : (
-        <div className="flex items-center justify-between">
-          <p className={themeClasses.text.primary}>{value}</p>
-          <Button 
-            variant="secondary" 
-            onClick={() => onEditStart(field, value)}
-            className="ml-2"
-          >
-            Редактировать
-          </Button>
-        </div>
+        <p className={themeClasses.text.primary}>{value}</p>
       )}
     </div>
   );

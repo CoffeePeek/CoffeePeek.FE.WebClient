@@ -65,6 +65,11 @@ export const API_ENDPOINTS = {
     BY_KEY: (storageKey: string) => `/api/Photo/${storageKey}`,
   },
 
+  PHOTOS: {
+    AVATAR: "/api/photos/avatar",
+    SHOP: "/api/photos/shop",
+  },
+
   MODERATION: {
     SHOP: "/api/ModerationShops",
     SHOP_STATUS: "/api/ModerationShops/status",

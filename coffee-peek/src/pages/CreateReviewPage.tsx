@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { createReview, CreateReviewRequest, getReviewById, updateReview, ShortPhotoMetadataDto, getPhotoUrl } from '../api/coffeeshop';
-import { getUploadUrls } from '../api/moderation';
+import { getShopUploadUrls } from '../api/photos';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getThemeColors, COLORS } from '../constants/colors';
@@ -163,17 +163,13 @@ const CreateReviewPage: React.FC = () => {
   const uploadPhotos = async (): Promise<Array<{ fileName: string; contentType: string; storageKey: string; size: number }>> => {
     if (selectedFiles.length === 0) return [];
 
-    const token = TokenManager.getAccessToken();
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
     const uploadRequests = selectedFiles.map(file => ({
       fileName: file.name,
       contentType: file.type,
+      sizeBytes: file.size,
     }));
 
-    const uploadUrlsResponse = await getUploadUrls(token, uploadRequests);
+    const uploadUrlsResponse = await getShopUploadUrls(uploadRequests);
     if (!uploadUrlsResponse.success || !uploadUrlsResponse.data) {
       throw new Error('Ошибка при получении URL для загрузки');
     }

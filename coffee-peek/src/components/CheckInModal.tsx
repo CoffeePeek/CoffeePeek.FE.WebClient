@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { createCheckIn, CreateCheckInRequest, DetailedCoffeeShop } from '../api/coffeeshop';
-import { getUploadUrls } from '../api/moderation';
+import { getShopUploadUrls } from '../api/photos';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getThemeColors, COLORS } from '../constants/colors';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { Icons } from '../constants';
-import { TokenManager } from '../api/core/httpClient';
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -76,17 +75,13 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   const uploadPhotos = async (): Promise<Array<{ fileName: string; contentType: string; storageKey: string; size: number }>> => {
     if (selectedFiles.length === 0) return [];
 
-    const token = TokenManager.getAccessToken();
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
     const uploadRequests = selectedFiles.map(file => ({
       fileName: file.name,
       contentType: file.type,
+      sizeBytes: file.size,
     }));
 
-    const uploadUrlsResponse = await getUploadUrls(token, uploadRequests);
+    const uploadUrlsResponse = await getShopUploadUrls(uploadRequests);
     if (!uploadUrlsResponse.success || !uploadUrlsResponse.data) {
       throw new Error('Ошибка при получении URL для загрузки');
     }

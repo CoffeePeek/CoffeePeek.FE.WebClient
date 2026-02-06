@@ -63,13 +63,6 @@ export interface UserProfile {
   roles?: string[];
 }
 
-export interface UpdateProfileRequest {
-  userName?: string;
-  email?: string;
-  about?: string;
-  avatarUrl?: string;
-}
-
 export interface UpdateAboutRequest {
   about: string;
 }
@@ -86,10 +79,15 @@ export interface UpdateUsernameRequest {
   username: string;
 }
 
-export interface UpdateAvatarRequest {
+export interface UploadedPhotoDto {
+  fileName: string;
+  contentType: string;
   storageKey: string;
-  url: string;
-  thumbnailUrl?: string;
+  size: number; // long
+}
+
+export interface UpdateAvatarRequest {
+  uploadedPhoto: UploadedPhotoDto;
 }
 
 // ==================== API Functions ====================
@@ -299,7 +297,7 @@ export async function updateUsername(
 export async function updateAvatar(
   data: UpdateAvatarRequest
 ): Promise<ApiResponse<any>> {
-  return httpClient.put<any>(API_ENDPOINTS.USER.UPDATE_AVATAR, data, {
+  return httpClient.patch<any>(API_ENDPOINTS.USER.UPDATE_AVATAR, data, {
     requiresAuth: true,
   });
 }
@@ -336,43 +334,6 @@ export async function confirmEmail(token: string): Promise<ApiResponse<void>> {
   );
 }
 
-/**
- * Обновляет профиль текущего пользователя (legacy функция для обратной совместимости)
- * @deprecated Используйте отдельные функции updateAbout, updateEmail, updateUsername, updateAvatar
- */
-export async function updateProfile(
-  accessToken: string,
-  profileData: UpdateProfileRequest
-): Promise<ApiResponse<UserProfile>> {
-  // Для обратной совместимости выполняем обновления по отдельности
-  const updates: Promise<any>[] = [];
-  
-  if (profileData.about !== undefined) {
-    updates.push(updateAbout({ about: profileData.about }));
-  }
-  
-  if (profileData.email !== undefined) {
-    updates.push(updateEmail({ email: profileData.email }));
-  }
-  
-  if (profileData.userName !== undefined) {
-    updates.push(updateUsername({ username: profileData.userName }));
-  }
-  
-  if (profileData.avatarUrl !== undefined) {
-    // Для аватара нужен полный объект UploadedPhotoDto
-    // Здесь используем только url, что может быть недостаточно
-    updates.push(updateAvatar({ 
-      storageKey: '', 
-      url: profileData.avatarUrl 
-    }));
-  }
-  
-  await Promise.all(updates);
-  
-  // Возвращаем обновленный профиль
-  return getProfile();
-}
 
 // Экспортируем ApiResponse для обратной совместимости
 export type { ApiResponse };

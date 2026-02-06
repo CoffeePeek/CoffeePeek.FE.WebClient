@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getUploadUrls } from '../api/moderation';
+import { getShopUploadUrls } from '../api/photos';
 import { TokenManager } from '../api/core/httpClient';
 
 export interface UploadedPhoto {
@@ -56,9 +56,10 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
       const uploadRequests = selectedFiles.map(file => ({
         fileName: file.name,
         contentType: file.type,
+        sizeBytes: file.size,
       }));
 
-      const uploadUrlsResponse = await getUploadUrls(token, uploadRequests);
+      const uploadUrlsResponse = await getShopUploadUrls(uploadRequests);
       if (!uploadUrlsResponse.success || !uploadUrlsResponse.data) {
         throw new Error('Ошибка при получении URL для загрузки');
       }
