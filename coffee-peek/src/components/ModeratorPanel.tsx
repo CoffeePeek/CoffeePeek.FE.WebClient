@@ -10,7 +10,7 @@ import {
   ModerationReviewDto,
   ModerationStatus
 } from '../api/moderation';
-import { getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, City, Equipment, CoffeeBean, Roaster, BrewMethod } from '../api/coffeeshop';
+import { getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, City, Equipment, CoffeeBean, Roaster, BrewMethod, formatEquipmentName } from '../api/coffeeshop';
 import Button from './Button';
 import { ModerationSkeleton } from './skeletons';
 import { useUser } from '../contexts/UserContext';
@@ -495,9 +495,8 @@ const ModeratorPanel: React.FC = () => {
     }
     const names = ids.map(id => {
       const equipment = equipments.find(e => e.id === id);
-      return equipment ? equipment.name : null;
+      return equipment ? formatEquipmentName(equipment) : null;
     }).filter(name => name !== null) as string[];
-    console.log('getEquipmentNamesByIds result:', { ids, names, equipmentsCount: equipments.length });
     return names;
   };
   

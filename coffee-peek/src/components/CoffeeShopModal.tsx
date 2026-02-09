@@ -1,5 +1,5 @@
 import React from 'react';
-import { DetailedCoffeeShop } from '../api/coffeeshop';
+import { DetailedCoffeeShop, formatEquipmentName, getEquipmentCategoryLabel } from '../api/coffeeshop';
 import PhotoCarousel from './PhotoCarousel';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
@@ -238,15 +238,16 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Equipment */}
                 {shop.equipments && shop.equipments.length > 0 && (
-                  <div>
+                  <div className="sm:col-span-2">
                     <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>⚙️ Оборудование</h4>
                     <div className="flex flex-wrap gap-2">
                       {shop.equipments.map(equipment => (
                         <span 
                           key={equipment.id}
                           className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
+                          title={`${getEquipmentCategoryLabel(equipment.category)}${equipment.brand ? ` · ${equipment.brand}` : ''}${equipment.model ? ` ${equipment.model}` : ''}`}
                         >
-                          {equipment.name}
+                          {formatEquipmentName(equipment)}
                         </span>
                       ))}
                     </div>

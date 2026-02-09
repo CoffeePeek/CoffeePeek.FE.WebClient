@@ -3,7 +3,6 @@ import {
   getCoffeeShopReviews,
   getReviewsByUserId,
   getReviewById,
-  canCreateCoffeeShopReview,
   createReview,
   updateReview,
   Review,
@@ -23,7 +22,6 @@ export const reviewKeys = {
     [...reviewKeys.lists(), 'user', userId, { page, pageSize }] as const,
   details: () => [...reviewKeys.all, 'detail'] as const,
   detail: (reviewId: string) => [...reviewKeys.details(), reviewId] as const,
-  canCreate: (shopId: string) => [...reviewKeys.all, 'canCreate', shopId] as const,
 };
 
 /**
@@ -91,24 +89,6 @@ export function useReview(reviewId: string | null, enabled: boolean = true) {
 }
 
 /**
- * Hook to check if user can create a review for a shop
- */
-export function useCanCreateReview(shopId: string | null, enabled: boolean = true) {
-  return useQuery({
-    queryKey: reviewKeys.canCreate(shopId!),
-    queryFn: async () => {
-      if (!shopId) throw new Error('Shop ID is required');
-      const response = await canCreateCoffeeShopReview(shopId);
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to check review creation');
-      }
-      return response.data;
-    },
-    enabled: enabled && !!shopId,
-  });
-}
-
-/**
  * Hook to create a review
  */
 export function useCreateReview() {
@@ -125,9 +105,6 @@ export function useCreateReview() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({
         queryKey: reviewKeys.list(variables.request.shopId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: reviewKeys.canCreate(variables.request.shopId),
       });
       queryClient.invalidateQueries({
         queryKey: ['coffeeShops', 'detail', variables.request.shopId],
@@ -189,4 +166,3 @@ export function useInvalidateReviews() {
       queryClient.invalidateQueries({ queryKey: reviewKeys.detail(reviewId) }),
   };
 }
-

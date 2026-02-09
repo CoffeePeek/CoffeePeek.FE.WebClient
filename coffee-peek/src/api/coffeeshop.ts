@@ -64,10 +64,7 @@ export interface CoffeeShop {
   coffeeBeanIds?: string[];
   roasterIds?: string[];
   brewMethodIds?: string[];
-  equipments?: Array<{
-    id: string;
-    name: string;
-  }>;
+  equipments?: Equipment[];
   photos?: ShortPhotoMetadataDto[];
   shopPhotos?: string[];
   rating?: number;
@@ -110,6 +107,8 @@ export interface DetailedCoffeeShop {
   isOpen: boolean;
   isFavorite?: boolean;
   isVisited?: boolean;
+  canCreateReview?: boolean | null;
+  existingReviewId?: string | null;
   isNew?: boolean;
   priceRange: number | string;
   location?: {
@@ -119,7 +118,7 @@ export interface DetailedCoffeeShop {
   };
   beans?: Array<{ id: string; name: string }>;
   roasters?: Array<{ id: string; name: string }>;
-  equipments?: Array<{ id: string; name: string }>;
+  equipments?: Equipment[];
   brewMethods?: Array<{ id: string; name: string }> | null;
   shopContact?: {
     phone?: string;
@@ -163,7 +162,7 @@ export interface ShortShopDto {
   };
   beans?: Array<{ id: string; name: string }>;
   roasters?: Array<{ id: string; name: string }>;
-  equipments?: Array<{ id: string; name: string }>;
+  equipments?: Equipment[];
   brewMethods?: Array<{ id: string; name: string }>;
   shopContact?: {
     phone?: string;
@@ -192,9 +191,53 @@ export interface City {
   name: string;
 }
 
+export enum EquipmentCategory {
+  EspressoMachine = 0,
+  Grinder = 1,
+  BulkAndShopGrinders = 2,
+  AlternativeBrewing = 3,
+  ManualBrewingEquipment = 4,
+  BatchBrewers = 5,
+  WaterFiltrationAndBoilers = 6,
+  ScalesAndPrecisiontools = 7,
+  ColdBrewSystems = 8,
+  Other = 9,
+}
+
+export const EQUIPMENT_CATEGORY_LABELS: Record<EquipmentCategory, string> = {
+  [EquipmentCategory.EspressoMachine]: 'Эспрессо-машина',
+  [EquipmentCategory.Grinder]: 'Кофемолка',
+  [EquipmentCategory.BulkAndShopGrinders]: 'Промышленные кофемолки',
+  [EquipmentCategory.AlternativeBrewing]: 'Альтернативное заваривание',
+  [EquipmentCategory.ManualBrewingEquipment]: 'Ручное заваривание',
+  [EquipmentCategory.BatchBrewers]: 'Батч-бруеры',
+  [EquipmentCategory.WaterFiltrationAndBoilers]: 'Фильтрация воды и бойлеры',
+  [EquipmentCategory.ScalesAndPrecisiontools]: 'Весы и точные инструменты',
+  [EquipmentCategory.ColdBrewSystems]: 'Системы колд-брю',
+  [EquipmentCategory.Other]: 'Другое',
+};
+
 export interface Equipment {
   id: string;
   name: string;
+  brand: string;
+  model: string;
+  category: EquipmentCategory;
+}
+
+/**
+ * Возвращает локализованное название категории оборудования
+ */
+export function getEquipmentCategoryLabel(category: EquipmentCategory): string {
+  return EQUIPMENT_CATEGORY_LABELS[category] ?? 'Другое';
+}
+
+/**
+ * Форматирует название оборудования с брендом и моделью
+ */
+export function formatEquipmentName(equipment: Equipment): string {
+  const parts = [equipment.brand, equipment.model].filter(Boolean);
+  return parts.length > 0 ? `${equipment.name} (${parts.join(' ')})` : equipment.name;
 }
 
 export interface CoffeeBean {
@@ -589,38 +632,6 @@ export async function getReviewById(reviewId: string): Promise<ApiResponse<Revie
   return httpClient.get<Review>(API_ENDPOINTS.REVIEW.BY_ID(reviewId), {
     requiresAuth: false,
   });
-}
-
-export async function canCreateCoffeeShopReview(
-  shopId: string
-): Promise<ApiResponse<{ canCreate: boolean; reviewId?: string | null }>> {
-  const response = await httpClient.get<any>(API_ENDPOINTS.REVIEW.CAN_CREATE, {
-    params: { shopId },
-    requiresAuth: true,
-  });
-
-  if (!response.success) {
-    return response as any;
-  }
-
-  const data = response.data as any;
-  
-  if (typeof data === 'boolean') {
-    return {
-      success: true,
-      message: response.message,
-      data: { canCreate: data },
-    };
-  }
-
-  const canCreate = Boolean(data?.canCreate ?? data?.isCanCreate ?? data?.allowed ?? false);
-  const reviewId = (data?.reviewId ?? data?.existingReviewId ?? null) as string | null;
-
-  return {
-    success: true,
-    message: response.message,
-    data: { canCreate, reviewId: reviewId || null },
-  };
 }
 
 export async function createReview(

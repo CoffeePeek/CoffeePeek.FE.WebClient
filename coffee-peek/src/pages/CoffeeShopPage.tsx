@@ -33,7 +33,7 @@ const CoffeeShopPage: React.FC = () => {
   
   // Custom hooks
   const { shop, isLoading, error, reloadShop } = useShopData(shopId);
-  const { myReviewId, isChecking: isCheckingMyReview } = useMyReview(shopId);
+  const { myReviewId } = useMyReview(shop);
   
   // Устанавливаем title с названием кофейни
   usePageTitle(shop?.name || 'Кофейня');
@@ -391,7 +391,7 @@ const CoffeeShopPage: React.FC = () => {
               usersCache={usersCache}
               isLoading={isLoading}
               myReviewId={myReviewId}
-              isCheckingMyReview={isCheckingMyReview}
+              isCheckingMyReview={false}
               onWriteOrEditReview={handleWriteOrEditReview}
               onUserSelect={(userId) => navigate(`/users/${userId}`)}
               user={user}

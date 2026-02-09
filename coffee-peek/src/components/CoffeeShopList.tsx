@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getCoffeeShops, searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl } from '../api/coffeeshop';
-import Button from './Button';
-import PhotoCarousel from './PhotoCarousel';
+import { getCoffeeShops, searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl, formatEquipmentName, getEquipmentCategoryLabel } from '../api/coffeeshop';
 import MaterialSelect from './MaterialSelect';
 import { ShopCardSkeleton } from './skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
-import { getThemeClasses } from '../utils/theme';
 import { getErrorMessage } from '../utils/errorHandler';
 import { COLORS, getThemeColors } from '../constants/colors';
 import { logger } from '../utils/logger';
@@ -18,7 +15,6 @@ interface CoffeeShopListProps {
 const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const { theme } = useTheme();
   const { user } = useUser();
-  const themeClasses = getThemeClasses(theme);
   const colors = getThemeColors(theme);
   const [allShops, setAllShops] = useState<CoffeeShop[]>([]); // Все кофейни с сервера (нефильтрованные)
   const [shops, setShops] = useState<CoffeeShop[]>([]); // Отфильтрованные кофейни для отображения
@@ -166,9 +162,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       filtered = filtered.filter(shop => shop.isVisited === true);
     }
     
-    // Поиск теперь происходит на сервере через searchCoffeeShops endpoint
-    // Клиентская фильтрация по searchQuery НЕ нужна
-    
     return filtered;
   };
   
@@ -230,11 +223,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       setIsLoading(true);
       setError(null);
       
-      // Используем поиск если есть запрос, иначе обычную загрузку
-      // Фильтрация по статусу (открыты/новые/избранные/посещённые) происходит на клиенте
-      const response = debouncedSearchQuery.trim()
-        ? await searchCoffeeShops(debouncedSearchQuery, filters, currentPage, pageSize)
-        : await getCoffeeShops(filters, currentPage, pageSize);
+      const response = await searchCoffeeShops(debouncedSearchQuery, filters, currentPage, pageSize)
       
       logger.log('CoffeeShopList: Получен ответ от API:', response);
       logger.log('CoffeeShopList: Используется поиск:', !!debouncedSearchQuery.trim());
@@ -618,7 +607,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                 onChange={(value) => setSelectedEquipment(value)}
                 options={[
                   { value: '', label: 'Любое оборудование' },
-                  ...equipments.map(equipment => ({ value: equipment.id, label: equipment.name }))
+                  ...equipments.map(equipment => ({ value: equipment.id, label: `${formatEquipmentName(equipment)} — ${getEquipmentCategoryLabel(equipment.category)}` }))
                 ]}
                 icon={
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -920,7 +909,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                             borderColor: colors.border, 
                             color: colors.textSecondary 
                           }}>
-                          ⚙️ {(shop as any).equipments[0].name}
+                          ⚙️ {formatEquipmentName((shop as any).equipments[0])}
                         </span>
                       )}
                       

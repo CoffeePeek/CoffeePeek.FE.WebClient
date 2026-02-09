@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { sendCoffeeShopToModeration, SendCoffeeShopToModerationRequest } from '../api/moderation';
-import { City, Equipment, CoffeeBean, Roaster, BrewMethod } from '../api/coffeeshop';
+import { City, Equipment, CoffeeBean, Roaster, BrewMethod, formatEquipmentName, getEquipmentCategoryLabel } from '../api/coffeeshop';
 import Button from './Button';
 import MaterialSelect from './MaterialSelect';
 import { useTheme } from '../contexts/ThemeContext';
@@ -410,7 +410,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                     { value: '', label: 'Выберите оборудование' },
                     ...equipments
                       .filter(eq => !formData.equipmentIds?.includes(eq.id))
-                      .map(eq => ({ value: eq.id, label: eq.name }))
+                      .map(eq => ({ value: eq.id, label: `${formatEquipmentName(eq)} — ${getEquipmentCategoryLabel(eq.category)}` }))
                   ]}
                   icon={
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -492,7 +492,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                   const eq = equipments.find(e => e.id === id);
                   return eq ? (
                     <span key={id} className={`px-3 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm flex items-center gap-2`}>
-                      {eq.name}
+                      {formatEquipmentName(eq)}
                       <button
                         type="button"
                         onClick={() => handleInputChange('equipmentIds', formData.equipmentIds?.filter(i => i !== id))}

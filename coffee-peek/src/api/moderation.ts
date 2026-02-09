@@ -66,8 +66,9 @@ export interface UpdateEntityResponse<T> {
 
 export interface ModerationShopPhoto {
   fileName: string;
+  contentType: string;
   storageKey: string;
-  fullUrl: string;
+  size: number;
 }
 
 // ==================== Backend DTO Types ====================
@@ -358,12 +359,13 @@ export async function updateModerationShop(
     brewMethodIds: shopData.brewMethodIds,
     shopPhotos: shopData.shopPhotos?.map(photo => {
       if (typeof photo === 'string') {
-        return { fileName: '', storageKey: photo, fullUrl: '' };
+        return { fileName: '', contentType: '', storageKey: photo, size: 0 };
       }
       return {
         fileName: photo.fileName,
+        contentType: photo.contentType,
         storageKey: photo.storageKey,
-        fullUrl: photo.fullUrl || '',
+        size: photo.size,
       };
     }),
   };
@@ -453,11 +455,7 @@ export async function sendCoffeeShopToModeration(
     coffeeBeanIds: shopData.coffeeBeanIds,
     roasterIds: shopData.roasterIds,
     brewMethodIds: shopData.brewMethodIds,
-    shopPhotos: shopData.shopPhotos?.map(photo => ({
-      fileName: photo.fileName,
-      storageKey: photo.storageKey,
-      fullUrl: '', // Бэкенд может заполнить это поле
-    })),
+    shopPhotos: shopData.shopPhotos,
   };
 
   return httpClient.post<ModerationShop>(

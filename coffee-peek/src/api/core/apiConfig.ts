@@ -50,7 +50,6 @@ export const API_ENDPOINTS = {
   REVIEW: {
     BASE: "/api/CoffeeShopReviews",
     BY_ID: (reviewId: string) => `/api/CoffeeShopReviews/${reviewId}`,
-    CAN_CREATE: "/api/CoffeeShopReviews/can-create",
   },
 
   CHECK_IN: {

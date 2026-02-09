@@ -15,7 +15,6 @@ const CreateReviewPage = lazy(() => import('../pages/CreateReviewPage'));
 const UserProfilePage = lazy(() => import('../pages/UserProfilePage'));
 const CreateCoffeeShopPage = lazy(() => import('../pages/CreateCoffeeShopPage'));
 const CreateCheckInPage = lazy(() => import('../pages/CreateCheckInPage'));
-const AIVideoModelsPage = lazy(() => import('../pages/AIVideoModelsPage'));
 const ErrorPage = lazy(() => import('../pages/ErrorPage'));
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage'));
 
@@ -126,16 +125,6 @@ export const AppRoutes: React.FC = () => {
           }
         />
 
-        <Route
-          path="/ai-video-models"
-          element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <AIVideoModelsPage />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
-          }
-        />
 
         {/* Legacy redirects for backward compatibility */}
         <Route path="/coffeeshops" element={<Navigate to="/shops" replace />} />
