@@ -18,9 +18,89 @@ import { getErrorMessage } from '../utils/errorHandler';
 import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { Review } from '../api/coffeeshop';
+
+// ==================== Мок-данные ====================
+
+interface FavoriteCoffeeShop {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  rating: number;
+  imageUrl: string;
+}
+
+const MOCK_FAVORITE_SHOPS: FavoriteCoffeeShop[] = [
+  {
+    id: '1',
+    name: 'Joe\'s Brew',
+    description: 'Карамельный латте специалист',
+    location: 'Москва, Арбат',
+    rating: 4.8,
+    imageUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop',
+  },
+  {
+    id: '2',
+    name: 'The Grind',
+    description: 'Аутентичный итальянский эспрессо',
+    location: 'Москва, Патриаршие',
+    rating: 4.6,
+    imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop',
+  },
+  {
+    id: '3',
+    name: 'Daily Press',
+    description: 'Колд-брю и выпечка',
+    location: 'Москва, Китай-город',
+    rating: 4.5,
+    imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop',
+  },
+];
+
+const MOCK_RECENT_REVIEWS: (Review & { shopName?: string })[] = [
+  {
+    id: 'r1',
+    coffeeShopId: '1',
+    userId: 'me',
+    shopName: 'Joe\'s Brew',
+    header: 'Отличный латте-арт',
+    comment: 'Латте-арт здесь просто невероятный. Текстура молока идеальна, а зёрна обжарены до совершенства...',
+    ratingCoffee: 5,
+    ratingService: 5,
+    ratingPlace: 4,
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'r2',
+    coffeeShopId: '2',
+    userId: 'me',
+    shopName: 'The Grind',
+    header: 'Уютное место для работы',
+    comment: 'Нашёл уютный уголок для удалённой работы. Отличный Wi-Fi и приятная атмосфера.',
+    ratingCoffee: 4,
+    ratingService: 4,
+    ratingPlace: 5,
+    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'r3',
+    coffeeShopId: '3',
+    userId: 'me',
+    shopName: 'Daily Press',
+    header: 'Лучший колд-брю',
+    comment: 'Попробовал их фирменный колд-брю — освежающий и насыщенный вкус.',
+    ratingCoffee: 5,
+    ratingService: 4,
+    ratingPlace: 4,
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+// ==================== Главный компонент ====================
 
 const SettingsPage: React.FC = () => {
-  usePageTitle('Настройки');
+  usePageTitle('Профиль');
   const { user, isLoading: userLoading, logout } = useUser();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -34,6 +114,10 @@ const SettingsPage: React.FC = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Мок-данные (позже будут загружаться с бэка)
+  const [favoriteShops] = useState<FavoriteCoffeeShop[]>(MOCK_FAVORITE_SHOPS);
+  const [recentReviews] = useState<(Review & { shopName?: string })[]>(MOCK_RECENT_REVIEWS);
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
@@ -64,7 +148,6 @@ const SettingsPage: React.FC = () => {
   const handleEditStart = useCallback(() => {
     if (!profile) return;
     
-    // Сохраняем исходные значения
     const original: Record<string, string> = {
       userName: profile.userName || '',
       email: profile.email || '',
@@ -90,13 +173,11 @@ const SettingsPage: React.FC = () => {
   const handleAvatarSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Проверяем тип файла
       if (!file.type.startsWith('image/')) {
         setError('Выберите изображение');
         return;
       }
       
-      // Проверяем размер (например, максимум 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Размер файла не должен превышать 5MB');
         return;
@@ -104,7 +185,6 @@ const SettingsPage: React.FC = () => {
       
       setSelectedAvatarFile(file);
       
-      // Создаем preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -116,7 +196,6 @@ const SettingsPage: React.FC = () => {
   const handleSave = useCallback(async () => {
     if (!profile) return;
 
-    // Валидация обязательных полей
     const userName = editValues.userName?.trim() || '';
     const email = editValues.email?.trim() || '';
     
@@ -130,7 +209,6 @@ const SettingsPage: React.FC = () => {
       return;
     }
 
-    // Проверяем email формат
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Введите корректный email');
@@ -141,7 +219,6 @@ const SettingsPage: React.FC = () => {
       setIsSaving(true);
       setError(null);
 
-      // Определяем измененные поля
       const updates: Promise<any>[] = [];
       
       if (editValues.userName !== originalValues.userName) {
@@ -156,7 +233,6 @@ const SettingsPage: React.FC = () => {
         updates.push(updateAbout({ about: editValues.about || '' }));
       }
 
-      // Загружаем аватар, если выбран новый файл
       if (selectedAvatarFile) {
         const uploadRequest = {
           fileName: selectedAvatarFile.name,
@@ -171,7 +247,6 @@ const SettingsPage: React.FC = () => {
 
         const { uploadUrl, storageKey } = uploadUrlResponse.data;
 
-        // Загружаем файл на S3
         const uploadResponse = await fetch(uploadUrl, {
           method: 'PUT',
           body: selectedAvatarFile,
@@ -184,7 +259,6 @@ const SettingsPage: React.FC = () => {
           throw new Error('Ошибка загрузки аватара');
         }
 
-        // Отправляем полный объект UploadedPhotoDto
         updates.push(updateAvatar({
           uploadedPhoto: {
             fileName: selectedAvatarFile.name,
@@ -195,11 +269,9 @@ const SettingsPage: React.FC = () => {
         }));
       }
 
-      // Отправляем только измененные поля
       if (updates.length > 0) {
         await Promise.all(updates);
         
-        // Обновляем профиль после успешного сохранения
         const updatedProfile = await getProfile();
         setProfile(updatedProfile.data);
       }
@@ -217,118 +289,148 @@ const SettingsPage: React.FC = () => {
     }
   }, [profile, editValues, originalValues, selectedAvatarFile]);
 
-  return (
-    <div className={`min-h-screen ${themeClasses.bg.primary} p-6`}>
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <header className="mb-8">
-          <h1 className={`text-4xl font-bold ${themeClasses.text.primary} mb-2`}>Настройки</h1>
-          <p className={themeClasses.text.secondary}>Управление вашим аккаунтом и настройками приложения</p>
-        </header>
+  const bgSurface = theme === 'dark' ? themeClasses.bg.secondary : themeClasses.bg.card;
+  const borderClass = themeClasses.border.default;
 
-        {/* Error Message */}
-        {error && (
-          <div className={`mb-6 p-4 ${theme === 'dark' ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'} border rounded-2xl`}>
+  return (
+    <div className={`min-h-screen ${themeClasses.bg.primary}`}>
+      {/* Error Message */}
+      {error && (
+        <div className="max-w-7xl mx-auto px-6 pt-4">
+          <div className={`p-4 ${theme === 'dark' ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'} border rounded-2xl`}>
             <p className={`text-sm ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{error}</p>
           </div>
-        )}
-
-        {/* Profile Card - показываем shimmer только для этой секции */}
-        {userLoading || isLoading || !profile ? (
-          <ProfileCardSkeleton />
-        ) : (
-          <ProfileCard
-            profile={profile}
-            isEditing={isEditing}
-            selectedAvatarFile={selectedAvatarFile}
-            avatarPreview={avatarPreview}
-            onAvatarSelect={handleAvatarSelect}
-            isSaving={isSaving}
-          />
-        )}
-
-        {/* Info Sections Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Личная информация - показываем shimmer только для этой секции */}
-          {userLoading || isLoading || !profile ? (
-            <PersonalInfoSkeleton />
-          ) : (
-            <PersonalInformation
-              profile={profile}
-              isEditing={isEditing}
-              editValues={editValues}
-              isSaving={isSaving}
-              onEditStart={handleEditStart}
-              onEditCancel={handleEditCancel}
-              onSave={handleSave}
-              onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
-            />
-          )}
-          {/* Настройки аккаунта - статичные, показываем сразу */}
-          <AccountSettings />
         </div>
+      )}
 
-        {/* Добавить кофейню */}
-        <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 mb-6`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-xl font-bold ${themeClasses.text.primary} mb-2`}>Добавить кофейню</h3>
-              <p className={`${themeClasses.text.secondary} text-sm`}>
-                Отправьте новую кофейню на модерацию. После проверки она появится в каталоге.
-              </p>
+      {/* Profile Header */}
+      {userLoading || isLoading || !profile ? (
+        <div className="max-w-7xl mx-auto px-6 pt-6">
+          <ProfileCardSkeleton />
+        </div>
+      ) : (
+        <ProfileHeader
+          profile={profile}
+          isEditing={isEditing}
+          selectedAvatarFile={selectedAvatarFile}
+          avatarPreview={avatarPreview}
+          onAvatarSelect={handleAvatarSelect}
+          isSaving={isSaving}
+          onCreatePost={() => navigate('/coffee-shops/new')}
+        />
+      )}
+
+      {/* Stats Cards */}
+      {userLoading || isLoading || !profile ? (
+        <div className="max-w-7xl mx-auto px-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className={`${bgSurface} border ${borderClass} rounded-2xl py-3 px-4 flex items-center gap-3 animate-pulse`}>
+                <div className={`w-9 h-9 ${themeClasses.bg.tertiary} rounded-xl flex-shrink-0`} />
+                <div>
+                  <div className={`w-12 h-5 ${themeClasses.bg.tertiary} rounded mb-1`} />
+                  <div className={`w-16 h-3 ${themeClasses.bg.tertiary} rounded`} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <StatsSection profile={profile} />
+      )}
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 pb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Favorite Coffee Shops */}
+            <FavoriteCoffeeShopsSection
+              shops={favoriteShops}
+              onAddShop={() => navigate('/coffee-shops')}
+              onShopClick={(id) => navigate(`/shops/${id}`)}
+            />
+
+            {/* Recent Activity */}
+            <RecentActivitySection
+              reviews={recentReviews}
+              onShopClick={(shopId) => navigate(`/shops/${shopId}`)}
+            />
+          </div>
+
+          {/* Right Column - Settings */}
+          <div className="space-y-6">
+            {/* Personal Info */}
+            {userLoading || isLoading || !profile ? (
+              <PersonalInfoSkeleton />
+            ) : (
+              <PersonalInformation
+                profile={profile}
+                isEditing={isEditing}
+                editValues={editValues}
+                isSaving={isSaving}
+                onEditStart={handleEditStart}
+                onEditCancel={handleEditCancel}
+                onSave={handleSave}
+                onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
+              />
+            )}
+
+            {/* Account Settings */}
+            <AccountSettings />
+
+            {/* App Settings */}
+            <div className={`${themeClasses.bg.card} border ${borderClass} rounded-2xl p-5`}>
+              <h3 className={`text-lg font-bold ${themeClasses.text.primary} mb-4`}>Настройки приложения</h3>
+              <ThemeSettingItem
+                title="Тема"
+                description={theme === 'dark' ? 'Тёмная тема' : 'Светлая тема'}
+                currentTheme={theme}
+                onToggle={toggleTheme}
+              />
             </div>
-            <Button
-              variant="primary"
-              onClick={() => navigate('/coffee-shops/new')}
-              className="w-auto flex items-center gap-2"
-            >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+
+            {/* Add Coffee Shop */}
+            <div className={`${themeClasses.bg.card} border ${borderClass} rounded-2xl p-5`}>
+              <h3 className={`text-lg font-bold ${themeClasses.text.primary} mb-2`}>Добавить кофейню</h3>
+              <p className={`${themeClasses.text.secondary} text-sm mb-4`}>
+                Отправьте новую кофейню на модерацию
+              </p>
+              <Button
+                variant="primary"
+                onClick={() => navigate('/coffee-shops/new')}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
                 Добавить кофейню
               </Button>
             </div>
-          </div>
 
-        {/* Настройки приложения */}
-        <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 mb-6`}>
-          <h3 className={`text-xl font-bold ${themeClasses.text.primary} mb-4`}>Настройки приложения</h3>
-
-          <div className="space-y-4">
-            <ThemeSettingItem
-              title="Тема"
-              description={theme === 'dark' ? 'Тёмная тема' : 'Светлая тема'}
-              currentTheme={theme}
-              onToggle={toggleTheme}
-            />
-          </div>
-        </div>
-
-        {/* Кнопка выхода */}
-        <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-xl font-bold ${themeClasses.text.primary} mb-2`}>Выход из аккаунта</h3>
-              <p className={`${themeClasses.text.secondary} text-sm`}>
+            {/* Logout */}
+            <div className={`${themeClasses.bg.card} border ${borderClass} rounded-2xl p-5`}>
+              <h3 className={`text-lg font-bold ${themeClasses.text.primary} mb-2`}>Выход</h3>
+              <p className={`${themeClasses.text.secondary} text-sm mb-4`}>
                 Выйти из текущего аккаунта
               </p>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  logout();
+                  navigate('/');
+                }}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Выйти
+              </Button>
             </div>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                logout();
-                navigate('/');
-              }}
-              className="w-auto flex items-center gap-2"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-              Выйти
-            </Button>
           </div>
         </div>
       </div>
@@ -336,48 +438,53 @@ const SettingsPage: React.FC = () => {
   );
 };
 
-// Компонент карточки профиля
-interface ProfileCardProps {
+// ==================== Profile Header ====================
+
+interface ProfileHeaderProps {
   profile: UserProfile;
   isEditing: boolean;
   selectedAvatarFile: File | null;
   avatarPreview: string | null;
   onAvatarSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isSaving: boolean;
+  onCreatePost: () => void;
 }
 
-const ProfileCard: React.FC<ProfileCardProps> = ({
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   profile,
   isEditing,
   selectedAvatarFile,
   avatarPreview,
   onAvatarSelect,
   isSaving,
+  onCreatePost,
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-
   const displayAvatar = avatarPreview || profile.avatarUrl;
 
+  const memberSince = profile.createdAtUtc
+    ? new Date(profile.createdAtUtc).getFullYear()
+    : new Date().getFullYear();
+
   return (
-  <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6 mb-6`}>
-    <div className="flex flex-col md:flex-row gap-6">
-      {/* Avatar */}
-      <div className="flex-shrink-0">
-        <div className="relative">
-          <div className={`w-32 h-32 ${themeClasses.bg.input} rounded-full border-2 ${themeClasses.border.default} flex items-center justify-center overflow-hidden`}>
+    <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+        {/* Avatar */}
+        <div className="relative flex-shrink-0">
+          <div className={`w-24 h-24 rounded-full border-4 ${theme === 'dark' ? 'border-[#3D2F28]' : 'border-white'} shadow-xl overflow-hidden`}>
             {displayAvatar ? (
               <img src={displayAvatar} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
-              <div className={`w-16 h-16 ${themeClasses.bg.tertiary} rounded-full flex items-center justify-center`}>
-                <span className="text-[#EAB308] text-2xl font-bold">
+              <div className={`w-full h-full ${themeClasses.primary.bg} flex items-center justify-center`}>
+                <span className="text-3xl font-bold text-white">
                   {profile.userName?.charAt(0)?.toUpperCase() || 'U'}
                 </span>
               </div>
             )}
           </div>
           {isEditing && (
-            <label className="absolute bottom-0 right-0 bg-[#EAB308] text-white rounded-full p-2 cursor-pointer hover:bg-[#CA8A04] transition-colors shadow-lg">
+            <label className="absolute bottom-0 right-0 bg-[#EAB308] text-white rounded-full p-1.5 cursor-pointer hover:bg-[#CA8A04] transition-colors shadow-lg">
               <input
                 type="file"
                 accept="image/*"
@@ -385,58 +492,305 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                 disabled={isSaving}
                 className="hidden"
               />
-              <span className="material-symbols-outlined text-lg">camera_alt</span>
+              <span className="material-symbols-outlined text-sm">camera_alt</span>
             </label>
           )}
+          {isEditing && selectedAvatarFile && (
+            <p className={`text-xs mt-1 ${themeClasses.text.secondary} text-center absolute -bottom-5 w-full`}>
+              {selectedAvatarFile.name}
+            </p>
+          )}
         </div>
-        {isEditing && selectedAvatarFile && (
-          <p className={`text-xs mt-2 ${themeClasses.text.secondary} text-center`}>
-            {selectedAvatarFile.name}
-          </p>
-        )}
-      </div>
 
-      {/* Profile Info */}
-      <div className="flex-1">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h2 className={`text-2xl font-bold ${themeClasses.text.primary} mb-1`}>
-              {profile.userName}
-            </h2>
-            <p className={themeClasses.text.secondary}>{profile.email}</p>
+        {/* Profile Info */}
+        <div className="flex-1">
+          <h1 className={`text-3xl font-bold ${themeClasses.text.primary} mb-2`}>
+            {profile.userName}
+          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Badge */}
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${themeClasses.primary.bgLight} border ${themeClasses.primary.borderLighter}`}>
+              <span className={`material-symbols-outlined text-sm ${themeClasses.primary.text}`}>local_cafe</span>
+              <span className={`${themeClasses.primary.text} text-xs font-bold uppercase tracking-wider`}>
+                Ценитель кофе
+              </span>
+            </div>
+            <span className={`${themeClasses.text.secondary} text-sm`}>
+              На сайте с {memberSince}
+            </span>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatCard label="Отзывы" value={profile.reviewCount || 0} />
-          <StatCard label="Чекины" value={profile.checkInCount || 0} />
-          <StatCard label="Добавлено кофеен" value={profile.addedShopsCount || 0} />
-        </div>
+        {/* Create Post Button */}
+        <Button
+          variant="primary"
+          onClick={onCreatePost}
+          className="w-auto flex items-center gap-2"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          Создать пост
+        </Button>
       </div>
     </div>
-  </div>
   );
 };
 
-// Компонент статистики
-interface StatCardProps {
-  label: string;
-  value: number;
+// ==================== Stats Section ====================
+
+interface StatsSectionProps {
+  profile: UserProfile;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ label, value }) => {
+const StatsSection: React.FC<StatsSectionProps> = ({ profile }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
+  const bgSurface = theme === 'dark' ? themeClasses.bg.secondary : themeClasses.bg.card;
+  const borderClass = themeClasses.border.default;
+
+  const stats = [
+    {
+      icon: 'shopping_cart_checkout',
+      value: profile.checkInCount || 0,
+      label: 'ПОСЕЩЕНИЯ',
+      color: themeClasses.primary.text,
+      bgColor: themeClasses.primary.bgLight,
+    },
+    {
+      icon: 'rate_review',
+      value: profile.reviewCount || 0,
+      label: 'ОТЗЫВОВ',
+      color: themeClasses.primary.text,
+      bgColor: themeClasses.primary.bgLight,
+    },
+    {
+      icon: 'favorite',
+      value: profile.addedShopsCount || 0,
+      label: 'ИЗБРАННОЕ',
+      color: themeClasses.primary.text,
+      bgColor: themeClasses.primary.bgLight,
+    },
+  ];
+
   return (
-  <div className={`${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl p-4`}>
-    <p className={`${themeClasses.text.secondary} text-sm`}>{label}</p>
-    <p className={`${themeClasses.text.primary} text-xl font-bold`}>{value}</p>
-  </div>
+    <div className="max-w-7xl mx-auto px-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {stats.map((stat, index) => (
+          <div
+            key={index}
+            className={`${bgSurface} border ${borderClass} rounded-2xl py-3 px-4 flex items-center gap-3 group hover:shadow-md transition-all`}
+          >
+            <div className={`w-9 h-9 rounded-xl ${stat.bgColor} ${stat.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+              <span className="material-symbols-outlined text-lg">{stat.icon}</span>
+            </div>
+            <div>
+              <span className={`text-xl font-bold ${themeClasses.text.primary} block leading-tight`}>
+                {stat.value}
+              </span>
+              <span className={`text-xs ${themeClasses.text.secondary} uppercase tracking-[0.1em]`}>
+                {stat.label}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
-// Компонент личной информации
+// ==================== Favorite Coffee Shops Section ====================
+
+interface FavoriteCoffeeShopsSectionProps {
+  shops: FavoriteCoffeeShop[];
+  onAddShop: () => void;
+  onShopClick: (id: string) => void;
+}
+
+const FavoriteCoffeeShopsSection: React.FC<FavoriteCoffeeShopsSectionProps> = ({
+  shops,
+  onAddShop,
+  onShopClick,
+}) => {
+  const { theme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
+  const bgSurface = theme === 'dark' ? themeClasses.bg.secondary : themeClasses.bg.card;
+  const borderClass = themeClasses.border.default;
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className={`text-xl font-bold ${themeClasses.text.primary}`}>Любимые кофейни</h2>
+          <p className={`${themeClasses.text.secondary} text-sm`}>Коллекция ваших любимых мест</p>
+        </div>
+        <button
+          onClick={onAddShop}
+          className={`${themeClasses.primary.text} text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity`}
+        >
+          Все
+          <span className="material-symbols-outlined text-sm">chevron_right</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {shops.map((shop) => (
+          <button
+            key={shop.id}
+            onClick={() => onShopClick(shop.id)}
+            className={`${bgSurface} border ${borderClass} rounded-2xl overflow-hidden text-left group hover:shadow-lg transition-all`}
+          >
+            {/* Image */}
+            <div className="relative aspect-[4/3] overflow-hidden">
+              <img
+                src={shop.imageUrl}
+                alt={shop.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              {/* Rating badge */}
+              <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1">
+                <span className="material-symbols-outlined text-[#EAB308] text-xs fill-1">star</span>
+                {shop.rating}
+              </div>
+            </div>
+            {/* Info */}
+            <div className="p-3">
+              <h3 className={`font-bold ${themeClasses.text.primary} text-sm truncate`}>{shop.name}</h3>
+              <p className={`${themeClasses.primary.text} text-xs truncate`}>{shop.description}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <span className={`material-symbols-outlined text-xs ${themeClasses.text.secondary}`}>location_on</span>
+                <span className={`${themeClasses.text.secondary} text-xs truncate`}>{shop.location}</span>
+              </div>
+            </div>
+          </button>
+        ))}
+
+        {/* Add New Shop Card */}
+        <button
+          onClick={onAddShop}
+          className={`${bgSurface} border-2 border-dashed ${borderClass} rounded-2xl flex flex-col items-center justify-center min-h-[200px] group hover:${themeClasses.primary.border} transition-all`}
+        >
+          <div className={`w-12 h-12 rounded-full ${themeClasses.bg.tertiary} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+            <span className={`material-symbols-outlined text-2xl ${themeClasses.text.secondary}`}>add</span>
+          </div>
+          <span className={`${themeClasses.text.secondary} text-sm font-medium`}>Добавить</span>
+        </button>
+      </div>
+    </section>
+  );
+};
+
+// ==================== Recent Activity Section ====================
+
+interface RecentActivitySectionProps {
+  reviews: (Review & { shopName?: string })[];
+  onShopClick: (shopId: string) => void;
+}
+
+const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ reviews, onShopClick }) => {
+  const { theme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
+  const bgSurface = theme === 'dark' ? themeClasses.bg.secondary : themeClasses.bg.card;
+  const borderClass = themeClasses.border.default;
+
+  const formatTimeAgo = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) return `${diffMins} мин. назад`;
+    if (diffHours < 24) return `${diffHours} ч. назад`;
+    if (diffDays === 1) return 'Вчера';
+    if (diffDays < 7) return `${diffDays} дн. назад`;
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  };
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className={`text-xl font-bold ${themeClasses.text.primary}`}>Последняя активность</h2>
+      </div>
+
+      {reviews.length > 0 ? (
+        <div className="space-y-3">
+          {reviews.map((review) => {
+            const avgRating = ((review.ratingCoffee + review.ratingService + review.ratingPlace) / 3);
+
+            return (
+              <div
+                key={review.id}
+                className={`${bgSurface} border ${borderClass} rounded-2xl p-4 hover:shadow-md transition-all`}
+              >
+                <div className="flex items-start gap-4">
+                  {/* Icon */}
+                  <div className={`w-10 h-10 rounded-full ${themeClasses.primary.bgLight} flex items-center justify-center flex-shrink-0`}>
+                    <span className={`material-symbols-outlined ${themeClasses.primary.text} text-lg`}>edit_square</span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className={`font-bold ${themeClasses.text.primary} text-sm`}>
+                          Отзыв на {review.shopName || 'кофейню'}
+                        </p>
+                        <p className={`${themeClasses.text.secondary} text-xs mt-0.5`}>
+                          "{review.comment}"
+                        </p>
+                      </div>
+                      <span className={`${themeClasses.text.secondary} text-xs whitespace-nowrap flex-shrink-0`}>
+                        {formatTimeAgo(review.createdAt)}
+                      </span>
+                    </div>
+
+                    {/* Stars */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            className={`material-symbols-outlined text-xs ${
+                              star <= Math.round(avgRating)
+                                ? `${themeClasses.primary.text} fill-1`
+                                : themeClasses.text.secondary
+                            }`}
+                          >
+                            star
+                          </span>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => onShopClick(review.coffeeShopId)}
+                        className={`text-xs ${themeClasses.primary.text} font-medium hover:opacity-80 transition-opacity flex items-center gap-0.5`}
+                      >
+                        <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                        К кофейне
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className={`${bgSurface} border ${borderClass} rounded-2xl p-8 text-center`}>
+          <div className={`w-14 h-14 rounded-full ${themeClasses.bg.tertiary} flex items-center justify-center mx-auto mb-3`}>
+            <span className={`material-symbols-outlined text-3xl ${themeClasses.text.secondary}`}>rate_review</span>
+          </div>
+          <p className={`${themeClasses.text.secondary}`}>Пока нет активности</p>
+        </div>
+      )}
+    </section>
+  );
+};
+
+// ==================== Personal Information ====================
+
 interface PersonalInformationProps {
   profile: UserProfile;
   isEditing: boolean;
@@ -462,86 +816,87 @@ const PersonalInformation: React.FC<PersonalInformationProps> = ({
   const themeClasses = getThemeClasses(theme);
   
   return (
-  <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6`}>
-    <div className="flex items-center justify-between mb-4">
-      <h3 className={`text-xl font-bold ${themeClasses.text.primary}`}>Личная информация</h3>
-      {!isEditing ? (
-        <Button 
-          variant="secondary" 
-          onClick={onEditStart}
-          className="w-auto"
-        >
-          Редактировать
-        </Button>
-      ) : (
-        <div className="flex gap-2">
+    <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-5`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className={`text-lg font-bold ${themeClasses.text.primary}`}>Личная информация</h3>
+        {!isEditing ? (
           <Button 
             variant="secondary" 
-            onClick={onEditCancel}
-            disabled={isSaving}
-            className="w-auto"
+            onClick={onEditStart}
+            className="w-auto !py-1.5 !px-3 text-sm"
           >
-            Отмена
+            Изменить
           </Button>
-          <Button 
-            variant="primary" 
-            onClick={onSave}
-            disabled={isSaving}
-            isLoading={isSaving}
-            className="w-auto"
-          >
-            Сохранить
-          </Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button 
+              variant="secondary" 
+              onClick={onEditCancel}
+              disabled={isSaving}
+              className="w-auto !py-1.5 !px-3 text-sm"
+            >
+              Отмена
+            </Button>
+            <Button 
+              variant="primary" 
+              onClick={onSave}
+              disabled={isSaving}
+              isLoading={isSaving}
+              className="w-auto !py-1.5 !px-3 text-sm"
+            >
+              Сохранить
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <EditableInfoField
+          field="userName"
+          label="Имя пользователя"
+          value={profile.userName || ''}
+          isEditing={isEditing}
+          editValue={editValues.userName}
+          isSaving={isSaving}
+          onInputChange={onInputChange}
+        />
+
+        <EditableInfoField
+          field="email"
+          label="Email"
+          type="email"
+          value={profile.email || ''}
+          isEditing={isEditing}
+          editValue={editValues.email}
+          isSaving={isSaving}
+          onInputChange={onInputChange}
+        />
+
+        <EditableInfoField
+          field="about"
+          label="О себе"
+          type="textarea"
+          value={profile.about || 'Информация не указана'}
+          isEditing={isEditing}
+          editValue={editValues.about}
+          isSaving={isSaving}
+          onInputChange={onInputChange}
+          placeholder="Расскажите немного о себе..."
+        />
+
+        <div>
+          <label className={`${themeClasses.text.secondary} text-xs mb-1 block`}>Дата регистрации</label>
+          <p className={`${themeClasses.text.primary} text-sm`}>
+            {profile.createdAtUtc ? new Date(profile.createdAtUtc).toLocaleDateString('ru-RU') : 'Неизвестно'}
+          </p>
         </div>
-      )}
-    </div>
-
-    <div className="space-y-4">
-      <EditableInfoField
-        field="userName"
-        label="Имя пользователя"
-        value={profile.userName || ''}
-        isEditing={isEditing}
-        editValue={editValues.userName}
-        isSaving={isSaving}
-        onInputChange={onInputChange}
-      />
-
-      <EditableInfoField
-        field="email"
-        label="Email"
-        type="email"
-        value={profile.email || ''}
-        isEditing={isEditing}
-        editValue={editValues.email}
-        isSaving={isSaving}
-        onInputChange={onInputChange}
-      />
-
-      <EditableInfoField
-        field="about"
-        label="О себе"
-        type="textarea"
-        value={profile.about || 'Информация не указана'}
-        isEditing={isEditing}
-        editValue={editValues.about}
-        isSaving={isSaving}
-        onInputChange={onInputChange}
-        placeholder="Расскажите немного о себе..."
-      />
-
-      <div>
-        <label className={`${themeClasses.text.secondary} text-sm mb-1 block`}>Дата регистрации</label>
-        <p className={themeClasses.text.primary}>
-          {profile.createdAtUtc ? new Date(profile.createdAtUtc).toLocaleDateString('ru-RU') : 'Неизвестно'}
-        </p>
       </div>
     </div>
-  </div>
   );
 };
 
-// Компонент редактируемого поля информации
+// ==================== Editable Info Field ====================
+
 interface EditableInfoFieldProps {
   field: string;
   label: string;
@@ -571,13 +926,13 @@ const EditableInfoField: React.FC<EditableInfoFieldProps> = ({
 
   return (
     <div>
-      <label className={`${themeClasses.text.secondary} text-sm mb-1 block`}>{label}</label>
+      <label className={`${themeClasses.text.secondary} text-xs mb-1 block`}>{label}</label>
       {isEditing ? (
         type === 'textarea' ? (
           <textarea
             value={displayValue}
             onChange={(e) => onInputChange(field, e.target.value)}
-            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary} min-h-[100px]`}
+            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-3 ${themeClasses.text.primary} min-h-[80px] text-sm`}
             placeholder={placeholder}
             disabled={isSaving}
           />
@@ -586,38 +941,39 @@ const EditableInfoField: React.FC<EditableInfoFieldProps> = ({
             type={type}
             value={displayValue}
             onChange={(e) => onInputChange(field, e.target.value)}
-            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-4 ${themeClasses.text.primary}`}
+            className={`w-full ${themeClasses.bg.input} border ${themeClasses.border.default} rounded-xl py-2 px-3 ${themeClasses.text.primary} text-sm`}
             placeholder={placeholder}
             disabled={isSaving}
           />
         )
       ) : (
-        <p className={themeClasses.text.primary}>{value}</p>
+        <p className={`${themeClasses.text.primary} text-sm`}>{value}</p>
       )}
     </div>
   );
 };
 
-// Компонент настроек аккаунта
+// ==================== Account Settings ====================
+
 const AccountSettings: React.FC = () => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   return (
-  <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-6`}>
-    <h3 className={`text-xl font-bold ${themeClasses.text.primary} mb-4`}>Настройки аккаунта</h3>
-
-    <div className="space-y-4">
-      <SettingItem
-        title="Изменить пароль"
-        description="Обновите свой пароль для безопасности аккаунта"
-        buttonText="Изменить"
-      />
+    <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl p-5`}>
+      <h3 className={`text-lg font-bold ${themeClasses.text.primary} mb-4`}>Настройки аккаунта</h3>
+      <div className="space-y-3">
+        <SettingItem
+          title="Изменить пароль"
+          description="Обновите свой пароль для безопасности"
+          buttonText="Изменить"
+        />
+      </div>
     </div>
-  </div>
   );
 };
 
-// Компонент элемента настройки
+// ==================== Setting Item ====================
+
 interface SettingItemProps {
   title: string;
   description: string;
@@ -628,17 +984,18 @@ const SettingItem: React.FC<SettingItemProps> = ({ title, description, buttonTex
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   return (
-  <div className="flex items-center justify-between">
-    <div>
-      <p className={`${themeClasses.text.primary} font-medium`}>{title}</p>
-      <p className={`${themeClasses.text.secondary} text-sm`}>{description}</p>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className={`${themeClasses.text.primary} font-medium text-sm`}>{title}</p>
+        <p className={`${themeClasses.text.secondary} text-xs`}>{description}</p>
+      </div>
+      <Button variant="secondary" className="!py-1.5 !px-3 text-sm">{buttonText}</Button>
     </div>
-    <Button variant="secondary">{buttonText}</Button>
-  </div>
   );
 };
 
-// Компонент настройки темы
+// ==================== Theme Setting Item ====================
+
 interface ThemeSettingItemProps {
   title: string;
   description: string;
@@ -663,23 +1020,23 @@ const ThemeSettingItem: React.FC<ThemeSettingItemProps> = ({ title, description,
       };
 
   return (
-    <div className={`flex items-center justify-between py-3 border-b ${themeClasses.border} last:border-0`}>
+    <div className="flex items-center justify-between">
       <div>
-        <p className={`${themeClasses.text} font-medium`}>{title}</p>
-        <p className={`${themeClasses.textSecondary} text-sm`}>{description}</p>
+        <p className={`${themeClasses.text} font-medium text-sm`}>{title}</p>
+        <p className={`${themeClasses.textSecondary} text-xs`}>{description}</p>
       </div>
       <button
         onClick={onToggle}
         className={`
-          relative inline-flex h-8 w-16 items-center rounded-full transition-colors duration-200
+          relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-200
           ${themeClasses.toggleBg}
         `}
         aria-label="Переключить тему"
       >
         <span
           className={`
-            inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-200 shadow-md
-            ${currentTheme === 'dark' ? 'translate-x-9' : 'translate-x-1'}
+            inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200 shadow-md
+            ${currentTheme === 'dark' ? 'translate-x-8' : 'translate-x-1'}
           `}
         />
         <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs">
