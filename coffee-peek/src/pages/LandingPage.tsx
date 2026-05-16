@@ -102,7 +102,7 @@ const LandingPage: React.FC = () => {
       </div>
       <div className="flex items-center gap-2 mb-1">
         <span className={`text-xl lg:text-2xl font-extrabold tracking-[-0.045em] font-display ${themeClasses.text.primary}`}>Coffee</span>
-        <span className={`text-xl lg:text-2xl font-bold tracking-tight ${themeClasses.primary.text}`}>Peek</span>
+        <span className={`text-xl lg:text-2xl font-bold tracking-tight font-display ${themeClasses.primary.text}`}>Peek</span>
       </div>
     </div>
   );
@@ -200,9 +200,8 @@ const LandingPage: React.FC = () => {
             <h1 className="mt-5 lg:mt-6 mx-auto max-w-[940px] font-display font-black uppercase leading-[0.98] tracking-[-0.035em] text-white"
               style={{ fontSize: 'clamp(36px, 7vw, 76px)' }}>
               ДОБРО ПОЖАЛОВАТЬ В{' '}
-              <span className="relative inline-block text-[#EAB308]">
+              <span className="text-[#EAB308]">
                 CoffeePeek
-                <span className="absolute left-0 right-0 h-[3px] lg:h-[4px] rounded-full bg-[#EAB308] opacity-60" style={{ bottom: '-4px' }} />
               </span>
             </h1>
 
@@ -437,8 +436,8 @@ const LandingPage: React.FC = () => {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {renderHeader()}
                 <div className="text-center mb-10">
-                  <h1 className={`text-3xl lg:text-4xl font-bold ${textPrimary} mb-3 tracking-tight`}>Join CoffeePeek</h1>
-                  <p className={`${textSecondary} lg:text-lg`}>Enter your email to join the exclusive waitlist.</p>
+                  <h1 className={`text-3xl lg:text-4xl font-bold font-display ${textPrimary} mb-3 tracking-tight`}>Join CoffeePeek</h1>
+                  <p className={`font-body ${textSecondary} lg:text-lg`}>Enter your email to join the exclusive waitlist.</p>
                 </div>
 
                 <form onSubmit={handleSendCode} className="space-y-6 lg:space-y-8">
@@ -462,8 +461,8 @@ const LandingPage: React.FC = () => {
             {step === VerificationStep.ENTER_CODE && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="text-center mb-10">
-                  <h1 className={`text-3xl lg:text-4xl font-bold ${textPrimary} mb-3 tracking-tight`}>Verify Identity</h1>
-                  <p className={`${textSecondary} lg:text-lg`}>A 6-digit code was sent to <span className={`${themeClasses.primary.text} font-semibold`}>{userState.email}</span></p>
+                  <h1 className={`text-3xl lg:text-4xl font-bold font-display ${textPrimary} mb-3 tracking-tight`}>Verify Identity</h1>
+                  <p className={`font-body ${textSecondary} lg:text-lg`}>A 6-digit code was sent to <span className={`${themeClasses.primary.text} font-semibold`}>{userState.email}</span></p>
                 </div>
                 <div className="space-y-10">
                   <div className="flex flex-col items-center">
@@ -475,9 +474,9 @@ const LandingPage: React.FC = () => {
                     </Button>
                     <div className="text-center pt-2">
                       {timer > 0 ? (
-                        <p className={`text-sm lg:text-base ${textTertiary}`}>Resend in <span className={`${textSecondary} font-medium`}>{timer}s</span></p>
+                        <p className={`font-body text-sm lg:text-base ${textTertiary}`}>Resend in <span className={`${textSecondary} font-medium`}>{timer}s</span></p>
                       ) : (
-                        <button onClick={() => setTimer(59)} className={`text-sm lg:text-base ${themeClasses.primary.text} font-medium hover:underline`}>Resend code</button>
+                        <button onClick={() => setTimer(59)} className={`font-body text-sm lg:text-base ${themeClasses.primary.text} font-medium`}>Resend code</button>
                       )}
                     </div>
                   </div>
@@ -488,8 +487,8 @@ const LandingPage: React.FC = () => {
             {step === VerificationStep.LINK_PROCESSING && (
               <div className="text-center animate-in fade-in duration-500 py-12">
                 <WobbleRing size={56} className="mx-auto mb-8" />
-                <h1 className={`text-3xl font-bold ${textPrimary} mb-3`}>Verifying Secure Link</h1>
-                <p className={textSecondary}>Please wait while we confirm your credentials...</p>
+                <h1 className={`text-3xl font-bold font-display ${textPrimary} mb-3`}>Verifying Secure Link</h1>
+                <p className={`font-body ${textSecondary}`}>Please wait while we confirm your credentials...</p>
                 <p className={`${textTertiary} text-sm mt-4 font-mono truncate px-4`}>UID: {userState.userId}</p>
               </div>
             )}
@@ -500,8 +499,8 @@ const LandingPage: React.FC = () => {
                   <div className={`w-24 h-24 lg:w-32 lg:h-32 ${themeClasses.primary.bgLight} rounded-full flex items-center justify-center mb-8 animate-bounce duration-[2000ms] border ${themeClasses.primary.borderLighter} shadow-lg ${themeClasses.primary.shadow}`}>
                     <Icons.Check />
                   </div>
-                  <h1 className={`text-4xl lg:text-5xl font-bold ${textPrimary} mb-4 tracking-tight`}>Verified!</h1>
-                  <p className={`${textSecondary} text-lg lg:text-xl max-w-[320px] mx-auto leading-relaxed`}>
+                  <h1 className={`text-4xl lg:text-5xl font-bold font-display ${textPrimary} mb-4 tracking-tight`}>Verified!</h1>
+                  <p className={`font-body ${textSecondary} text-lg lg:text-xl max-w-[320px] mx-auto leading-relaxed`}>
                     Account confirmed. You're now on the priority list.
                   </p>
                   <div className="w-full mt-12">
