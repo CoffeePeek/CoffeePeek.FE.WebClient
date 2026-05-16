@@ -17,6 +17,7 @@ const CreateReviewPage = lazy(() => import('../pages/CreateReviewPage'));
 const UserProfilePage = lazy(() => import('../pages/UserProfilePage'));
 const CreateCoffeeShopPage = lazy(() => import('../pages/CreateCoffeeShopPage'));
 const CreateCheckInPage = lazy(() => import('../pages/CreateCheckInPage'));
+const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 const ErrorPage = lazy(() => import('../pages/ErrorPage'));
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage'));
 
@@ -130,13 +131,22 @@ export const AppRoutes: React.FC = () => {
           }
         />
 
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <SettingsPage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Legacy redirects for backward compatibility */}
+        {/* Legacy redirects */}
         <Route path="/coffeeshops" element={<Navigate to="/shops" replace />} />
         <Route path="/moderation" element={<Navigate to="/dashboard?page=moderation" replace />} />
         <Route path="/map" element={<Navigate to="/dashboard?page=map" replace />} />
         <Route path="/jobs" element={<Navigate to="/dashboard?page=jobs" replace />} />
-        <Route path="/settings" element={<Navigate to="/dashboard?page=settings" replace />} />
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/error" replace />} />

@@ -65,13 +65,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCity, setSelectedCity] = useState<string>(''); // Фильтр по городу
-  const [selectedEquipment, setSelectedEquipment] = useState<string>('');
-  const [selectedBeans, setSelectedBeans] = useState<string>('');
-  const [selectedRoasters, setSelectedRoasters] = useState<string>('');
-  const [selectedBrewMethods, setSelectedBrewMethods] = useState<string>('');
+  const [activeQuick, setActiveQuick] = useState('all');
+  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
+  const [selectedBeans, setSelectedBeans] = useState<string[]>([]);
+  const [selectedRoasters, setSelectedRoasters] = useState<string[]>([]);
+  const [selectedBrewMethods, setSelectedBrewMethods] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(''); // Debounced версия для запросов
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [activeFilterTabs, setActiveFilterTabs] = useState<Set<'open' | 'new' | 'favorite' | 'visited'>>(new Set());
   const [favoriteShopIds, setFavoriteShopIds] = useState<Set<string>>(new Set());
   const [visitedShopIds, setVisitedShopIds] = useState<Set<string>>(new Set());
@@ -114,22 +115,20 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
 
 
   useEffect(() => {
-    // Update filters with selected items
     const updatedFilters: CoffeeShopFilters = {
-      cityId: selectedCity || undefined, // Фильтр по городу
-      equipmentIds: selectedEquipment ? [selectedEquipment] : undefined,
-      coffeeBeanIds: selectedBeans ? [selectedBeans] : undefined,
-      roasterIds: selectedRoasters ? [selectedRoasters] : undefined,
-      brewMethodIds: selectedBrewMethods ? [selectedBrewMethods] : undefined,
-      priceRange: filters.priceRange, // Keep existing price range filter
+      cityId: selectedCity || undefined,
+      equipmentIds: selectedEquipments.length ? selectedEquipments : undefined,
+      coffeeBeanIds: selectedBeans.length ? selectedBeans : undefined,
+      roasterIds: selectedRoasters.length ? selectedRoasters : undefined,
+      brewMethodIds: selectedBrewMethods.length ? selectedBrewMethods : undefined,
+      priceRange: filters.priceRange,
     };
-      
-    // Only update if filters actually changed
+
     if (JSON.stringify(filters) !== JSON.stringify(updatedFilters)) {
       setFilters(updatedFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCity, selectedEquipment, selectedBeans, selectedRoasters, selectedBrewMethods]);
+  }, [selectedCity, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods]);
 
   // Only trigger shop loading from filter changes after initial load is complete
   useEffect(() => {
@@ -386,73 +385,39 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           onCityChange={setSelectedCity}
           showCityDropdown={showCityDropdown}
           onCityDropdownToggle={() => setShowCityDropdown(v => !v)}
-          activeFilterTabs={activeFilterTabs}
-          onFilterTabToggle={toggleFilterTab}
           colors={colors}
           dark={isDark}
         />
 
-        {/* Desktop filter bar (always visible) */}
-        <div className="hidden lg:block">
-          <ShopFilterPanel
-            filters={filters}
-            equipments={equipments}
-            coffeeBeans={coffeeBeans}
-            roasters={roasters}
-            brewMethods={brewMethods}
-            selectedEquipment={selectedEquipment}
-            selectedBeans={selectedBeans}
-            selectedRoasters={selectedRoasters}
-            selectedBrewMethods={selectedBrewMethods}
-            colors={colors}
-            dark={isDark}
-            shopsCount={shops.length}
-            onFilterChange={handleFilterChange}
-            onEquipmentChange={setSelectedEquipment}
-            onBeansChange={setSelectedBeans}
-            onRoastersChange={setSelectedRoasters}
-            onBrewMethodsChange={setSelectedBrewMethods}
-            onClearFilters={() => {
-              clearFilters();
-              setSelectedEquipment('');
-              setSelectedBeans('');
-              setSelectedRoasters('');
-              setSelectedBrewMethods('');
-            }}
-          />
-        </div>
-
-        {/* Advanced filters panel (mobile + desktop, when toggled) */}
-        {showFilters && (
-          <div className="lg:hidden max-w-7xl mx-auto px-4 sm:px-6 pb-6">
-            <ShopFilterPanel
-              filters={filters}
-              equipments={equipments}
-              coffeeBeans={coffeeBeans}
-              roasters={roasters}
-              brewMethods={brewMethods}
-              selectedEquipment={selectedEquipment}
-              selectedBeans={selectedBeans}
-              selectedRoasters={selectedRoasters}
-              selectedBrewMethods={selectedBrewMethods}
-              colors={colors}
-              dark={isDark}
-              shopsCount={shops.length}
-              onFilterChange={handleFilterChange}
-              onEquipmentChange={setSelectedEquipment}
-              onBeansChange={setSelectedBeans}
-              onRoastersChange={setSelectedRoasters}
-              onBrewMethodsChange={setSelectedBrewMethods}
-              onClearFilters={() => {
-                clearFilters();
-                setSelectedEquipment('');
-                setSelectedBeans('');
-                setSelectedRoasters('');
-                setSelectedBrewMethods('');
-              }}
-            />
-          </div>
-        )}
+        {/* Unified filter panel: chips row + toggled advanced panel */}
+        <ShopFilterPanel
+          activeQuick={activeQuick}
+          onQuickChange={setActiveQuick}
+          showFilters={showFilters}
+          filters={filters}
+          equipments={equipments}
+          coffeeBeans={coffeeBeans}
+          roasters={roasters}
+          brewMethods={brewMethods}
+          selectedEquipments={selectedEquipments}
+          selectedBeans={selectedBeans}
+          selectedRoasters={selectedRoasters}
+          selectedBrewMethods={selectedBrewMethods}
+          colors={colors}
+          dark={isDark}
+          onFilterChange={handleFilterChange}
+          onEquipmentChange={setSelectedEquipments}
+          onBeansChange={setSelectedBeans}
+          onRoastersChange={setSelectedRoasters}
+          onBrewMethodsChange={setSelectedBrewMethods}
+          onClearAdvanced={() => {
+            clearFilters();
+            setSelectedEquipments([]);
+            setSelectedBeans([]);
+            setSelectedRoasters([]);
+            setSelectedBrewMethods([]);
+          }}
+        />
 
         {error && (
           <div role="alert" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 p-4 border rounded-2xl"
@@ -539,7 +504,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                   const photos = shop.shopPhotos?.filter((p): p is string => typeof p === 'string') ?? [];
                   return (
                     <article key={shop.id} onClick={() => openShopDetails(shop.id)}
-                      style={{ display: 'flex', gap: 12, padding: 12, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, cursor: 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, cursor: 'pointer' }}>
                       <div style={{ width: 84, height: 84, flexShrink: 0, borderRadius: 12, background: photos[0] ? `url(${photos[0]}) center/cover` : `${COLORS.primary}20`, overflow: 'hidden' }}>
                         {photos[0] && <img src={photos[0]} alt={shop.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                       </div>

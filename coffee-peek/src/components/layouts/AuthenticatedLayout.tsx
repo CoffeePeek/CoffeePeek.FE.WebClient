@@ -17,7 +17,7 @@ export const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ childr
   return (
     <div className={`min-h-screen ${bgClass}`}>
       <Header />
-      <div className="pt-16 min-h-screen">
+      <div className="min-h-screen">
         {children}
       </div>
     </div>
