@@ -2,37 +2,33 @@ import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface ShimmerProps {
-  width?: string;
-  height?: string;
+  width?: string | number;
+  height?: string | number;
   className?: string;
   circle?: boolean;
+  style?: React.CSSProperties;
 }
 
-/**
- * Базовый компонент Shimmer для создания skeleton loading элементов
- */
-const Shimmer: React.FC<ShimmerProps> = ({ 
-  width = '100%', 
-  height = '1rem', 
+const Shimmer: React.FC<ShimmerProps> = ({
+  width = '100%',
+  height = '1rem',
   className = '',
-  circle = false 
+  circle = false,
+  style,
 }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  
-  const shimmerGradient = isDark 
-    ? 'from-[#2D241F] via-[#3D2F28] to-[#2D241F]'
-    : 'from-gray-100 via-gray-200 to-gray-100';
-
-  const style = {
-    width,
-    height,
-  };
 
   return (
-    <div 
-      className={`bg-gradient-to-r ${shimmerGradient} animate-shimmer ${circle ? 'rounded-full' : 'rounded-lg'} ${className}`}
-      style={style}
+    <div
+      className={`animate-pulse ${circle ? 'rounded-full' : 'rounded-lg'} ${className}`}
+      style={{
+        width,
+        height,
+        background: isDark ? '#3D2F28' : '#ECEAE7',
+        flexShrink: 0,
+        ...style,
+      }}
     />
   );
 };

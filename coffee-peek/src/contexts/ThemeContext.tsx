@@ -28,8 +28,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (themeToApply === 'light') {
         document.body.classList.add('light-theme');
         document.body.classList.remove('dark-theme');
-        document.body.style.backgroundColor = '#ffffff';
-        document.body.style.color = '#213547';
+        document.body.style.backgroundColor = '#FAFAF9';
+        document.body.style.color = '#1C1917';
       } else {
         document.body.classList.add('dark-theme');
         document.body.classList.remove('light-theme');
@@ -52,8 +52,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (themeToApply === 'light') {
         document.body.classList.add('light-theme');
         document.body.classList.remove('dark-theme');
-        document.body.style.backgroundColor = '#ffffff';
-        document.body.style.color = '#213547';
+        document.body.style.backgroundColor = '#FAFAF9';
+        document.body.style.color = '#1C1917';
       } else {
         document.body.classList.add('dark-theme');
         document.body.classList.remove('light-theme');

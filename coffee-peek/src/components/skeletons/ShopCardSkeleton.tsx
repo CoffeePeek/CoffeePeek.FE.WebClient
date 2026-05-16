@@ -4,52 +4,84 @@ import Shimmer from './Shimmer';
 
 interface ShopCardSkeletonProps {
   count?: number;
+  variant?: 'card' | 'row';
 }
 
-const ShopCardSkeleton: React.FC<ShopCardSkeletonProps> = ({ count = 6 }) => {
+const ShopCardSkeleton: React.FC<ShopCardSkeletonProps> = ({ count = 6, variant = 'card' }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  
-  const bgClass = isDark ? 'bg-[#2D241F]' : 'bg-white';
-  const borderColor = isDark ? 'border-[#3D2F28]' : 'border-[#E8E4E1]';
 
+  const surface = isDark ? '#2D241F' : '#ffffff';
+  const border = isDark ? '#3D2F28' : '#E7E5E4';
+
+  if (variant === 'row') {
+    return (
+      <>
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: 12,
+            background: surface, border: `1px solid ${border}`,
+            borderRadius: 16,
+          }}>
+            {/* Square photo */}
+            <Shimmer width={84} height={84} style={{ borderRadius: 12 }} />
+
+            {/* Text content */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* Name + rating */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <Shimmer width="55%" height={16} />
+                <Shimmer width={44} height={22} style={{ borderRadius: 6 }} />
+              </div>
+              {/* Status + address */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Shimmer width={52} height={16} style={{ borderRadius: 6 }} />
+                <Shimmer width="38%" height={13} />
+              </div>
+              {/* Tags */}
+              <div style={{ display: 'flex', gap: 4 }}>
+                <Shimmer width={60} height={22} style={{ borderRadius: 8 }} />
+                <Shimmer width={72} height={22} style={{ borderRadius: 8 }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </>
+    );
+  }
+
+  // Card variant — matches ShopCard: borderRadius 16, 5:3 photo, 12px 14px body padding
   return (
     <>
-      {Array.from({ length: count }).map((_, index) => (
-        <div
-          key={index}
-          className={`${bgClass} rounded-3xl overflow-hidden shadow-sm border ${borderColor}`}
-        >
-          {/* Изображение skeleton */}
-          <div className="relative h-48 overflow-hidden">
-            <Shimmer width="100%" height="100%" className="rounded-none" />
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} style={{
+          background: surface, border: `1px solid ${border}`,
+          borderRadius: 16, overflow: 'hidden',
+        }}>
+          {/* Photo — 5:3 aspect ratio */}
+          <div style={{ position: 'relative', aspectRatio: '5/3', overflow: 'hidden' }}>
+            <Shimmer width="100%" height="100%" className="!rounded-none" />
           </div>
 
-          {/* Контент skeleton */}
-          <div className="p-6">
-            {/* Заголовок */}
-            <div className="mb-4">
-              <Shimmer width="75%" height="24px" className="mb-2" />
-              <Shimmer width="50%" height="16px" />
+          {/* Body */}
+          <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Name + open badge */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <Shimmer width="58%" height={16} />
+              <Shimmer width={52} height={18} style={{ borderRadius: 6 }} />
             </div>
 
-            {/* Рейтинг и статус */}
-            <div className="flex items-center gap-3 mb-4">
-              <Shimmer width="64px" height="24px" />
-              <Shimmer width="96px" height="24px" />
-              <Shimmer width="80px" height="24px" />
-            </div>
+            {/* Address */}
+            <Shimmer width="75%" height={13} />
 
-            {/* Теги */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Shimmer width="80px" height="28px" className="rounded-xl" />
-              <Shimmer width="96px" height="28px" className="rounded-xl" />
-              <Shimmer width="64px" height="28px" className="rounded-xl" />
-            </div>
+            {/* Meta */}
+            <Shimmer width="45%" height={12} />
 
-            {/* Адрес */}
-            <Shimmer width="100%" height="16px" className="mb-2" />
-            <Shimmer width="66%" height="16px" />
+            {/* Tags */}
+            <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
+              <Shimmer width={64} height={24} style={{ borderRadius: 8 }} />
+              <Shimmer width={76} height={24} style={{ borderRadius: 8 }} />
+            </div>
           </div>
         </div>
       ))}

@@ -26,7 +26,7 @@ const Header: React.FC = () => {
 
   const isDark = theme === 'dark';
   const gold = COLORS.primary;
-  const goldWarm = '#B48C4B';
+  const goldWarm = '#D4A84B';
 
   const allNav = [
     ...PUBLIC_NAV,

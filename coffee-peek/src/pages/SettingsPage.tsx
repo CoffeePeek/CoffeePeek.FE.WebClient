@@ -46,7 +46,7 @@ const SettingsPage: React.FC = () => {
 
   // Colors
   const gold = COLORS.primary;
-  const goldWarm = '#B48C4B';
+  const goldWarm = '#D4A84B';
   const bg = isDark ? '#1A1412' : '#F5F4F2';
   const surface = isDark ? '#2D241F' : '#fff';
   const border = isDark ? '#3D2F28' : '#E7E5E4';
@@ -204,9 +204,6 @@ const SettingsPage: React.FC = () => {
       {/* ── Page title bar ──────────────────────────────────────── */}
       <div style={{ borderBottom: `1px solid ${border}`, background: isDark ? 'rgba(45,36,31,0.7)' : surface, backdropFilter: 'blur(12px)' }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8" style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px 6px 4px', background: 'none', border: 'none', cursor: 'pointer', color: textMuted, borderRadius: 8 }}>
-            <span className="material-symbols-rounded" style={{ fontSize: 20, lineHeight: 1 }}>arrow_back</span>
-          </button>
           <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 18, color: textPrimary, letterSpacing: '-0.01em' }}>Настройки</h1>
           {saveSuccess && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: '#15803D', fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 700 }}>

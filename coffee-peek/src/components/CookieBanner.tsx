@@ -34,7 +34,7 @@ const CookieBanner: React.FC = () => {
 
   const bgClass = theme === 'dark' ? 'bg-[#2D241F] border-[#3D2F28]' : 'bg-white border-gray-200';
   const textClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
-  const linkClass = theme === 'dark' ? 'text-[#EAB308] hover:text-[#FACC15]' : 'text-blue-600 hover:text-blue-700';
+  const linkClass = 'text-[#EAB308] hover:text-[#FACC15]';
 
   return (
     <div className={`fixed bottom-0 left-0 right-0 z-50 border-t ${bgClass} shadow-lg`}>

@@ -77,7 +77,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.4) 100%)' }} />
           </>
         ) : (
-          <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, ${COLORS.primary}20, #B48C4B20)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, ${COLORS.primary}20, #D4A84B20)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span className="material-symbols-rounded" style={{ fontSize: 40, color: colors.textSecondary, lineHeight: 1 }}>local_cafe</span>
           </div>
         )}
@@ -89,9 +89,9 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
               display: 'inline-flex', alignItems: 'center', gap: 3,
               padding: '3px 8px', borderRadius: 6,
               background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',
-              fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, fontSize: 11, color: '#B48C4B',
+              fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, fontSize: 11, color: '#D4A84B',
             }}>
-              <span className="material-symbols-rounded star-filled" style={{ fontSize: 12, color: '#B48C4B', lineHeight: 1 }}>star</span>
+              <span className="material-symbols-rounded star-filled" style={{ fontSize: 12, color: '#D4A84B', lineHeight: 1 }}>star</span>
               {shop.rating.toFixed(1)}
             </span>
           )}
@@ -139,7 +139,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
 
         {/* Address */}
         <p style={{ margin: '4px 0 0', fontFamily: '"Noto Sans",system-ui', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          <span className="material-symbols-rounded" style={{ fontSize: 13, color: '#B48C4B', lineHeight: 1, flexShrink: 0 }}>location_on</span>
+          <span className="material-symbols-rounded" style={{ fontSize: 13, color: '#D4A84B', lineHeight: 1, flexShrink: 0 }}>location_on</span>
           {shop.address || shop.cityName || 'Адрес не указан'}
         </p>
 

@@ -45,7 +45,11 @@
       "Bash(mkdir -p /tmp/design4)",
       "Bash(cp \"C:\\\\Users\\\\goloo\\\\.claude\\\\projects\\\\C--Users-goloo-RiderProjects-CoffeePeek-FE-WebClient\\\\64e0447c-02bc-4a2b-a5cb-f9c361f27bb1\\\\tool-results\\\\webfetch-1778919758325-ace0ey.bin\" /tmp/design4/design.gz)",
       "Bash(mkdir -p /tmp/design5)",
-      "Bash(cp \"C:\\\\Users\\\\goloo\\\\.claude\\\\projects\\\\C--Users-goloo-RiderProjects-CoffeePeek-FE-WebClient\\\\64e0447c-02bc-4a2b-a5cb-f9c361f27bb1\\\\tool-results\\\\webfetch-1778921011546-fbrmio.bin\" /tmp/design5/design.gz)"
+      "Bash(cp \"C:\\\\Users\\\\goloo\\\\.claude\\\\projects\\\\C--Users-goloo-RiderProjects-CoffeePeek-FE-WebClient\\\\64e0447c-02bc-4a2b-a5cb-f9c361f27bb1\\\\tool-results\\\\webfetch-1778921011546-fbrmio.bin\" /tmp/design5/design.gz)",
+      "Bash(cp /c/Users/goloo/.claude/projects/C--Users-goloo-RiderProjects-CoffeePeek-FE-WebClient/64e0447c-02bc-4a2b-a5cb-f9c361f27bb1/tool-results/webfetch-1778932046455-uuws1f.bin /tmp/design.gz)",
+      "Bash(gunzip -f /tmp/design.gz)",
+      "Bash(mkdir -p /tmp/designpkg)",
+      "Bash(tar -xf /tmp/design -C /tmp/designpkg)"
     ]
   }
 }

@@ -65,7 +65,16 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [activeQuick, setActiveQuick] = useState('all');
+  const [activeQuick, setActiveQuick] = useState<string[]>(['all']);
+
+  const handleQuickChange = (id: string) => {
+    setActiveQuick(prev => {
+      if (id === 'all') return ['all'];
+      const without = prev.filter(x => x !== 'all');
+      const next = without.includes(id) ? without.filter(x => x !== id) : [...without, id];
+      return next.length === 0 ? ['all'] : next;
+    });
+  };
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
   const [selectedBeans, setSelectedBeans] = useState<string[]>([]);
@@ -340,31 +349,26 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     }
   };
 
-  const handleFilterChange = (key: keyof CoffeeShopFilters, value: string | string[] | undefined) => {
-    setFilters(prev => {
-      // Проверяем, изменилось ли значение, чтобы избежать лишних обновлений
-      if (prev[key] === value || (Array.isArray(prev[key]) && Array.isArray(value) &&
-        prev[key].length === value.length &&
-        prev[key].every((v, i) => v === value[i]))) {
-        return prev;
-      }
-      return {
-        ...prev,
-        [key]: value,
-      };
-    });
+  const handleApplyFilters = (applied: { priceRange?: string; equipments: string[]; beans: string[]; roasters: string[]; brewMethods: string[] }) => {
+    setSelectedEquipments(applied.equipments);
+    setSelectedBeans(applied.beans);
+    setSelectedRoasters(applied.roasters);
+    setSelectedBrewMethods(applied.brewMethods);
+    setFilters(prev => ({ ...prev, priceRange: applied.priceRange }));
+    setShowFilters(false);
   };
 
-  const clearFilters = () => {
-    setFilters({});
-  };
-  
   const openShopDetails = (shopId: string) => {
     onShopSelect(shopId);
   };
 
   const isDark = theme === 'dark';
   const featured = shops.filter(s => s.rating && s.rating >= 4.7).slice(0, 5);
+
+  const activeFilterCount =
+    selectedEquipments.length + selectedBeans.length +
+    selectedRoasters.length + selectedBrewMethods.length +
+    (filters.priceRange ? 1 : 0);
 
   return (
     <>
@@ -380,19 +384,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           onSearchChange={setSearchQuery}
           showFilters={showFilters}
           onFilterToggle={() => setShowFilters(f => !f)}
-          cities={cities}
-          selectedCity={selectedCity}
-          onCityChange={setSelectedCity}
-          showCityDropdown={showCityDropdown}
-          onCityDropdownToggle={() => setShowCityDropdown(v => !v)}
+          activeFilterCount={activeFilterCount}
           colors={colors}
           dark={isDark}
         />
 
-        {/* Unified filter panel: chips row + toggled advanced panel */}
         <ShopFilterPanel
           activeQuick={activeQuick}
-          onQuickChange={setActiveQuick}
+          onQuickChange={handleQuickChange}
           showFilters={showFilters}
           filters={filters}
           equipments={equipments}
@@ -403,20 +402,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           selectedBeans={selectedBeans}
           selectedRoasters={selectedRoasters}
           selectedBrewMethods={selectedBrewMethods}
+          cities={cities}
+          selectedCity={selectedCity}
+          onCityChange={setSelectedCity}
+          showCityDropdown={showCityDropdown}
+          onCityDropdownToggle={() => setShowCityDropdown(v => !v)}
           colors={colors}
           dark={isDark}
-          onFilterChange={handleFilterChange}
-          onEquipmentChange={setSelectedEquipments}
-          onBeansChange={setSelectedBeans}
-          onRoastersChange={setSelectedRoasters}
-          onBrewMethodsChange={setSelectedBrewMethods}
-          onClearAdvanced={() => {
-            clearFilters();
-            setSelectedEquipments([]);
-            setSelectedBeans([]);
-            setSelectedRoasters([]);
-            setSelectedBrewMethods([]);
-          }}
+          onApplyFilters={handleApplyFilters}
         />
 
         {error && (
@@ -431,7 +424,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           <div className="lg:hidden mb-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-baseline justify-between mb-3">
               <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>Подборка недели</h2>
-              <button style={{ background: 'none', border: 'none', color: '#B48C4B', fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Все →</button>
+              <button style={{ background: 'none', border: 'none', color: '#D4A84B', fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Все →</button>
             </div>
             <div className="pl-4 sm:pl-6 overflow-x-auto no-scrollbar" style={{ display: 'flex', gap: 12, paddingBottom: 4 }}>
               {featured.map(shop => {
@@ -441,8 +434,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                     style={{ flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden', border: `1px solid ${colors.border}`, background: colors.surface, cursor: 'pointer' }}>
                     <div style={{ height: 112, background: photos[0] ? `url(${photos[0]}) center/cover` : `${COLORS.primary}20`, position: 'relative' }}>
                       {shop.rating && (
-                        <span style={{ position: 'absolute', top: 8, left: 8, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 7px', borderRadius: 6, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, color: '#B48C4B' }}>
-                          <span className="material-symbols-rounded star-filled" style={{ fontSize: 12, color: '#B48C4B', lineHeight: 1 }}>star</span>
+                        <span style={{ position: 'absolute', top: 8, left: 8, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 7px', borderRadius: 6, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, color: '#D4A84B' }}>
+                          <span className="material-symbols-rounded star-filled" style={{ fontSize: 12, color: '#D4A84B', lineHeight: 1 }}>star</span>
                           {shop.rating.toFixed(1)}
                         </span>
                       )}
@@ -482,7 +475,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               </div>
               {/* Mobile skeleton */}
               <div className="lg:hidden flex flex-col gap-3">
-                <ShopCardSkeleton count={4} />
+                <ShopCardSkeleton count={4} variant="row" />
               </div>
             </>
           ) : shops.length === 0 ? (
@@ -512,8 +505,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                           <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h3>
                           {shop.rating && shop.rating > 0 && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: 'rgba(180,140,75,.12)', color: '#B48C4B', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' as const }}>
-                              <span className="material-symbols-rounded star-filled" style={{ fontSize: 13, color: '#B48C4B', lineHeight: 1 }}>star</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: 'rgba(180,140,75,.12)', color: '#D4A84B', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' as const }}>
+                              <span className="material-symbols-rounded star-filled" style={{ fontSize: 13, color: '#D4A84B', lineHeight: 1 }}>star</span>
                               {shop.rating.toFixed(1)}
                             </span>
                           )}

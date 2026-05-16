@@ -27,7 +27,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
       <div style={{ position: 'relative' }}>
         {icon && (
           <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }}>
-            <span className="material-symbols-rounded" style={{ fontSize: 20, color: dark ? '#B48C4B' : '#9E7B36', lineHeight: 1, verticalAlign: 'middle' }}>{icon}</span>
+            <span className="material-symbols-rounded" style={{ fontSize: 20, color: dark ? '#D4A84B' : '#D4A84B', lineHeight: 1, verticalAlign: 'middle' }}>{icon}</span>
           </span>
         )}
         <input
@@ -35,7 +35,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
           style={{
             width: '100%', height: 50, borderRadius: 12,
-            border: `1px solid ${error ? '#EF4444' : focused ? '#B48C4B' : dark ? '#3D2F28' : 'rgba(158,123,54,.4)'}`,
+            border: `1px solid ${error ? '#EF4444' : focused ? '#D4A84B' : dark ? '#3D2F28' : 'rgba(158,123,54,.4)'}`,
             background: dark ? 'rgba(255,255,255,0.03)' : '#fff',
             boxShadow: focused ? '0 0 0 4px rgba(234,179,8,0.08)' : 'none',
             padding: `0 ${trailing ? 44 : 16}px 0 ${icon ? 46 : 16}px`,
@@ -132,7 +132,7 @@ const LoginPage: React.FC = () => {
   const cardBorder = dark ? '#3D2F28' : '#E7E5E4';
   const textPrimary = dark ? '#fff' : '#1C1917';
   const textMuted = dark ? '#A39E93' : '#78716C';
-  const gold = dark ? '#EAB308' : '#B48C4B';
+  const gold = dark ? '#EAB308' : '#D4A84B';
 
   const PwdToggle = (
     <button type="button" onClick={() => setShowPwd(s => !s)} aria-label={showPwd ? 'Скрыть пароль' : 'Показать пароль'}
