@@ -18,6 +18,7 @@ const MapPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shops, setShops] = useState<MapShop[]>([]);
+  const [shopsLoaded, setShopsLoaded] = useState(false);
   const markersRef = useRef<any[]>([]);
   const clustererRef = useRef<any>(null);
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
@@ -74,11 +75,9 @@ const MapPage: React.FC = () => {
         maxLat = Math.max(bounds[0][0], bounds[1][0]);
         maxLon = Math.max(bounds[0][1], bounds[1][1]);
         
-        console.log('Загрузка кофеен для границ:', { minLat, minLon, maxLat, maxLon });
       }
 
       const response = await getCoffeeShopsByMapBounds(minLat, minLon, maxLat, maxLon);
-      console.log('Ответ API кофеен:', response);
       
       // API возвращает { data: { shops: MapShop[] } }
       let shopsList: MapShop[] = [];
@@ -92,11 +91,11 @@ const MapPage: React.FC = () => {
         }));
       }
       
-      console.log('Загружено кофеен:', shopsList.length, shopsList);
       setShops(shopsList);
+      setShopsLoaded(true);
       return shopsList;
     } catch (err: any) {
-      console.error('Ошибка при загрузке кофеен:', err);
+      setShopsLoaded(true);
       setError('Ошибка при загрузке кофеен: ' + getErrorMessage(err));
       return [];
     }
@@ -111,7 +110,6 @@ const MapPage: React.FC = () => {
         setSelectedShopDetails(response.data);
       }
     } catch (err: any) {
-      console.error('Ошибка при загрузке деталей кофейни:', err);
     } finally {
       setIsLoadingDetails(false);
     }
@@ -119,7 +117,6 @@ const MapPage: React.FC = () => {
 
   // Добавляем маркеры кофеен на карту
   const addCoffeeShopMarkers = (map: any, ymaps: any, shopsList: MapShop[] = shops) => {
-    console.log('Добавление маркеров для кофеен:', shopsList.length);
     
     // Удаляем старые маркеры
     markersRef.current.forEach(marker => {
@@ -128,7 +125,6 @@ const MapPage: React.FC = () => {
     markersRef.current = [];
 
     if (!shopsList || shopsList.length === 0) {
-      console.log('Нет кофеен для отображения');
       return;
     }
 
@@ -136,7 +132,6 @@ const MapPage: React.FC = () => {
       const coordinates = [shop.latitude, shop.longitude];
       
       if (!coordinates || coordinates.length !== 2 || !coordinates[0] || !coordinates[1]) {
-        console.warn('Кофейня без координат:', shop.title, shop);
         return;
       }
       
@@ -206,11 +201,9 @@ const MapPage: React.FC = () => {
         map.geoObjects.add(marker);
         markersRef.current.push(marker);
       } catch (err: any) {
-        console.error('Ошибка при добавлении маркера для', shop.title, ':', err);
       }
     });
     
-    console.log('Всего маркеров добавлено:', markersRef.current.length);
   };
 
   const initMap = () => {
@@ -255,7 +248,6 @@ const MapPage: React.FC = () => {
           updateTimeout = setTimeout(() => {
             try {
               const bounds = map.getBounds();
-              console.log('Границы карты:', bounds);
               
               if (bounds && Array.isArray(bounds) && bounds.length >= 2) {
                 // В Яндекс.Картах bounds[0] - левый нижний угол [широта, долгота]
@@ -264,21 +256,16 @@ const MapPage: React.FC = () => {
                   [bounds[0][0], bounds[0][1]], // левый нижний угол [lat, lon]
                   [bounds[1][0], bounds[1][1]]  // правый верхний угол [lat, lon]
                 ];
-                console.log('Обработанные границы:', boundsArray);
                 
                 loadCoffeeShops(boundsArray).then((loadedShops) => {
-                  console.log('Загруженные кофейни для отображения:', loadedShops?.length);
                   if (loadedShops && loadedShops.length > 0) {
                     addCoffeeShopMarkers(map, window.ymaps, loadedShops);
                   } else {
-                    console.log('Нет кофеен для отображения в текущей области');
                   }
                 });
               } else {
-                console.warn('Не удалось получить границы карты:', bounds);
               }
             } catch (err: any) {
-              console.error('Ошибка при обновлении кофеен:', err);
             }
           }, 300); // Задержка 300мс для дебаунса
         };
@@ -302,7 +289,6 @@ const MapPage: React.FC = () => {
   // Обновляем маркеры при изменении списка кофеен (резервный механизм)
   useEffect(() => {
     if (mapInstance && shops.length > 0 && window.ymaps) {
-      console.log('Обновление маркеров через useEffect, кофеен:', shops.length);
       addCoffeeShopMarkers(mapInstance, window.ymaps, shops);
     }
   }, [shops, mapInstance]);
@@ -340,6 +326,14 @@ const MapPage: React.FC = () => {
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="text-[#EAB308] text-xl">Загрузка карты...</div>
+            </div>
+          )}
+
+          {shopsLoaded && shops.length === 0 && !isLoading && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-5 py-3 rounded-2xl shadow-lg border flex items-center gap-3"
+                 style={{ backgroundColor: 'rgba(45,36,31,0.92)', borderColor: '#3D2F28', backdropFilter: 'blur(12px)' }}>
+              <span className="material-symbols-rounded text-[#EAB308]">search_off</span>
+              <span className="text-white text-sm font-medium">Кофейни в этой области не найдены</span>
             </div>
           )}
           <div
@@ -400,7 +394,6 @@ const MapPage: React.FC = () => {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            console.warn('Ошибка загрузки изображения кофейни:', firstImageUrl);
                             target.style.display = 'none';
                             const parent = target.parentElement;
                             if (parent) {
@@ -442,7 +435,6 @@ const MapPage: React.FC = () => {
                     className="flex-shrink-0 w-8 h-8 flex items-center justify-center"
                     onClick={() => {
                       // TODO: Добавить функционал закладок
-                      console.log('Добавить в закладки:', selectedShop.id);
                     }}
                   >
                     <svg

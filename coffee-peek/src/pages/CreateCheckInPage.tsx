@@ -1,3 +1,4 @@
+import WobbleRing from '../components/WobbleRing';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { createCheckIn, CreateCheckInRequest } from '../api/coffeeshop';
@@ -143,7 +144,7 @@ const CreateCheckInPage: React.FC = () => {
   if (!shopFromState) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-        <div className={`w-12 h-12 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
+        <WobbleRing size={48} />
       </div>
     );
   }
@@ -185,7 +186,7 @@ const CreateCheckInPage: React.FC = () => {
                     <img alt={shop?.name || 'Кофейня'} className="w-full h-full object-cover" src={shopImage} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-                      <span className="material-symbols-outlined text-4xl" style={{ color: colors.textMuted }}>
+                      <span className="material-symbols-rounded text-4xl" style={{ color: colors.textMuted }}>
                         store
                       </span>
                     </div>
@@ -201,7 +202,7 @@ const CreateCheckInPage: React.FC = () => {
               </h2>
 
               <div className="flex items-center justify-center gap-1.5 mb-8" style={{ color: colors.textMuted }}>
-                <span className={`material-symbols-outlined ${themeClasses.primary.text} text-lg`}>location_on</span>
+                <span className={`material-symbols-rounded ${themeClasses.primary.text} text-lg`}>location_on</span>
                 <span className="text-sm font-medium">
                   {shop?.address || 'Адрес не указан'}
                 </span>
@@ -235,7 +236,7 @@ const CreateCheckInPage: React.FC = () => {
                     maxLength={500}
                   />
                   <div className="absolute bottom-4 right-4 pointer-events-none" style={{ color: `${colors.textMuted}33` }}>
-                    <span className="material-symbols-outlined text-2xl">edit_note</span>
+                    <span className="material-symbols-rounded text-2xl">edit_note</span>
                   </div>
                 </div>
                 <p className="text-xs" style={{ color: colors.textMuted }}>
@@ -312,7 +313,7 @@ const CreateCheckInPage: React.FC = () => {
 
               {uploadingPhotos && (
                 <div className="flex items-center justify-center py-4">
-                  <div className={`w-8 h-8 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
+                  <WobbleRing size={32} />
                   <span className="ml-3 text-sm" style={{ color: colors.textMuted }}>
                     Загрузка фотографий...
                   </span>
@@ -352,7 +353,7 @@ const CreateCheckInPage: React.FC = () => {
                 className={`px-10 py-5 ${themeClasses.primary.bg} ${themeClasses.primary.bgHover} text-white rounded-2xl font-bold text-lg flex items-center gap-3 shadow-lg ${themeClasses.primary.shadow} transition-all active:scale-95 group disabled:opacity-50`}
               >
                 {isSubmitting ? 'Создание...' : 'Чекиниться'}
-                <span className="material-symbols-outlined group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
+                <span className="material-symbols-rounded group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
                   check_circle
                 </span>
               </button>

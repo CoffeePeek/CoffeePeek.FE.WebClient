@@ -4,6 +4,7 @@ import { PublicUserProfile } from '../../api/user';
 import { ReviewCardSkeleton } from '../skeletons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
+import { AppUser } from '../../contexts/UserContext';
 
 interface ReviewsSectionProps {
   reviews: Review[];
@@ -13,7 +14,7 @@ interface ReviewsSectionProps {
   isCheckingMyReview: boolean;
   onWriteOrEditReview: () => void;
   onUserSelect?: (userId: string) => void;
-  user: any;
+  user: AppUser | null;
   textMain: string;
   textMuted: string;
   cardBg: string;
@@ -102,7 +103,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   <div className="flex items-center gap-2">
                     <div className={`flex ${themeClasses.primary.text}`}>
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <span key={star} className={`material-symbols-outlined ${star <= avgReviewRating ? 'fill-1' : ''}`}>
+                        <span key={star} className={`material-symbols-rounded ${star <= avgReviewRating ? 'fill-1' : ''}`}>
                           star
                         </span>
                       ))}

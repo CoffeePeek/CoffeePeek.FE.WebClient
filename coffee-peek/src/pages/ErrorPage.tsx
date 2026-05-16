@@ -73,7 +73,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-6 ${bgClass} relative overflow-hidden`}>
       {/* Background decorations */}
-      <div className="absolute inset-0 bg-pattern opacity-10 pointer-events-none" />
+      {theme === 'dark' && <div className="absolute inset-0 bg-pattern opacity-10 pointer-events-none" />}
       <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] bg-[#EAB308]/5 blur-[120px] rounded-full" />
 
       <div className="z-10 text-center max-w-2xl w-full animate-in fade-in zoom-in-95 duration-1000">

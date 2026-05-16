@@ -2,14 +2,16 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { parseJWT, getUserRoles, getUserEmail, getUserId, isTokenExpired } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
 
+export interface AppUser {
+  id: string | null;
+  email: string | null;
+  roles: string[];
+  isModerator: boolean;
+  isAdmin: boolean;
+}
+
 interface UserContextType {
-  user: {
-    id: string | null;
-    email: string | null;
-    roles: string[];
-    isModerator: boolean;
-    isAdmin: boolean;
-  } | null;
+  user: AppUser | null;
   isLoading: boolean;
   updateUserFromToken: (token: string) => void;
   logout: () => void;

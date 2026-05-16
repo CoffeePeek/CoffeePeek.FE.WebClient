@@ -216,7 +216,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
       } else {
         setError(response.message || 'Ошибка при отправке кофейни на модерацию');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err));
       logger.error('Error submitting coffee shop:', err);
     } finally {
@@ -239,7 +239,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
             onClick={onBack}
             className={`mb-6 flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
           >
-            <span className="material-symbols-outlined">arrow_back</span>
+            <span className="material-symbols-rounded">arrow_back</span>
             <span>Назад</span>
           </button>
           <h1 className={`text-4xl font-bold ${themeClasses.text.primary} mb-2`}>Добавить кофейню</h1>

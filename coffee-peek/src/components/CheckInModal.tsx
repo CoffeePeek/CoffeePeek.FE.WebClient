@@ -1,3 +1,4 @@
+import WobbleRing from './WobbleRing';
 import React, { useState } from 'react';
 import { createCheckIn, CreateCheckInRequest, DetailedCoffeeShop } from '../api/coffeeshop';
 import { getShopUploadUrls } from '../api/photos';
@@ -7,6 +8,7 @@ import { getThemeColors, COLORS } from '../constants/colors';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { Icons } from '../constants';
+import { logger } from '../utils/logger';
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -179,7 +181,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
         }
       }
     } catch (err) {
-      console.error('Error submitting check-in:', err);
+      logger.error('Error submitting check-in:', err);
       setUploadingPhotos(false);
       showToast('Не удалось создать чекин', 'error');
     } finally {
@@ -240,7 +242,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                       <img alt={shop.name} className="w-full h-full object-cover" src={shopImage} />
                     ) : (
                       <div className={`w-full h-full flex items-center justify-center ${themeClasses.bg.tertiary}`}>
-                        <span className="material-symbols-outlined text-lg" style={{ color: colors.textMuted }}>
+                        <span className="material-symbols-rounded text-lg" style={{ color: colors.textMuted }}>
                           store
                         </span>
                       </div>
@@ -253,7 +255,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                 <div className="flex-1 min-w-0">
                   <h3 className={`font-bold text-sm ${themeClasses.text.primary} mb-0.5 truncate`}>{shop.name}</h3>
                   <div className="flex items-center gap-1">
-                    <span className={`material-symbols-outlined ${themeClasses.primary.text} text-xs`}>location_on</span>
+                    <span className={`material-symbols-rounded ${themeClasses.primary.text} text-xs`}>location_on</span>
                     <span className={`text-xs ${themeClasses.text.secondary} truncate`}>
                       {shop.location?.address || 'Адрес не указан'}
                     </span>
@@ -267,7 +269,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                   Дата посещения
                 </label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg pointer-events-none" style={{ color: colors.textMuted }}>
+                  <span className="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-lg pointer-events-none" style={{ color: colors.textMuted }}>
                     calendar_today
                   </span>
                   <input
@@ -310,7 +312,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                 maxLength={500}
               />
               <div className="absolute bottom-3 right-3 pointer-events-none" style={{ color: `${colors.textMuted}33` }}>
-                <span className="material-symbols-outlined text-xl">edit_note</span>
+                <span className="material-symbols-rounded text-xl">edit_note</span>
               </div>
             </div>
             <p className={`text-xs ${themeClasses.text.secondary}`}>
@@ -376,7 +378,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
             {uploadingPhotos && (
               <div className="flex items-center justify-center py-3">
-                <div className={`w-6 h-6 border-3 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
+                <WobbleRing size={24} />
                 <span className={`ml-3 text-xs ${themeClasses.text.secondary}`}>
                   Загрузка фотографий...
                 </span>
@@ -412,7 +414,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                         className="hover:scale-110 transition-transform"
                       >
                         <span
-                          className={`material-symbols-outlined text-[24px] ${
+                          className={`material-symbols-rounded text-[24px] ${
                             star <= ratingCoffee ? `star-filled ${themeClasses.primary.text}` : ''
                           }`}
                           style={star > ratingCoffee ? { color: `${colors.primary}20` } : undefined}
@@ -438,7 +440,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                         className="hover:scale-110 transition-transform"
                       >
                         <span
-                          className={`material-symbols-outlined text-[24px] ${
+                          className={`material-symbols-rounded text-[24px] ${
                             star <= ratingService ? `star-filled ${themeClasses.primary.text}` : ''
                           }`}
                           style={star > ratingService ? { color: `${colors.primary}20` } : undefined}
@@ -464,7 +466,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                         className="hover:scale-110 transition-transform"
                       >
                         <span
-                          className={`material-symbols-outlined text-[24px] ${
+                          className={`material-symbols-rounded text-[24px] ${
                             star <= ratingPlace ? `star-filled ${themeClasses.primary.text}` : ''
                           }`}
                           style={star > ratingPlace ? { color: `${colors.primary}20` } : undefined}
@@ -514,12 +516,12 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
             >
               {isSubmitting ? (
                 <>
-                  <div className={`w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin`} />
+                  <WobbleRing size={16} color="#fff" />
                   Создание...
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-lg">check_circle</span>
+                  <span className="material-symbols-rounded text-lg">check_circle</span>
                   Чекиниться
                 </>
               )}

@@ -31,9 +31,9 @@ const Input: React.FC<InputProps> = ({ label, icon, className = '', type, ...pro
         <input
           type={inputType}
           className={`
-            w-full ${themeClasses.bg.input} ${themeClasses.border.default} rounded-2xl py-4 
+            w-full ${themeClasses.bg.input} ${themeClasses.border.default} rounded-[26px] py-4
             ${icon ? 'pl-12' : 'px-4'} ${isPassword ? 'pr-12' : 'pr-4'} ${themeClasses.text.primary} ${themeClasses.text.tertiary.replace('text-', 'placeholder:text-')}
-            focus:outline-none ${themeClasses.primary.ring.replace('focus:', 'focus:ring-2 focus:')} ${themeClasses.border.focus}
+            focus:outline-none focus:ring-[3px] focus:ring-[#EAB308]/10 focus:border-[#EAB308]
             transition-all duration-200 ${className}
           `}
           {...props}
@@ -45,7 +45,7 @@ const Input: React.FC<InputProps> = ({ label, icon, className = '', type, ...pro
             className={`absolute right-4 top-1/2 -translate-y-1/2 ${themeClasses.text.secondary} ${themeClasses.primary.hover} transition-colors z-10`}
             aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
           >
-            <span className="material-symbols-outlined text-xl">
+            <span className="material-symbols-rounded text-xl">
               {showPassword ? 'visibility_off' : 'visibility'}
             </span>
           </button>

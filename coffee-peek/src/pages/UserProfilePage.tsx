@@ -1,3 +1,4 @@
+import WobbleRing from '../components/WobbleRing';
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUserPublicProfile, PublicUserProfile } from '../api/user';
@@ -127,7 +128,7 @@ const UserProfilePage: React.FC = () => {
   if (isLoadingProfile) {
     return (
       <div className={`min-h-screen ${bgClass} flex items-center justify-center`}>
-        <div className={`w-12 h-12 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
+        <WobbleRing size={48} />
       </div>
     );
   }
@@ -156,7 +157,7 @@ const UserProfilePage: React.FC = () => {
       {/* Back button */}
       <div className="fixed top-20 left-4 z-10">
         <Button onClick={() => navigate(-1)} variant="secondary">
-          <span className="material-symbols-outlined text-xl">arrow_back</span>
+          <span className="material-symbols-rounded text-xl">arrow_back</span>
           Назад
         </Button>
       </div>
@@ -189,7 +190,7 @@ const UserProfilePage: React.FC = () => {
               <div className="flex items-center gap-2">
                 {profile.nickname && (
                   <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full ${themeClasses.primary.bgLight} ${themeClasses.primary.borderLighter} border`}>
-                    <span className={`material-symbols-outlined text-lg ${themeClasses.primary.text}`}>verified</span>
+                    <span className={`material-symbols-rounded text-lg ${themeClasses.primary.text}`}>verified</span>
                     <span className={`${themeClasses.primary.text} text-xs font-bold uppercase tracking-widest`}>
                       @{profile.nickname}
                     </span>
@@ -218,7 +219,7 @@ const UserProfilePage: React.FC = () => {
           <div className="grid grid-cols-3 gap-6">
             <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group ${themeClasses.border.activeHover} transition-all`}>
               <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} ${themeClasses.primary.text} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                <span className="material-symbols-outlined text-3xl">shopping_cart_checkout</span>
+                <span className="material-symbols-rounded text-3xl">shopping_cart_checkout</span>
               </div>
               <span className={`text-4xl font-bold ${textMain}`}>
                 {profile.checkInCount ?? 0}
@@ -229,7 +230,7 @@ const UserProfilePage: React.FC = () => {
             </div>
             <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group ${themeClasses.border.activeHover} transition-all`}>
               <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} ${themeClasses.primary.text} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                <span className="material-symbols-outlined text-3xl">rate_review</span>
+                <span className="material-symbols-rounded text-3xl">rate_review</span>
               </div>
               <span className={`text-4xl font-bold ${textMain}`}>
                 {profile.reviewCount ?? 0}
@@ -240,7 +241,7 @@ const UserProfilePage: React.FC = () => {
             </div>
             <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group ${themeClasses.border.activeHover} transition-all`}>
               <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} ${themeClasses.primary.text} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                <span className="material-symbols-outlined text-3xl fill-1">star</span>
+                <span className="material-symbols-rounded text-3xl fill-1">star</span>
               </div>
               <span className={`text-4xl font-bold ${textMain}`}>
                 {averageRating}
@@ -265,7 +266,7 @@ const UserProfilePage: React.FC = () => {
 
           {isLoadingReviews ? (
             <div className="flex items-center justify-center py-12">
-              <div className={`w-12 h-12 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
+              <WobbleRing size={48} />
             </div>
           ) : reviews.length > 0 ? (
             <>
@@ -285,7 +286,7 @@ const UserProfilePage: React.FC = () => {
                       className={`${bgSurface} p-6 rounded-2xl border ${borderClass} shadow-sm flex items-start gap-4 hover:shadow-md transition-all`}
                     >
                       <div className={`w-12 h-12 rounded-full ${theme === 'dark' ? themeClasses.bg.secondary : 'bg-stone-100'} flex items-center justify-center shrink-0`}>
-                        <span className={`material-symbols-outlined ${themeClasses.primary.text}`}>edit_square</span>
+                        <span className={`material-symbols-rounded ${themeClasses.primary.text}`}>edit_square</span>
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start mb-2">
@@ -306,7 +307,7 @@ const UserProfilePage: React.FC = () => {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <span 
                                 key={star}
-                                className={`material-symbols-outlined text-sm ${
+                                className={`material-symbols-rounded text-sm ${
                                   star <= Math.round(parseFloat(avgRating))
                                     ? `${themeClasses.primary.text} fill-1`
                                     : theme === 'dark' ? themeClasses.border.default : 'text-stone-300'
@@ -320,7 +321,7 @@ const UserProfilePage: React.FC = () => {
                             onClick={() => handleShopSelect(review.coffeeShopId)}
                             className={`text-xs ${themeClasses.primary.text} ${themeClasses.primary.hover} font-medium transition-colors flex items-center gap-1`}
                           >
-                            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                            <span className="material-symbols-rounded text-sm">arrow_forward</span>
                             Перейти к кофейне
                           </button>
                         </div>
@@ -338,7 +339,7 @@ const UserProfilePage: React.FC = () => {
                     disabled={reviewsPage === 1}
                     variant="secondary"
                   >
-                    <span className="material-symbols-outlined text-xl">chevron_left</span>
+                    <span className="material-symbols-rounded text-xl">chevron_left</span>
                     Предыдущая
                   </Button>
                   <span className={`px-4 py-2 ${textMain} font-medium`}>
@@ -350,7 +351,7 @@ const UserProfilePage: React.FC = () => {
                     variant="secondary"
                   >
                     Следующая
-                    <span className="material-symbols-outlined text-xl">chevron_right</span>
+                    <span className="material-symbols-rounded text-xl">chevron_right</span>
                   </Button>
                 </div>
               )}
@@ -358,7 +359,7 @@ const UserProfilePage: React.FC = () => {
           ) : (
             <div className={`${bgSurface} p-12 rounded-2xl border ${borderClass} text-center`}>
               <div className={`w-16 h-16 rounded-full ${theme === 'dark' ? themeClasses.bg.secondary : 'bg-stone-100'} ${textMuted} flex items-center justify-center mx-auto mb-4`}>
-                <span className="material-symbols-outlined text-4xl">rate_review</span>
+                <span className="material-symbols-rounded text-4xl">rate_review</span>
               </div>
               <p className={`${textMuted} text-lg`}>
                 Пользователь пока не оставил ни одного отзыва

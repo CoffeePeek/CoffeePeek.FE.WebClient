@@ -20,7 +20,7 @@ import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { Review } from '../api/coffeeshop';
 
-// ==================== Мок-данные ====================
+// ==================== Types ====================
 
 interface FavoriteCoffeeShop {
   id: string;
@@ -30,72 +30,6 @@ interface FavoriteCoffeeShop {
   rating: number;
   imageUrl: string;
 }
-
-const MOCK_FAVORITE_SHOPS: FavoriteCoffeeShop[] = [
-  {
-    id: '1',
-    name: 'Joe\'s Brew',
-    description: 'Карамельный латте специалист',
-    location: 'Москва, Арбат',
-    rating: 4.8,
-    imageUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop',
-  },
-  {
-    id: '2',
-    name: 'The Grind',
-    description: 'Аутентичный итальянский эспрессо',
-    location: 'Москва, Патриаршие',
-    rating: 4.6,
-    imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop',
-  },
-  {
-    id: '3',
-    name: 'Daily Press',
-    description: 'Колд-брю и выпечка',
-    location: 'Москва, Китай-город',
-    rating: 4.5,
-    imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop',
-  },
-];
-
-const MOCK_RECENT_REVIEWS: (Review & { shopName?: string })[] = [
-  {
-    id: 'r1',
-    coffeeShopId: '1',
-    userId: 'me',
-    shopName: 'Joe\'s Brew',
-    header: 'Отличный латте-арт',
-    comment: 'Латте-арт здесь просто невероятный. Текстура молока идеальна, а зёрна обжарены до совершенства...',
-    ratingCoffee: 5,
-    ratingService: 5,
-    ratingPlace: 4,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'r2',
-    coffeeShopId: '2',
-    userId: 'me',
-    shopName: 'The Grind',
-    header: 'Уютное место для работы',
-    comment: 'Нашёл уютный уголок для удалённой работы. Отличный Wi-Fi и приятная атмосфера.',
-    ratingCoffee: 4,
-    ratingService: 4,
-    ratingPlace: 5,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'r3',
-    coffeeShopId: '3',
-    userId: 'me',
-    shopName: 'Daily Press',
-    header: 'Лучший колд-брю',
-    comment: 'Попробовал их фирменный колд-брю — освежающий и насыщенный вкус.',
-    ratingCoffee: 5,
-    ratingService: 4,
-    ratingPlace: 4,
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
 
 // ==================== Главный компонент ====================
 
@@ -115,9 +49,6 @@ const SettingsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Мок-данные (позже будут загружаться с бэка)
-  const [favoriteShops] = useState<FavoriteCoffeeShop[]>(MOCK_FAVORITE_SHOPS);
-  const [recentReviews] = useState<(Review & { shopName?: string })[]>(MOCK_RECENT_REVIEWS);
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
@@ -133,7 +64,7 @@ const SettingsPage: React.FC = () => {
       const response = await getProfile();
       setProfile(response.data);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err));
       logger.error('Error loading profile:', err);
     } finally {
@@ -219,7 +150,7 @@ const SettingsPage: React.FC = () => {
       setIsSaving(true);
       setError(null);
 
-      const updates: Promise<any>[] = [];
+      const updates: Promise<unknown>[] = [];
       
       if (editValues.userName !== originalValues.userName) {
         updates.push(updateUsername({ username: editValues.userName }));
@@ -281,7 +212,7 @@ const SettingsPage: React.FC = () => {
       setOriginalValues({});
       setSelectedAvatarFile(null);
       setAvatarPreview(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err));
       logger.error('Error updating profile:', err);
     } finally {
@@ -289,7 +220,7 @@ const SettingsPage: React.FC = () => {
     }
   }, [profile, editValues, originalValues, selectedAvatarFile]);
 
-  const bgSurface = theme === 'dark' ? themeClasses.bg.secondary : themeClasses.bg.card;
+  
   const borderClass = themeClasses.border.default;
 
   return (
@@ -325,7 +256,7 @@ const SettingsPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className={`${bgSurface} border ${borderClass} rounded-2xl py-3 px-4 flex items-center gap-3 animate-pulse`}>
+              <div key={i} className={`${themeClasses.bg.card} border ${borderClass} rounded-2xl py-3 px-4 flex items-center gap-3 animate-pulse`}>
                 <div className={`w-9 h-9 ${themeClasses.bg.tertiary} rounded-xl flex-shrink-0`} />
                 <div>
                   <div className={`w-12 h-5 ${themeClasses.bg.tertiary} rounded mb-1`} />
@@ -344,16 +275,16 @@ const SettingsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Favorite Coffee Shops */}
+            {/* Favourite shops — coming when API is ready */}
             <FavoriteCoffeeShopsSection
-              shops={favoriteShops}
-              onAddShop={() => navigate('/coffee-shops')}
+              shops={[]}
+              onAddShop={() => navigate('/shops')}
               onShopClick={(id) => navigate(`/shops/${id}`)}
             />
 
-            {/* Recent Activity */}
+            {/* Recent activity — coming when API is ready */}
             <RecentActivitySection
-              reviews={recentReviews}
+              reviews={[]}
               onShopClick={(shopId) => navigate(`/shops/${shopId}`)}
             />
           </div>
@@ -492,7 +423,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 disabled={isSaving}
                 className="hidden"
               />
-              <span className="material-symbols-outlined text-sm">camera_alt</span>
+              <span className="material-symbols-rounded text-sm">camera_alt</span>
             </label>
           )}
           {isEditing && selectedAvatarFile && (
@@ -510,7 +441,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           <div className="flex flex-wrap items-center gap-3">
             {/* Badge */}
             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${themeClasses.primary.bgLight} border ${themeClasses.primary.borderLighter}`}>
-              <span className={`material-symbols-outlined text-sm ${themeClasses.primary.text}`}>local_cafe</span>
+              <span className={`material-symbols-rounded text-sm ${themeClasses.primary.text}`}>local_cafe</span>
               <span className={`${themeClasses.primary.text} text-xs font-bold uppercase tracking-wider`}>
                 Ценитель кофе
               </span>
@@ -547,7 +478,7 @@ interface StatsSectionProps {
 const StatsSection: React.FC<StatsSectionProps> = ({ profile }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const bgSurface = theme === 'dark' ? themeClasses.bg.secondary : themeClasses.bg.card;
+  
   const borderClass = themeClasses.border.default;
 
   const stats = [
@@ -580,10 +511,10 @@ const StatsSection: React.FC<StatsSectionProps> = ({ profile }) => {
         {stats.map((stat, index) => (
           <div
             key={index}
-            className={`${bgSurface} border ${borderClass} rounded-2xl py-3 px-4 flex items-center gap-3 group hover:shadow-md transition-all`}
+            className={`${themeClasses.bg.card} border ${borderClass} rounded-2xl py-3 px-4 flex items-center gap-3 group hover:shadow-md transition-all`}
           >
             <div className={`w-9 h-9 rounded-xl ${stat.bgColor} ${stat.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
-              <span className="material-symbols-outlined text-lg">{stat.icon}</span>
+              <span className="material-symbols-rounded text-lg">{stat.icon}</span>
             </div>
             <div>
               <span className={`text-xl font-bold ${themeClasses.text.primary} block leading-tight`}>
@@ -615,7 +546,7 @@ const FavoriteCoffeeShopsSection: React.FC<FavoriteCoffeeShopsSectionProps> = ({
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const bgSurface = theme === 'dark' ? themeClasses.bg.secondary : themeClasses.bg.card;
+  
   const borderClass = themeClasses.border.default;
 
   return (
@@ -630,7 +561,7 @@ const FavoriteCoffeeShopsSection: React.FC<FavoriteCoffeeShopsSectionProps> = ({
           className={`${themeClasses.primary.text} text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity`}
         >
           Все
-          <span className="material-symbols-outlined text-sm">chevron_right</span>
+          <span className="material-symbols-rounded text-sm">chevron_right</span>
         </button>
       </div>
 
@@ -639,7 +570,7 @@ const FavoriteCoffeeShopsSection: React.FC<FavoriteCoffeeShopsSectionProps> = ({
           <button
             key={shop.id}
             onClick={() => onShopClick(shop.id)}
-            className={`${bgSurface} border ${borderClass} rounded-2xl overflow-hidden text-left group hover:shadow-lg transition-all`}
+            className={`${themeClasses.bg.card} border ${borderClass} rounded-2xl overflow-hidden text-left group hover:shadow-lg transition-all`}
           >
             {/* Image */}
             <div className="relative aspect-[4/3] overflow-hidden">
@@ -650,7 +581,7 @@ const FavoriteCoffeeShopsSection: React.FC<FavoriteCoffeeShopsSectionProps> = ({
               />
               {/* Rating badge */}
               <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1">
-                <span className="material-symbols-outlined text-[#EAB308] text-xs fill-1">star</span>
+                <span className="material-symbols-rounded text-[#EAB308] text-xs fill-1">star</span>
                 {shop.rating}
               </div>
             </div>
@@ -659,7 +590,7 @@ const FavoriteCoffeeShopsSection: React.FC<FavoriteCoffeeShopsSectionProps> = ({
               <h3 className={`font-bold ${themeClasses.text.primary} text-sm truncate`}>{shop.name}</h3>
               <p className={`${themeClasses.primary.text} text-xs truncate`}>{shop.description}</p>
               <div className="flex items-center gap-1 mt-1">
-                <span className={`material-symbols-outlined text-xs ${themeClasses.text.secondary}`}>location_on</span>
+                <span className={`material-symbols-rounded text-xs ${themeClasses.text.secondary}`}>location_on</span>
                 <span className={`${themeClasses.text.secondary} text-xs truncate`}>{shop.location}</span>
               </div>
             </div>
@@ -669,10 +600,10 @@ const FavoriteCoffeeShopsSection: React.FC<FavoriteCoffeeShopsSectionProps> = ({
         {/* Add New Shop Card */}
         <button
           onClick={onAddShop}
-          className={`${bgSurface} border-2 border-dashed ${borderClass} rounded-2xl flex flex-col items-center justify-center min-h-[200px] group hover:${themeClasses.primary.border} transition-all`}
+          className={`${themeClasses.bg.card} border-2 border-dashed ${borderClass} rounded-2xl flex flex-col items-center justify-center min-h-[200px] group hover:${themeClasses.primary.border} transition-all`}
         >
           <div className={`w-12 h-12 rounded-full ${themeClasses.bg.tertiary} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-            <span className={`material-symbols-outlined text-2xl ${themeClasses.text.secondary}`}>add</span>
+            <span className={`material-symbols-rounded text-2xl ${themeClasses.text.secondary}`}>add</span>
           </div>
           <span className={`${themeClasses.text.secondary} text-sm font-medium`}>Добавить</span>
         </button>
@@ -691,7 +622,7 @@ interface RecentActivitySectionProps {
 const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ reviews, onShopClick }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const bgSurface = theme === 'dark' ? themeClasses.bg.secondary : themeClasses.bg.card;
+  
   const borderClass = themeClasses.border.default;
 
   const formatTimeAgo = (dateStr: string) => {
@@ -723,12 +654,12 @@ const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ reviews, 
             return (
               <div
                 key={review.id}
-                className={`${bgSurface} border ${borderClass} rounded-2xl p-4 hover:shadow-md transition-all`}
+                className={`${themeClasses.bg.card} border ${borderClass} rounded-2xl p-4 hover:shadow-md transition-all`}
               >
                 <div className="flex items-start gap-4">
                   {/* Icon */}
                   <div className={`w-10 h-10 rounded-full ${themeClasses.primary.bgLight} flex items-center justify-center flex-shrink-0`}>
-                    <span className={`material-symbols-outlined ${themeClasses.primary.text} text-lg`}>edit_square</span>
+                    <span className={`material-symbols-rounded ${themeClasses.primary.text} text-lg`}>edit_square</span>
                   </div>
 
                   {/* Content */}
@@ -753,7 +684,7 @@ const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ reviews, 
                         {[1, 2, 3, 4, 5].map((star) => (
                           <span
                             key={star}
-                            className={`material-symbols-outlined text-xs ${
+                            className={`material-symbols-rounded text-xs ${
                               star <= Math.round(avgRating)
                                 ? `${themeClasses.primary.text} fill-1`
                                 : themeClasses.text.secondary
@@ -767,7 +698,7 @@ const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ reviews, 
                         onClick={() => onShopClick(review.coffeeShopId)}
                         className={`text-xs ${themeClasses.primary.text} font-medium hover:opacity-80 transition-opacity flex items-center gap-0.5`}
                       >
-                        <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                        <span className="material-symbols-rounded text-xs">arrow_forward</span>
                         К кофейне
                       </button>
                     </div>
@@ -778,9 +709,9 @@ const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ reviews, 
           })}
         </div>
       ) : (
-        <div className={`${bgSurface} border ${borderClass} rounded-2xl p-8 text-center`}>
+        <div className={`${themeClasses.bg.card} border ${borderClass} rounded-2xl p-8 text-center`}>
           <div className={`w-14 h-14 rounded-full ${themeClasses.bg.tertiary} flex items-center justify-center mx-auto mb-3`}>
-            <span className={`material-symbols-outlined text-3xl ${themeClasses.text.secondary}`}>rate_review</span>
+            <span className={`material-symbols-rounded text-3xl ${themeClasses.text.secondary}`}>rate_review</span>
           </div>
           <p className={`${themeClasses.text.secondary}`}>Пока нет активности</p>
         </div>
@@ -1005,32 +936,18 @@ interface ThemeSettingItemProps {
 
 const ThemeSettingItem: React.FC<ThemeSettingItemProps> = ({ title, description, currentTheme, onToggle }) => {
   const { theme } = useTheme();
-  const themeClasses = theme === 'dark' 
-    ? {
-        border: 'border-[#3D2F28]',
-        text: 'text-white',
-        textSecondary: 'text-[#A39E93]',
-        toggleBg: currentTheme === 'dark' ? 'bg-[#EAB308]' : 'bg-[#3D2F28]',
-      }
-    : {
-        border: 'border-gray-200',
-        text: 'text-gray-900',
-        textSecondary: 'text-gray-600',
-        toggleBg: currentTheme === 'dark' ? 'bg-[#EAB308]' : 'bg-gray-300',
-      };
+  const tc = getThemeClasses(theme);
+  const toggleBg = currentTheme === 'dark' ? tc.primary.bg : (theme === 'dark' ? 'bg-[#3D2F28]' : 'bg-gray-300');
 
   return (
     <div className="flex items-center justify-between">
       <div>
-        <p className={`${themeClasses.text} font-medium text-sm`}>{title}</p>
-        <p className={`${themeClasses.textSecondary} text-xs`}>{description}</p>
+        <p className={`${tc.text.primary} font-medium text-sm`}>{title}</p>
+        <p className={`${tc.text.secondary} text-xs`}>{description}</p>
       </div>
       <button
         onClick={onToggle}
-        className={`
-          relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-200
-          ${themeClasses.toggleBg}
-        `}
+        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-200 ${toggleBg}`}
         aria-label="Переключить тему"
       >
         <span

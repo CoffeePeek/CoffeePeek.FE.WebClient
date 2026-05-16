@@ -189,7 +189,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
       } else {
         setError(response.message || 'Ошибка при отправке кофейни на модерацию');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err));
       logger.error('Error submitting coffee shop:', err);
     } finally {

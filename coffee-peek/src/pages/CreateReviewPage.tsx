@@ -1,3 +1,4 @@
+import WobbleRing from '../components/WobbleRing';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { createReview, CreateReviewRequest, getReviewById, updateReview, ShortPhotoMetadataDto, getPhotoUrl } from '../api/coffeeshop';
@@ -281,7 +282,7 @@ const CreateReviewPage: React.FC = () => {
   if (isLoadingExistingReview) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-        <div className={`w-12 h-12 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
+        <WobbleRing size={48} />
       </div>
     );
   }
@@ -290,7 +291,7 @@ const CreateReviewPage: React.FC = () => {
   if (!shopFromState && !isEditMode) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-        <div className={`w-12 h-12 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
+        <WobbleRing size={48} />
       </div>
     );
   }
@@ -317,7 +318,7 @@ const CreateReviewPage: React.FC = () => {
             className="flex items-center gap-2 font-semibold hover:opacity-70 transition-opacity"
             style={{ color: colors.textMuted }}
           >
-            <span className="material-symbols-outlined">arrow_back</span>
+            <span className="material-symbols-rounded">arrow_back</span>
             Назад
           </button>
         </div>
@@ -335,14 +336,14 @@ const CreateReviewPage: React.FC = () => {
                     <img alt={shop?.name || 'Кофейня'} className="w-full h-full object-cover" src={shopImage} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-                      <span className="material-symbols-outlined text-4xl" style={{ color: colors.textMuted }}>
+                      <span className="material-symbols-rounded text-4xl" style={{ color: colors.textMuted }}>
                         store
                       </span>
                     </div>
                   )}
                 </div>
                 <div className={`absolute -bottom-2 -right-2 ${themeClasses.primary.bg} text-white p-2 rounded-full shadow-lg`}>
-                  <span className="material-symbols-outlined text-sm block">verified</span>
+                  <span className="material-symbols-rounded text-sm block">verified</span>
                 </div>
               </div>
 
@@ -351,7 +352,7 @@ const CreateReviewPage: React.FC = () => {
               </h2>
 
               <div className="flex items-center justify-center gap-1.5 mb-8" style={{ color: colors.textMuted }}>
-                <span className={`material-symbols-outlined ${themeClasses.primary.text} text-lg`}>location_on</span>
+                <span className={`material-symbols-rounded ${themeClasses.primary.text} text-lg`}>location_on</span>
                 <span className="text-sm font-medium">
                   {shop?.address || 'Адрес не указан'}
                 </span>
@@ -365,7 +366,7 @@ const CreateReviewPage: React.FC = () => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <span
                       key={star}
-                      className={`material-symbols-outlined text-[32px] ${
+                      className={`material-symbols-rounded text-[32px] ${
                         star <= parseFloat(getAverageRating()) ? `star-filled ${themeClasses.primary.text}` : ''
                       }`}
                       style={star > parseFloat(getAverageRating()) ? { color: `${colors.primary}30` } : undefined}
@@ -384,7 +385,7 @@ const CreateReviewPage: React.FC = () => {
                     Дата посещения
                   </label>
                   <div className="relative">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg pointer-events-none" style={{ color: colors.textMuted }}>
+                    <span className="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-lg pointer-events-none" style={{ color: colors.textMuted }}>
                       calendar_today
                     </span>
                     <input
@@ -431,7 +432,7 @@ const CreateReviewPage: React.FC = () => {
                           className="hover:scale-110 transition-transform"
                         >
                           <span
-                            className={`material-symbols-outlined text-[28px] ${
+                            className={`material-symbols-rounded text-[28px] ${
                               star <= ratingCoffee ? `star-filled ${themeClasses.primary.text}` : ''
                             }`}
                             style={star > ratingCoffee ? { color: `${colors.primary}20` } : undefined}
@@ -456,7 +457,7 @@ const CreateReviewPage: React.FC = () => {
                           className="hover:scale-110 transition-transform"
                         >
                           <span
-                            className={`material-symbols-outlined text-[28px] ${
+                            className={`material-symbols-rounded text-[28px] ${
                               star <= ratingService ? `star-filled ${themeClasses.primary.text}` : ''
                             }`}
                             style={star > ratingService ? { color: `${colors.primary}20` } : undefined}
@@ -481,7 +482,7 @@ const CreateReviewPage: React.FC = () => {
                           className="hover:scale-110 transition-transform"
                         >
                           <span
-                            className={`material-symbols-outlined text-[28px] ${
+                            className={`material-symbols-rounded text-[28px] ${
                               star <= ratingPlace ? `star-filled ${themeClasses.primary.text}` : ''
                             }`}
                             style={star > ratingPlace ? { color: `${colors.primary}20` } : undefined}
@@ -535,7 +536,7 @@ const CreateReviewPage: React.FC = () => {
                       placeholder="Поделитесь подробностями о вашем визите..."
                     />
                     <div className="absolute bottom-4 right-4 pointer-events-none" style={{ color: `${colors.textMuted}33` }}>
-                      <span className="material-symbols-outlined text-2xl">edit_note</span>
+                      <span className="material-symbols-rounded text-2xl">edit_note</span>
                     </div>
                   </div>
                 </div>
@@ -637,7 +638,7 @@ const CreateReviewPage: React.FC = () => {
 
               {uploadingPhotos && (
                 <div className="flex items-center justify-center py-4">
-                  <div className={`w-8 h-8 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
+                  <WobbleRing size={32} />
                   <span className="ml-3 text-sm" style={{ color: colors.textMuted }}>
                     Загрузка фотографий...
                   </span>
@@ -653,7 +654,7 @@ const CreateReviewPage: React.FC = () => {
                 className={`px-10 py-5 ${themeClasses.primary.bg} ${themeClasses.primary.bgHover} text-white rounded-2xl font-bold text-lg flex items-center gap-3 shadow-lg ${themeClasses.primary.shadow} transition-all active:scale-95 group disabled:opacity-50`}
               >
                 {isSubmitting ? (reviewId ? 'Сохранение...' : 'Публикация...') : (reviewId ? 'Сохранить изменения' : 'Опубликовать отзыв')}
-                <span className="material-symbols-outlined group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
+                <span className="material-symbols-rounded group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
                   send
                 </span>
               </button>

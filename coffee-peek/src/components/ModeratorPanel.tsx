@@ -1397,21 +1397,21 @@ const ModeratorPanel: React.FC = () => {
                           <div className={`${themeClasses.bg.tertiary} rounded-xl p-3`}>
                             <p className={`${themeClasses.text.secondary} text-xs mb-1`}>Кофе</p>
                             <div className="flex items-center gap-1">
-                              <span className={`material-symbols-outlined ${themeClasses.primary.text} text-sm`}>star</span>
+                              <span className={`material-symbols-rounded ${themeClasses.primary.text} text-sm`}>star</span>
                               <span className={`${themeClasses.text.primary} font-bold`}>{review.ratingCoffee}</span>
                             </div>
                           </div>
                           <div className={`${themeClasses.bg.tertiary} rounded-xl p-3`}>
                             <p className={`${themeClasses.text.secondary} text-xs mb-1`}>Сервис</p>
                             <div className="flex items-center gap-1">
-                              <span className={`material-symbols-outlined ${themeClasses.primary.text} text-sm`}>star</span>
+                              <span className={`material-symbols-rounded ${themeClasses.primary.text} text-sm`}>star</span>
                               <span className={`${themeClasses.text.primary} font-bold`}>{review.ratingService}</span>
                             </div>
                           </div>
                           <div className={`${themeClasses.bg.tertiary} rounded-xl p-3`}>
                             <p className={`${themeClasses.text.secondary} text-xs mb-1`}>Место</p>
                             <div className="flex items-center gap-1">
-                              <span className={`material-symbols-outlined ${themeClasses.primary.text} text-sm`}>star</span>
+                              <span className={`material-symbols-rounded ${themeClasses.primary.text} text-sm`}>star</span>
                               <span className={`${themeClasses.text.primary} font-bold`}>{review.ratingPlace}</span>
                             </div>
                           </div>

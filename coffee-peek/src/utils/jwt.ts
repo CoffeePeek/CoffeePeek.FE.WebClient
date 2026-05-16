@@ -43,25 +43,16 @@ function base64UrlDecode(str: string): string {
  * Парсит JWT токен и возвращает payload (claims)
  */
 export function parseJWT(token: string | null | undefined): JWTClaims | null {
-  if (!token || typeof token !== 'string') {
-    console.error('Token is missing or invalid');
-    return null;
-  }
+  if (!token || typeof token !== 'string') return null;
 
   try {
     const parts = token.split('.');
-    if (parts.length !== 3) {
-      console.error('Invalid JWT token format');
-      return null;
-    }
+    if (parts.length !== 3) return null;
 
     const payload = parts[1];
     const decoded = base64UrlDecode(payload);
-    const claims = JSON.parse(decoded) as JWTClaims;
-    
-    return claims;
-  } catch (error) {
-    console.error('Error parsing JWT token:', error);
+    return JSON.parse(decoded) as JWTClaims;
+  } catch {
     return null;
   }
 }

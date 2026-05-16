@@ -114,7 +114,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ shop, cardBg, border
           }}
           className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md text-[#2D2926] px-4 py-2 rounded-xl font-bold text-sm border border-[#E8E4E1] shadow-xl flex items-center gap-2 hover:bg-white transition-all z-10"
         >
-          <span className="material-symbols-outlined text-base">grid_view</span>
+          <span className="material-symbols-rounded text-base">grid_view</span>
           Показать все фото ({photoCount})
         </button>
       </div>
@@ -134,7 +134,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ shop, cardBg, border
               className="absolute top-4 right-4 z-10 bg-white/90 hover:bg-white text-[#2D2926] p-2 rounded-full transition-all shadow-lg"
               aria-label="Закрыть"
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-rounded">close</span>
             </button>
             <div className="h-full">
               <PhotoCarousel images={photos} shopName={shop.name} isCardView={false} />

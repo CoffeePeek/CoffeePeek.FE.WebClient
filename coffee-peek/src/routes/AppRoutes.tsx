@@ -1,5 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useTheme } from '../contexts/ThemeContext';
+import WobbleRing from '../components/WobbleRing';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AuthenticatedLayout } from '../components/layouts/AuthenticatedLayout';
 import { ShopDetailSkeleton } from '../components/skeletons';
@@ -18,11 +20,14 @@ const CreateCheckInPage = lazy(() => import('../pages/CreateCheckInPage'));
 const ErrorPage = lazy(() => import('../pages/ErrorPage'));
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage'));
 
-const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#1A1412]">
-    <div className="w-12 h-12 border-4 border-[#EAB308] border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+const LoadingFallback = () => {
+  const { theme } = useTheme();
+  return (
+    <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-[#1A1412]' : 'bg-[#FAFAF9]'}`}>
+      <WobbleRing size={48} />
+    </div>
+  );
+};
 
 export const AppRoutes: React.FC = () => {
   return (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getUsersPublicProfiles, PublicUserProfile } from '../api/user';
 import { Review } from '../api/coffeeshop';
+import { logger } from '../utils/logger';
 
 export function useUsersCache(reviews: Review[]) {
   const [usersCache, setUsersCache] = useState<Map<string, PublicUserProfile>>(new Map());
@@ -36,7 +37,7 @@ export function useUsersCache(reviews: Review[]) {
         });
       } catch (err) {
         if (!cancelled) {
-          console.error('Error loading user profiles:', err);
+          logger.error('Error loading user profiles:', err);
         }
       }
     };

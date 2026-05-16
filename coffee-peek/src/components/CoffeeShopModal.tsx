@@ -51,19 +51,6 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
 
   const photoUrls = extractPhotoUrls();
   
-  // Отладочная информация
-  if (process.env.NODE_ENV === 'development') {
-    console.log('CoffeeShopModal - Shop data:', {
-      shopName: shop.name,
-      hasPhotos: !!shop.photos,
-      photosCount: shop.photos?.length || 0,
-      photosData: shop.photos,
-      hasImageUrls: !!(shop as any).imageUrls,
-      imageUrlsCount: (shop as any).imageUrls?.length || 0,
-      extractedUrls: photoUrls,
-      extractedUrlsCount: photoUrls.length
-    });
-  }
 
   const formatPriceRange = (priceRange: string) => {
     switch (priceRange) {

@@ -8,27 +8,45 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#B48C4B",
-          hover: "#8E6F3A",
-          light: "#F5EFE6",
+          DEFAULT: "#EAB308",
+          hover: "#FACC15",
+          dark: "#CA8A04",
+          light: "#FEF3C7",
+        },
+        "gold-warm": {
+          DEFAULT: "#D4A84B",
+          hover: "#B68A2E",
+          soft: "#F8F1DD",
         },
         background: {
-          light: "#FCFBFA",
+          light: "#FAFAF9",
+          dark: "#1A1412",
         },
         surface: {
           white: "#FFFFFF",
+          dark: "#2D241F",
         },
         text: {
-          main: "#2D2926",
-          muted: "#6B6661",
+          main: "#1C1917",
+          muted: "#78716C",
         },
         border: {
-          light: "#E8E4E1",
+          light: "#E7E5E4",
+          dark: "#3D2F28",
         },
       },
       fontFamily: {
-        display: ["Sora", "sans-serif"],
-        body: ["Noto Sans", "sans-serif"],
+        display: ["RF Dewi Expanded", "Sora", "sans-serif"],
+        body: ["Noto Sans", "Inter", "sans-serif"],
+      },
+      letterSpacing: {
+        wordmark: "-0.045em",
+        hero: "-0.01em",
+        heading: "-0.02em",
+      },
+      lineHeight: {
+        hero: "0.92",
+        stamp: "0.84",
       },
     },
   },

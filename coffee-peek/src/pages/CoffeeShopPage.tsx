@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { createReview,CreateReviewRequest } from '../api/coffeeshop';
 import { ShopDetailSkeleton } from '../components/skeletons';
 import { PhotoGallery } from '../components/coffeeshop/PhotoGallery';
 import { ShopHeader } from '../components/coffeeshop/ShopHeader';
@@ -9,6 +8,7 @@ import { ReviewsSection } from '../components/coffeeshop/ReviewsSection';
 import { ShopSidebar } from '../components/coffeeshop/ShopSidebar';
 import CheckInModal from '../components/CheckInModal';
 import { useTheme } from '../contexts/ThemeContext';
+import { getThemeClasses } from '../utils/theme';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { useShopData } from '../hooks/useShopData';
@@ -58,31 +58,21 @@ const CoffeeShopPage: React.FC = () => {
         'success'
       );
       await reloadShop();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Error toggling favorite:', err);
       showToast('Не удалось изменить статус избранного', 'error');
     }
   };
   
-  // Legacy modal state (for backward compatibility)
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewHeader, setReviewHeader] = useState('');
-  const [reviewComment, setReviewComment] = useState('');
-  const [reviewRatingCoffee, setReviewRatingCoffee] = useState(5);
-  const [reviewRatingService, setReviewRatingService] = useState(5);
-  const [reviewRatingPlace, setReviewRatingPlace] = useState(5);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  
   // Check-in modal state
   const [showCheckInModal, setShowCheckInModal] = useState(false);
 
-  // Цветовая схема
-  const isDark = theme === 'dark';
-  const bgClass = isDark ? 'bg-[#1A1412]' : 'bg-[#FCFBFA]';
-  const textMain = isDark ? 'text-white' : 'text-[#2D2926]';
-  const textMuted = isDark ? 'text-gray-400' : 'text-[#6B6661]';
-  const cardBg = isDark ? 'bg-[#2D241F]' : 'bg-white';
-  const borderColor = isDark ? 'border-[#3D2F28]' : 'border-[#E8E4E1]';
+  const tc = getThemeClasses(theme);
+  const bgClass = tc.bg.primary;
+  const textMain = tc.text.primary;
+  const textMuted = tc.text.secondary;
+  const cardBg = tc.bg.card;
+  const borderColor = tc.border.default;
   
   // Получаем отзывы из shop (приходят с бэкенда в CoffeeShopDetailsDto)
   const reviews = shop?.reviews || [];
@@ -125,50 +115,6 @@ const CoffeeShopPage: React.FC = () => {
     await reloadShop();
   };
 
-  const handleSubmitReview = async () => {
-    if (!user || !shopId) {
-      showToast('Необходимо войти в систему', 'error');
-      return;
-    }
-
-    if (!reviewHeader.trim() || !reviewComment.trim()) {
-      showToast('Заполните все обязательные поля', 'error');
-      return;
-    }
-
-    const token = TokenManager.getAccessToken();
-    if (!token) return;
-
-    try {
-      setIsSubmittingReview(true);
-      const request: CreateReviewRequest = {
-        shopId,
-        header: reviewHeader,
-        comment: reviewComment,
-        ratingCoffee: reviewRatingCoffee,
-        ratingService: reviewRatingService,
-        ratingPlace: reviewRatingPlace,
-      };
-
-      const response = await createReview(request, token);
-      if (response.success) {
-        showToast('Отзыв успешно добавлен!', 'success');
-        setShowReviewModal(false);
-        setReviewHeader('');
-        setReviewComment('');
-        setReviewRatingCoffee(5);
-        setReviewRatingService(5);
-        setReviewRatingPlace(5);
-        
-        await reloadShop();
-      }
-    } catch (err: any) {
-      logger.error('Error submitting review:', err);
-      showToast('Не удалось отправить отзыв', 'error');
-    } finally {
-      setIsSubmittingReview(false);
-    }
-  };
 
   if (isLoading) {
     return <ShopDetailSkeleton />;
@@ -181,7 +127,7 @@ const CoffeeShopPage: React.FC = () => {
           <p className={`text-xl ${textMain} mb-4`}>{error || 'Кофейня не найдена'}</p>
           <button
             onClick={() => navigate('/shops')}
-            className="bg-[#B48C4B] hover:bg-[#8E6F3A] text-white px-6 py-3 rounded-2xl font-bold transition-all"
+            className="bg-[#EAB308] hover:bg-[#FACC15] text-[#1A1412] px-6 py-3 rounded-2xl font-bold transition-all"
           >
             Вернуться назад
           </button>
@@ -232,7 +178,7 @@ const CoffeeShopPage: React.FC = () => {
           {shop.description && (
             <div className={`${cardBg} p-6 rounded-3xl border ${borderColor}`}>
               <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
-                <span className="w-1.5 h-8 bg-[#B48C4B] rounded-full" />
+                <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
                 О кофейне
               </h2>
               <p className={`${textMuted} leading-relaxed`}>{shop.description}</p>
@@ -243,25 +189,25 @@ const CoffeeShopPage: React.FC = () => {
           {shop.shopContact && (shop.shopContact.phone || shop.shopContact.email || shop.shopContact.website || shop.shopContact.instagram) && (
             <div className={`${cardBg} p-6 rounded-3xl border ${borderColor}`}>
               <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
-                <span className="w-1.5 h-8 bg-[#B48C4B] rounded-full" />
+                <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
                 Контакты
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {shop.shopContact.phone && (
                   <a 
                     href={`tel:${shop.shopContact.phone}`}
-                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#B48C4B]/50 ${textMuted} hover:text-[#B48C4B] transition-all`}
+                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
                   >
-                    <span className="material-symbols-outlined text-[#B48C4B]">call</span>
+                    <span className="material-symbols-rounded text-[#D4A84B]">call</span>
                     <span className="font-medium break-all">{shop.shopContact.phone}</span>
                   </a>
                 )}
                 {shop.shopContact.email && (
                   <a 
                     href={`mailto:${shop.shopContact.email}`}
-                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#B48C4B]/50 ${textMuted} hover:text-[#B48C4B] transition-all`}
+                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
                   >
-                    <span className="material-symbols-outlined text-[#B48C4B]">mail</span>
+                    <span className="material-symbols-rounded text-[#D4A84B]">mail</span>
                     <span className="font-medium break-all">{shop.shopContact.email}</span>
                   </a>
                 )}
@@ -270,9 +216,9 @@ const CoffeeShopPage: React.FC = () => {
                     href={shop.shopContact.website.startsWith('http') ? shop.shopContact.website : `https://${shop.shopContact.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#B48C4B]/50 ${textMuted} hover:text-[#B48C4B] transition-all`}
+                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
                   >
-                    <span className="material-symbols-outlined text-[#B48C4B]">language</span>
+                    <span className="material-symbols-rounded text-[#D4A84B]">language</span>
                     <span className="font-medium break-all">{shop.shopContact.website}</span>
                   </a>
                 )}
@@ -281,9 +227,9 @@ const CoffeeShopPage: React.FC = () => {
                     href={shop.shopContact.instagram.startsWith('http') ? shop.shopContact.instagram : `https://instagram.com/${shop.shopContact.instagram.replace('@', '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#B48C4B]/50 ${textMuted} hover:text-[#B48C4B] transition-all`}
+                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
                   >
-                    <span className="material-symbols-outlined text-[#B48C4B]">photo_camera</span>
+                    <span className="material-symbols-rounded text-[#D4A84B]">photo_camera</span>
                     <span className="font-medium break-all">{shop.shopContact.instagram}</span>
                   </a>
                 )}
@@ -295,7 +241,7 @@ const CoffeeShopPage: React.FC = () => {
           {(shop.equipments?.length > 0 || shop.beans?.length > 0 || shop.roasters?.length > 0 || shop.brewMethods?.length > 0) && (
             <div>
               <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-8`}>
-                <span className="w-1.5 h-8 bg-[#B48C4B] rounded-full" />
+                <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
                 Детали кофе
               </h2>
               
@@ -305,14 +251,14 @@ const CoffeeShopPage: React.FC = () => {
                 {shop.equipments && shop.equipments.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-outlined text-[#B48C4B]">precision_manufacturing</span>
+                      <span className="material-symbols-rounded text-[#D4A84B]">precision_manufacturing</span>
                       <h3 className={`font-bold ${textMain}`}>Оборудование</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {shop.equipments.map(equipment => (
                         <span 
                           key={equipment.id}
-                          className="px-4 py-2 bg-[#F5EFE6] text-[#B48C4B] rounded-xl text-sm font-semibold border border-[#B48C4B]/20"
+                          className="px-4 py-2 bg-[#F8F1DD] text-[#D4A84B] rounded-xl text-sm font-semibold border border-[#D4A84B]/20"
                         >
                           {equipment.name}
                         </span>
@@ -325,14 +271,14 @@ const CoffeeShopPage: React.FC = () => {
                 {shop.beans && shop.beans.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-outlined text-[#B48C4B]">energy</span>
+                      <span className="material-symbols-rounded text-[#D4A84B]">energy</span>
                       <h3 className={`font-bold ${textMain}`}>Кофейные зёрна</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {shop.beans.map(bean => (
                         <span 
                           key={bean.id}
-                          className="px-4 py-2 bg-[#F5EFE6] text-[#B48C4B] rounded-xl text-sm font-semibold border border-[#B48C4B]/20"
+                          className="px-4 py-2 bg-[#F8F1DD] text-[#D4A84B] rounded-xl text-sm font-semibold border border-[#D4A84B]/20"
                         >
                           {bean.name}
                         </span>
@@ -345,14 +291,14 @@ const CoffeeShopPage: React.FC = () => {
                 {shop.roasters && shop.roasters.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-outlined text-[#B48C4B]">local_fire_department</span>
+                      <span className="material-symbols-rounded text-[#D4A84B]">local_fire_department</span>
                       <h3 className={`font-bold ${textMain}`}>Обжарщики</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {shop.roasters.map(roaster => (
                         <span 
                           key={roaster.id}
-                          className="px-4 py-2 bg-[#F5EFE6] text-[#B48C4B] rounded-xl text-sm font-semibold border border-[#B48C4B]/20"
+                          className="px-4 py-2 bg-[#F8F1DD] text-[#D4A84B] rounded-xl text-sm font-semibold border border-[#D4A84B]/20"
                         >
                           {roaster.name}
                         </span>
@@ -365,14 +311,14 @@ const CoffeeShopPage: React.FC = () => {
                 {shop.brewMethods && shop.brewMethods.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-outlined text-[#B48C4B]">water_drop</span>
+                      <span className="material-symbols-rounded text-[#D4A84B]">water_drop</span>
                       <h3 className={`font-bold ${textMain}`}>Методы заваривания</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {shop.brewMethods.map(method => (
                         <span 
                           key={method.id}
-                          className="px-4 py-2 bg-[#F5EFE6] text-[#B48C4B] rounded-xl text-sm font-semibold border border-[#B48C4B]/20"
+                          className="px-4 py-2 bg-[#F8F1DD] text-[#D4A84B] rounded-xl text-sm font-semibold border border-[#D4A84B]/20"
                         >
                           {method.name}
                         </span>
@@ -415,99 +361,13 @@ const CoffeeShopPage: React.FC = () => {
         </section>
       )}
 
-      {/* Модальное окно отзыва */}
-      {showReviewModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className={`${cardBg} border ${borderColor} rounded-2xl max-w-md w-full p-6`}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className={`text-xl font-bold ${textMain}`}>Оставить отзыв</h3>
-              <button onClick={() => setShowReviewModal(false)} className={textMuted}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className={`block text-sm font-medium ${textMain} mb-2`}>
-                  Заголовок <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={reviewHeader}
-                  onChange={(e) => setReviewHeader(e.target.value)}
-                  className={`w-full p-3 rounded-lg ${cardBg} border ${borderColor} ${textMain} focus:outline-none focus:ring-2 focus:ring-[#B48C4B]`}
-                  placeholder="Краткое описание"
-                  maxLength={100}
-                />
-              </div>
-
-              {/* Рейтинги */}
-              {['Кофе', 'Сервис', 'Место'].map((category, idx) => {
-                const rating = idx === 0 ? reviewRatingCoffee : idx === 1 ? reviewRatingService : reviewRatingPlace;
-                const setRating = idx === 0 ? setReviewRatingCoffee : idx === 1 ? setReviewRatingService : setReviewRatingPlace;
-                
-                return (
-                  <div key={category}>
-                    <label className={`block text-sm font-medium ${textMain} mb-2`}>
-                      ☕ Рейтинг {category.toLowerCase()} <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          onClick={() => setRating(star)}
-                          className={`text-3xl transition-transform hover:scale-110 ${
-                            star <= rating ? 'text-[#B48C4B]' : `${textMuted} opacity-30`
-                          }`}
-                        >
-                          ☕
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-
-              <div>
-                <label className={`block text-sm font-medium ${textMain} mb-2`}>
-                  Комментарий <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  className={`w-full p-3 rounded-lg ${cardBg} border ${borderColor} ${textMain} focus:outline-none focus:ring-2 focus:ring-[#B48C4B]`}
-                  placeholder="Ваш подробный отзыв"
-                  rows={4}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={handleSubmitReview}
-                  disabled={isSubmittingReview}
-                  className="flex-1 bg-[#B48C4B] hover:bg-[#8E6F3A] text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50"
-                >
-                  {isSubmittingReview ? 'Отправка...' : 'Отправить'}
-                </button>
-                <button
-                  onClick={() => setShowReviewModal(false)}
-                  className={`flex-1 ${cardBg} border ${borderColor} ${textMain} py-3 rounded-xl font-bold transition-all`}
-                >
-                  Отмена
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Кнопка назад */}
       <div className="fixed bottom-8 left-8 z-40">
         <button
           onClick={() => navigate('/shops')}
-          className="bg-[#B48C4B] hover:bg-[#8E6F3A] text-white px-6 py-3 rounded-2xl font-bold shadow-lg transition-all flex items-center gap-2"
+          className="bg-[#EAB308] hover:bg-[#FACC15] text-[#1A1412] px-6 py-3 rounded-2xl font-bold shadow-lg transition-all flex items-center gap-2"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <span className="material-symbols-rounded">arrow_back</span>
           Назад
         </button>
       </div>

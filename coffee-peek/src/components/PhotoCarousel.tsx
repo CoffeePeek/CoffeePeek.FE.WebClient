@@ -59,7 +59,7 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {validImages.map((image, index) => (
-            <div key={index} className="w-full flex-shrink-0">
+            <div key={image} className="w-full flex-shrink-0">
               <img
                 src={image}
                 alt={`${shopName} - ${index + 1}`}
@@ -107,9 +107,9 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
       {/* Indicators */}
       {validImages.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-          {validImages.map((_, index) => (
+          {validImages.map((img, index) => (
             <button
-              key={index}
+              key={img}
               onClick={(e) => {
                 e.stopPropagation();
                 goToSlide(index);

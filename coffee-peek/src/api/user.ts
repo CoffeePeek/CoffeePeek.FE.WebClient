@@ -5,6 +5,7 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
+import { logger } from '../utils/logger';
 
 // ==================== Types ====================
 
@@ -28,24 +29,15 @@ export async function getUserPublicProfile(
   userId: string
 ): Promise<ApiResponse<PublicUserProfile | null>> {
   try {
-    if (import.meta.env.DEV) {
-      console.log(`[getUserPublicProfile] Fetching user profile for ID: ${userId}`);
-    }
-
     const response = await httpClient.get<PublicUserProfile>(
       API_ENDPOINTS.USER.BY_ID(userId),
       { requiresAuth: false }
     );
 
-    if (import.meta.env.DEV) {
-      console.log(`[getUserPublicProfile] Response:`, response);
-    }
-
-    // Нормализация данных в зависимости от структуры ответа
     const userData = response.data;
-    
+
     if (!userData || !userData.id) {
-      console.warn(`[getUserPublicProfile] No user ID in response`);
+      logger.warn(`[getUserPublicProfile] No user ID in response`);
       return {
         success: false,
         message: "Invalid user data: missing ID",
@@ -68,7 +60,7 @@ export async function getUserPublicProfile(
       },
     };
   } catch (error: any) {
-    console.error("[getUserPublicProfile] Exception:", error);
+    logger.error("[getUserPublicProfile] Exception:", error);
     
     // Возвращаем fallback профиль для 500 ошибок
     if (error.status === 500) {

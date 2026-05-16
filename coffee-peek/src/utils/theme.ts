@@ -37,7 +37,7 @@ export const getThemeClasses = (theme: Theme) => {
       tertiary: theme === 'light' ? 'bg-gray-100' : hexToTailwind(colors.border),
       card: hexToTailwind(colors.card),
       cardTransparent: `${hexToTailwind(colors.background)}/90`,
-      cardBackdrop: theme === 'light' ? 'bg-gray-50/80' : `${hexToTailwind(colors.surface)}/60`,
+      cardBackdrop: theme === 'light' ? 'bg-white/80' : `${hexToTailwind(colors.surface)}/60`,
       input: hexToTailwind(colors.input),
       badge: hexToTailwind(colors.badge),
       surface: hexToTailwind(colors.surfaceAlt),
@@ -48,7 +48,7 @@ export const getThemeClasses = (theme: Theme) => {
       secondary: hexToTextTailwind(colors.textSecondary),
       tertiary: theme === 'light' ? 'text-gray-500' : hexToTextTailwind(colors.textTertiary),
       muted: hexToTextTailwind(colors.textMuted),
-      inverse: theme === 'light' ? 'text-white' : hexToTextTailwind(COLORS.dark.background),
+      inverse: 'text-[#1A1412]',
     },
     // Borders
     border: {
@@ -78,9 +78,9 @@ export const getThemeClasses = (theme: Theme) => {
       borderLight: `${hexToBorderTailwind(COLORS.primary)}/30`,
       borderLighter: `${hexToBorderTailwind(COLORS.primary)}/20`,
       hover: `hover:${hexToTextTailwind(COLORS.primary)}`,
-      shadow: `shadow-[${COLORS.primary}]/5`,
-      ring: `focus:ring-[${COLORS.primary}]/5`,
-      ringFocus: `focus:ring-4 focus:ring-[${COLORS.primary}]/5`,
+      shadow: 'shadow-[0_4px_6px_-4px_rgba(180,140,75,0.2),_0_10px_15px_-3px_rgba(180,140,75,0.2)]',
+      ring: `focus:ring-[${COLORS.primary}]/10`,
+      ringFocus: `focus:ring-[3px] focus:ring-[${COLORS.primary}]/10`,
     },
     // Buttons
     button: {

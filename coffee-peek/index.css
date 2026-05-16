@@ -1,3 +1,40 @@
+/* ── RF Dewi Expanded — display family (Magazine Stamp) ────────── */
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Ultralight.otf") format("opentype");
+  font-weight: 200; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Light.otf") format("opentype");
+  font-weight: 300; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Regular.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Semibold.otf") format("opentype");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Bold.otf") format("opentype");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Ultrabold.otf") format("opentype");
+  font-weight: 800; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Black.otf") format("opentype");
+  font-weight: 900; font-style: normal; font-display: swap;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -75,6 +112,66 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* ── Wobble Ring loader — Organic Loaders #11 ────────────────────── */
+@keyframes wobble-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes wobble-morph {
+  0%,100% { border-radius: 42% 58% 65% 35% / 50% 45% 55% 50%; }
+  25%     { border-radius: 60% 40% 30% 70% / 40% 60% 40% 60%; }
+  50%     { border-radius: 35% 65% 50% 50% / 55% 35% 65% 45%; }
+  75%     { border-radius: 55% 45% 70% 30% / 45% 65% 35% 55%; }
+}
+.wobble-ring {
+  display: block;
+  background: transparent;
+  border-style: solid;
+  border-color: transparent;
+  animation:
+    wobble-spin  1.6s ease-in-out infinite,
+    wobble-morph 5s   ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* Dotted radial background pattern for auth/marketing pages */
+.bg-pattern {
+  background-image: radial-gradient(#2D241F 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Magazine Stamp typography system ──────────────────────────── */
+/* Wordmark: RF Dewi Expanded Ultrabold, tight tracking            */
+.wordmark {
+  font-family: "RF Dewi Expanded", "Sora", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+/* Hero / h1: ALL CAPS, Regular 400, dense line-height            */
+.hero-text {
+  font-family: "RF Dewi Expanded", "Sora", sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.92;
+}
+
+/* Accent word inside hero: Ultrabold gold                         */
+.accent-word {
+  font-weight: 800;
+  color: #EAB308;
+}
+
+/* Large numeral (ratings, stats): Ultrabold, tabular              */
+.numeral {
+  font-family: "RF Dewi Expanded", "Sora", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.84;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Material Icons filled stars */

@@ -1,3 +1,4 @@
+import WobbleRing from '../WobbleRing';
 import React, { useEffect, useRef, useState } from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { formatDayOfWeek } from '../../utils/shopUtils';
@@ -151,7 +152,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
           <div ref={mapRef} className="w-full h-full" />
           {!isMapLoaded && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#2D241F]">
-              <div className={`w-8 h-8 border-4 ${themeClasses.primary.border} border-t-transparent rounded-full animate-spin`} />
+              <WobbleRing size={32} />
             </div>
           )}
         </div>
@@ -160,7 +161,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
       <div className="p-8">
         <div className="flex items-start gap-4 mb-8">
           <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} flex items-center justify-center shrink-0`}>
-            <span className={`material-symbols-outlined ${themeClasses.primary.text}`}>pin_drop</span>
+            <span className={`material-symbols-rounded ${themeClasses.primary.text}`}>pin_drop</span>
           </div>
           <div>
             <h3 className={`font-bold ${textMain} mb-1`}>{shop.location?.address || shop.address || 'Адрес не указан'}</h3>
@@ -176,7 +177,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
           <div className={`space-y-4 pt-6 border-t ${borderColor}`}>
             <div className={`flex items-center gap-4 ${textMain} font-bold`}>
               <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} flex items-center justify-center shrink-0`}>
-                <span className={`material-symbols-outlined ${themeClasses.primary.text}`}>schedule</span>
+                <span className={`material-symbols-rounded ${themeClasses.primary.text}`}>schedule</span>
               </div>
               <span>Часы работы</span>
             </div>

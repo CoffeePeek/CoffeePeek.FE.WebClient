@@ -5,6 +5,7 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS, getFullUrl } from './core/apiConfig';
 import { ApiResponse } from './core/types';
+import { logger } from '../utils/logger';
 
 // ==================== Types ====================
 
@@ -34,7 +35,7 @@ export function getPhotoUrl(photo: PhotoMetadataDto | ShortPhotoMetadataDto): st
   }
   
   if (!photo.storageKey) {
-    console.warn('[getPhotoUrl] Missing both fullUrl and storageKey for photo:', photo);
+    logger.warn('[getPhotoUrl] Missing both fullUrl and storageKey for photo:', photo);
     return '';
   }
   
