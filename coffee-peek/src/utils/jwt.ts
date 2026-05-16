@@ -115,6 +115,20 @@ export function getUserRoles(token: string | null | undefined): string[] {
 }
 
 /**
+ * Парсит claim email_verified из JWT и возвращает boolean.
+ * Бэкенд кладёт его как строку "true"/"false".
+ */
+export function isEmailVerified(token: string | null | undefined): boolean {
+  if (!token) return false;
+  const claims = parseJWT(token);
+  if (!claims) return false;
+  const val = claims['email_verified'];
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'string') return val.toLowerCase() === 'true';
+  return false;
+}
+
+/**
  * Извлекает email пользователя из токена
  * Email добавляется через JwtRegisteredClaimNames.Email
  */

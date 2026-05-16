@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E '\\\\.\\(ts|js|md|json|yml|yaml\\)$|vite|tsconfig')"
+      "Bash(grep -E '\\\\.\\(ts|js|md|json|yml|yaml\\)$|vite|tsconfig')",
+      "Bash(npx tsc *)"
     ]
   }
 }

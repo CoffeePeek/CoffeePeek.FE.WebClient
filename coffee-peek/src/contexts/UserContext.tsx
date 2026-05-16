@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { parseJWT, getUserRoles, getUserEmail, getUserId, isTokenExpired } from '../utils/jwt';
+import { parseJWT, getUserRoles, getUserEmail, getUserId, isTokenExpired, isEmailVerified } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
 
 export interface AppUser {
@@ -8,6 +8,7 @@ export interface AppUser {
   roles: string[];
   isModerator: boolean;
   isAdmin: boolean;
+  emailConfirmed: boolean;
 }
 
 interface UserContextType {
@@ -44,11 +45,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const roles = getUserRoles(token);
     const email = getUserEmail(token);
     const id = getUserId(token);
+    const emailConfirmed = isEmailVerified(token);
 
     // Роли могут быть "User" и "Admin"
     // Admin имеет права модератора и администратора
-    const isAdmin = roles.some(role => 
-      role.toLowerCase() === 'admin' || 
+    const isAdmin = roles.some(role =>
+      role.toLowerCase() === 'admin' ||
       role.toLowerCase() === 'administrator'
     );
 
@@ -61,6 +63,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       roles,
       isModerator,
       isAdmin,
+      emailConfirmed,
     });
   };
 

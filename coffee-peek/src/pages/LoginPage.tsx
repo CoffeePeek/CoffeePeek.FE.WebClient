@@ -92,6 +92,7 @@ const LoginPage: React.FC = () => {
   const [showPwd, setShowPwd] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
   const [dark, setDark] = useState(true);
   const [emailValidDebounced, setEmailValidDebounced] = useState(false);
 
@@ -121,7 +122,14 @@ const LoginPage: React.FC = () => {
       updateUserFromToken(accessToken);
       navigate(from, { replace: true });
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'login'));
+      const rawMsg = (err as any)?.message || '';
+      if (rawMsg.toLowerCase().includes('not confirmed')) {
+        setEmailNotConfirmed(true);
+        setError(null);
+      } else {
+        setEmailNotConfirmed(false);
+        setError(getErrorMessage(err, 'login'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -199,7 +207,7 @@ const LoginPage: React.FC = () => {
               placeholder="name@example.com"
               label="Email"
               value={email}
-              onChange={e => { setEmail(e.target.value); setError(null); }}
+              onChange={e => { setEmail(e.target.value); setError(null); setEmailNotConfirmed(false); }}
               dark={dark}
               trailing={emailValidDebounced ? (
                 <span className="material-symbols-rounded star-filled"
@@ -215,6 +223,17 @@ const LoginPage: React.FC = () => {
             <div style={{ textAlign: 'right', marginTop: -6 }}>
               <a style={{ fontFamily: '"Noto Sans"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer' }}>Забыли пароль?</a>
             </div>
+
+            {emailNotConfirmed && (
+              <div style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(234,179,8,0.09)', border: '1px solid rgba(234,179,8,0.30)' }}>
+                <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
+                  <strong>Email не подтверждён.</strong> Найдите письмо от{' '}
+                  <span style={{ fontWeight: 600 }}>info@coffeepeek.by</span> и перейдите по ссылке.<br />
+                  Письмо не пришло? После входа зайдите в{' '}
+                  <span style={{ fontWeight: 600 }}>Настройки → Безопасность</span>.
+                </p>
+              </div>
+            )}
 
             <button type="submit" disabled={isLoading || !password}
               style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'pointer', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>

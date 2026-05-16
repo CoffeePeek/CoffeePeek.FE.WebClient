@@ -20,6 +20,7 @@ const CreateCheckInPage = lazy(() => import('../pages/CreateCheckInPage'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 const ErrorPage = lazy(() => import('../pages/ErrorPage'));
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage'));
+const ConfirmEmailPage = lazy(() => import('../pages/ConfirmEmailPage'));
 
 const LoadingFallback = () => {
   const { theme } = useTheme();
@@ -40,6 +41,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/error" element={<ErrorPage />} />
+        <Route path="/confirm-email" element={<ConfirmEmailPage />} />
 
         {/* Protected routes */}
         <Route

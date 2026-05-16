@@ -6,11 +6,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoffeePeek</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"RF Dewi Expanded"', 'Sora', 'sans-serif'],
+              body: ['"Noto Sans"', 'Inter', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans:wght@400;500;600;700&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <style>
+        @font-face {
+            font-family: "RF Dewi Expanded";
+            src: url("/fonts/RFDewiExpanded-Ultralight.otf") format("opentype");
+            font-weight: 200;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "RF Dewi Expanded";
+            src: url("/fonts/RFDewiExpanded-Light.otf") format("opentype");
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "RF Dewi Expanded";
+            src: url("/fonts/RFDewiExpanded-Regular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "RF Dewi Expanded";
+            src: url("/fonts/RFDewiExpanded-Semibold.otf") format("opentype");
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "RF Dewi Expanded";
+            src: url("/fonts/RFDewiExpanded-Bold.otf") format("opentype");
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "RF Dewi Expanded";
+            src: url("/fonts/RFDewiExpanded-Ultrabold.otf") format("opentype");
+            font-weight: 800;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "RF Dewi Expanded";
+            src: url("/fonts/RFDewiExpanded-Black.otf") format("opentype");
+            font-weight: 900;
+            font-style: normal;
+            font-display: swap;
+        }
         body {
             font-family: 'Noto Sans', 'Inter', sans-serif;
             background-color: #1A1412;

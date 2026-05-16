@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import {
   getProfile, UserProfile,
-  updateUsername, updateEmail, updateAbout, updateAvatar,
+  updateUsername, updateEmail, updateAbout, updateAvatar, resendEmailConfirmation,
 } from '../api/auth';
 import { getAvatarUploadUrl } from '../api/photos';
 import { useTheme } from '../contexts/ThemeContext';
@@ -43,6 +43,9 @@ const SettingsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   // Colors
   const gold = COLORS.primary;
@@ -84,6 +87,7 @@ const SettingsPage: React.FC = () => {
     setIsEditing(true);
     setError(null);
     setSaveSuccess(false);
+    setPendingEmailConfirmation(null);
   }, [profile]);
 
   const handleEditCancel = useCallback(() => {
@@ -118,8 +122,9 @@ const SettingsPage: React.FC = () => {
       setIsSaving(true);
       setError(null);
       const updates: Promise<unknown>[] = [];
+      const emailChanged = editValues.email !== originalValues.email;
       if (editValues.userName !== originalValues.userName) updates.push(updateUsername({ username: editValues.userName }));
-      if (editValues.email !== originalValues.email) updates.push(updateEmail({ email: editValues.email }));
+      if (emailChanged) updates.push(updateEmail({ email: editValues.email }));
       if (editValues.about !== originalValues.about) updates.push(updateAbout({ about: editValues.about || '' }));
 
       if (selectedAvatarFile) {
@@ -136,6 +141,9 @@ const SettingsPage: React.FC = () => {
         const refreshed = await getProfile();
         setProfile(refreshed.data);
       }
+      if (emailChanged) {
+        setPendingEmailConfirmation(editValues.email);
+      }
       setIsEditing(false);
       setEditValues({});
       setOriginalValues({});
@@ -150,6 +158,20 @@ const SettingsPage: React.FC = () => {
       setIsSaving(false);
     }
   }, [profile, editValues, originalValues, selectedAvatarFile]);
+
+  const handleResendConfirmation = useCallback(async () => {
+    setIsResending(true);
+    setResendSuccess(false);
+    try {
+      await resendEmailConfirmation();
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 4000);
+    } catch (err: unknown) {
+      logger.error('Error resending confirmation:', err);
+    } finally {
+      setIsResending(false);
+    }
+  }, []);
 
   // ── Loading state ─────────────────────────────────────────────────
   if (userLoading || isLoading) {
@@ -200,6 +222,7 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: bg }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
 
       {/* ── Page title bar ──────────────────────────────────────── */}
       <div style={{ borderBottom: `1px solid ${border}`, background: isDark ? 'rgba(45,36,31,0.7)' : surface, backdropFilter: 'blur(12px)' }}>
@@ -220,6 +243,42 @@ const SettingsPage: React.FC = () => {
         {error && (
           <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 14, color: '#EF4444' }}>{error}</p>
+          </div>
+        )}
+
+        {/* Pending email confirmation banner */}
+        {pendingEmailConfirmation && !isEditing && (
+          <div style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 12, background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.28)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <span className="material-symbols-rounded" style={{ fontSize: 18, color: '#EAB308', lineHeight: 1, flexShrink: 0, marginTop: 2 }}>mail</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: '0 0 10px', fontFamily: '"Noto Sans"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
+                Письмо отправлено на{' '}
+                <strong>{pendingEmailConfirmation}</strong>.<br />
+                Старый email активен до подтверждения.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleResendConfirmation}
+                  disabled={isResending}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
+                  {isResending
+                    ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
+                    : <><span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>refresh</span>Отправить повторно</>
+                  }
+                </button>
+                {resendSuccess && (
+                  <span style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>check_circle</span>
+                    Письмо отправлено
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setPendingEmailConfirmation(null)}
+              style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#A39E93', flexShrink: 0 }}>
+              <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>close</span>
+            </button>
           </div>
         )}
 

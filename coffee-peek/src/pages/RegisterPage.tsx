@@ -135,7 +135,6 @@ const RegisterPage: React.FC = () => {
       const response = await register({ email, password, userName: userName || undefined });
       if (!response.isSuccess) throw new Error(response.message || 'Ошибка при регистрации');
       setStep('success');
-      setTimeout(() => navigate('/login', { state: { email } }), 2000);
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'register'));
       logger.error('Registration error:', err);
@@ -182,13 +181,22 @@ const RegisterPage: React.FC = () => {
           {/* Success screen */}
           {step === 'success' ? (
             <div style={{ textAlign: 'center', padding: '8px 0' }}>
-              <div style={{ width: 88, height: 88, borderRadius: 99, background: 'rgba(34,197,94,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                <span className="material-symbols-rounded star-filled" style={{ fontSize: 56, color: dark ? '#22C55E' : '#15803D', lineHeight: 1 }}>check_circle</span>
+              <div style={{ width: 88, height: 88, borderRadius: 99, background: dark ? 'rgba(234,179,8,0.12)' : 'rgba(234,179,8,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                <span className="material-symbols-rounded star-filled" style={{ fontSize: 52, color: gold, lineHeight: 1 }}>mark_email_read</span>
               </div>
-              <h1 style={{ margin: '24px 0 8px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: textPrimary }}>Готово!</h1>
-              <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
-                Ваш аккаунт CoffeePeek создан.<br />Перенаправляем на страницу входа…
+              <h1 style={{ margin: '24px 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Проверьте почту</h1>
+              <p style={{ margin: '0 0 28px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.6 }}>
+                Мы отправили ссылку на{' '}
+                <span style={{ color: textPrimary, fontWeight: 600 }}>{email}</span>.<br />
+                Перейдите по ссылке чтобы активировать аккаунт.<br />
+                <span style={{ fontSize: 12 }}>Ссылка действует 10 минут.</span>
               </p>
+              <button
+                onClick={() => navigate('/login')}
+                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>login</span>
+                На страницу входа
+              </button>
             </div>
           ) : (
             <>
