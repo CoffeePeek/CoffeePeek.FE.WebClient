@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tar -xzf design.tar.gz \"app-onboarding/chats/chat1.md\" \"app-onboarding/chats/chat2.md\")",
+      "Bash(npm run:*)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(/home/arseny/RiderProjects/CoffeePeek.FE.WebClient/coffee-peek/node_modules/.bin/tsc --noEmit)",
+      "Bash(npm install:*)",
+      "Bash(node_modules/.bin/vite build:*)"
+    ]
+  }
+}

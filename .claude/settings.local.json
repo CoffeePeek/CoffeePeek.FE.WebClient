@@ -49,7 +49,11 @@
       "Bash(cp /c/Users/goloo/.claude/projects/C--Users-goloo-RiderProjects-CoffeePeek-FE-WebClient/64e0447c-02bc-4a2b-a5cb-f9c361f27bb1/tool-results/webfetch-1778932046455-uuws1f.bin /tmp/design.gz)",
       "Bash(gunzip -f /tmp/design.gz)",
       "Bash(mkdir -p /tmp/designpkg)",
-      "Bash(tar -xf /tmp/design -C /tmp/designpkg)"
+      "Bash(tar -xf /tmp/design -C /tmp/designpkg)",
+      "Bash(cp /home/arseny/.claude/projects/-home-arseny-RiderProjects-CoffeePeek-FE-WebClient/7efc2438-02d0-4c67-9cda-599c85e89c81/tool-results/webfetch-1779023590171-5d9kav.bin design.tar.gz)",
+      "Bash(tar -tzf design.tar.gz)",
+      "Bash(gunzip -c design.tar.gz)",
+      "Bash(tar -xzf design.tar.gz app-onboarding/README.md app-onboarding/project/Landing.html app-onboarding/project/landing-desktop.jsx app-onboarding/project/landing-mobile.jsx)"
     ]
   }
 }
