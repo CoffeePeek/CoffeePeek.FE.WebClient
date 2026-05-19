@@ -312,11 +312,20 @@ export async function deleteUser(): Promise<ApiResponse<boolean>> {
 }
 
 /**
- * Повторно отправляет подтверждение email
+ * Повторно отправляет подтверждение email (для авторизованных пользователей)
  */
 export async function resendEmailConfirmation(): Promise<ApiResponse<void>> {
   return httpClient.post<void>(API_ENDPOINTS.USER.EMAIL_CONFIRMATION, undefined, {
     requiresAuth: true,
+  });
+}
+
+/**
+ * Повторно отправляет подтверждение email по адресу (публичный, без авторизации)
+ */
+export async function resendEmailConfirmationByEmail(email: string): Promise<ApiResponse<void>> {
+  return httpClient.post<void>(API_ENDPOINTS.USER.EMAIL_CONFIRMATION_RESEND, { email }, {
+    requiresAuth: false,
   });
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { login } from '../api/auth';
+import { login, resendEmailConfirmationByEmail } from '../api/auth';
 import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
 import { useUser } from '../contexts/UserContext';
 import { getErrorMessage } from '../utils/errorHandler';
@@ -93,6 +93,8 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [dark, setDark] = useState(true);
   const [emailValidDebounced, setEmailValidDebounced] = useState(false);
 
@@ -103,6 +105,25 @@ const LoginPage: React.FC = () => {
     }, 400);
     return () => clearTimeout(t);
   }, [email]);
+
+  // Countdown for resend cooldown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const handleResend = async () => {
+    if (resendCooldown > 0 || resendState === 'sending') return;
+    setResendState('sending');
+    try {
+      await resendEmailConfirmationByEmail(email.trim());
+      setResendState('sent');
+      setResendCooldown(60);
+    } catch {
+      setResendState('error');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,6 +147,11 @@ const LoginPage: React.FC = () => {
       if (rawMsg.toLowerCase().includes('not confirmed')) {
         setEmailNotConfirmed(true);
         setError(null);
+        // Auto-send a new confirmation email
+        setResendState('sending');
+        resendEmailConfirmationByEmail(email.trim())
+          .then(() => { setResendState('sent'); setResendCooldown(60); })
+          .catch(() => { setResendState('idle'); });
       } else {
         setEmailNotConfirmed(false);
         setError(getErrorMessage(err, 'login'));
@@ -207,7 +233,7 @@ const LoginPage: React.FC = () => {
               placeholder="name@example.com"
               label="Email"
               value={email}
-              onChange={e => { setEmail(e.target.value); setError(null); setEmailNotConfirmed(false); }}
+              onChange={e => { setEmail(e.target.value); setError(null); setEmailNotConfirmed(false); setResendState('idle'); setResendCooldown(0); }}
               dark={dark}
               trailing={emailValidDebounced ? (
                 <span className="material-symbols-rounded star-filled"
@@ -225,13 +251,30 @@ const LoginPage: React.FC = () => {
             </div>
 
             {emailNotConfirmed && (
-              <div style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(234,179,8,0.09)', border: '1px solid rgba(234,179,8,0.30)' }}>
+              <div style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(234,179,8,0.09)', border: '1px solid rgba(234,179,8,0.30)', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
-                  <strong>Email не подтверждён.</strong> Найдите письмо от{' '}
-                  <span style={{ fontWeight: 600 }}>info@coffeepeek.by</span> и перейдите по ссылке.<br />
-                  Письмо не пришло? После входа зайдите в{' '}
-                  <span style={{ fontWeight: 600 }}>Настройки → Безопасность</span>.
+                  <strong>Email не подтверждён.</strong>{' '}
+                  {resendState === 'sending'
+                    ? 'Отправляем письмо подтверждения…'
+                    : resendState === 'sent'
+                      ? <>Новое письмо отправлено на <span style={{ fontWeight: 600 }}>{email}</span>. Проверьте почту.</>
+                      : resendState === 'error'
+                        ? <>Не удалось отправить письмо. Попробуйте ещё раз или зайдите в <span style={{ fontWeight: 600 }}>Настройки → Безопасность</span>.</>
+                        : <>Найдите письмо от <span style={{ fontWeight: 600 }}>info@coffeepeek.by</span> и перейдите по ссылке.</>
+                  }
                 </p>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendState === 'sending' || resendCooldown > 0}
+                  style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 12, cursor: resendState === 'sending' || resendCooldown > 0 ? 'not-allowed' : 'pointer', opacity: resendState === 'sending' || resendCooldown > 0 ? 0.6 : 1 }}>
+                  {resendState === 'sending'
+                    ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
+                    : resendCooldown > 0
+                      ? <><span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>schedule</span>Повторно через {resendCooldown}с</>
+                      : <><span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>refresh</span>Отправить письмо повторно</>
+                  }
+                </button>
               </div>
             )}
 

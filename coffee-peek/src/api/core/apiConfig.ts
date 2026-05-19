@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
     UPDATE_USERNAME: "/api/users/me/username",
     DELETE: "/api/users/me",
     EMAIL_CONFIRMATION: "/api/users/me/email-confirmation",
+    EMAIL_CONFIRMATION_RESEND: "/api/users/email-confirmation/resend",
   },
 
   COFFEE_SHOP: {
