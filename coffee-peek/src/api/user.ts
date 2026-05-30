@@ -36,21 +36,21 @@ export async function getUserPublicProfile(
 
     const userData = response.data;
 
-    if (!userData || !userData.id) {
-      logger.warn(`[getUserPublicProfile] No user ID in response`);
+    if (!userData || !userData.userName) {
+      logger.warn(`[getUserPublicProfile] Empty or invalid user data in response`);
       return {
         success: false,
-        message: "Invalid user data: missing ID",
+        message: "Invalid user data",
         data: null,
       };
     }
-    
+
     return {
       success: true,
       message: "User profile loaded successfully",
       data: {
         id: userData.id,
-        userName: userData.userName || "Unknown User",
+        userName: userData.userName,
         nickname: userData.nickname,
         avatarUrl: userData.avatarUrl,
         about: userData.about,

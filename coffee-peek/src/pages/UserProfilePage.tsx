@@ -196,9 +196,9 @@ const UserProfilePage: React.FC = () => {
                     </span>
                   </div>
                 )}
-                {profile.createdAt && (
+                {profile.createdAtUtc && (
                   <span className={`${textMuted} text-sm px-2`}>
-                    На сайте с {new Date(profile.createdAt).getFullYear()}
+                    На сайте с {new Date(profile.createdAtUtc).getFullYear()}
                   </span>
                 )}
               </div>

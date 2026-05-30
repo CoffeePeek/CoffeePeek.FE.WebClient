@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ── RF Dewi Expanded — display family (Magazine Stamp) ────────── */
 @font-face {
   font-family: "RF Dewi Expanded";

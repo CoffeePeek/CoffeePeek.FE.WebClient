@@ -15,5 +15,16 @@ export default defineConfig(() => {
         "@": path.resolve(__dirname, "."),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-router': ['react-router-dom'],
+            'vendor-query': ['@tanstack/react-query'],
+            'vendor-form': ['react-hook-form', 'zod'],
+          },
+        },
+      },
+    },
   };
 });
