@@ -180,46 +180,47 @@ const Header: React.FC = () => {
 
         {/* Mobile nav */}
         {isMobileMenuOpen && (
-          <div id="mobile-nav" style={{ padding: '12px 0 16px', borderTop: `1px solid ${borderColor}` }}>
+          <div id="mobile-nav" style={{ padding: '8px 0 16px', borderTop: `1px solid ${borderColor}` }}>
             {/* Nav items */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {allNav.map(({ id, label, route }) => (
-                <button key={id} onClick={() => { navigate(route); setIsMobileMenuOpen(false); }} style={navBtn(currentId === id)}>
+                <button key={id} onClick={() => { navigate(route); setIsMobileMenuOpen(false); }}
+                  style={{ ...navBtn(currentId === id), width: '100%', textAlign: 'left', padding: '10px 12px' }}>
                   {label}
                 </button>
               ))}
             </div>
 
             {/* Auth actions */}
-            <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${borderColor}`, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', gap: 2 }}>
               {user ? (
                 <>
                   {user.id && (
                     <button onClick={() => { navigate(`/users/${user.id}`); setIsMobileMenuOpen(false); }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-                      <span className="material-symbols-rounded" style={{ fontSize: 16, lineHeight: 1 }}>person</span>
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                      <span className="material-symbols-rounded" style={{ fontSize: 18, color: mutedColor, lineHeight: 1 }}>person</span>
                       Профиль
                     </button>
                   )}
                   <button onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, border: `1px solid ${isSettings ? gold : borderColor}`, background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-                    <span className="material-symbols-rounded" style={{ fontSize: 16, lineHeight: 1 }}>settings</span>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    <span className="material-symbols-rounded" style={{ fontSize: 18, color: isSettings ? gold : mutedColor, lineHeight: 1 }}>settings</span>
                     Настройки
                   </button>
-                  <button onClick={() => { logout(); navigate('/'); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.3)', background: 'transparent', color: '#EF4444', fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-                    <span className="material-symbols-rounded" style={{ fontSize: 16, lineHeight: 1 }}>logout</span>
+                  <button onClick={() => { logout(); navigate('/'); setIsMobileMenuOpen(false); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    <span className="material-symbols-rounded" style={{ fontSize: 18, color: '#EF4444', lineHeight: 1 }}>logout</span>
                     Выйти
                   </button>
                 </>
               ) : (
                 <>
                   <button onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     Войти
                   </button>
                   <button onClick={() => { navigate('/register'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: `${gold}15`, color: gold, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     Регистрация
                   </button>
                 </>

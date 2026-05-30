@@ -163,60 +163,62 @@ const UserProfilePage: React.FC = () => {
       </div>
 
       {/* Profile header */}
-      <header className={`${bgSurface} border-b ${borderClass} px-12 py-10`}>
-        <div className="max-w-6xl mx-auto flex items-end justify-between">
-          <div className="flex items-center gap-8">
-            <div className="relative">
-              <div className={`w-32 h-32 rounded-full border-4 ${theme === 'dark' ? themeClasses.border.default : 'border-white'} shadow-xl overflow-hidden ring-1 ${theme === 'dark' ? themeClasses.border.default.replace('border-', 'ring-') : 'ring-stone-200'}`}>
-                {profile.avatarUrl ? (
-                  <img 
-                    src={profile.avatarUrl} 
-                    alt={profile.userName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className={`w-full h-full ${themeClasses.primary.bg} flex items-center justify-center`}>
-                    <span className="text-5xl font-bold text-white">
-                      {profile.userName.charAt(0).toUpperCase()}
+      <header className={`${bgSurface} border-b ${borderClass} px-4 sm:px-12 py-6 sm:py-10`}>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-8">
+              <div className="relative flex-shrink-0">
+                <div className={`w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 ${theme === 'dark' ? themeClasses.border.default : 'border-white'} shadow-xl overflow-hidden`}>
+                  {profile.avatarUrl ? (
+                    <img
+                      src={profile.avatarUrl}
+                      alt={profile.userName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-full h-full ${themeClasses.primary.bg} flex items-center justify-center`}>
+                      <span className="text-3xl sm:text-5xl font-bold text-white">
+                        {profile.userName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:gap-3 text-center sm:text-left">
+                <h1 className={`text-2xl sm:text-4xl font-bold ${textMain} tracking-tight`}>
+                  {profile.userName}
+                </h1>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  {profile.nickname && (
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${themeClasses.primary.bgLight} ${themeClasses.primary.borderLighter} border`}>
+                      <span className={`material-symbols-rounded text-base ${themeClasses.primary.text}`}>verified</span>
+                      <span className={`${themeClasses.primary.text} text-xs font-bold uppercase tracking-widest`}>
+                        @{profile.nickname}
+                      </span>
+                    </div>
+                  )}
+                  {profile.createdAtUtc && (
+                    <span className={`${textMuted} text-sm`}>
+                      На сайте с {new Date(profile.createdAtUtc).getFullYear()}
                     </span>
-                  </div>
+                  )}
+                </div>
+                {profile.about && (
+                  <p className={`${textMuted} text-sm max-w-lg`}>
+                    {profile.about}
+                  </p>
                 )}
               </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <h1 className={`text-4xl font-bold ${textMain} tracking-tight`}>
-                {profile.userName}
-              </h1>
-              <div className="flex items-center gap-2">
-                {profile.nickname && (
-                  <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full ${themeClasses.primary.bgLight} ${themeClasses.primary.borderLighter} border`}>
-                    <span className={`material-symbols-rounded text-lg ${themeClasses.primary.text}`}>verified</span>
-                    <span className={`${themeClasses.primary.text} text-xs font-bold uppercase tracking-widest`}>
-                      @{profile.nickname}
-                    </span>
-                  </div>
-                )}
-                {profile.createdAtUtc && (
-                  <span className={`${textMuted} text-sm px-2`}>
-                    На сайте с {new Date(profile.createdAtUtc).getFullYear()}
-                  </span>
-                )}
-              </div>
-              {profile.about && (
-                <p className={`${textMuted} text-sm max-w-lg`}>
-                  {profile.about}
-                </p>
-              )}
             </div>
           </div>
         </div>
       </header>
 
       {/* Main content */}
-      <div className="max-w-6xl mx-auto px-12 py-10 space-y-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-12 py-6 sm:py-10 space-y-8 sm:space-y-12">
         {/* Statistics */}
         <section>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-3 sm:gap-6">
             <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group ${themeClasses.border.activeHover} transition-all`}>
               <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} ${themeClasses.primary.text} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                 <span className="material-symbols-rounded text-3xl">shopping_cart_checkout</span>
