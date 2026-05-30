@@ -51,6 +51,7 @@ export const API_ENDPOINTS = {
   REVIEW: {
     BASE: "/api/CoffeeShopReviews",
     BY_ID: (reviewId: string) => `/api/CoffeeShopReviews/${reviewId}`,
+    BY_USER_ID: (userId: string) => `/api/CoffeeShopReviews/${userId}`,
   },
 
   CHECK_IN: {
