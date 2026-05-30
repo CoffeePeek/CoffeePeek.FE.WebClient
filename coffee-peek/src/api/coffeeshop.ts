@@ -620,7 +620,7 @@ export async function getReviewsByUserId(
 ): Promise<ApiResponse<GetReviewsResponse>> {
   // Используем REVIEW эндпоинт с фильтрацией по userId, если такой эндпоинт существует
   // Или можно использовать REVIEW.BASE с параметрами
-  return httpClient.get<GetReviewsResponse>(API_ENDPOINTS.REVIEW.BY_USER_ID(userId), {
+  return httpClient.get<GetReviewsResponse>(API_ENDPOINTS.USER.REVIEWS(userId), {
     params: { pageNumber: page, pageSize },
     requiresAuth: false,
   });

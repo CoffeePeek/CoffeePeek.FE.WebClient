@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
     UPDATE_USERNAME: "/api/users/me/username",
     DELETE: "/api/users/me",
     EMAIL_CONFIRMATION: "/api/users/me/email-confirmation",
+    REVIEWS: (userId: string) => `/api/users/${userId}/reviews`,
     EMAIL_CONFIRMATION_RESEND: "/api/users/email-confirmation/resend",
   },
 
@@ -51,7 +52,6 @@ export const API_ENDPOINTS = {
   REVIEW: {
     BASE: "/api/CoffeeShopReviews",
     BY_ID: (reviewId: string) => `/api/CoffeeShopReviews/${reviewId}`,
-    BY_USER_ID: (userId: string) => `/api/CoffeeShopReviews/${userId}`,
   },
 
   CHECK_IN: {
