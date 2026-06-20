@@ -14,37 +14,40 @@ export const API_ENDPOINTS = {
     BASE: '/api/users',
     BY_ID: (id: string) => `/api/users/${id}`,
     PROFILE: '/api/users/me',
-    LIST: '/api/admin/users',
-    UPDATE_ROLE: (id: string) => `/api/admin/users/${id}/role`,
-    DELETE: (id: string) => `/api/admin/users/${id}`,
-    STATS: '/api/admin/users/stats',
+    // Admin user management — adjust these if your backend uses different paths
+    LIST: '/api/users',
+    UPDATE_ROLE: (id: string) => `/api/users/${id}/role`,
+    DELETE: (id: string) => `/api/users/${id}`,
+    STATS: '/api/users/stats',
   },
 
   COFFEE_SHOP: {
     BASE: '/api/CoffeeShops',
     BY_ID: (id: string) => `/api/CoffeeShops/${id}`,
-    UPDATE: (id: string) => `/api/admin/coffee-shops/${id}`,
+    // Admin edit reuses the same shop endpoint
+    UPDATE: (id: string) => `/api/CoffeeShops/${id}`,
   },
 
   MODERATION: {
-    SHOPS: '/api/admin/moderation/shops',
-    SHOP_BY_ID: (id: string) => `/api/admin/moderation/shops/${id}`,
-    SHOP_APPROVE: (id: string) => `/api/admin/moderation/shops/${id}/approve`,
-    SHOP_REJECT: (id: string) => `/api/admin/moderation/shops/${id}/reject`,
-    REVIEWS: '/api/admin/moderation/reviews',
-    REVIEW_BY_ID: (id: string) => `/api/admin/moderation/reviews/${id}`,
-    REVIEW_APPROVE: (id: string) => `/api/admin/moderation/reviews/${id}/approve`,
-    REVIEW_REJECT: (id: string) => `/api/admin/moderation/reviews/${id}/reject`,
+    // These match the existing backend paths from the main app
+    SHOPS: '/api/ModerationShops',
+    SHOP_BY_ID: (id: string) => `/api/ModerationShops/${id}`,
+    SHOP_APPROVE: (id: string) => `/api/ModerationShops/${id}/approve`,
+    SHOP_REJECT: (id: string) => `/api/ModerationShops/${id}/reject`,
+    REVIEWS: '/api/ModerationReviews',
+    REVIEW_BY_ID: (id: string) => `/api/ModerationReviews/${id}`,
+    REVIEW_APPROVE: (id: string) => `/api/ModerationReviews/${id}/approve`,
+    REVIEW_REJECT: (id: string) => `/api/ModerationReviews/${id}/reject`,
   },
 
   CACHE: {
-    CLEAR_ALL: '/api/admin/cache/clear',
-    CLEAR_BY_KEY: (key: string) => `/api/admin/cache/clear/${key}`,
-    KEYS: '/api/admin/cache/keys',
+    CLEAR_ALL: '/api/Cache/clear',
+    CLEAR_BY_KEY: (key: string) => `/api/Cache/clear/${key}`,
+    KEYS: '/api/Cache/keys',
   },
 
   STATS: {
-    OVERVIEW: '/api/admin/stats/overview',
+    OVERVIEW: '/api/Stats/overview',
   },
 
   CATALOGS: {
