@@ -5,6 +5,13 @@
 // Core
 export { httpClient, TokenManager } from './core/httpClient';
 export { API_ENDPOINTS, API_BASE_URL, buildUrlWithParams, getFullUrl } from './core/apiConfig';
+export {
+  ApiRequestError,
+  isApiRequestError,
+  ShopModerationErrorCodes,
+  CommonErrorCodes,
+} from './core/apiError';
+export type { ApiErrorResponse, SendShopSuccessResponse } from './core/apiError';
 export type { 
   ApiResponse, 
   ApiConfig, 

@@ -29,6 +29,7 @@ export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;
   status?: number;
+  errorCode?: string;
 }
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';

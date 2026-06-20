@@ -1,15 +1,25 @@
 import React, { useState } from 'react';
-import { sendCoffeeShopToModeration, SendCoffeeShopToModerationRequest } from '../api/moderation';
+import { sendCoffeeShopToModeration } from '../api/moderation';
 import { City, Equipment, CoffeeBean, Roaster, BrewMethod, formatEquipmentName, getEquipmentCategoryLabel } from '../api/coffeeshop';
 import Button from './Button';
 import MaterialSelect from './MaterialSelect';
 import { useTheme } from '../contexts/ThemeContext';
+import { useToast } from '../contexts/ToastContext';
 import { getThemeClasses } from '../utils/theme';
-import { getErrorMessage } from '../utils/errorHandler';
 import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
-import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
+import {
+  buildShopSubmissionPayload,
+  INITIAL_SHOP_FORM_DATA,
+  ShopFormData,
+  validateShopFormClient,
+} from '../utils/shopModerationForm';
+import {
+  getShopFieldErrorClass,
+  parseShopModerationError,
+  ShopFormField,
+} from '../utils/shopModerationFormErrors';
 
 interface AddCoffeeShopModalProps {
   isOpen: boolean;
@@ -35,37 +45,28 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
   referenceDataLoaded,
 }) => {
   const { theme } = useTheme();
+  const { showToast } = useToast();
   const themeClasses = getThemeClasses(theme);
 
-  const [formData, setFormData] = useState<Omit<SendCoffeeShopToModerationRequest, 'priceRange'> & { priceRange?: string }>({
-    name: '',
-    notValidatedAddress: '',
-    description: '',
-    priceRange: undefined,
-    cityId: '',
-    shopContact: {
-      phone: '',
-      email: '',
-      website: '',
-      instagram: '',
-    },
-    schedules: getDefaultSchedules(),
-    equipmentIds: [],
-    coffeeBeanIds: [],
-    roasterIds: [],
-    brewMethodIds: [],
-    shopPhotos: [],
-  });
+  const [formData, setFormData] = useState<ShopFormData>(INITIAL_SHOP_FORM_DATA);
 
   const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos, clearFiles } = usePhotoUpload();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<ShopFormField, string>>>({});
 
-  const handleInputChange = (field: keyof SendCoffeeShopToModerationRequest, value: unknown) => {
+  const handleInputChange = (field: keyof ShopFormData, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
+    if (field in fieldErrors) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[field as ShopFormField];
+        return next;
+      });
+    }
   };
 
   const handleContactChange = (field: string, value: string) => {
@@ -118,79 +119,35 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
-    if (!formData.name || !formData.notValidatedAddress) {
-      setError('Заполните обязательные поля: название и адрес');
+    const clientErrors = validateShopFormClient(formData);
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      // Загружаем фотографии
       const uploadedPhotos = await uploadPhotos();
+      const shopData = buildShopSubmissionPayload(formData);
+      const response = await sendCoffeeShopToModeration(shopData, uploadedPhotos.length > 0 ? uploadedPhotos : undefined);
 
-      const token = TokenManager.getAccessToken();
-      if (!token) {
-        throw new Error('Не авторизован');
-      }
-
-      // Преобразуем PriceRange из строки в число (enum)
-      const priceRangeMap: Record<string, number> = {
-        'Budget': 0,
-        'Moderate': 1,
-        'Premium': 2,
-      };
-      
-      // Отправляем данные кофейни
-      const shopData: SendCoffeeShopToModerationRequest = {
-        ...formData,
-        priceRange: formData.priceRange ? priceRangeMap[formData.priceRange] : undefined,
-        shopPhotos: uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
-        schedules: formData.schedules && formData.schedules.length > 0 ? formData.schedules : undefined,
-        equipmentIds: formData.equipmentIds && formData.equipmentIds.length > 0 ? formData.equipmentIds : undefined,
-        coffeeBeanIds: formData.coffeeBeanIds && formData.coffeeBeanIds.length > 0 ? formData.coffeeBeanIds : undefined,
-        roasterIds: formData.roasterIds && formData.roasterIds.length > 0 ? formData.roasterIds : undefined,
-        brewMethodIds: formData.brewMethodIds && formData.brewMethodIds.length > 0 ? formData.brewMethodIds : undefined,
-        shopContact: formData.shopContact && (
-          formData.shopContact.phone || 
-          formData.shopContact.email || 
-          formData.shopContact.website || 
-          formData.shopContact.instagram
-        ) ? formData.shopContact : undefined,
-      };
-
-      const response = await sendCoffeeShopToModeration(token, shopData);
-      
-      if (response.success) {
-        onSuccess();
-        onClose();
-        // Сброс формы
-        setFormData({
-          name: '',
-          notValidatedAddress: '',
-          description: '',
-          priceRange: undefined,
-          cityId: '',
-          shopContact: {
-            phone: '',
-            email: '',
-            website: '',
-            instagram: '',
-          },
-          schedules: getDefaultSchedules(),
-          equipmentIds: [],
-          coffeeBeanIds: [],
-          roasterIds: [],
-          brewMethodIds: [],
-          shopPhotos: [],
-        });
-        clearFiles();
+      if (response.data?.isAddressValidated) {
+        showToast('Заявка отправлена на модерацию', 'success');
       } else {
-        setError(response.message || 'Ошибка при отправке кофейни на модерацию');
+        showToast('Заявка принята, адрес проверит модератор', 'warning');
       }
+
+      onSuccess();
+      onClose();
+      setFormData({ ...INITIAL_SHOP_FORM_DATA, schedules: getDefaultSchedules() });
+      clearFiles();
     } catch (err: unknown) {
-      setError(getErrorMessage(err));
+      const parsed = parseShopModerationError(err);
+      setFieldErrors(parsed.fieldErrors);
+      setError(parsed.globalError);
       logger.error('Error submitting coffee shop:', err);
     } finally {
       setIsSubmitting(false);
@@ -231,9 +188,12 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                   required
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-2xl py-3 px-4 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all`}
+                  className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-2xl py-3 px-4 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all ${getShopFieldErrorClass(!!fieldErrors.name)}`}
                   placeholder="Введите название кофейни"
                 />
+                {fieldErrors.name && (
+                  <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{fieldErrors.name}</p>
+                )}
               </div>
 
               <div>
@@ -243,9 +203,12 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                   required
                   value={formData.notValidatedAddress}
                   onChange={(e) => handleInputChange('notValidatedAddress', e.target.value)}
-                  className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-2xl py-3 px-4 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all`}
+                  className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-2xl py-3 px-4 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all ${getShopFieldErrorClass(!!fieldErrors.notValidatedAddress)}`}
                   placeholder="Введите адрес"
                 />
+                {fieldErrors.notValidatedAddress && (
+                  <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{fieldErrors.notValidatedAddress}</p>
+                )}
               </div>
 
               <div>
@@ -253,28 +216,36 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-2xl py-3 px-4 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all`}
+                  className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-2xl py-3 px-4 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all ${getShopFieldErrorClass(!!fieldErrors.description)}`}
                   rows={4}
                   placeholder="Описание кофейни"
                 />
+                {fieldErrors.description && (
+                  <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{fieldErrors.description}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <MaterialSelect
-                  label="Город"
-                  value={formData.cityId || ''}
-                  onChange={(value) => handleInputChange('cityId', value || undefined)}
-                  options={[
-                    { value: '', label: 'Выберите город' },
-                    ...cities.map(city => ({ value: city.id, label: city.name }))
-                  ]}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                      <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                  }
-                />
+                <div>
+                  <MaterialSelect
+                    label="Город"
+                    value={formData.cityId || ''}
+                    onChange={(value) => handleInputChange('cityId', value || undefined)}
+                    options={[
+                      { value: '', label: 'Выберите город' },
+                      ...cities.map(city => ({ value: city.id, label: city.name }))
+                    ]}
+                    icon={
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                    }
+                  />
+                  {fieldErrors.cityId && (
+                    <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{fieldErrors.cityId}</p>
+                  )}
+                </div>
 
                 <MaterialSelect
                   label="Ценовой диапазон"

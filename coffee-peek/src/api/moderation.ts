@@ -5,6 +5,7 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
+import { SendShopSuccessResponse } from './core/apiError';
 
 // ==================== Types ====================
 
@@ -242,14 +243,21 @@ export async function getUploadUrls(
   );
 }
 
+export interface SendShopModerationResult {
+  shopId: string;
+  status: string;
+  isAddressValidated: boolean;
+}
+
 /**
- * Отправляет кофейню
+ * Отправляет кофейню на модерацию.
+ * Успех: HTTP 201 + isSuccess: true
  */
 export async function sendCoffeeShopToModeration(
-  accessToken: string,
-  shopData: SendCoffeeShopToModerationRequest
-): Promise<ApiResponse<{ id: string }>> {
-  const backendData: any = {
+  shopData: SendCoffeeShopToModerationRequest,
+  shopPhotos?: SendCoffeeShopToModerationRequest['shopPhotos']
+): Promise<ApiResponse<SendShopModerationResult>> {
+  const backendData: Record<string, unknown> = {
     name: shopData.name,
     address: shopData.notValidatedAddress,
     description: shopData.description,
@@ -265,14 +273,16 @@ export async function sendCoffeeShopToModeration(
     coffeeBeanIds: shopData.coffeeBeanIds,
     roasterIds: shopData.roasterIds,
     brewMethodIds: shopData.brewMethodIds,
-    shopPhotos: shopData.shopPhotos,
+    shopPhotos: shopPhotos ?? shopData.shopPhotos,
   };
 
-  return httpClient.post<{ id: string }>(
+  const response = await httpClient.post<SendShopSuccessResponse['data']>(
     API_ENDPOINTS.MODERATION.SHOP,
     backendData,
     { requiresAuth: true }
   );
+
+  return response;
 }
 
 /**

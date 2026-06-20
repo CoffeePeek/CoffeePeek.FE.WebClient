@@ -4,6 +4,7 @@
  */
 
 import { ApiError } from './types';
+import { ApiErrorResponse, ApiRequestError } from './apiError';
 import { getErrorMessageByStatus } from '../../utils/errorHandler';
 import { logger } from '../../utils/logger';
 
@@ -104,13 +105,14 @@ export async function responseInterceptor<T>(
       handleServerError();
     }
 
-    const error: ApiError = {
+    const errorBody: ApiErrorResponse = {
+      isSuccess: false,
       message: data.message || getErrorMessageByStatus(response.status),
+      errorCode: data.errorCode,
       errors: data.errors,
-      status: response.status,
     };
 
-    throw error;
+    throw new ApiRequestError(response.status, errorBody);
   }
 
   const isSuccess =
@@ -118,12 +120,14 @@ export async function responseInterceptor<T>(
     (data.isSuccess === true || data.success === true);
 
   if (!isSuccess) {
-    const error: ApiError = {
+    const errorBody: ApiErrorResponse = {
+      isSuccess: false,
       message: data.message || getErrorMessageByStatus(response.status) || 'Запрос не выполнен',
+      errorCode: data.errorCode,
       errors: data.errors,
-      status: response.status,
     };
-    throw error;
+
+    throw new ApiRequestError(response.status, errorBody);
   }
 
   return data;

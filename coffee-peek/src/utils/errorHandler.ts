@@ -135,32 +135,31 @@ export function isAuthError(error: any): boolean {
  * Использует статус-код для определения сообщения, игнорируя сообщения с бэкенда
  */
 export function getErrorMessage(error: any, context?: 'login' | 'register'): string {
-  // Проверяем статус в разных местах объекта ошибки
   const status = error?.status || error?.response?.status;
   
   if (status) {
-    // Для 401 в контексте логина/регистрации используем специальное сообщение
     if (status === 401 && (context === 'login' || context === 'register')) {
       return 'Неверный email или пароль.';
     }
-    // Для 404 в контексте логина/регистрации используем специальное сообщение
     if (status === 404 && (context === 'login' || context === 'register')) {
       return 'Пользователь с таким email не найден.';
     }
     return getErrorMessageByStatus(status);
   }
   
-  // Проверяем на сетевые ошибки
   if (error?.code === 'ECONNREFUSED' || error?.message?.includes('fetch') || error?.message?.includes('network')) {
     return ErrorCodes.NETWORK.message;
   }
   
-  // Если есть errors (валидационные ошибки), показываем их
   if (error?.errors && typeof error.errors === 'object') {
     const errorMessages = Object.values(error.errors).flat();
     if (errorMessages.length > 0) {
       return errorMessages.join(', ');
     }
+  }
+
+  if (error?.errorCode && import.meta.env.DEV && error?.message) {
+    return error.message;
   }
   
   return ErrorCodes.UNKNOWN.message;
