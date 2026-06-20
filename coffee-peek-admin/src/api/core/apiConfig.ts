@@ -14,30 +14,16 @@ export const API_ENDPOINTS = {
     BASE: '/api/users',
     BY_ID: (id: string) => `/api/users/${id}`,
     PROFILE: '/api/users/me',
-    // Admin user management — adjust these if your backend uses different paths
     LIST: '/api/users',
     UPDATE_ROLE: (id: string) => `/api/users/${id}/role`,
     DELETE: (id: string) => `/api/users/${id}`,
     STATS: '/api/users/stats',
   },
 
-  COFFEE_SHOP: {
-    BASE: '/api/CoffeeShops',
-    BY_ID: (id: string) => `/api/CoffeeShops/${id}`,
-    // Admin edit reuses the same shop endpoint
-    UPDATE: (id: string) => `/api/CoffeeShops/${id}`,
-  },
-
   MODERATION: {
-    // These match the existing backend paths from the main app
     SHOPS: '/api/ModerationShops',
-    SHOP_BY_ID: (id: string) => `/api/ModerationShops/${id}`,
-    SHOP_APPROVE: (id: string) => `/api/ModerationShops/${id}/approve`,
-    SHOP_REJECT: (id: string) => `/api/ModerationShops/${id}/reject`,
+    SHOP_STATUS: '/api/ModerationShops/status',
     REVIEWS: '/api/ModerationReviews',
-    REVIEW_BY_ID: (id: string) => `/api/ModerationReviews/${id}`,
-    REVIEW_APPROVE: (id: string) => `/api/ModerationReviews/${id}/approve`,
-    REVIEW_REJECT: (id: string) => `/api/ModerationReviews/${id}/reject`,
   },
 
   CACHE: {

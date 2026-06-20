@@ -81,6 +81,24 @@ export async function responseInterceptor<T>(
 }
 
 export function normalizeResponseData<T>(data: unknown): T {
+  if (!data || typeof data !== 'object') {
+    return data as T;
+  }
+
+  const record = data as Record<string, unknown>;
+
+  if ('moderationShops' in record && Array.isArray(record.moderationShops)) {
+    return record.moderationShops as T;
+  }
+
+  if ('reviewDtos' in record && Array.isArray(record.reviewDtos)) {
+    return record.reviewDtos as T;
+  }
+
+  if ('moderationShop' in record) {
+    return record.moderationShop as T;
+  }
+
   return data as T;
 }
 
