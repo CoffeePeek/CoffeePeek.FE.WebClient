@@ -75,25 +75,26 @@ export const DashboardPage: React.FC = () => {
             label="Пользователей"
             value={data.totalUsers}
             icon={<IconUsers />}
-            subtitle={`+${data.newUsersToday} сегодня`}
+            subtitle={`+${data.usersRegisteredToday} сегодня`}
           />
           <StatCard
             label="Кофеен"
-            value={data.totalShops}
+            value={data.totalCoffeeShops}
             icon={<IconShop />}
-            subtitle={`+${data.newShopsToday} сегодня`}
+            subtitle={`+${data.newCoffeeShopsToday} сегодня`}
           />
           <StatCard
             label="Отзывов"
             value={data.totalReviews}
             icon={<IconReview />}
+            subtitle={data.newReviewsToday ? `+${data.newReviewsToday} сегодня` : undefined}
           />
           <StatCard
             label="На модерации"
-            value={data.pendingShops + data.pendingReviews}
+            value={data.pendingModerationShops + data.pendingModerationReviews}
             icon={<IconPending />}
             color="text-yellow-500"
-            subtitle={`${data.pendingShops} кофеен, ${data.pendingReviews} отзывов`}
+            subtitle={`${data.pendingModerationShops} кофеен, ${data.pendingModerationReviews} отзывов`}
           />
         </div>
       ) : (

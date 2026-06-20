@@ -1,8 +1,16 @@
+export interface PaginatedMeta {
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
 export interface ApiResponse<T> {
   success?: boolean;
   isSuccess?: boolean;
   message: string;
   data: T;
+  meta?: PaginatedMeta;
 }
 
 export interface ApiConfig {

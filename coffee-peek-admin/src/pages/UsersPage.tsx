@@ -25,6 +25,8 @@ const ROLE_COLORS: Record<UserRole, string> = {
   Moderator: 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300',
   Admin: 'bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-300',
   Owner: 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300',
+  Employee: 'bg-teal-100 text-teal-800 dark:bg-teal-500/20 dark:text-teal-300',
+  Roaster: 'bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300',
 };
 
 const UserRoleBadge: React.FC<{ role: UserRole }> = ({ role }) => (
@@ -100,6 +102,8 @@ function getRoleDescription(role: UserRole): string {
     case 'Moderator': return 'Модератор контента';
     case 'Admin': return 'Полный доступ';
     case 'Owner': return 'Владелец кофейни';
+    case 'Employee': return 'Сотрудник кофейни';
+    case 'Roaster': return 'Обжарщик';
   }
 }
 
@@ -144,7 +148,7 @@ export const UsersPage: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteAdminUser(id),
     onSuccess: () => {
-      showToast('Пользователь удалён', 'success');
+      showToast('Пользователь заблокирован', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'users'] });
       setDeletingUserId(null);
     },
@@ -173,7 +177,7 @@ export const UsersPage: React.FC = () => {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard label="Всего" value={stats.totalUsers} icon={<IconUsers />} />
-          <StatCard label="Новых (месяц)" value={stats.newUsersThisMonth} icon={<IconUsers />} color="text-green-500" />
+          <StatCard label="Сегодня" value={stats.registeredToday} icon={<IconUsers />} color="text-green-500" />
           <StatCard label="Активных" value={stats.activeUsers} icon={<IconUsers />} color="text-blue-500" />
           <StatCard label="Заблокированных" value={stats.blockedUsers} icon={<IconUsers />} color="text-red-500" />
         </div>
@@ -325,9 +329,9 @@ export const UsersPage: React.FC = () => {
 
       <ConfirmModal
         isOpen={!!deletingUserId}
-        title="Удалить пользователя?"
-        message="Это действие необратимо. Все данные пользователя будут удалены."
-        confirmLabel="Удалить"
+        title="Заблокировать пользователя?"
+        message="Пользователь будет помечен как заблокированный, все сессии будут отозваны."
+        confirmLabel="Заблокировать"
         variant="danger"
         onConfirm={async () => {
           if (deletingUserId) await deleteMutation.mutateAsync(deletingUserId);

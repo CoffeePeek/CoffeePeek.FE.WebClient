@@ -1,4 +1,4 @@
-import { ApiError } from './types';
+import { ApiError, PaginatedMeta } from './types';
 
 export class TokenManager {
   private static ACCESS_TOKEN_KEY = 'admin_accessToken';
@@ -29,6 +29,11 @@ export class TokenManager {
   }
 }
 
+export interface InterceptedResponse<T> {
+  envelope: T;
+  pagination?: PaginatedMeta;
+}
+
 export function requestInterceptor(
   _url: string,
   options: RequestInit,
@@ -57,11 +62,11 @@ export function requestInterceptor(
 export async function responseInterceptor<T>(
   response: Response,
   _url: string
-): Promise<T> {
+): Promise<InterceptedResponse<T>> {
   const contentType = response.headers.get('content-type');
 
   if (!contentType?.includes('application/json')) {
-    if (response.ok) return {} as T;
+    if (response.ok) return { envelope: {} as T };
     throw createApiError(response.status, getErrorMessageByStatus(response.status));
   }
 
@@ -77,7 +82,10 @@ export async function responseInterceptor<T>(
     throw err;
   }
 
-  return data;
+  return {
+    envelope: data,
+    pagination: extractPagination(response.headers, data.data ?? data),
+  };
 }
 
 export function normalizeResponseData<T>(data: unknown): T {
@@ -87,19 +95,35 @@ export function normalizeResponseData<T>(data: unknown): T {
 
   const record = data as Record<string, unknown>;
 
-  if ('moderationShops' in record && Array.isArray(record.moderationShops)) {
-    return record.moderationShops as T;
-  }
-
-  if ('reviewDtos' in record && Array.isArray(record.reviewDtos)) {
-    return record.reviewDtos as T;
-  }
-
   if ('moderationShop' in record) {
     return record.moderationShop as T;
   }
 
   return data as T;
+}
+
+function extractPagination(headers: Headers, data: unknown): PaginatedMeta | undefined {
+  if (data && typeof data === 'object') {
+    const record = data as Record<string, unknown>;
+    if ('totalItems' in record || 'totalPages' in record) {
+      return {
+        totalCount: Number(record.totalItems ?? 0),
+        totalPages: Number(record.totalPages ?? 1),
+        currentPage: Number(record.currentPage ?? 1),
+        pageSize: Number(record.pageSize ?? 20),
+      };
+    }
+  }
+
+  const totalCount = headers.get('X-Total-Count');
+  if (!totalCount) return undefined;
+
+  return {
+    totalCount: parseInt(totalCount, 10),
+    totalPages: parseInt(headers.get('X-Total-Pages') ?? '1', 10),
+    currentPage: parseInt(headers.get('X-Current-Page') ?? '1', 10),
+    pageSize: parseInt(headers.get('X-Page-Size') ?? '20', 10),
+  };
 }
 
 function getErrorMessageByStatus(status: number): string {
@@ -111,6 +135,7 @@ function getErrorMessageByStatus(status: number): string {
     case 409: return 'Конфликт данных';
     case 422: return 'Ошибка валидации';
     case 500: return 'Внутренняя ошибка сервера';
+    case 503: return 'Сервис недоступен';
     default: return 'Произошла ошибка';
   }
 }

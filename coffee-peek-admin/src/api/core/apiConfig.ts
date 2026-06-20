@@ -10,30 +10,23 @@ export const API_ENDPOINTS = {
     REFRESH: '/api/tokens',
   },
 
-  USER: {
-    BASE: '/api/users',
-    BY_ID: (id: string) => `/api/users/${id}`,
-    PROFILE: '/api/users/me',
-    LIST: '/api/users',
-    UPDATE_ROLE: (id: string) => `/api/users/${id}/role`,
-    DELETE: (id: string) => `/api/users/${id}`,
-    STATS: '/api/users/stats',
+  ADMIN: {
+    STATS_OVERVIEW: '/api/admin/stats/overview',
+    USERS: '/api/admin/users',
+    USER_STATS: '/api/admin/users/stats',
+    USER_ROLE: (id: string) => `/api/admin/users/${id}/role`,
+    USER_DELETE: (id: string) => `/api/admin/users/${id}`,
+    CACHE_KEYS: '/api/admin/cache/keys',
+    CACHE_CLEAR: '/api/admin/cache/clear',
+    CACHE_CLEAR_KEY: (key: string) => `/api/admin/cache/clear/${encodeURIComponent(key)}`,
   },
 
   MODERATION: {
     SHOPS: '/api/ModerationShops',
+    SHOP_BY_ID: (id: string) => `/api/ModerationShops/${id}`,
     SHOP_STATUS: '/api/ModerationShops/status',
     REVIEWS: '/api/ModerationReviews',
-  },
-
-  CACHE: {
-    CLEAR_ALL: '/api/Cache/clear',
-    CLEAR_BY_KEY: (key: string) => `/api/Cache/clear/${key}`,
-    KEYS: '/api/Cache/keys',
-  },
-
-  STATS: {
-    OVERVIEW: '/api/Stats/overview',
+    REVIEW_BY_ID: (id: string) => `/api/ModerationReviews/${id}`,
   },
 
   CATALOGS: {
@@ -47,7 +40,7 @@ export const API_ENDPOINTS = {
 
 export function buildUrlWithParams(
   url: string,
-  params?: Record<string, any>
+  params?: Record<string, unknown>
 ): string {
   if (!params || Object.keys(params).length === 0) {
     return url;

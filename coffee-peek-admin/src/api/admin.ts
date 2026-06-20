@@ -1,11 +1,11 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
-import { ApiResponse } from './core/types';
+import { ApiResponse, PaginatedMeta } from './core/types';
 
 // ==================== Types ====================
 
 export type ModerationStatus = 'Pending' | 'Approved' | 'Rejected';
-export type UserRole = 'User' | 'Moderator' | 'Admin' | 'Owner';
+export type UserRole = 'User' | 'Moderator' | 'Admin' | 'Owner' | 'Employee' | 'Roaster';
 
 export interface PaginatedResult<T> {
   items: T[];
@@ -65,6 +65,7 @@ interface BackendModerationReview {
   userId: string;
   userName?: string;
   shopId: string;
+  shopName?: string;
   rating?: {
     coffee: number;
     service: number;
@@ -73,6 +74,44 @@ interface BackendModerationReview {
   rejectedReason?: string | null;
   createdAt: string;
   moderationStatus: ModerationStatus | number;
+}
+
+interface GetAllModerationShopsResponse {
+  moderationShops: BackendModerationShop[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+interface GetAllModerationReviewsResponse {
+  reviewDtos: BackendModerationReview[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+interface BackendAdminUser {
+  id: string;
+  userName: string;
+  email: string;
+  createdAtUtc: string;
+  about: string | null;
+  avatarUrl: string | null;
+  reviewCount: number;
+  checkInCount: number;
+  addedShopsCount: number;
+  roles: string[];
+  isBlocked: boolean;
+}
+
+interface GetAdminUsersResponse {
+  items: BackendAdminUser[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
 }
 
 export interface AdminCoffeeShop {
@@ -140,24 +179,24 @@ export interface AdminReview {
 
 export interface AdminUser {
   id: string;
-  userCredentialId: string;
   userName: string;
   email: string;
   roles: UserRole[];
-  about?: string;
+  about?: string | null;
   createdAtUtc: string;
-  avatarUrl?: string;
-  reviewCount?: number;
-  checkInCount?: number;
-  addedShopsCount?: number;
-  isBlocked?: boolean;
+  avatarUrl?: string | null;
+  reviewCount: number;
+  checkInCount: number;
+  addedShopsCount: number;
+  isBlocked: boolean;
 }
 
 export interface UserStats {
   totalUsers: number;
-  newUsersThisMonth: number;
   activeUsers: number;
   blockedUsers: number;
+  registeredToday: number;
+  usersByRole: Record<string, number>;
 }
 
 export interface UpdateUserRoleRequest {
@@ -166,18 +205,18 @@ export interface UpdateUserRoleRequest {
 
 export interface OverviewStats {
   totalUsers: number;
-  totalShops: number;
+  usersRegisteredToday: number;
+  totalCoffeeShops: number;
   totalReviews: number;
-  pendingShops: number;
-  pendingReviews: number;
-  newUsersToday: number;
-  newShopsToday: number;
+  pendingModerationShops: number;
+  pendingModerationReviews: number;
+  newCoffeeShopsToday: number;
+  newReviewsToday: number;
 }
 
-export interface CacheKey {
-  key: string;
-  size?: number;
-  expiresAt?: string;
+export interface ClearCacheResponse {
+  clearedCount: number;
+  pattern: string;
 }
 
 interface ListParams {
@@ -234,11 +273,11 @@ function mapShopToAdmin(shop: BackendModerationShop): AdminCoffeeShop {
   };
 }
 
-function mapReviewToAdmin(review: BackendModerationReview, shopNameById: Map<string, string>): AdminReview {
+function mapReviewToAdmin(review: BackendModerationReview): AdminReview {
   return {
     id: review.id,
     shopId: review.shopId,
-    shopName: shopNameById.get(review.shopId) ?? review.shopId,
+    shopName: review.shopName ?? review.shopId,
     authorEmail: review.userName ?? review.userId,
     authorName: review.userName,
     header: review.header,
@@ -251,60 +290,35 @@ function mapReviewToAdmin(review: BackendModerationReview, shopNameById: Map<str
   };
 }
 
-function paginate<T>(items: T[], page = 1, pageSize = 15): PaginatedResult<T> {
-  const safePage = Math.max(1, page);
-  const safePageSize = Math.max(1, pageSize);
-  const totalCount = items.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize));
-  const start = (safePage - 1) * safePageSize;
-
+function mapUserToAdmin(user: BackendAdminUser): AdminUser {
   return {
-    items: items.slice(start, start + safePageSize),
-    totalCount,
-    page: safePage,
-    pageSize: safePageSize,
-    totalPages,
+    id: user.id,
+    userName: user.userName,
+    email: user.email,
+    roles: user.roles as UserRole[],
+    about: user.about,
+    createdAtUtc: user.createdAtUtc,
+    avatarUrl: user.avatarUrl,
+    reviewCount: user.reviewCount,
+    checkInCount: user.checkInCount,
+    addedShopsCount: user.addedShopsCount,
+    isBlocked: user.isBlocked,
   };
 }
 
-function filterShops(shops: AdminCoffeeShop[], params: ListParams): AdminCoffeeShop[] {
-  let result = shops;
-
-  if (params.status) {
-    result = result.filter((shop) => shop.status === params.status);
-  }
-
-  if (params.search?.trim()) {
-    const query = params.search.trim().toLowerCase();
-    result = result.filter(
-      (shop) =>
-        shop.name.toLowerCase().includes(query) ||
-        shop.address.toLowerCase().includes(query)
-    );
-  }
-
-  return result;
-}
-
-function filterReviews(reviews: AdminReview[], params: ListParams): AdminReview[] {
-  let result = reviews;
-
-  if (params.status) {
-    result = result.filter((review) => review.status === params.status);
-  }
-
-  if (params.search?.trim()) {
-    const query = params.search.trim().toLowerCase();
-    result = result.filter(
-      (review) =>
-        review.header.toLowerCase().includes(query) ||
-        review.comment.toLowerCase().includes(query) ||
-        review.authorName?.toLowerCase().includes(query) ||
-        review.shopName.toLowerCase().includes(query)
-    );
-  }
-
-  return result;
+function toPaginatedResult<T>(
+  items: T[],
+  meta: PaginatedMeta | undefined,
+  fallbackPage: number,
+  fallbackPageSize: number
+): PaginatedResult<T> {
+  return {
+    items,
+    totalCount: meta?.totalCount ?? items.length,
+    totalPages: meta?.totalPages ?? 1,
+    page: meta?.currentPage ?? fallbackPage,
+    pageSize: meta?.pageSize ?? fallbackPageSize,
+  };
 }
 
 function appendFormValue(form: FormData, key: string, value: string | number | boolean | undefined | null) {
@@ -376,23 +390,12 @@ function buildModerationShopFormData(
   return form;
 }
 
-async function fetchAllModerationShops(): Promise<BackendModerationShop[]> {
-  const response = await httpClient.get<BackendModerationShop[]>(API_ENDPOINTS.MODERATION.SHOPS);
-  return response.data ?? [];
-}
-
-async function fetchAllModerationReviews(): Promise<BackendModerationReview[]> {
-  const response = await httpClient.get<BackendModerationReview[]>(API_ENDPOINTS.MODERATION.REVIEWS);
-  return response.data ?? [];
-}
-
-async function fetchModerationShopById(id: string): Promise<BackendModerationShop> {
-  const shops = await fetchAllModerationShops();
-  const shop = shops.find((item) => item.id === id);
-  if (!shop) {
-    throw { status: 404, message: 'Кофейня не найдена' };
-  }
-  return shop;
+function buildStatusParams(id: string, status: ModerationStatus, comment?: string) {
+  return {
+    id,
+    status,
+    ...(comment?.trim() ? { comment: comment.trim() } : {}),
+  };
 }
 
 // ==================== Shop moderation ====================
@@ -400,37 +403,45 @@ async function fetchModerationShopById(id: string): Promise<BackendModerationSho
 export async function getModerationShops(
   params: ListParams = {}
 ): Promise<ApiResponse<PaginatedResult<AdminCoffeeShop>>> {
-  const shops = (await fetchAllModerationShops()).map(mapShopToAdmin);
-  const filtered = filterShops(shops, params);
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 20;
+  const response = await httpClient.get<GetAllModerationShopsResponse>(
+    API_ENDPOINTS.MODERATION.SHOPS,
+    { params }
+  );
+  const raw = response.data as unknown as GetAllModerationShopsResponse;
 
   return {
-    success: true,
-    isSuccess: true,
-    message: '',
-    data: paginate(filtered, params.page, params.pageSize),
+    ...response,
+    data: toPaginatedResult(
+      (raw.moderationShops ?? []).map(mapShopToAdmin),
+      response.meta,
+      page,
+      pageSize
+    ),
   };
 }
 
 export async function getModerationShopById(id: string): Promise<ApiResponse<AdminCoffeeShop>> {
-  const shop = await fetchModerationShopById(id);
+  const response = await httpClient.get<BackendModerationShop>(
+    API_ENDPOINTS.MODERATION.SHOP_BY_ID(id)
+  );
 
   return {
-    success: true,
-    isSuccess: true,
-    message: '',
-    data: mapShopToAdmin(shop),
+    ...response,
+    data: mapShopToAdmin(response.data),
   };
 }
 
-export async function approveShop(_id: string, _data?: ModerationActionRequest): Promise<ApiResponse<void>> {
+export async function approveShop(id: string, data?: ModerationActionRequest): Promise<ApiResponse<void>> {
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.SHOP_STATUS, undefined, {
-    params: { id: _id, status: 'Approved' },
+    params: buildStatusParams(id, 'Approved', data?.comment),
   });
 }
 
-export async function rejectShop(_id: string, _data?: ModerationActionRequest): Promise<ApiResponse<void>> {
+export async function rejectShop(id: string, data?: ModerationActionRequest): Promise<ApiResponse<void>> {
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.SHOP_STATUS, undefined, {
-    params: { id: _id, status: 'Rejected' },
+    params: buildStatusParams(id, 'Rejected', data?.comment),
   });
 }
 
@@ -438,18 +449,19 @@ export async function updateCoffeeShop(
   id: string,
   data: UpdateCoffeeShopRequest
 ): Promise<ApiResponse<AdminCoffeeShop>> {
-  const shop = await fetchModerationShopById(id);
+  const shopResponse = await httpClient.get<BackendModerationShop>(
+    API_ENDPOINTS.MODERATION.SHOP_BY_ID(id)
+  );
+  const shop = shopResponse.data;
   const formData = buildModerationShopFormData(shop, data);
-  const response = await httpClient.put<{ data?: BackendModerationShop }>(
+  const response = await httpClient.put<BackendModerationShop>(
     API_ENDPOINTS.MODERATION.SHOPS,
     formData
   );
 
-  const updatedShop = response.data?.data ?? shop;
-
   return {
     ...response,
-    data: mapShopToAdmin(updatedShop),
+    data: mapShopToAdmin(response.data ?? shop),
   };
 }
 
@@ -458,27 +470,41 @@ export async function updateCoffeeShop(
 export async function getModerationReviews(
   params: ListParams = {}
 ): Promise<ApiResponse<PaginatedResult<AdminReview>>> {
-  const [reviews, shops] = await Promise.all([
-    fetchAllModerationReviews(),
-    fetchAllModerationShops(),
-  ]);
-
-  const shopNameById = new Map(shops.map((shop) => [shop.id, shop.name]));
-  const mapped = reviews.map((review) => mapReviewToAdmin(review, shopNameById));
-  const filtered = filterReviews(mapped, params);
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 20;
+  const response = await httpClient.get<GetAllModerationReviewsResponse>(
+    API_ENDPOINTS.MODERATION.REVIEWS,
+    { params }
+  );
+  const raw = response.data as unknown as GetAllModerationReviewsResponse;
 
   return {
-    success: true,
-    isSuccess: true,
-    message: '',
-    data: paginate(filtered, params.page, params.pageSize),
+    ...response,
+    data: toPaginatedResult(
+      (raw.reviewDtos ?? []).map(mapReviewToAdmin),
+      response.meta,
+      page,
+      pageSize
+    ),
   };
 }
 
-export async function approveReview(id: string, _data?: ModerationActionRequest): Promise<ApiResponse<void>> {
+export async function getModerationReviewById(id: string): Promise<ApiResponse<AdminReview>> {
+  const response = await httpClient.get<BackendModerationReview>(
+    API_ENDPOINTS.MODERATION.REVIEW_BY_ID(id)
+  );
+
+  return {
+    ...response,
+    data: mapReviewToAdmin(response.data),
+  };
+}
+
+export async function approveReview(id: string, data?: ModerationActionRequest): Promise<ApiResponse<void>> {
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
     moderationStatus: 'Approved',
+    ...(data?.comment?.trim() ? { comment: data.comment.trim() } : {}),
   });
 }
 
@@ -486,7 +512,7 @@ export async function rejectReview(id: string, data?: ModerationActionRequest): 
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
     moderationStatus: 'Rejected',
-    rejectReason: data?.comment?.trim() || 'Отклонено модератором',
+    comment: data?.comment?.trim() || undefined,
   });
 }
 
@@ -495,44 +521,67 @@ export async function rejectReview(id: string, data?: ModerationActionRequest): 
 export async function getAdminUsers(
   params: { page?: number; pageSize?: number; search?: string; role?: UserRole }
 ): Promise<ApiResponse<PaginatedResult<AdminUser>>> {
-  return httpClient.get(API_ENDPOINTS.USER.LIST, { params });
-}
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 20;
+  const response = await httpClient.get<GetAdminUsersResponse>(
+    API_ENDPOINTS.ADMIN.USERS,
+    { params }
+  );
+  const raw = response.data as unknown as GetAdminUsersResponse;
 
-export async function getAdminUserById(id: string): Promise<ApiResponse<AdminUser>> {
-  return httpClient.get(API_ENDPOINTS.USER.BY_ID(id));
+  return {
+    ...response,
+    data: toPaginatedResult(
+      (raw.items ?? []).map(mapUserToAdmin),
+      response.meta,
+      page,
+      pageSize
+    ),
+  };
 }
 
 export async function updateUserRole(
   id: string,
   data: UpdateUserRoleRequest
-): Promise<ApiResponse<void>> {
-  return httpClient.patch(API_ENDPOINTS.USER.UPDATE_ROLE(id), data);
+): Promise<ApiResponse<string>> {
+  return httpClient.patch<string>(API_ENDPOINTS.ADMIN.USER_ROLE(id), data);
 }
 
-export async function deleteAdminUser(id: string): Promise<ApiResponse<void>> {
-  return httpClient.delete(API_ENDPOINTS.USER.DELETE(id));
+export async function deleteAdminUser(id: string): Promise<ApiResponse<boolean>> {
+  return httpClient.delete<boolean>(API_ENDPOINTS.ADMIN.USER_DELETE(id));
 }
 
 export async function getUserStats(): Promise<ApiResponse<UserStats>> {
-  return httpClient.get(API_ENDPOINTS.USER.STATS);
+  return httpClient.get<UserStats>(API_ENDPOINTS.ADMIN.USER_STATS);
 }
 
 // ==================== Stats ====================
 
 export async function getOverviewStats(): Promise<ApiResponse<OverviewStats>> {
-  return httpClient.get(API_ENDPOINTS.STATS.OVERVIEW);
+  return httpClient.get<OverviewStats>(API_ENDPOINTS.ADMIN.STATS_OVERVIEW);
 }
 
 // ==================== Cache ====================
 
-export async function getCacheKeys(): Promise<ApiResponse<CacheKey[]>> {
-  return httpClient.get(API_ENDPOINTS.CACHE.KEYS);
+export async function getCacheKeys(
+  pattern: string,
+  limit = 100
+): Promise<ApiResponse<string[]>> {
+  const response = await httpClient.get<{ keys: string[]; count: number }>(
+    API_ENDPOINTS.ADMIN.CACHE_KEYS,
+    { params: { pattern, limit } }
+  );
+
+  return {
+    ...response,
+    data: response.data?.keys ?? [],
+  };
 }
 
-export async function clearAllCache(): Promise<ApiResponse<void>> {
-  return httpClient.post(API_ENDPOINTS.CACHE.CLEAR_ALL);
+export async function clearCacheByPattern(pattern: string): Promise<ApiResponse<ClearCacheResponse>> {
+  return httpClient.post<ClearCacheResponse>(API_ENDPOINTS.ADMIN.CACHE.CLEAR, { pattern });
 }
 
 export async function clearCacheByKey(key: string): Promise<ApiResponse<void>> {
-  return httpClient.post(API_ENDPOINTS.CACHE.CLEAR_BY_KEY(key));
+  return httpClient.post<void>(API_ENDPOINTS.ADMIN.CACHE_CLEAR_KEY(key));
 }

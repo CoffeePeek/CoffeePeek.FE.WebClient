@@ -27,14 +27,16 @@ class HttpClient {
 
     try {
       const response = await fetch(fullUrl, requestOptions);
-      const data = await responseInterceptor<any>(response, fullUrl);
-      const normalizedData = normalizeResponseData<T>(data.data ?? data);
+      const { envelope, pagination } = await responseInterceptor<any>(response, fullUrl);
+      const payload = envelope.data ?? envelope;
+      const normalizedData = normalizeResponseData<T>(payload);
 
       return {
         success: true,
-        isSuccess: true,
-        message: data.message || '',
+        isSuccess: envelope.isSuccess ?? envelope.success ?? true,
+        message: envelope.message || '',
         data: normalizedData,
+        meta: pagination,
       };
     } catch (error) {
       throw error;
