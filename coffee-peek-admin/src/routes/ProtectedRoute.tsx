@@ -6,14 +6,16 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
   requireModerator?: boolean;
+  requireOwner?: boolean;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAdmin = false,
   requireModerator = false,
+  requireOwner = false,
 }) => {
-  const { user, isLoading, isAdmin, isModerator } = useUser();
+  const { user, isLoading, isAdmin, isModerator, isOwner } = useUser();
   const location = useLocation();
 
   if (isLoading) {
@@ -33,6 +35,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (requireModerator && !isModerator) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (requireOwner && !isOwner) {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -37,9 +37,9 @@ const ReviewCard: React.FC<{
   onApprove: () => void;
   onReject: () => void;
 }> = ({ review, onApprove, onReject }) => (
-  <div className="p-5 border-b border-border-light dark:border-border-dark last:border-0">
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex-1 min-w-0">
+  <div className="p-4 sm:p-5 border-b border-border-light dark:border-border-dark last:border-0">
+    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+      <div className="flex-1 min-w-0 w-full">
         <div className="flex items-center gap-2 flex-wrap mb-1">
           <span className="font-semibold text-sm text-text-main dark:text-white font-body">{review.header}</span>
           <Badge variant={statusToBadgeVariant(review.status)}>{statusLabels[review.status]}</Badge>
@@ -58,9 +58,13 @@ const ReviewCard: React.FC<{
         </div>
       </div>
       {review.status === 'Pending' && (
-        <div className="flex flex-col gap-1.5 shrink-0">
-          <Button variant="success" size="sm" onClick={onApprove}>Одобрить</Button>
-          <Button variant="danger" size="sm" onClick={onReject}>Отклонить</Button>
+        <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto shrink-0">
+          <Button variant="success" size="sm" onClick={onApprove} className="flex-1 sm:flex-none min-h-[44px] sm:min-h-0">
+            Одобрить
+          </Button>
+          <Button variant="danger" size="sm" onClick={onReject} className="flex-1 sm:flex-none min-h-[44px] sm:min-h-0">
+            Отклонить
+          </Button>
         </div>
       )}
     </div>
@@ -119,9 +123,9 @@ export const ReviewsModerationPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 max-w-4xl">
+    <div className="page-container max-w-4xl">
       <div>
-        <h2 className="text-lg font-bold text-text-main dark:text-white font-display">
+        <h2 className="page-header-title">
           Модерация отзывов
         </h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
@@ -129,13 +133,13 @@ export const ReviewsModerationPage: React.FC = () => {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex gap-1">
+      <div className="filter-bar">
+        <div className="filter-chips">
           {STATUS_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setParam('status', opt.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors font-body ${
+              className={`filter-chip ${
                 status === opt.value
                   ? 'bg-primary text-black'
                   : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
@@ -147,16 +151,18 @@ export const ReviewsModerationPage: React.FC = () => {
         </div>
         <form
           onSubmit={(e) => { e.preventDefault(); setParam('search', localSearch); }}
-          className="flex gap-2 ml-auto"
+          className="search-form"
         >
           <input
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Поиск по тексту..."
-            className="border border-border-light dark:border-border-dark rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary/30 font-body"
+            className="search-input"
           />
-          <Button type="submit" variant="secondary" size="sm">Найти</Button>
+          <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
+            Найти
+          </Button>
         </form>
       </div>
 

@@ -51,11 +51,11 @@ export const DashboardPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="page-container max-w-5xl">
       {/* Greeting */}
       <div>
-        <h2 className="text-xl font-bold text-text-main dark:text-white font-display">
-          Добро пожаловать{user?.email ? `, ${user.email}` : ''}
+        <h2 className="page-header-title">
+          Добро пожаловать{user?.email ? `, ${user.email.split('@')[0]}` : ''}
         </h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-1">
           {isAdmin ? 'Администратор' : isModerator ? 'Модератор' : 'Пользователь'} · CoffeePeek Admin

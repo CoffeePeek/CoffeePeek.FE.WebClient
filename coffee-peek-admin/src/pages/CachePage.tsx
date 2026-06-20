@@ -58,18 +58,16 @@ export const CachePage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="page-container max-w-3xl">
       <div>
-        <h2 className="text-lg font-bold text-text-main dark:text-white font-display">
-          Управление кешем
-        </h2>
+        <h2 className="page-header-title">Управление кешем</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           Просмотр и очистка Redis-кеша по паттерну
         </p>
       </div>
 
-      <form onSubmit={handleSearch} className="flex flex-wrap gap-3 items-end">
-        <div className="flex-1 min-w-[200px]">
+      <form onSubmit={handleSearch} className="filter-bar">
+        <div className="flex-1 min-w-0 w-full">
           <label className="block text-xs font-medium text-text-muted dark:text-stone-400 font-body mb-1.5">
             Redis pattern
           </label>
@@ -78,21 +76,24 @@ export const CachePage: React.FC = () => {
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
             placeholder="user:*"
-            className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary/30 font-mono"
+            className="search-input w-full font-mono"
           />
         </div>
-        <Button type="submit" variant="secondary" size="sm" loading={isFetching}>
-          Найти ключи
-        </Button>
-        <Button
-          type="button"
-          variant="danger"
-          size="sm"
-          onClick={() => setConfirmClearPattern(true)}
-          disabled={!activePattern.includes(':') || clearPatternMutation.isPending}
-        >
-          Очистить по паттерну
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:self-end">
+          <Button type="submit" variant="secondary" size="sm" loading={isFetching} className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
+            Найти ключи
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            onClick={() => setConfirmClearPattern(true)}
+            disabled={!activePattern.includes(':') || clearPatternMutation.isPending}
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0 shrink-0"
+          >
+            Очистить по паттерну
+          </Button>
+        </div>
       </form>
 
       <Card padding="none">

@@ -42,9 +42,9 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative bg-white dark:bg-surface-dark rounded-2xl shadow-xl w-full max-w-md p-6 border border-border-light dark:border-border-dark">
+      <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 border border-border-light dark:border-border-dark max-h-[90dvh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-2">{title}</h3>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mb-4">{message}</p>
 
@@ -58,11 +58,11 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           />
         )}
 
-        <div className="flex gap-3 justify-end">
-          <Button variant="ghost" size="sm" onClick={onCancel} disabled={loading}>
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sm:justify-end">
+          <Button variant="ghost" size="sm" onClick={onCancel} disabled={loading} className="w-full sm:w-auto min-h-[44px]">
             {cancelLabel}
           </Button>
-          <Button variant={variant} size="sm" onClick={handleConfirm} loading={loading}>
+          <Button variant={variant} size="sm" onClick={handleConfirm} loading={loading} className="w-full sm:w-auto min-h-[44px]">
             {confirmLabel}
           </Button>
         </div>

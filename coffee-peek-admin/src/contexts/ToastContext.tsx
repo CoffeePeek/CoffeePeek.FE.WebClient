@@ -60,11 +60,11 @@ const ToastContainer: React.FC<{ toasts: Toast[]; onRemove: (id: string) => void
   if (!toasts.length) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 flex flex-col gap-2 pb-[env(safe-area-inset-bottom)] pointer-events-none">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`${toastColors[toast.type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 min-w-[280px] max-w-sm`}
+          className={`${toastColors[toast.type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 w-full sm:min-w-[280px] sm:max-w-sm pointer-events-auto`}
         >
           <span className="flex-1 text-sm font-body">{toast.message}</span>
           <button

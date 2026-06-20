@@ -6,6 +6,7 @@ import {
   getUserStats,
   updateUserRole,
   deleteAdminUser,
+  blockUser,
   AdminUser,
   UserRole,
 } from '../api/admin';
@@ -62,9 +63,9 @@ const EditRoleModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-surface-dark rounded-2xl shadow-xl w-full max-w-sm p-6 border border-border-light dark:border-border-dark">
+      <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm p-5 sm:p-6 border border-border-light dark:border-border-dark max-h-[90dvh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-1">
           Изменить роль
         </h3>
@@ -87,9 +88,9 @@ const EditRoleModal: React.FC<{
           ))}
         </div>
 
-        <div className="flex gap-3 justify-end">
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={loading}>Отмена</Button>
-          <Button variant="primary" size="sm" onClick={handleSave} loading={loading}>Сохранить</Button>
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sm:justify-end">
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={loading} className="w-full sm:w-auto min-h-[44px] sm:min-h-0">Отмена</Button>
+          <Button variant="primary" size="sm" onClick={handleSave} loading={loading} className="w-full sm:w-auto min-h-[44px] sm:min-h-0">Сохранить</Button>
         </div>
       </div>
     </div>
@@ -117,6 +118,7 @@ export const UsersPage: React.FC = () => {
   const roleFilter = (searchParams.get('role') ?? '') as UserRole | '';
   const [localSearch, setLocalSearch] = useState(search);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [blockingUser, setBlockingUser] = useState<AdminUser | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const { data: stats } = useQuery({
@@ -145,10 +147,20 @@ export const UsersPage: React.FC = () => {
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
   });
 
+  const blockMutation = useMutation({
+    mutationFn: ({ id, blocked }: { id: string; blocked: boolean }) => blockUser(id, { blocked }),
+    onSuccess: (_, { blocked }) => {
+      showToast(blocked ? 'Пользователь заблокирован' : 'Пользователь разблокирован', 'success');
+      qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      setBlockingUser(null);
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteAdminUser(id),
     onSuccess: () => {
-      showToast('Пользователь заблокирован', 'success');
+      showToast('Пользователь удалён (soft delete)', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'users'] });
       setDeletingUserId(null);
     },
@@ -163,9 +175,9 @@ export const UsersPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 max-w-6xl">
+    <div className="page-container">
       <div>
-        <h2 className="text-lg font-bold text-text-main dark:text-white font-display">
+        <h2 className="page-header-title">
           Пользователи
         </h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
@@ -175,7 +187,7 @@ export const UsersPage: React.FC = () => {
 
       {/* Stats row */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <StatCard label="Всего" value={stats.totalUsers} icon={<IconUsers />} />
           <StatCard label="Сегодня" value={stats.registeredToday} icon={<IconUsers />} color="text-green-500" />
           <StatCard label="Активных" value={stats.activeUsers} icon={<IconUsers />} color="text-blue-500" />
@@ -184,13 +196,13 @@ export const UsersPage: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex gap-1 flex-wrap">
+      <div className="filter-bar">
+        <div className="filter-chips">
           {(['', ...ROLES] as (UserRole | '')[]).map((r) => (
             <button
-              key={r}
+              key={r || 'all'}
               onClick={() => setParam('role', r)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors font-body ${
+              className={`filter-chip ${
                 roleFilter === r
                   ? 'bg-primary text-black'
                   : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
@@ -202,16 +214,16 @@ export const UsersPage: React.FC = () => {
         </div>
         <form
           onSubmit={(e) => { e.preventDefault(); setParam('search', localSearch); }}
-          className="flex gap-2 ml-auto"
+          className="search-form"
         >
           <input
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Email или имя..."
-            className="border border-border-light dark:border-border-dark rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary/30 font-body"
+            className="search-input"
           />
-          <Button type="submit" variant="secondary" size="sm">Найти</Button>
+          <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">Найти</Button>
         </form>
       </div>
 
@@ -228,7 +240,7 @@ export const UsersPage: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="table-scroll">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
@@ -254,8 +266,11 @@ export const UsersPage: React.FC = () => {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-medium text-text-main dark:text-white truncate max-w-[160px] font-body text-xs">
+                            <p className="font-medium text-text-main dark:text-white truncate max-w-[160px] font-body text-xs flex items-center gap-1.5">
                               {user.userName ?? user.email}
+                              {user.isBlocked && (
+                                <Badge variant="rejected">Blocked</Badge>
+                              )}
                             </p>
                             {user.userName && (
                               <p className="text-stone-400 text-xs truncate max-w-[160px] font-body">{user.email}</p>
@@ -283,13 +298,21 @@ export const UsersPage: React.FC = () => {
                         {new Date(user.createdAtUtc).toLocaleDateString('ru')}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-1">
+                        <div className="action-buttons min-w-[120px]">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setEditingUser(user)}
                           >
                             Роль
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={user.isBlocked ? 'text-green-500' : 'text-amber-500'}
+                            onClick={() => setBlockingUser(user)}
+                          >
+                            {user.isBlocked ? 'Разблок.' : 'Блок'}
                           </Button>
                           <Button
                             variant="ghost"
@@ -328,10 +351,31 @@ export const UsersPage: React.FC = () => {
       />
 
       <ConfirmModal
+        isOpen={!!blockingUser}
+        title={blockingUser?.isBlocked ? 'Разблокировать пользователя?' : 'Заблокировать пользователя?'}
+        message={
+          blockingUser?.isBlocked
+            ? 'Пользователь снова сможет входить в систему.'
+            : 'Все активные сессии будут отозваны. Вход будет запрещён до разблокировки.'
+        }
+        confirmLabel={blockingUser?.isBlocked ? 'Разблокировать' : 'Заблокировать'}
+        variant={blockingUser?.isBlocked ? 'primary' : 'danger'}
+        onConfirm={async () => {
+          if (blockingUser) {
+            await blockMutation.mutateAsync({
+              id: blockingUser.id,
+              blocked: !blockingUser.isBlocked,
+            });
+          }
+        }}
+        onCancel={() => setBlockingUser(null)}
+      />
+
+      <ConfirmModal
         isOpen={!!deletingUserId}
-        title="Заблокировать пользователя?"
-        message="Пользователь будет помечен как заблокированный, все сессии будут отозваны."
-        confirmLabel="Заблокировать"
+        title="Удалить пользователя (soft delete)?"
+        message="Пользователь будет помечен как удалённый, все сессии отозваны. Отдельно от блокировки."
+        confirmLabel="Удалить"
         variant="danger"
         onConfirm={async () => {
           if (deletingUserId) await deleteMutation.mutateAsync(deletingUserId);

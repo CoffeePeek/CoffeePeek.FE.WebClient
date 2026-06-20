@@ -219,6 +219,45 @@ export interface ClearCacheResponse {
   pattern: string;
 }
 
+export type CoffeeShopStatus = 'Active' | 'TemporarilyClosed' | 'PermanentlyClosed';
+export type PriceRangeLevel = 'Cheap' | 'Moderate' | 'Expensive' | 'Luxury';
+export type AuditEntityType = 'Shop' | 'Review';
+export type AuditAction = 'Approved' | 'Rejected' | 'Pending';
+
+export interface PublishedShop {
+  id: string;
+  name: string;
+  cityId: string;
+  status: CoffeeShopStatus;
+  creatorId: string;
+  ownerUserId: string | null;
+  moderationId: string | null;
+  createdAtUtc: string;
+  isHidden: boolean;
+}
+
+export interface UpdatePublishedShopRequest {
+  name: string;
+  description?: string | null;
+  priceRange: PriceRangeLevel | number;
+  status?: CoffeeShopStatus;
+}
+
+export interface ModerationAuditEntry {
+  id: string;
+  entityType: AuditEntityType;
+  entityId: string;
+  entityName: string;
+  action: AuditAction;
+  moderatorUserId: string;
+  comment: string | null;
+  createdAtUtc: string;
+}
+
+export interface BlockUserRequest {
+  blocked: boolean;
+}
+
 interface ListParams {
   status?: ModerationStatus;
   page?: number;
@@ -551,6 +590,10 @@ export async function deleteAdminUser(id: string): Promise<ApiResponse<boolean>>
   return httpClient.delete<boolean>(API_ENDPOINTS.ADMIN.USER_DELETE(id));
 }
 
+export async function blockUser(id: string, data: BlockUserRequest): Promise<ApiResponse<boolean>> {
+  return httpClient.patch<boolean>(API_ENDPOINTS.ADMIN.USER_BLOCK(id), data);
+}
+
 export async function getUserStats(): Promise<ApiResponse<UserStats>> {
   return httpClient.get<UserStats>(API_ENDPOINTS.ADMIN.USER_STATS);
 }
@@ -559,6 +602,179 @@ export async function getUserStats(): Promise<ApiResponse<UserStats>> {
 
 export async function getOverviewStats(): Promise<ApiResponse<OverviewStats>> {
   return httpClient.get<OverviewStats>(API_ENDPOINTS.ADMIN.STATS_OVERVIEW);
+}
+
+// ==================== Moderation audit ====================
+
+interface GetModerationAuditLogResponse {
+  items: ModerationAuditEntry[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+function mapEnumStatus<T extends string>(value: T | number | undefined, labels: string[]): T {
+  if (value === undefined || value === null) return labels[0] as T;
+  if (typeof value === 'string') return value as T;
+  return (labels[value] ?? labels[0]) as T;
+}
+
+function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
+  return {
+    id: String(shop.id),
+    name: String(shop.name),
+    cityId: String(shop.cityId),
+    status: mapEnumStatus<CoffeeShopStatus>(shop.status as CoffeeShopStatus | number, [
+      'Active',
+      'TemporarilyClosed',
+      'PermanentlyClosed',
+    ]),
+    creatorId: String(shop.creatorId),
+    ownerUserId: shop.ownerUserId ? String(shop.ownerUserId) : null,
+    moderationId: shop.moderationId ? String(shop.moderationId) : null,
+    createdAtUtc: String(shop.createdAtUtc),
+    isHidden: Boolean(shop.isHidden),
+  };
+}
+
+function mapAuditEntry(entry: Record<string, unknown>): ModerationAuditEntry {
+  return {
+    id: String(entry.id),
+    entityType: mapEnumStatus<AuditEntityType>(entry.entityType as AuditEntityType | number, [
+      'Shop',
+      'Review',
+    ]),
+    entityId: String(entry.entityId),
+    entityName: String(entry.entityName),
+    action: mapEnumStatus<AuditAction>(entry.action as AuditAction | number, [
+      'Approved',
+      'Rejected',
+      'Pending',
+    ]),
+    moderatorUserId: String(entry.moderatorUserId),
+    comment: entry.comment ? String(entry.comment) : null,
+    createdAtUtc: String(entry.createdAtUtc),
+  };
+}
+
+export async function getModerationAuditLog(
+  params: {
+    page?: number;
+    pageSize?: number;
+    entityType?: AuditEntityType;
+    action?: AuditAction;
+  } = {}
+): Promise<ApiResponse<PaginatedResult<ModerationAuditEntry>>> {
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 20;
+  const response = await httpClient.get<GetModerationAuditLogResponse>(
+    API_ENDPOINTS.ADMIN.AUDIT_MODERATION,
+    { params }
+  );
+  const raw = response.data as unknown as GetModerationAuditLogResponse;
+
+  return {
+    ...response,
+    data: toPaginatedResult(
+      (raw.items ?? []).map((item) => mapAuditEntry(item as unknown as Record<string, unknown>)),
+      response.meta,
+      page,
+      pageSize
+    ),
+  };
+}
+
+// ==================== Published shops (admin) ====================
+
+interface GetAdminCoffeeShopsResponse {
+  items: Record<string, unknown>[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export async function getPublishedShops(
+  params: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    status?: CoffeeShopStatus;
+  } = {}
+): Promise<ApiResponse<PaginatedResult<PublishedShop>>> {
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 20;
+  const response = await httpClient.get<GetAdminCoffeeShopsResponse>(
+    API_ENDPOINTS.ADMIN.SHOPS,
+    { params }
+  );
+  const raw = response.data as unknown as GetAdminCoffeeShopsResponse;
+
+  return {
+    ...response,
+    data: toPaginatedResult(
+      (raw.items ?? []).map((item) => mapPublishedShop(item)),
+      response.meta,
+      page,
+      pageSize
+    ),
+  };
+}
+
+export async function getPublishedShopById(id: string): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.get<Record<string, unknown>>(API_ENDPOINTS.ADMIN.SHOP_BY_ID(id));
+  return { ...response, data: mapPublishedShop(response.data) };
+}
+
+const PRICE_RANGE_MAP: Record<number, PriceRangeLevel> = {
+  1: 'Cheap',
+  2: 'Moderate',
+  3: 'Expensive',
+  4: 'Luxury',
+};
+
+function normalizePriceRange(value: PriceRangeLevel | number): PriceRangeLevel {
+  if (typeof value === 'number') return PRICE_RANGE_MAP[value] ?? 'Moderate';
+  return value;
+}
+
+export async function updatePublishedShop(
+  id: string,
+  data: UpdatePublishedShopRequest
+): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.put<Record<string, unknown>>(API_ENDPOINTS.ADMIN.SHOP_BY_ID(id), {
+    name: data.name,
+    description: data.description ?? null,
+    priceRange: normalizePriceRange(data.priceRange),
+    status: data.status,
+  });
+
+  return { ...response, data: mapPublishedShop(response.data) };
+}
+
+export async function setPublishedShopVisibility(
+  id: string,
+  hidden: boolean
+): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.patch<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.SHOP_VISIBILITY(id),
+    { hidden }
+  );
+
+  return { ...response, data: mapPublishedShop(response.data) };
+}
+
+export async function assignPublishedShopOwner(
+  id: string,
+  ownerUserId: string | null
+): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.patch<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.SHOP_OWNER(id),
+    { ownerUserId }
+  );
+
+  return { ...response, data: mapPublishedShop(response.data) };
 }
 
 // ==================== Cache ====================

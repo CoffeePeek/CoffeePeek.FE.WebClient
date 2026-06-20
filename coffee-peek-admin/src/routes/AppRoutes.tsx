@@ -10,6 +10,11 @@ const ShopEditPage = lazy(() => import('../pages/ShopEditPage').then((m) => ({ d
 const ReviewsModerationPage = lazy(() => import('../pages/ReviewsModerationPage').then((m) => ({ default: m.ReviewsModerationPage })));
 const UsersPage = lazy(() => import('../pages/UsersPage').then((m) => ({ default: m.UsersPage })));
 const CachePage = lazy(() => import('../pages/CachePage').then((m) => ({ default: m.CachePage })));
+const AuditModerationPage = lazy(() => import('../pages/AuditModerationPage').then((m) => ({ default: m.AuditModerationPage })));
+const PublishedShopsPage = lazy(() => import('../pages/PublishedShopsPage').then((m) => ({ default: m.PublishedShopsPage })));
+const PublishedShopEditPage = lazy(() => import('../pages/PublishedShopEditPage').then((m) => ({ default: m.PublishedShopEditPage })));
+const OwnerShopsPage = lazy(() => import('../pages/OwnerShopsPage').then((m) => ({ default: m.OwnerShopsPage })));
+const OwnerShopEditPage = lazy(() => import('../pages/OwnerShopEditPage').then((m) => ({ default: m.OwnerShopEditPage })));
 
 const Loader = () => (
   <div className="flex-1 flex items-center justify-center">
@@ -58,6 +63,32 @@ export const AppRoutes: React.FC = () => (
         />
 
         <Route
+          path="/published-shops"
+          element={
+            <ProtectedRoute requireAdmin>
+              <PublishedShopsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/published-shops/:id"
+          element={
+            <ProtectedRoute requireAdmin>
+              <PublishedShopEditPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/audit"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AuditModerationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/users"
           element={
             <ProtectedRoute requireAdmin>
@@ -71,6 +102,23 @@ export const AppRoutes: React.FC = () => (
           element={
             <ProtectedRoute requireAdmin>
               <CachePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/my-shops"
+          element={
+            <ProtectedRoute requireOwner>
+              <OwnerShopsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-shops/:id"
+          element={
+            <ProtectedRoute requireOwner>
+              <OwnerShopEditPage />
             </ProtectedRoute>
           }
         />

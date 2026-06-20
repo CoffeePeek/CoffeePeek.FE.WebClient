@@ -129,31 +129,34 @@ export const ShopEditPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl space-y-5">
-      {/* Header */}
-      <div className="flex items-start gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="mt-1 text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg font-bold text-text-main dark:text-white font-display">{shop.name}</h2>
-            <Badge variant={statusToBadgeVariant(shop.status)}>{statusLabels[shop.status]}</Badge>
+    <div className="w-full min-w-0 max-w-2xl space-y-5">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-1 p-2 -ml-2 text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white transition-colors touch-manipulation"
+            aria-label="Назад"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="page-header-title">{shop.name}</h2>
+              <Badge variant={statusToBadgeVariant(shop.status)}>{statusLabels[shop.status]}</Badge>
+            </div>
+            <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5 break-words">{shop.address}</p>
           </div>
-          <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">{shop.address}</p>
         </div>
         {shop.status === 'Pending' && (
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
             <Button
               variant="success"
               size="sm"
               loading={approveMutation.isPending}
               onClick={() => approveMutation.mutate()}
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
             >
               Одобрить
             </Button>
@@ -162,6 +165,7 @@ export const ShopEditPage: React.FC = () => {
               size="sm"
               loading={rejectMutation.isPending}
               onClick={() => rejectMutation.mutate()}
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
             >
               Отклонить
             </Button>

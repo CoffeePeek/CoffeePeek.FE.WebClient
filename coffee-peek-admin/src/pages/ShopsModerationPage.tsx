@@ -81,9 +81,9 @@ export const ShopsModerationPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 max-w-6xl">
+    <div className="page-container">
       <div>
-        <h2 className="text-lg font-bold text-text-main dark:text-white font-display">
+        <h2 className="page-header-title">
           Модерация кофеен
         </h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
@@ -91,14 +91,13 @@ export const ShopsModerationPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex gap-1">
+      <div className="filter-bar">
+        <div className="filter-chips">
           {STATUS_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setParam('status', opt.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors font-body ${
+              className={`filter-chip ${
                 status === opt.value
                   ? 'bg-primary text-black'
                   : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
@@ -108,15 +107,17 @@ export const ShopsModerationPage: React.FC = () => {
             </button>
           ))}
         </div>
-        <form onSubmit={handleSearch} className="flex gap-2 ml-auto">
+        <form onSubmit={handleSearch} className="search-form">
           <input
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Поиск по названию..."
-            className="border border-border-light dark:border-border-dark rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary/30 font-body"
+            className="search-input"
           />
-          <Button type="submit" variant="secondary" size="sm">Найти</Button>
+          <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
+            Найти
+          </Button>
         </form>
       </div>
 
@@ -133,7 +134,7 @@ export const ShopsModerationPage: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="table-scroll">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
@@ -172,7 +173,7 @@ export const ShopsModerationPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         {shop.status === 'Pending' && (
-                          <div className="flex gap-1">
+                          <div className="action-buttons">
                             <Button
                               variant="success"
                               size="sm"

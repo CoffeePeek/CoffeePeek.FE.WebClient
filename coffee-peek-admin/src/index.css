@@ -7,14 +7,61 @@
     box-sizing: border-box;
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply font-body text-text-main bg-background-light dark:bg-background-dark;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 
   :root {
     color-scheme: light dark;
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply space-y-4 sm:space-y-5 w-full min-w-0 max-w-6xl;
+  }
+
+  .page-header-title {
+    @apply text-base sm:text-lg font-bold text-text-main dark:text-white font-display;
+  }
+
+  .filter-bar {
+    @apply flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center;
+  }
+
+  .filter-chips {
+    @apply flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory sm:flex-wrap sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0;
+  }
+
+  .filter-chip {
+    @apply px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-colors font-body whitespace-nowrap snap-start shrink-0 min-h-[36px] sm:min-h-0;
+  }
+
+  .search-form {
+    @apply flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-auto;
+  }
+
+  .search-input {
+    @apply flex-1 min-w-0 border border-border-light dark:border-border-dark rounded-lg px-3 py-2 sm:py-1.5 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary/30 font-body;
+  }
+
+  .table-scroll {
+    @apply overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0;
+  }
+
+  .table-scroll table {
+    @apply min-w-[640px] sm:min-w-0 w-full;
+  }
+
+  .action-buttons {
+    @apply flex flex-wrap gap-1;
   }
 }
 

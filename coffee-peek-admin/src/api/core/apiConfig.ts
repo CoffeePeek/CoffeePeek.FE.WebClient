@@ -15,10 +15,21 @@ export const API_ENDPOINTS = {
     USERS: '/api/admin/users',
     USER_STATS: '/api/admin/users/stats',
     USER_ROLE: (id: string) => `/api/admin/users/${id}/role`,
+    USER_BLOCK: (id: string) => `/api/admin/users/${id}/block`,
     USER_DELETE: (id: string) => `/api/admin/users/${id}`,
+    AUDIT_MODERATION: '/api/admin/audit/moderation',
+    SHOPS: '/api/admin/shops',
+    SHOP_BY_ID: (id: string) => `/api/admin/shops/${id}`,
+    SHOP_VISIBILITY: (id: string) => `/api/admin/shops/${id}/visibility`,
+    SHOP_OWNER: (id: string) => `/api/admin/shops/${id}/owner`,
     CACHE_KEYS: '/api/admin/cache/keys',
     CACHE_CLEAR: '/api/admin/cache/clear',
     CACHE_CLEAR_KEY: (key: string) => `/api/admin/cache/clear/${encodeURIComponent(key)}`,
+  },
+
+  OWNER: {
+    SHOPS: '/api/owner/coffee-shops',
+    SHOP_BY_ID: (id: string) => `/api/owner/coffee-shops/${id}`,
   },
 
   MODERATION: {

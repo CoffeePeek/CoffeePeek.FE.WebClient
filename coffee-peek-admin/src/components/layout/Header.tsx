@@ -22,24 +22,25 @@ export const Header: React.FC<HeaderProps> = ({ title, onToggleSidebar, sidebarC
   const { isDark, toggleTheme } = useTheme();
 
   return (
-    <header className="h-14 bg-white dark:bg-surface-dark border-b border-border-light dark:border-border-dark flex items-center px-4 gap-4 shrink-0">
+    <header className="h-14 bg-white dark:bg-surface-dark border-b border-border-light dark:border-border-dark flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 pt-[env(safe-area-inset-top)]">
       <button
         onClick={onToggleSidebar}
-        className="p-1.5 rounded-lg text-text-muted dark:text-stone-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-        aria-label={sidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
+        className="p-2 -ml-1 rounded-lg text-text-muted dark:text-stone-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors touch-manipulation"
+        aria-label={sidebarCollapsed ? 'Открыть меню' : 'Закрыть меню'}
+        aria-expanded={sidebarCollapsed}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
-      <h1 className="text-sm font-semibold text-text-main dark:text-white font-display flex-1">
+      <h1 className="text-sm font-semibold text-text-main dark:text-white font-display flex-1 truncate min-w-0">
         {title}
       </h1>
 
       <button
         onClick={toggleTheme}
-        className="p-1.5 rounded-lg text-text-muted dark:text-stone-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+        className="p-2 rounded-lg text-text-muted dark:text-stone-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors touch-manipulation shrink-0"
         aria-label="Переключить тему"
       >
         {isDark ? <SunIcon /> : <MoonIcon />}

@@ -18,30 +18,40 @@ export const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPage
   });
 
   return (
-    <div className="flex items-center justify-center gap-1 mt-4">
+    <div className="flex items-center justify-center gap-1 mt-2 sm:mt-4 flex-wrap">
       <Button
         variant="ghost"
         size="sm"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
+        aria-label="Предыдущая страница"
       >
         ←
       </Button>
-      {pages.map((p) => (
-        <Button
-          key={p}
-          variant={p === page ? 'primary' : 'ghost'}
-          size="sm"
-          onClick={() => onPageChange(p)}
-        >
-          {p}
-        </Button>
-      ))}
+
+      <span className="sm:hidden px-2 text-xs text-text-muted dark:text-stone-400 font-body tabular-nums">
+        {page} / {totalPages}
+      </span>
+
+      <div className="hidden sm:flex items-center gap-1">
+        {pages.map((p) => (
+          <Button
+            key={p}
+            variant={p === page ? 'primary' : 'ghost'}
+            size="sm"
+            onClick={() => onPageChange(p)}
+          >
+            {p}
+          </Button>
+        ))}
+      </div>
+
       <Button
         variant="ghost"
         size="sm"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
+        aria-label="Следующая страница"
       >
         →
       </Button>
