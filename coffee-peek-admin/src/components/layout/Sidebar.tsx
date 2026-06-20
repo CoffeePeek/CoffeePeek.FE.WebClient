@@ -36,15 +36,6 @@ const IconCache = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582 4-8 4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4S4 18.21 4 17" />
   </svg>
 );
-const IconChevron = ({ open }: { open: boolean }) => (
-  <svg
-    className={`w-4 h-4 transition-transform ${open ? 'rotate-0' : '-rotate-90'}`}
-    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-  </svg>
-);
-
 const NAV_ITEMS: NavItem[] = [
   { path: '/dashboard', label: 'Дашборд', icon: <IconDashboard /> },
   { path: '/shops', label: 'Кофейни', icon: <IconShop />, moderatorOnly: true },
