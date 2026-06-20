@@ -2,7 +2,7 @@
  * Утилиты для работы с темами
  */
 
-import { COLORS } from '../constants/colors';
+import { brand, COLORS } from '../design-system/tokens';
 
 export type Theme = 'dark' | 'light';
 
@@ -54,33 +54,33 @@ export const getThemeClasses = (theme: Theme) => {
     border: {
       default: theme === 'light' ? 'border-gray-200' : hexToBorderTailwind(colors.border),
       hover: theme === 'light' ? 'border-gray-300' : hexToBorderTailwind(colors.borderHover),
-      focus: hexToBorderTailwind(COLORS.primary),
-      active: `${hexToBorderTailwind(COLORS.primary)}/30`,
-      activeHover: `hover:${hexToBorderTailwind(COLORS.primary)}/30`,
+      focus: hexToBorderTailwind(brand.primary),
+      active: `${hexToBorderTailwind(brand.primary)}/30`,
+      activeHover: `hover:${hexToBorderTailwind(brand.primary)}/30`,
       badge: theme === 'light' ? 'border-gray-200' : hexToBorderTailwind(colors.border),
       subtle: hexToBorderTailwind(colors.borderSubtle),
     },
     // Effects
     effects: {
-      glow: `${hexToTailwind(COLORS.primary)}/${theme === 'light' ? '10' : '5'}`,
-      iconBg: `${hexToTailwind(COLORS.primary)}/10`,
+      glow: `${hexToTailwind(brand.primary)}/${theme === 'light' ? '10' : '5'}`,
+      iconBg: `${hexToTailwind(brand.primary)}/10`,
       shadowCard: theme === 'light' ? 'shadow-gray-200/50' : 'shadow-black/50',
     },
     // Primary color (accent)
     primary: {
-      text: hexToTextTailwind(COLORS.primary),
-      bg: hexToTailwind(COLORS.primary),
-      bgHover: `hover:${hexToTailwind(COLORS.primaryHover)}`,
-      bgLight: `${hexToTailwind(COLORS.primary)}/10`,
-      bgLighter: `${hexToTailwind(COLORS.primary)}/5`,
-      border: hexToBorderTailwind(COLORS.primary),
-      borderHover: `hover:${hexToBorderTailwind(COLORS.primary)}`,
-      borderLight: `${hexToBorderTailwind(COLORS.primary)}/30`,
-      borderLighter: `${hexToBorderTailwind(COLORS.primary)}/20`,
-      hover: `hover:${hexToTextTailwind(COLORS.primary)}`,
+      text: hexToTextTailwind(brand.primary),
+      bg: hexToTailwind(brand.primary),
+      bgHover: `hover:${hexToTailwind(brand.primaryHover)}`,
+      bgLight: `${hexToTailwind(brand.primary)}/10`,
+      bgLighter: `${hexToTailwind(brand.primary)}/5`,
+      border: hexToBorderTailwind(brand.primary),
+      borderHover: `hover:${hexToBorderTailwind(brand.primary)}`,
+      borderLight: `${hexToBorderTailwind(brand.primary)}/30`,
+      borderLighter: `${hexToBorderTailwind(brand.primary)}/20`,
+      hover: `hover:${hexToTextTailwind(brand.primary)}`,
       shadow: 'shadow-[0_4px_6px_-4px_rgba(180,140,75,0.2),_0_10px_15px_-3px_rgba(180,140,75,0.2)]',
-      ring: `focus:ring-[${COLORS.primary}]/10`,
-      ringFocus: `focus:ring-[3px] focus:ring-[${COLORS.primary}]/10`,
+      ring: `focus:ring-[${brand.primary}]/10`,
+      ringFocus: `focus:ring-[3px] focus:ring-[${brand.primary}]/10`,
     },
     // Buttons
     button: {

@@ -1,5 +1,5 @@
 /**
- * API модуль для модерации кофеен
+ * API модуль для отправки кофеен и отзывов
  */
 
 import { httpClient } from './core/httpClient';
@@ -8,70 +8,12 @@ import { ApiResponse } from './core/types';
 
 // ==================== Types ====================
 
-export enum ModerationStatus {
-  Pending = 0,
-  Approved = 1,
-  Rejected = 2,
-}
-
-export interface ModerationReviewDto {
-  id: string;
-  header: string;
-  comment: string;
-  userId: string;
-  userName: string;
-  shopId: string;
-  shopName?: string;
-  ratingCoffee: number;
-  ratingPlace: number;
-  ratingService: number;
-  rejectedReason?: string | null;
-  moderatedBy?: string | null;
-  moderatedAt?: string | null;
-  moderationStatus: ModerationStatus;
-  createdAt?: string;
-}
-
-export interface UpdateReviewModerationStatusRequest {
-  moderationReviewId: string;
-  moderationStatus: ModerationStatus;
-  rejectReason?: string | null;
-}
-
-export interface SendReviewToModerationRequest {
-  shopId: string;
-  header: string;
-  comment: string;
-  ratingService: number;
-  ratingPlace: number;
-  ratingCoffee: number;
-}
-
-export interface UpdateCoffeeShopReviewRequest {
-  header: string;
-  comment: string;
-  ratingCoffee: number;
-  ratingService: number;
-  ratingPlace: number;
-}
-
-export interface CreateEntityResponse {
-  id: string;
-}
-
-export interface UpdateEntityResponse<T> {
-  id: string;
-  data: T;
-}
-
 export interface ModerationShopPhoto {
   fileName: string;
   contentType: string;
   storageKey: string;
   size: number;
 }
-
-// ==================== Backend DTO Types ====================
 
 /**
  * Интервал работы кофейни (соответствует ShopScheduleIntervalDto на бэкенде)
@@ -109,8 +51,6 @@ export interface ShortPhotoMetadataDto {
   fullUrl: string;
 }
 
-// ==================== Frontend Types ====================
-
 /**
  * Упрощенный формат расписания для работы на фронтенде
  */
@@ -130,62 +70,13 @@ export interface FrontendShopContact {
   instagram?: string;
 }
 
-export interface ModerationShop {
+export interface CreateEntityResponse {
   id: string;
-  name: string;
-  notValidatedAddress?: string;
-  description?: string;
-  priceRange?: number;
-  cityId?: string;
-  userId: string;
-  moderationStatus: number;
-  status: number;
-  shopContact?: {
-    phone?: string;
-    email?: string;
-    website?: string;
-    instagram?: string;
-  } | null;
-  schedules?: Array<{
-    dayOfWeek: number;
-    openTime?: string;
-    closeTime?: string;
-  }>;
-  equipmentIds?: string[];
-  coffeeBeanIds?: string[];
-  roasterIds?: string[];
-  brewMethodIds?: string[];
-  shopPhotos?: ModerationShopPhoto[];
 }
 
-export interface UpdateModerationShopRequest {
+export interface UpdateEntityResponse<T> {
   id: string;
-  name?: string;
-  notValidatedAddress?: string;
-  description?: string;
-  priceRange?: number | string;
-  cityId?: string;
-  shopContact?: {
-    phone?: string;
-    email?: string;
-    website?: string;
-    instagram?: string;
-  };
-  schedules?: Array<{
-    dayOfWeek: number;
-    openTime?: string;
-    closeTime?: string;
-  }>;
-  equipmentIds?: string[];
-  coffeeBeanIds?: string[];
-  roasterIds?: string[];
-  brewMethodIds?: string[];
-  shopPhotos?: (string | ModerationShopPhoto)[];
-}
-
-export interface UpdateModerationStatusRequest {
-  id: string;
-  status: "Approved" | "Rejected" | "Pending";
+  data: T;
 }
 
 export interface UploadUrlRequest {
@@ -225,6 +116,23 @@ export interface SendCoffeeShopToModerationRequest {
     storageKey: string;
     size: number;
   }>;
+}
+
+export interface SendReviewToModerationRequest {
+  shopId: string;
+  header: string;
+  comment: string;
+  ratingService: number;
+  ratingPlace: number;
+  ratingCoffee: number;
+}
+
+export interface UpdateCoffeeShopReviewRequest {
+  header: string;
+  comment: string;
+  ratingCoffee: number;
+  ratingService: number;
+  ratingPlace: number;
 }
 
 // ==================== Transformation Functions ====================
@@ -270,7 +178,6 @@ export function transformSchedulesFromBackend(
     .filter(schedule => !schedule.isClosed && schedule.intervals && schedule.intervals.length > 0)
     .map(schedule => {
       const interval = schedule.intervals![0];
-      // Преобразуем "HH:mm:ss" в "HH:mm"
       const openTime = interval.openTime.substring(0, 5);
       const closeTime = interval.closeTime.substring(0, 5);
       return {
@@ -322,102 +229,6 @@ export function transformContactFromBackend(
 // ==================== API Functions ====================
 
 /**
- * Получает все кофейни на модерации
- */
-export async function getModerationShops(
-  accessToken: string
-): Promise<ApiResponse<ModerationShop[]>> {
-  return httpClient.get<ModerationShop[]>(API_ENDPOINTS.MODERATION.SHOP, {
-    requiresAuth: true,
-  });
-}
-
-/**
- * Обновляет данные кофейни на модерации
- */
-export async function updateModerationShop(
-  accessToken: string,
-  shopData: UpdateModerationShopRequest
-): Promise<ApiResponse<ModerationShop>> {
-  // Преобразуем данные в формат бэкенда
-  const backendData: any = {
-    id: shopData.id,
-    name: shopData.name,
-    address: shopData.notValidatedAddress, // На бэкенде поле называется Address
-    description: shopData.description,
-    priceRange: shopData.priceRange,
-    cityId: shopData.cityId,
-    shopContact: shopData.shopContact
-      ? transformContactToBackend(shopData.shopContact)
-      : undefined,
-    schedules: shopData.schedules
-      ? transformSchedulesToBackend(shopData.schedules)
-      : undefined,
-    equipmentIds: shopData.equipmentIds,
-    coffeeBeanIds: shopData.coffeeBeanIds,
-    roasterIds: shopData.roasterIds,
-    brewMethodIds: shopData.brewMethodIds,
-    shopPhotos: shopData.shopPhotos?.map(photo => {
-      if (typeof photo === 'string') {
-        return { fileName: '', contentType: '', storageKey: photo, size: 0 };
-      }
-      return {
-        fileName: photo.fileName,
-        contentType: photo.contentType,
-        storageKey: photo.storageKey,
-        size: photo.size,
-      };
-    }),
-  };
-
-  // Формируем FormData для отправки
-  const formData = new FormData();
-
-  Object.entries(backendData).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (Array.isArray(value)) {
-        // Для массивов примитивов добавляем каждый элемент отдельно
-        if (value.length > 0 && typeof value[0] === 'object') {
-          // Для массивов объектов сериализуем весь массив
-          formData.append(key, JSON.stringify(value));
-        } else {
-          // Для массивов примитивов добавляем каждый элемент
-        value.forEach((item) => formData.append(key, String(item)));
-        }
-      } else if (typeof value === "object") {
-        formData.append(key, JSON.stringify(value));
-      } else {
-        formData.append(key, String(value));
-      }
-    }
-  });
-
-  return httpClient.put<ModerationShop>(
-    API_ENDPOINTS.MODERATION.SHOP,
-    formData,
-    { requiresAuth: true }
-  );
-}
-
-/**
- * Обновляет статус модерации кофейни
- */
-export async function updateModerationStatus(
-  accessToken: string,
-  id: string,
-  status: "Approved" | "Rejected" | "Pending"
-): Promise<ApiResponse<void>> {
-  return httpClient.put<void>(
-    API_ENDPOINTS.MODERATION.SHOP_STATUS,
-    undefined,
-    {
-      params: { id, status },
-      requiresAuth: true,
-    }
-  );
-}
-
-/**
  * Получает URL для загрузки фотографий
  */
 export async function getUploadUrls(
@@ -432,16 +243,15 @@ export async function getUploadUrls(
 }
 
 /**
- * Отправляет кофейню на модерацию
+ * Отправляет кофейню
  */
 export async function sendCoffeeShopToModeration(
   accessToken: string,
   shopData: SendCoffeeShopToModerationRequest
-): Promise<ApiResponse<ModerationShop>> {
-  // Преобразуем данные в формат бэкенда
+): Promise<ApiResponse<{ id: string }>> {
   const backendData: any = {
     name: shopData.name,
-    address: shopData.notValidatedAddress, // На бэкенде поле называется Address
+    address: shopData.notValidatedAddress,
     description: shopData.description,
     priceRange: shopData.priceRange,
     cityId: shopData.cityId,
@@ -458,7 +268,7 @@ export async function sendCoffeeShopToModeration(
     shopPhotos: shopData.shopPhotos,
   };
 
-  return httpClient.post<ModerationShop>(
+  return httpClient.post<{ id: string }>(
     API_ENDPOINTS.MODERATION.SHOP,
     backendData,
     { requiresAuth: true }
@@ -466,39 +276,7 @@ export async function sendCoffeeShopToModeration(
 }
 
 /**
- * Получает все отзывы на модерации
- */
-export async function getModerationReviews(): Promise<ApiResponse<ModerationReviewDto[]>> {
-  return httpClient.get<ModerationReviewDto[]>(API_ENDPOINTS.MODERATION.REVIEWS, {
-    requiresAuth: true,
-  });
-}
-
-/**
- * Обновляет статус модерации отзыва
- */
-export async function updateReviewModerationStatus(
-  moderationReviewId: string,
-  moderationStatus: ModerationStatus,
-  rejectReason?: string | null
-): Promise<ApiResponse<UpdateEntityResponse<ModerationStatus>>> {
-  const request: UpdateReviewModerationStatusRequest = {
-    moderationReviewId,
-    moderationStatus,
-    rejectReason: rejectReason || null,
-  };
-  
-  return httpClient.put<UpdateEntityResponse<ModerationStatus>>(
-    API_ENDPOINTS.MODERATION.REVIEW_STATUS,
-    request,
-    {
-      requiresAuth: true,
-    }
-  );
-}
-
-/**
- * Отправляет отзыв на модерацию
+ * Отправляет отзыв
  */
 export async function sendReviewToModeration(
   reviewData: SendReviewToModerationRequest
@@ -513,7 +291,7 @@ export async function sendReviewToModeration(
 }
 
 /**
- * Обновляет отзыв на модерации
+ * Обновляет отзыв
  */
 export async function updateCoffeeShopReview(
   reviewId: string,

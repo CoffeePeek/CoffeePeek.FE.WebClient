@@ -11,11 +11,6 @@ const PUBLIC_NAV = [
   { id: 'jobs',        label: 'Работа',  route: '/dashboard?page=jobs', match: (p: string) => p.includes('jobs')       },
 ] as const;
 
-const ADMIN_NAV = [
-  { id: 'moderation', label: 'Модерация',    route: '/dashboard?page=moderation', match: (p: string) => p.includes('moderation') },
-  { id: 'admin',      label: 'Админ панель', route: '/dashboard?page=admin',      match: (p: string) => p.includes('admin')      },
-] as const;
-
 const Header: React.FC = () => {
   const { theme } = useTheme();
   const { user, logout } = useUser();
@@ -28,10 +23,7 @@ const Header: React.FC = () => {
   const gold = COLORS.primary;
   const goldWarm = '#D4A84B';
 
-  const allNav = [
-    ...PUBLIC_NAV,
-    ...(user?.isAdmin ? ADMIN_NAV : []),
-  ];
+  const allNav = [...PUBLIC_NAV];
 
   const currentPath = location.pathname + location.search;
   const currentId = allNav.find(n => n.match(currentPath))?.id ?? '';

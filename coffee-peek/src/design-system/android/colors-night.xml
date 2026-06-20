@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CoffeePeek Design System — Android dark theme
+  Скопируйте в: app/src/main/res/values-night/colors.xml
+-->
+<resources>
+    <color name="theme_background">#1A1412</color>
+    <color name="theme_surface">#2D241F</color>
+    <color name="theme_surface_alt">#2D241F</color>
+    <color name="theme_card">#2D241F</color>
+    <color name="theme_input">#1A1412</color>
+    <color name="theme_badge">#2D241F</color>
+    <color name="theme_text_primary">#FFFFFF</color>
+    <color name="theme_text_secondary">#A39E93</color>
+    <color name="theme_text_muted">#A8A8A8</color>
+    <color name="theme_text_tertiary">#5C544F</color>
+    <color name="theme_text_on_primary">#1A1412</color>
+    <color name="theme_border">#3D2F28</color>
+    <color name="theme_border_subtle">#3D2F28</color>
+    <color name="theme_border_hover">#4A3D35</color>
+    <color name="theme_overlay">#80000000</color>
+</resources>

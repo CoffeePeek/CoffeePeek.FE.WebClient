@@ -73,18 +73,9 @@ export const API_ENDPOINTS = {
 
   MODERATION: {
     SHOP: "/api/ModerationShops",
-    SHOP_STATUS: "/api/ModerationShops/status",
     UPLOAD_URLS: "/api/Moderation/upload-urls",
     REVIEWS: "/api/ModerationReviews",
-    REVIEW_STATUS: "/api/ModerationReviews/status",
     REVIEW_UPDATE: (reviewId: string) => `/api/ModerationReviews/${reviewId}`,
-  },
-
-  ADMIN: {
-    ACCOUNT_ROLE: "/api/admin/account/role",
-    CACHE: (service: string) => `/api/admin/${service}/cache`,
-    CACHE_CATEGORIES: (service: string) =>
-      `/api/admin/${service}/cache/categories`,
   },
 } as const;
 

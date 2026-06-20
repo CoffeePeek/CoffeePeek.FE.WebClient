@@ -1,13 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { parseJWT, getUserRoles, getUserEmail, getUserId, isTokenExpired, isEmailVerified } from '../utils/jwt';
+import { getUserRoles, getUserEmail, getUserId, isTokenExpired, isEmailVerified } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
 
 export interface AppUser {
   id: string | null;
   email: string | null;
   roles: string[];
-  isModerator: boolean;
-  isAdmin: boolean;
   emailConfirmed: boolean;
 }
 
@@ -47,22 +45,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const id = getUserId(token);
     const emailConfirmed = isEmailVerified(token);
 
-    // Роли могут быть "User" и "Admin"
-    // Admin имеет права модератора и администратора
-    const isAdmin = roles.some(role =>
-      role.toLowerCase() === 'admin' ||
-      role.toLowerCase() === 'administrator'
-    );
-
-    // Модератор = Admin (так как ролей только User и Admin)
-    const isModerator = isAdmin;
-
     setUser({
       id: id || '',
       email: email || '',
       roles,
-      isModerator,
-      isAdmin,
       emailConfirmed,
     });
   };
@@ -79,7 +65,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
     setIsLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Запускаем только один раз при монтировании
+  }, []);
 
   return (
     <UserContext.Provider value={{ user, isLoading, updateUserFromToken, logout }}>
@@ -87,4 +73,3 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     </UserContext.Provider>
   );
 };
-

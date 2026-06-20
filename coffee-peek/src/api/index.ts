@@ -24,8 +24,5 @@ export * from './coffeeshop';
 // Moderation
 export * from './moderation';
 
-// Admin
-export * from './admin';
-
 // User
 export * from './user';
