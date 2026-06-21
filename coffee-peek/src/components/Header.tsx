@@ -8,7 +8,6 @@ import { COLORS } from '../constants/colors';
 const PUBLIC_NAV = [
   { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
   { id: 'map',         label: 'Карта',   route: '/dashboard?page=map',  match: (p: string) => p.includes('map')        },
-  { id: 'jobs',        label: 'Работа',  route: '/dashboard?page=jobs', match: (p: string) => p.includes('jobs')       },
 ] as const;
 
 const Header: React.FC = () => {

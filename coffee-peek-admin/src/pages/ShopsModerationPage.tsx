@@ -83,9 +83,7 @@ export const ShopsModerationPage: React.FC = () => {
   return (
     <div className="page-container">
       <div>
-        <h2 className="page-header-title">
-          Модерация кофеен
-        </h2>
+        <h2 className="page-header-title">Модерация кофеен</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           {data ? `Всего: ${data.totalCount}` : 'Загрузка...'}
         </p>
@@ -121,96 +119,170 @@ export const ShopsModerationPage: React.FC = () => {
         </form>
       </div>
 
-      <Card padding="none">
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-14 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        ) : !data?.items.length ? (
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-28 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
+          ))}
+        </div>
+      ) : !data?.items.length ? (
+        <Card>
           <div className="p-12 text-center">
             <p className="text-text-muted dark:text-stone-400 text-sm font-body">Кофейни не найдены</p>
           </div>
-        ) : (
-          <>
+        </Card>
+      ) : (
+        <>
+          <div className="space-y-3 lg:hidden">
+            {data.items.map((shop) => (
+              <Card key={shop.id} padding="md">
+                <div className="flex gap-3">
+                  {shop.photos?.[0] ? (
+                    <img
+                      src={shop.photos[0].fullUrl}
+                      alt=""
+                      className="w-16 h-16 rounded-lg object-cover shrink-0 border border-border-light dark:border-border-dark"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg shrink-0 bg-gray-100 dark:bg-white/5 border border-border-light dark:border-border-dark" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link
+                        to={`/shops/${shop.id}`}
+                        className="font-medium text-text-main dark:text-white hover:text-primary font-body line-clamp-2"
+                      >
+                        {shop.name}
+                      </Link>
+                      <Badge variant={statusToBadgeVariant(shop.status)}>
+                        {statusLabels[shop.status]}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1 line-clamp-2">
+                      {shop.address}
+                    </p>
+                    {shop.description && (
+                      <p className="text-xs text-text-muted dark:text-stone-500 font-body mt-1 line-clamp-2">
+                        {shop.description}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <Link to={`/shops/${shop.id}`} className="flex-1 min-w-[120px]">
+                        <Button variant="primary" size="sm" className="w-full">Открыть</Button>
+                      </Link>
+                      {shop.status === 'Pending' && (
+                        <>
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={() => setPendingAction({ id: shop.id, type: 'approve' })}
+                          >
+                            ✓
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => setPendingAction({ id: shop.id, type: 'reject' })}
+                          >
+                            ✕
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <Card padding="none" className="hidden lg:block">
             <div className="table-scroll">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
-                    <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Название</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden sm:table-cell">Адрес</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Владелец</th>
+                    <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-16" />
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Название</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Адрес</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Описание</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Статус</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Дата</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">
                   {data.items.map((shop) => (
-                    <tr key={shop.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                    <tr key={shop.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors align-top">
                       <td className="px-5 py-3">
+                        {shop.photos?.[0] ? (
+                          <img
+                            src={shop.photos[0].fullUrl}
+                            alt=""
+                            className="w-12 h-12 rounded-lg object-cover border border-border-light dark:border-border-dark"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-white/5 border border-border-light dark:border-border-dark" />
+                        )}
+                      </td>
+                      <td className="px-4 py-3 max-w-[200px]">
                         <Link
                           to={`/shops/${shop.id}`}
-                          className="font-medium text-text-main dark:text-white hover:text-primary dark:hover:text-primary transition-colors font-body"
+                          className="font-medium text-text-main dark:text-white hover:text-primary transition-colors font-body"
                         >
                           {shop.name}
                         </Link>
+                        <p className="text-xs text-text-muted dark:text-stone-500 font-body mt-1">
+                          {shop.photos?.length ? `${shop.photos.length} фото` : 'Без фото'}
+                        </p>
                       </td>
-                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 hidden sm:table-cell max-w-[180px] truncate font-body">
-                        {shop.address}
+                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 max-w-[220px] font-body">
+                        <span className="line-clamp-3">{shop.address}</span>
                       </td>
-                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 hidden md:table-cell font-body">
-                        {shop.ownerEmail ?? '—'}
+                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 max-w-[260px] font-body">
+                        <span className="line-clamp-3">{shop.description || '—'}</span>
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant={statusToBadgeVariant(shop.status)}>
                           {statusLabels[shop.status]}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden lg:table-cell font-body">
-                        {new Date(shop.createdAtUtc).toLocaleDateString('ru')}
-                      </td>
                       <td className="px-4 py-3">
-                        {shop.status === 'Pending' && (
-                          <div className="action-buttons">
-                            <Button
-                              variant="success"
-                              size="sm"
-                              onClick={() => setPendingAction({ id: shop.id, type: 'approve' })}
-                            >
-                              Одобрить
-                            </Button>
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => setPendingAction({ id: shop.id, type: 'reject' })}
-                            >
-                              Отклонить
-                            </Button>
-                          </div>
-                        )}
-                        {shop.status !== 'Pending' && (
+                        <div className="action-buttons justify-end">
                           <Link to={`/shops/${shop.id}`}>
-                            <Button variant="ghost" size="sm">Детали</Button>
+                            <Button variant="primary" size="sm">Открыть</Button>
                           </Link>
-                        )}
+                          {shop.status === 'Pending' && (
+                            <>
+                              <Button
+                                variant="success"
+                                size="sm"
+                                onClick={() => setPendingAction({ id: shop.id, type: 'approve' })}
+                              >
+                                Одобрить
+                              </Button>
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => setPendingAction({ id: shop.id, type: 'reject' })}
+                              >
+                                Отклонить
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
-              <Pagination
-                page={page}
-                totalPages={data.totalPages}
-                onPageChange={(p) => setParam('page', String(p))}
-              />
-            </div>
-          </>
-        )}
-      </Card>
+          </Card>
+
+          <Pagination
+            page={page}
+            totalPages={data.totalPages}
+            onPageChange={(p) => setParam('page', String(p))}
+          />
+        </>
+      )}
 
       <ConfirmModal
         isOpen={pendingAction?.type === 'approve'}

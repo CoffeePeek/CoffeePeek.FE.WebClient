@@ -147,7 +147,6 @@ export const AppRoutes: React.FC = () => {
         {/* Legacy redirects */}
         <Route path="/coffeeshops" element={<Navigate to="/shops" replace />} />
         <Route path="/map" element={<Navigate to="/dashboard?page=map" replace />} />
-        <Route path="/jobs" element={<Navigate to="/dashboard?page=jobs" replace />} />
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/error" replace />} />

@@ -193,7 +193,6 @@ const LandingPage: React.FC = () => {
   if (step === VerificationStep.LANDING) {
     const features = [
       { icon: 'explore',      title: 'Карта кофеен',    desc: 'Найди лучшие кофейни поблизости с подробной информацией, фото и живыми отзывами.' },
-      { icon: 'work',         title: 'Поиск работы',    desc: 'Вакансии для бариста, обжарщиков и других специалистов кофейной индустрии.' },
       { icon: 'science',      title: 'Инструменты',     desc: 'Подробные описания всех инструментов и методов приготовления кофе.' },
       { icon: 'rate_review',  title: 'Чек-ины и отзывы', desc: 'Оценивай кофейни, оставляй отзывы и делись впечатлениями с друзьями.' },
       { icon: 'trending_up',  title: 'Рейтинги',        desc: 'Персональная система оценок и рекомендаций на основе твоих предпочтений.' },
@@ -203,11 +202,9 @@ const LandingPage: React.FC = () => {
     const navTabs = [
       { label: 'Кофейни', href: '/shops' },
       { label: 'Карта',   href: '/dashboard?page=map' },
-      { label: 'Работа',  href: '/dashboard?page=jobs' },
     ];
     const footerCols = [
       { t: 'Продукт',  items: ['Кофейни', 'Карта', 'Журнал', 'Инструменты'] },
-      { t: 'Карьера',  items: ['Вакансии', 'Партнёрам', 'Стажировки'] },
       { t: 'Компания', items: ['О нас', 'Блог', 'Контакты'] },
       { t: 'Помощь',   items: ['FAQ', 'Поддержка', 'Условия', 'Политика'] },
     ];
@@ -292,7 +289,7 @@ const LandingPage: React.FC = () => {
 
                 {/* Description */}
                 <p className="mt-5 lg:mt-6 mx-auto lg:mx-0 max-w-[320px] lg:max-w-[520px] font-body text-[14px] lg:text-[17px] leading-[1.55] text-[#A39E93]">
-                  Удобный инструмент для любителей кофе. Открой для себя лучшие кофейни, найди работу в индустрии и делись впечатлениями с единомышленниками.
+                  Удобный инструмент для любителей кофе. Открой для себя лучшие кофейни, оставляй отзывы и делись впечатлениями с единомышленниками.
                 </p>
 
                 {/* CTAs */}
@@ -323,7 +320,7 @@ const LandingPage: React.FC = () => {
               style={{ background: 'rgba(45,36,31,0.55)', backdropFilter: 'blur(12px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
               {/* Mobile: 2x2 grid */}
               <div className="grid grid-cols-2 gap-4 lg:hidden">
-                {[['2 480+','Кофеен'],['58 тыс.','Отзывов'],['120+','Вакансий'],['4.8★','Средняя оценка']].map(([v,l]) => (
+                {[['2 480+','Кофеен'],['58 тыс.','Отзывов'],['12 тыс.+','Чек-инов'],['4.8★','Средняя оценка']].map(([v,l]) => (
                   <div key={l}>
                     <div className="font-display font-bold text-[22px] tracking-[-0.02em] text-white leading-none">{v}</div>
                     <div className="mt-1 font-body text-[10px] text-[#A39E93] uppercase tracking-[.04em]">{l}</div>
@@ -332,7 +329,7 @@ const LandingPage: React.FC = () => {
               </div>
               {/* Desktop: row */}
               <div className="hidden lg:flex items-center justify-between gap-8">
-                {[['2 480+','кофеен на карте'],['58 тыс.','отзывов'],['120+','вакансий'],['4.8★','средняя оценка']].map(([v,l], i, arr) => (
+                {[['2 480+','кофеен на карте'],['58 тыс.','отзывов'],['12 тыс.+','чек-инов'],['4.8★','средняя оценка']].map(([v,l], i, arr) => (
                   <React.Fragment key={l}>
                     <div className="text-left">
                       <div className="font-display font-bold text-[32px] tracking-[-0.02em] text-white leading-none">{v}</div>
@@ -361,7 +358,7 @@ const LandingPage: React.FC = () => {
                 <article key={title}
                   className="relative rounded-[18px] lg:rounded-[20px] p-4 lg:p-[22px] border border-[#3D2F28] transition-all duration-200 hover:-translate-y-[2px] cursor-pointer group"
                   style={{ background: '#2D241F', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
-                  {(i === 0 || i === 5) && (
+                  {(i === 0 || i === 4) && (
                     <div className="absolute top-[-30px] right-[-30px] w-[120px] h-[120px] rounded-full pointer-events-none"
                       style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.12), transparent 60%)' }} />
                   )}
@@ -390,7 +387,7 @@ const LandingPage: React.FC = () => {
               <div className="relative">
                 <span className="font-body font-bold text-[10px] lg:text-[11px] uppercase tracking-[.08em] text-[#EAB308]">Присоединяйся к сообществу</span>
                 <h2 className="mt-[6px] font-display font-bold text-[20px] lg:text-[32px] tracking-[-0.02em] text-white leading-[1.15]">
-                  Делись опытом и открывай<br className="hidden lg:block" />новые места в индустрии.
+                  Делись опытом и открывай<br className="hidden lg:block" />новые кофейни рядом с тобой.
                 </h2>
               </div>
               <button onClick={() => navigate('/register')}
@@ -413,10 +410,10 @@ const LandingPage: React.FC = () => {
                   <span className="font-display font-bold text-[17px] text-white">Coffee<span className="text-[#EAB308]">Peek</span></span>
                 </div>
                 <p className="mt-3 font-body text-[13px] text-[#A39E93] leading-[1.55]">
-                  Проводник в мире кофе. Карта, отзывы, работа, инструменты и сообщество — в одном приложении.
+                  Проводник в мире кофе. Карта, отзывы, инструменты и сообщество — в одном приложении.
                 </p>
               </div>
-              <div className="grid grid-cols-4 gap-14">
+              <div className="grid grid-cols-3 gap-14">
                 {footerCols.map((col) => (
                   <div key={col.t}>
                     <div className="font-body font-bold text-[11px] uppercase tracking-[.08em] text-[#A39E93] mb-3">{col.t}</div>

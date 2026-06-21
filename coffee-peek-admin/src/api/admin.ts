@@ -114,11 +114,21 @@ interface GetAdminUsersResponse {
   pageSize: number;
 }
 
+export interface AdminShopSchedule {
+  dayOfWeek: number;
+  isClosed?: boolean;
+  openTime: string;
+  closeTime: string;
+}
+
 export interface AdminCoffeeShop {
   id: string;
   name: string;
   address: string;
+  cityId?: string;
   cityName?: string;
+  userId?: string;
+  addressIsValidated?: boolean;
   status: ModerationStatus;
   ownerEmail?: string;
   createdAtUtc: string;
@@ -126,18 +136,18 @@ export interface AdminCoffeeShop {
   reviewCount?: number;
   description?: string;
   priceRange?: number;
-  photos?: { storageKey: string; fullUrl: string }[];
+  photos?: { fileName?: string; storageKey: string; fullUrl: string }[];
   shopContact?: {
     phone?: string;
     email?: string;
     website?: string;
     instagram?: string;
   };
-  schedules?: {
-    dayOfWeek: number;
-    openTime: string;
-    closeTime: string;
-  }[];
+  schedules?: AdminShopSchedule[];
+  equipmentIds?: string[];
+  coffeeBeanIds?: string[];
+  roasterIds?: string[];
+  brewMethodIds?: string[];
   equipments?: { id: string; name: string }[];
   beans?: { id: string; name: string }[];
   roasters?: { id: string; name: string }[];
@@ -156,6 +166,11 @@ export interface UpdateCoffeeShopRequest {
     website?: string;
     instagram?: string;
   };
+  schedules?: AdminShopSchedule[];
+  equipmentIds?: string[];
+  coffeeBeanIds?: string[];
+  roasterIds?: string[];
+  brewMethodIds?: string[];
 }
 
 export interface ModerationActionRequest {
@@ -278,15 +293,42 @@ function formatTimeSpan(value: string | undefined): string {
   return value.substring(0, 5);
 }
 
+function mapBackendSchedules(schedules?: BackendSchedule[] | null): AdminShopSchedule[] {
+  if (!schedules?.length) return [];
+
+  return schedules.map((schedule) => {
+    if (schedule.isClosed) {
+      return {
+        dayOfWeek: schedule.dayOfWeek,
+        isClosed: true,
+        openTime: '',
+        closeTime: '',
+      };
+    }
+
+    const interval = schedule.intervals?.[0];
+    return {
+      dayOfWeek: schedule.dayOfWeek,
+      isClosed: false,
+      openTime: formatTimeSpan(interval?.openTime),
+      closeTime: formatTimeSpan(interval?.closeTime),
+    };
+  });
+}
+
 function mapShopToAdmin(shop: BackendModerationShop): AdminCoffeeShop {
   return {
     id: shop.id,
     name: shop.name,
     address: shop.address ?? '',
+    cityId: shop.cityId ?? undefined,
+    userId: shop.userId,
+    addressIsValidated: shop.addressIsValidated,
     status: mapModerationStatus(shop.moderationStatus),
     description: shop.description ?? undefined,
     priceRange: shop.priceRange,
     photos: shop.shopPhotos?.map((photo) => ({
+      fileName: photo.fileName,
       storageKey: photo.storageKey,
       fullUrl: photo.fullUrl,
     })),
@@ -298,16 +340,11 @@ function mapShopToAdmin(shop: BackendModerationShop): AdminCoffeeShop {
           instagram: shop.shopContact.instagramLink ?? undefined,
         }
       : undefined,
-    schedules: shop.schedules
-      ?.filter((schedule) => !schedule.isClosed && schedule.intervals?.length)
-      .map((schedule) => {
-        const interval = schedule.intervals![0];
-        return {
-          dayOfWeek: schedule.dayOfWeek,
-          openTime: formatTimeSpan(interval.openTime),
-          closeTime: formatTimeSpan(interval.closeTime),
-        };
-      }),
+    schedules: mapBackendSchedules(shop.schedules),
+    equipmentIds: shop.equipmentIds ?? [],
+    coffeeBeanIds: shop.coffeeBeanIds ?? [],
+    roasterIds: shop.roasterIds ?? [],
+    brewMethodIds: shop.brewMethodIds ?? [],
     createdAtUtc: '',
   };
 }
@@ -371,6 +408,12 @@ function appendGuidArray(form: FormData, key: string, values?: string[]) {
   });
 }
 
+function toBackendTime(value: string): string {
+  if (!value) return '00:00:00';
+  const [hours = '00', minutes = '00'] = value.split(':');
+  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+}
+
 function buildModerationShopFormData(
   shop: BackendModerationShop,
   updates: UpdateCoffeeShopRequest
@@ -398,27 +441,28 @@ function buildModerationShopFormData(
   appendFormValue(form, 'ShopContact.SiteLink', contact.siteLink);
   appendFormValue(form, 'ShopContact.InstagramLink', contact.instagramLink);
 
-  shop.schedules?.forEach((schedule, scheduleIndex) => {
+  const schedules = updates.schedules ?? mapBackendSchedules(shop.schedules);
+  schedules.forEach((schedule, scheduleIndex) => {
     appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, schedule.dayOfWeek);
     appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, schedule.isClosed ?? false);
-    schedule.intervals?.forEach((interval, intervalIndex) => {
+    if (!schedule.isClosed && schedule.openTime && schedule.closeTime) {
       appendFormValue(
         form,
-        `Schedules[${scheduleIndex}].Intervals[${intervalIndex}].OpenTime`,
-        interval.openTime
+        `Schedules[${scheduleIndex}].Intervals[0].OpenTime`,
+        toBackendTime(schedule.openTime)
       );
       appendFormValue(
         form,
-        `Schedules[${scheduleIndex}].Intervals[${intervalIndex}].CloseTime`,
-        interval.closeTime
+        `Schedules[${scheduleIndex}].Intervals[0].CloseTime`,
+        toBackendTime(schedule.closeTime)
       );
-    });
+    }
   });
 
-  appendGuidArray(form, 'EquipmentIds', shop.equipmentIds);
-  appendGuidArray(form, 'CoffeeBeanIds', shop.coffeeBeanIds);
-  appendGuidArray(form, 'RoasterIds', shop.roasterIds);
-  appendGuidArray(form, 'BrewMethodIds', shop.brewMethodIds);
+  appendGuidArray(form, 'EquipmentIds', updates.equipmentIds ?? shop.equipmentIds);
+  appendGuidArray(form, 'CoffeeBeanIds', updates.coffeeBeanIds ?? shop.coffeeBeanIds);
+  appendGuidArray(form, 'RoasterIds', updates.roasterIds ?? shop.roasterIds);
+  appendGuidArray(form, 'BrewMethodIds', updates.brewMethodIds ?? shop.brewMethodIds);
 
   shop.shopPhotos?.forEach((photo, index) => {
     appendFormValue(form, `ShopPhotos[${index}].FileName`, photo.fileName);
