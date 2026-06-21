@@ -1,25 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { confirmEmail } from '../api/auth';
+import { isApiRequestError } from '../api/core/apiError';
 import { usePageTitle } from '../hooks/usePageTitle';
+
+function getEmailConfirmationToken(searchParams: URLSearchParams): string | null {
+  const tokenFromQuery = searchParams.get('token');
+  if (tokenFromQuery) {
+    return tokenFromQuery;
+  }
+
+  const hash = window.location.hash;
+  if (!hash.startsWith('#')) {
+    return null;
+  }
+
+  const tokenFromHash = hash.slice(1).split('&')[0];
+  return tokenFromHash || null;
+}
 
 const ConfirmEmailPage: React.FC = () => {
   usePageTitle('Подтверждение email');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(5);
+  const confirmStarted = useRef(false);
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    if (!token) {
-      setStatus('error');
+    if (confirmStarted.current) {
       return;
     }
+
+    const token = getEmailConfirmationToken(searchParams);
+    if (!token) {
+      setStatus('error');
+      setErrorMessage('В ссылке отсутствует код подтверждения.');
+      return;
+    }
+
+    confirmStarted.current = true;
     confirmEmail(token)
       .then(() => setStatus('success'))
-      .catch(() => setStatus('error'));
-  }, []);
+      .catch((error: unknown) => {
+        if (isApiRequestError(error)) {
+          setErrorMessage(error.message);
+        }
+        setStatus('error');
+      });
+  }, [searchParams]);
 
   useEffect(() => {
     if (status !== 'success') return;
@@ -97,8 +127,13 @@ const ConfirmEmailPage: React.FC = () => {
                 Ссылка недействительна
               </h1>
               <p style={{ margin: '0 0 28px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
-                Ссылка для подтверждения устарела или уже использована.<br />
-                Запросите новую в настройках аккаунта.
+                {errorMessage ?? (
+                  <>
+                    Ссылка для подтверждения устарела или уже использована.
+                    <br />
+                    Запросите новую в настройках аккаунта.
+                  </>
+                )}
               </p>
               <button
                 onClick={() => navigate('/login')}

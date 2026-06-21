@@ -77,6 +77,14 @@ class HttpClient {
   /**
    * POST запрос
    */
+  private serializeBody(data?: unknown): BodyInit | undefined {
+    if (data === undefined) {
+      return undefined;
+    }
+
+    return data instanceof FormData ? data : JSON.stringify(data);
+  }
+
   async post<T>(
     endpoint: string,
     data?: any,
@@ -84,7 +92,7 @@ class HttpClient {
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: data instanceof FormData ? data : JSON.stringify(data),
+      body: this.serializeBody(data),
       params: config?.params,
       headers: config?.headers,
       requiresAuth: config?.requiresAuth,
@@ -102,7 +110,7 @@ class HttpClient {
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: data instanceof FormData ? data : JSON.stringify(data),
+      body: this.serializeBody(data),
       params: config?.params,
       headers: config?.headers,
       requiresAuth: config?.requiresAuth,
@@ -133,7 +141,7 @@ class HttpClient {
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PATCH',
-      body: data instanceof FormData ? data : JSON.stringify(data),
+      body: this.serializeBody(data),
       params: config?.params,
       headers: config?.headers,
       requiresAuth: config?.requiresAuth,
