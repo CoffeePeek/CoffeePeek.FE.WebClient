@@ -63,6 +63,14 @@
   .action-buttons {
     @apply flex flex-wrap gap-1;
   }
+
+  .table-actions {
+    @apply flex flex-col gap-1.5 w-[7.25rem] shrink-0 ml-auto;
+  }
+
+  .table-actions .action-btn {
+    @apply w-full justify-center whitespace-nowrap;
+  }
 }
 
 @layer utilities {

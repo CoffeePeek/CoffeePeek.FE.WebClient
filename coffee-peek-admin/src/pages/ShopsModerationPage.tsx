@@ -205,7 +205,9 @@ export const ShopsModerationPage: React.FC = () => {
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Адрес</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Описание</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Статус</th>
-                    <th className="px-4 py-3" />
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-[7.25rem]">
+                      Действия
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">
@@ -244,16 +246,19 @@ export const ShopsModerationPage: React.FC = () => {
                           {statusLabels[shop.status]}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="action-buttons justify-end">
-                          <Link to={`/shops/${shop.id}`}>
-                            <Button variant="primary" size="sm">Открыть</Button>
+                      <td className="px-4 py-3 align-top">
+                        <div className="table-actions">
+                          <Link to={`/shops/${shop.id}`} className="block">
+                            <Button variant="primary" size="sm" className="action-btn">
+                              Открыть
+                            </Button>
                           </Link>
                           {shop.status === 'Pending' && (
                             <>
                               <Button
                                 variant="success"
                                 size="sm"
+                                className="action-btn"
                                 onClick={() => setPendingAction({ id: shop.id, type: 'approve' })}
                               >
                                 Одобрить
@@ -261,6 +266,7 @@ export const ShopsModerationPage: React.FC = () => {
                               <Button
                                 variant="danger"
                                 size="sm"
+                                className="action-btn"
                                 onClick={() => setPendingAction({ id: shop.id, type: 'reject' })}
                               >
                                 Отклонить
