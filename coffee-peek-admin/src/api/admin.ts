@@ -692,9 +692,9 @@ function mapAuditEntry(entry: Record<string, unknown>): ModerationAuditEntry {
     entityId: String(entry.entityId),
     entityName: String(entry.entityName),
     action: mapEnumStatus<AuditAction>(entry.action as AuditAction | number, [
+      'Pending',
       'Approved',
       'Rejected',
-      'Pending',
     ]),
     moderatorUserId: String(entry.moderatorUserId),
     comment: entry.comment ? String(entry.comment) : null,

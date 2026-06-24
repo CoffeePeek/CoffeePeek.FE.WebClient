@@ -26,6 +26,12 @@ const ACTION_OPTIONS: { value: AuditAction | ''; label: string }[] = [
   { value: 'Pending', label: 'На модерации' },
 ];
 
+const ACTION_LABELS: Record<AuditAction, string> = {
+  Approved: 'Одобрено',
+  Rejected: 'Отклонено',
+  Pending: 'На модерации',
+};
+
 const ACTION_VARIANT: Record<AuditAction, 'approved' | 'rejected' | 'pending'> = {
   Approved: 'approved',
   Rejected: 'rejected',
@@ -44,7 +50,7 @@ const AuditRow: React.FC<{ entry: ModerationAuditEntry }> = ({ entry }) => (
       {entry.entityName}
     </td>
     <td className="px-4 py-3">
-      <Badge variant={ACTION_VARIANT[entry.action]}>{entry.action}</Badge>
+      <Badge variant={ACTION_VARIANT[entry.action]}>{ACTION_LABELS[entry.action]}</Badge>
     </td>
     <td className="px-4 py-3 text-xs font-mono text-text-muted dark:text-stone-400 hidden md:table-cell">
       {entry.moderatorUserId.slice(0, 8)}…
