@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LEGAL_ROUTES } from '../constants/legalRoutes';
 import { useTheme } from '../contexts/ThemeContext';
 import Button from './Button';
 import { Icons } from '../constants';
@@ -49,7 +50,8 @@ const CookieBanner: React.FC = () => {
               Мы используем localStorage для хранения токенов аутентификации и настроек темы, 
               что необходимо для работы сайта. Продолжая использовать сайт, вы соглашаетесь с нашей{' '}
               <button
-                onClick={() => navigate('/privacy')}
+                type="button"
+                onClick={() => navigate(LEGAL_ROUTES.privacy)}
                 className={`underline ${linkClass} font-medium`}
               >
                 Политикой конфиденциальности

@@ -10,6 +10,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { logger } from '../utils/logger';
+import { LEGAL_ROUTES } from '../constants/legalRoutes';
 
 const ISO_MAP_PINS = [
   { x: 100, y: 150 }, { x: 165, y: 110 }, { x: 220, y: 80 },
@@ -208,6 +209,12 @@ const LandingPage: React.FC = () => {
       { t: 'Компания', items: ['О нас', 'Блог', 'Контакты'] },
       { t: 'Помощь',   items: ['FAQ', 'Поддержка', 'Условия', 'Политика'] },
     ];
+    const footerLinks: Record<string, string> = {
+      Кофейни: '/shops',
+      Карта: '/dashboard?page=map',
+      Условия: LEGAL_ROUTES.terms,
+      Политика: LEGAL_ROUTES.privacy,
+    };
 
     return (
       <div className="min-h-screen bg-[#1A1412] relative overflow-x-hidden text-white">
@@ -418,9 +425,24 @@ const LandingPage: React.FC = () => {
                   <div key={col.t}>
                     <div className="font-body font-bold text-[11px] uppercase tracking-[.08em] text-[#A39E93] mb-3">{col.t}</div>
                     <div className="flex flex-col gap-2">
-                      {col.items.map((item) => (
-                        <span key={item} className="font-body text-[13px] text-white cursor-pointer hover:text-[#EAB308] transition-colors">{item}</span>
-                      ))}
+                      {col.items.map((item) => {
+                        const href = footerLinks[item];
+                        if (!href) {
+                          return (
+                            <span key={item} className="font-body text-[13px] text-[#A39E93]">{item}</span>
+                          );
+                        }
+                        return (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => navigate(href)}
+                            className="font-body text-[13px] text-white text-left cursor-pointer hover:text-[#EAB308] transition-colors"
+                          >
+                            {item}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}

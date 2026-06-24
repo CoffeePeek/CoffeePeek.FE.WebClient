@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { register, checkEmailExists } from '../api/auth';
 import { getErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { LEGAL_ROUTES } from '../constants/legalRoutes';
 import { logger } from '../utils/logger';
 
 type RegisterStep = 'email' | 'registration' | 'success';
@@ -252,12 +253,34 @@ const RegisterPage: React.FC = () => {
                         value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
                       <StrengthBar password={password} dark={dark} />
                     </div>
-                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={agreeToPrivacy} onChange={e => setAgreeToPrivacy(e.target.checked)} style={{ marginTop: 2, width: 18, height: 18, accentColor: gold }} />
-                      <span style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: textMuted, lineHeight: 1.45 }}>
-                        Я принимаю <span style={{ color: gold, fontWeight: 600 }}>Условия использования</span> и даю согласие на обработку персональных данных.
-                      </span>
-                    </label>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <input
+                        id="register-agree"
+                        type="checkbox"
+                        checked={agreeToPrivacy}
+                        onChange={e => setAgreeToPrivacy(e.target.checked)}
+                        style={{ marginTop: 2, width: 18, height: 18, accentColor: gold, flexShrink: 0 }}
+                      />
+                      <label htmlFor="register-agree" style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: textMuted, lineHeight: 1.45, cursor: 'pointer' }}>
+                        Я принимаю{' '}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); navigate(LEGAL_ROUTES.terms); }}
+                          style={{ background: 'none', border: 'none', padding: 0, color: gold, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+                        >
+                          Условия использования
+                        </button>
+                        {' '}и даю согласие на{' '}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); navigate(LEGAL_ROUTES.privacy); }}
+                          style={{ background: 'none', border: 'none', padding: 0, color: gold, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+                        >
+                          обработку персональных данных
+                        </button>
+                        .
+                      </label>
+                    </div>
                     <button type="submit" disabled={isLoading || !canRegister}
                       style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: isLoading || !canRegister ? 'not-allowed' : 'pointer', opacity: !canRegister ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Создаём…</> : 'Создать аккаунт'}

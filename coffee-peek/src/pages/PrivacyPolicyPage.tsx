@@ -1,16 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { getThemeClasses } from '../utils/theme';
 import Button from '../components/Button';
 import { Icons } from '../constants';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { goBackOrHome } from '../constants/legalRoutes';
 
 const PrivacyPolicyPage: React.FC = () => {
   usePageTitle('Политика конфиденциальности');
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const themeClasses = getThemeClasses(theme);
 
   const bgClass = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-white';
   const textClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
@@ -22,7 +21,7 @@ const PrivacyPolicyPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <Button
           variant="secondary"
-          onClick={() => navigate(-1)}
+          onClick={() => goBackOrHome(navigate)}
           className="mb-6"
         >
           <Icons.Back className="w-5 h-5 inline mr-2" />
@@ -195,7 +194,7 @@ const PrivacyPolicyPage: React.FC = () => {
           <div className={`mt-8 pt-6 border-t ${borderClass}`}>
             <Button
               variant="secondary"
-              onClick={() => navigate(-1)}
+              onClick={() => goBackOrHome(navigate)}
               className="w-full sm:w-auto"
             >
               <Icons.Back className="w-5 h-5 inline mr-2" />
