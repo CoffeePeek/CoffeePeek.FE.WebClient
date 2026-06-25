@@ -3,6 +3,10 @@ import { DetailedCoffeeShop, formatEquipmentName, getEquipmentCategoryLabel } fr
 import PhotoCarousel from './PhotoCarousel';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import {
+  X, Camera, Warning, Star, MapPin, Phone, Envelope, Globe, DeviceMobile,
+  Coffee, Gear, Leaf, Flame, Drop, Clock, Circle, PriceRangeLabel,
+} from '@/components/Icon';
 
 interface CoffeeShopModalProps {
   shop: DetailedCoffeeShop | null;
@@ -15,60 +19,50 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
   const themeClasses = getThemeClasses(theme);
   if (!isOpen || !shop) return null;
 
-  // Функция для извлечения URL фотографий из различных форматов
   const extractPhotoUrls = (): string[] => {
     const urls: string[] = [];
-    
-    // Проверяем shop.photos (новый формат - PhotoMetadataDto[])
+
     if (shop.photos && Array.isArray(shop.photos)) {
-      shop.photos.forEach((photo: any) => {
-        if (photo && typeof photo === 'object') {
-          // Если это объект с fullUrl
-          if ('fullUrl' in photo && typeof photo.fullUrl === 'string' && photo.fullUrl.trim()) {
-            urls.push(photo.fullUrl.trim());
-          }
+      shop.photos.forEach((photo: unknown) => {
+        if (photo && typeof photo === 'object' && 'fullUrl' in photo && typeof (photo as { fullUrl: unknown }).fullUrl === 'string') {
+          const url = (photo as { fullUrl: string }).fullUrl.trim();
+          if (url) urls.push(url);
         } else if (typeof photo === 'string' && photo.trim()) {
-          // Если это уже строка
           urls.push(photo.trim());
         }
       });
     }
-    
-    // Проверяем shop.imageUrls (старый формат)
-    if ((shop as any).imageUrls && Array.isArray((shop as any).imageUrls)) {
-      (shop as any).imageUrls.forEach((url: any) => {
+
+    const legacy = shop as DetailedCoffeeShop & { imageUrls?: unknown[] };
+    if (legacy.imageUrls && Array.isArray(legacy.imageUrls)) {
+      legacy.imageUrls.forEach((url: unknown) => {
         if (typeof url === 'string' && url.trim()) {
           urls.push(url.trim());
-        } else if (url && typeof url === 'object' && 'fullUrl' in url && typeof url.fullUrl === 'string' && url.fullUrl.trim()) {
-          urls.push(url.fullUrl.trim());
+        } else if (url && typeof url === 'object' && 'fullUrl' in url && typeof (url as { fullUrl: unknown }).fullUrl === 'string') {
+          const fullUrl = (url as { fullUrl: string }).fullUrl.trim();
+          if (fullUrl) urls.push(fullUrl);
         }
       });
     }
-    
-    // Удаляем дубликаты
+
     return [...new Set(urls)];
   };
 
   const photoUrls = extractPhotoUrls();
-  
 
-  const formatPriceRange = (priceRange: string) => {
-    switch (priceRange) {
-      case 'Budget':
-        return '💰';
-      case 'Moderate':
-        return '💰💰';
-      case 'Premium':
-        return '💰💰💰';
-      default:
-        return priceRange;
+  const priceLevel = ((): 1 | 2 | 3 | null => {
+    switch (shop.priceRange) {
+      case 'Budget': return 1;
+      case 'Moderate': return 2;
+      case 'Premium': return 3;
+      default: return null;
     }
-  };
+  })();
 
   const formatDayOfWeek = (day: number) => {
     const days = [
-      'Воскресенье', 'Понедельник', 'Вторник', 'Среда', 
-      'Четверг', 'Пятница', 'Суббота'
+      'Воскресенье', 'Понедельник', 'Вторник', 'Среда',
+      'Четверг', 'Пятница', 'Суббота',
     ];
     return days[day] || '';
   };
@@ -81,17 +75,17 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
             <h2 className={`text-2xl font-bold ${themeClasses.text.primary}`}>{shop.name}</h2>
             <button
               onClick={onClose}
-              className={`${themeClasses.text.secondary} ${theme === 'dark' ? 'hover:text-white' : 'hover:text-gray-900'} text-xl`}
+              className={`${themeClasses.text.secondary} ${theme === 'dark' ? 'hover:text-white' : 'hover:text-gray-900'} flex items-center justify-center`}
+              aria-label="Закрыть"
             >
-              ✕
+              <X size={24} />
             </button>
           </div>
 
-          {/* Фотографии кофейни */}
           {photoUrls.length > 0 ? (
             <div className="mb-6">
               <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-3 flex items-center gap-2`}>
-                <span>📸</span>
+                <Camera size={20} />
                 <span>Фотографии кофейни</span>
                 <span className={`text-sm font-normal ${themeClasses.text.secondary}`}>
                   ({photoUrls.length} {photoUrls.length === 1 ? 'фото' : photoUrls.length < 5 ? 'фото' : 'фотографий'})
@@ -102,43 +96,42 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
               </div>
             </div>
           ) : (
-            // Показываем сообщение, если фотографий нет (для отладки)
             process.env.NODE_ENV === 'development' && (
-              <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+              <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-start gap-2">
+                <Warning size={18} className="text-yellow-500 shrink-0 mt-0.5" />
                 <p className="text-yellow-500 text-sm">
-                  ⚠️ Фотографии не найдены. Проверьте консоль для отладки.
+                  Фотографии не найдены. Проверьте консоль для отладки.
                 </p>
               </div>
             )
           )}
 
-          {/* Main shop info */}
           <div className="mb-6">
-
-            {/* Header info with rating, price, status */}
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-[#EAB308] text-xl">⭐</span>
+                <Star size={20} weight="fill" color="#EAB308" />
                 <span className={`${themeClasses.text.primary} font-semibold text-lg`}>{(shop.rating || 0).toFixed(1)}</span>
                 <span className={`${themeClasses.text.secondary} text-sm`}>({shop.reviewCount || 0} {shop.reviewCount === 1 ? 'отзыв' : shop.reviewCount < 5 ? 'отзыва' : 'отзывов'})</span>
               </div>
-              <div className="flex items-center gap-1 text-lg">
-                {formatPriceRange(shop.priceRange || '')}
-              </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                shop.isOpen 
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+              {priceLevel && (
+                <div className="flex items-center gap-1 text-lg">
+                  <PriceRangeLabel level={priceLevel} />
+                </div>
+              )}
+              <span className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${
+                shop.isOpen
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                   : 'bg-red-500/20 text-red-400 border border-red-500/30'
               }`}>
-                {shop.isOpen ? '🟢 Открыто' : '🔴 Закрыто'}
+                <Circle size={8} weight="fill" color={shop.isOpen ? '#22C55E' : '#EF4444'} />
+                {shop.isOpen ? 'Открыто' : 'Закрыто'}
               </span>
             </div>
 
-            {/* Address and location */}
             {shop.location && (
               <div className={`mb-4 p-3 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
                 <div className="flex items-start gap-2">
-                  <span className="text-xl">📍</span>
+                  <MapPin size={20} className="shrink-0 mt-0.5" color="#EAB308" />
                   <div className="flex-1">
                     {shop.location.address && (
                       <p className={`${themeClasses.text.primary} font-medium mb-1`}>{shop.location.address}</p>
@@ -153,7 +146,6 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
               </div>
             )}
 
-            {/* Description */}
             {shop.description && (
               <div className={`mb-4 p-3 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
                 <h3 className={`text-sm font-semibold ${themeClasses.text.primary} mb-2`}>О кофейне</h3>
@@ -162,51 +154,50 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
             )}
           </div>
 
-          {/* Contact info */}
           {shop.shopContact && (shop.shopContact.phone || shop.shopContact.email || shop.shopContact.website || shop.shopContact.instagram) && (
             <div className={`mb-6 p-4 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
               <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-3 flex items-center gap-2`}>
-                <span>📞</span>
+                <Phone size={20} />
                 <span>Контакты</span>
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {shop.shopContact.phone && (
-                  <a 
+                  <a
                     href={`tel:${shop.shopContact.phone}`}
                     className={`flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
                   >
-                    <span className="text-lg">📞</span>
+                    <Phone size={18} />
                     <span className="break-all">{shop.shopContact.phone}</span>
                   </a>
                 )}
                 {shop.shopContact.email && (
-                  <a 
+                  <a
                     href={`mailto:${shop.shopContact.email}`}
                     className={`flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
                   >
-                    <span className="text-lg">✉️</span>
+                    <Envelope size={18} />
                     <span className="break-all">{shop.shopContact.email}</span>
                   </a>
                 )}
                 {shop.shopContact.website && (
-                  <a 
+                  <a
                     href={shop.shopContact.website.startsWith('http') ? shop.shopContact.website : `https://${shop.shopContact.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
                   >
-                    <span className="text-lg">🌐</span>
+                    <Globe size={18} />
                     <span className="break-all">{shop.shopContact.website}</span>
                   </a>
                 )}
                 {shop.shopContact.instagram && (
-                  <a 
+                  <a
                     href={shop.shopContact.instagram.startsWith('http') ? shop.shopContact.instagram : `https://instagram.com/${shop.shopContact.instagram.replace('@', '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
                   >
-                    <span className="text-lg">📱</span>
+                    <DeviceMobile size={18} />
                     <span className="break-all">{shop.shopContact.instagram}</span>
                   </a>
                 )}
@@ -214,22 +205,22 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
             </div>
           )}
 
-          {/* Coffee details grid */}
           {(shop.equipments?.length > 0 || shop.beans?.length > 0 || shop.roasters?.length > 0 || shop.brewMethods?.length > 0) && (
             <div className={`mb-6 p-4 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
               <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-4 flex items-center gap-2`}>
-                <span>☕</span>
+                <Coffee size={20} />
                 <span>Детали кофе</span>
               </h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Equipment */}
                 {shop.equipments && shop.equipments.length > 0 && (
                   <div className="sm:col-span-2">
-                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>⚙️ Оборудование</h4>
+                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2 flex items-center gap-1.5`}>
+                      <Gear size={16} /> Оборудование
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {shop.equipments.map(equipment => (
-                        <span 
+                        <span
                           key={equipment.id}
                           className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
                           title={`${getEquipmentCategoryLabel(equipment.category)}${equipment.brand ? ` · ${equipment.brand}` : ''}${equipment.model ? ` ${equipment.model}` : ''}`}
@@ -241,13 +232,14 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
                   </div>
                 )}
 
-                {/* Coffee beans */}
                 {shop.beans && shop.beans.length > 0 && (
                   <div>
-                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>🌱 Кофейные зёрна</h4>
+                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2 flex items-center gap-1.5`}>
+                      <Leaf size={16} /> Кофейные зёрна
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {shop.beans.map(bean => (
-                        <span 
+                        <span
                           key={bean.id}
                           className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
                         >
@@ -258,13 +250,14 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
                   </div>
                 )}
 
-                {/* Roasters */}
                 {shop.roasters && shop.roasters.length > 0 && (
                   <div>
-                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>🔥 Обжарщики</h4>
+                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2 flex items-center gap-1.5`}>
+                      <Flame size={16} /> Обжарщики
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {shop.roasters.map(roaster => (
-                        <span 
+                        <span
                           key={roaster.id}
                           className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
                         >
@@ -275,13 +268,14 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
                   </div>
                 )}
 
-                {/* Brew methods */}
                 {shop.brewMethods && shop.brewMethods.length > 0 && (
                   <div>
-                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2`}>💧 Методы заваривания</h4>
+                    <h4 className={`text-sm font-medium ${themeClasses.text.primary} mb-2 flex items-center gap-1.5`}>
+                      <Drop size={16} /> Методы заваривания
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {shop.brewMethods.map(method => (
-                        <span 
+                        <span
                           key={method.id}
                           className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
                         >
@@ -295,19 +289,18 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
             </div>
           )}
 
-          {/* Schedule */}
           {shop.schedules && shop.schedules.length > 0 && (
             <div className={`p-4 ${themeClasses.bg.tertiary} rounded-lg border ${themeClasses.border.default}`}>
               <h3 className={`text-lg font-semibold ${themeClasses.text.primary} mb-3 flex items-center gap-2`}>
-                <span>🕐</span>
+                <Clock size={20} />
                 <span>Расписание работы</span>
               </h3>
               <div className="space-y-2">
                 {shop.schedules.map(schedule => {
                   const isToday = new Date().getDay() === schedule.dayOfWeek;
                   return (
-                    <div 
-                      key={schedule.dayOfWeek} 
+                    <div
+                      key={schedule.dayOfWeek}
                       className={`flex justify-between items-center py-2 px-3 rounded-lg ${
                         isToday ? `${themeClasses.bg.primary} border ${themeClasses.border.default}` : ''
                       }`}
@@ -317,7 +310,7 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
                         {isToday && <span className="ml-2 text-xs text-[#EAB308]">(сегодня)</span>}
                       </span>
                       <span className={`${isToday ? themeClasses.text.primary : themeClasses.text.secondary} font-semibold`}>
-                        {schedule.openTime && schedule.closeTime 
+                        {schedule.openTime && schedule.closeTime
                           ? `${schedule.openTime} - ${schedule.closeTime}`
                           : <span className="text-red-400">Закрыто</span>}
                       </span>

@@ -4,6 +4,9 @@ import { getThemeClasses } from '../utils/theme';
 import { getCoffeeShopsByMapBounds, getCoffeeShopById, MapShop, DetailedCoffeeShop } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
 import { AppIcon } from './icons';
+import { Coffee, Star, BookmarkSimple } from '@/components/Icon';
+
+const MAP_COFFEE_FALLBACK = '<div class="w-full h-full flex items-center justify-center text-[#EAB308]"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V192a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,192H48V96H208v96Z"/></svg></div>';
 
 declare global {
   interface Window {
@@ -158,9 +161,11 @@ const MapPage: React.FC = () => {
         ">
           <div style="
             transform: rotate(45deg);
-            font-size: 20px;
             color: #1A1412;
-          ">☕</div>
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V192a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,192H48V96H208v96Z"/></svg></div>
         </div>
       `;
 
@@ -398,13 +403,13 @@ const MapPage: React.FC = () => {
                             target.style.display = 'none';
                             const parent = target.parentElement;
                             if (parent) {
-                              parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><span class="text-3xl">☕</span></div>';
+                              parent.innerHTML = MAP_COFFEE_FALLBACK;
                             }
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <span className="text-3xl">☕</span>
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200 text-[#EAB308]">
+                          <Coffee size={32} />
                         </div>
                       );
                     })()}
@@ -414,7 +419,7 @@ const MapPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     {/* Рейтинг и отзывы */}
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-yellow-500">⭐</span>
+                      <Star size={16} weight="fill" color="#EAB308" />
                       <span className={`${themeClasses.text.secondary} text-sm`}>
                         {selectedShopDetails?.reviewCount ? `${selectedShopDetails.reviewCount} отзывов` : 'Нет отзывов'}
                       </span>
@@ -438,14 +443,7 @@ const MapPage: React.FC = () => {
                       // TODO: Добавить функционал закладок
                     }}
                   >
-                    <svg
-                      className={`w-6 h-6 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
+                    <BookmarkSimple size={24} className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`} />
                   </button>
                 </div>
               </div>

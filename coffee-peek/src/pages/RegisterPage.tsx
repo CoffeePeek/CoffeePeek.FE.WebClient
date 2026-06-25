@@ -7,7 +7,7 @@ import { LEGAL_ROUTES } from '../constants/legalRoutes';
 import { logger } from '../utils/logger';
 import {
   Envelope, Lock, User, WarningCircle, Eye, EyeSlash, Sun, Moon,
-  EnvelopeOpen, SignIn, Globe, Sparkle, ArrowLeft,
+  EnvelopeOpen, SignIn, Globe, Sparkle, ArrowLeft, Check,
 } from '@/components/Icon';
 
 type RegisterStep = 'email' | 'registration' | 'success';
@@ -64,7 +64,7 @@ const Stepper: React.FC<{ step: 'email' | 'register'; dark: boolean }> = ({ step
         <React.Fragment key={s}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, background: i <= idx ? 'rgba(234,179,8,0.12)' : dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', color: i <= idx ? '#EAB308' : dark ? '#A39E93' : '#78716C', fontFamily: '"Noto Sans"', fontSize: 11, fontWeight: 600 }}>
             <span style={{ width: 16, height: 16, borderRadius: 99, background: i <= idx ? '#EAB308' : 'transparent', border: i <= idx ? 'none' : `1px solid ${dark ? '#3D2F28' : '#E7E5E4'}`, color: '#1A1412', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
-              {i < idx ? '✓' : i + 1}
+              {i < idx ? <Check size={10} weight="bold" /> : i + 1}
             </span>
             {s}
           </span>

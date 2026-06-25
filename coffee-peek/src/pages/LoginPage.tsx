@@ -7,7 +7,7 @@ import { getErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 import {
   Envelope, Lock, WarningCircle, Eye, EyeSlash, Sun, Moon,
-  CheckCircle, Clock, ArrowClockwise, ArrowLeft,
+  CheckCircle, Clock, ArrowClockwise, ArrowLeft, Check,
 } from '@/components/Icon';
 
 interface AuthFieldProps {
@@ -72,7 +72,7 @@ const Stepper: React.FC<{ dark: boolean }> = ({ dark }) => {
             fontFamily: '"Noto Sans"', fontSize: 11, fontWeight: 600,
           }}>
             <span style={{ width: 16, height: 16, borderRadius: 99, background: i <= 1 ? '#EAB308' : 'transparent', border: i <= 1 ? 'none' : `1px solid ${dark ? '#3D2F28' : '#E7E5E4'}`, color: '#1A1412', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
-              {i < 1 ? '✓' : i + 1}
+              {i < 1 ? <Check size={10} weight="bold" /> : i + 1}
             </span>
             {s}
           </span>

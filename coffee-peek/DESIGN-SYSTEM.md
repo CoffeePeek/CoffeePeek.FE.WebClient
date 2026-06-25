@@ -79,7 +79,7 @@ src/design-system/
 |------|-----------|----------|---------|
 | Display (заголовки, логотип) | RF Dewi Expanded | Sora | `res/font/rf_dewi_expanded_*.otf` |
 | Body (текст, формы) | Noto Sans | Inter | `res/font/noto_sans_*.ttf` |
-| Icons | Material Symbols Rounded | — | Material Icons Extended |
+| Icons | Phosphor Icons (`@phosphor-icons/react`) | — | Material Icons Extended |
 
 Файлы шрифтов в вебе: `/public/fonts/RFDewiExpanded-*.otf`
 
@@ -293,8 +293,9 @@ const inputRadius = input.borderRadius; // 26
 
 ## Иконки
 
-Веб использует два набора:
-1. **Material Symbols Rounded** — `settings`, `person`, `visibility`, `star`, `location_on`
-2. **Custom SVG** (`src/constants.tsx`) — `Coffee`, `Back`, `Check`, `Map`, `Menu`, `Close`, `Alert`
+Веб использует **Phosphor Icons** (`@phosphor-icons/react`) через `src/components/Icon.tsx`:
+- Прямые импорты: `User`, `Gear`, `Star`, `MapPin`, `Coffee`, и др.
+- Обратная совместимость: `Icons` object (`Coffee`, `Back`, `Check`, `Map`, `Menu`, `Close`, `Alert`, `Home`, `Info`)
+- `AppIcon` в `src/components/icons/` — маппинг legacy material-имён на Phosphor (для постепенной миграции)
 
 Для Android рекомендуется Material Icons Extended + custom vector drawables для брендовых иконок (кофейная чашка).

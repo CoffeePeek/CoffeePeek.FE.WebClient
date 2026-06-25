@@ -10,6 +10,9 @@ import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
 import {
+  MapPin, CurrencyDollar, Images, Factory, Leaf, Flame, Drop, Lightbulb, X,
+} from '@/components/Icon';
+import {
   buildShopSubmissionPayload,
   INITIAL_SHOP_FORM_DATA,
   ShopFormData,
@@ -166,7 +169,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
               onClick={onClose}
               className={`${themeClasses.text.secondary} ${theme === 'dark' ? 'hover:text-white' : 'hover:text-gray-900'} text-2xl transition-colors`}
             >
-              ✕
+              <X size={24} />
             </button>
           </div>
 
@@ -235,12 +238,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                       { value: '', label: 'Выберите город' },
                       ...cities.map(city => ({ value: city.id, label: city.name }))
                     ]}
-                    icon={
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                      </svg>
-                    }
+                    icon={<MapPin size={20} />}
                   />
                   {fieldErrors.cityId && (
                     <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{fieldErrors.cityId}</p>
@@ -253,16 +251,11 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                   onChange={(value) => handleInputChange('priceRange', value || undefined)}
                   options={[
                     { value: '', label: 'Выберите диапазон' },
-                    { value: 'Budget', label: '💰 Бюджетный' },
-                    { value: 'Moderate', label: '💰💰 Средний' },
-                    { value: 'Premium', label: '💰💰💰 Премиум' }
+                    { value: 'Budget', label: 'Бюджетный' },
+                    { value: 'Moderate', label: 'Средний' },
+                    { value: 'Premium', label: 'Премиум' }
                   ]}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="1" x2="12" y2="23"></line>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                  }
+                  icon={<CurrencyDollar size={20} />}
                 />
               </div>
             </div>
@@ -335,9 +328,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                   htmlFor="photo-upload"
                   className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-pointer hover:border-[#EAB308] transition-all`}
                 >
-                  <svg className={`mx-auto h-12 w-12 ${themeClasses.text.secondary} mb-2`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <Images size={48} className={`mx-auto mb-2 ${themeClasses.text.secondary}`} />
                   <span className={themeClasses.text.secondary}>Нажмите для выбора фотографий</span>
                 </label>
               </div>
@@ -383,12 +374,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                       .filter(eq => !formData.equipmentIds?.includes(eq.id))
                       .map(eq => ({ value: eq.id, label: `${formatEquipmentName(eq)} — ${getEquipmentCategoryLabel(eq.category)}` }))
                   ]}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                    </svg>
-                  }
+                  icon={<Factory size={20} />}
                 />
 
                 <MaterialSelect
@@ -405,12 +391,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                       .filter(bean => !formData.coffeeBeanIds?.includes(bean.id))
                       .map(bean => ({ value: bean.id, label: bean.name }))
                   ]}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                    </svg>
-                  }
+                  icon={<Leaf size={20} />}
                 />
 
                 <MaterialSelect
@@ -427,12 +408,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                       .filter(roaster => !formData.roasterIds?.includes(roaster.id))
                       .map(roaster => ({ value: roaster.id, label: roaster.name }))
                   ]}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="3"></circle>
-                      <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
-                    </svg>
-                  }
+                  icon={<Flame size={20} />}
                 />
 
                 <MaterialSelect
@@ -449,11 +425,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                       .filter(method => !formData.brewMethodIds?.includes(method.id))
                       .map(method => ({ value: method.id, label: method.name }))
                   ]}
-                  icon={
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 12h14M12 5l7 7-7 7"></path>
-                    </svg>
-                  }
+                  icon={<Drop size={20} />}
                 />
               </div>
 
@@ -588,8 +560,9 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                 })}
               </div>
 
-              <p className={`${themeClasses.text.secondary} text-xs mt-2`}>
-                💡 По умолчанию: Пн-Пт 8:00-22:00, Сб-Вс 10:00-22:00
+              <p className={`${themeClasses.text.secondary} text-xs mt-2 flex items-center gap-1.5`}>
+                <Lightbulb size={14} />
+                По умолчанию: Пн-Пт 8:00-22:00, Сб-Вс 10:00-22:00
               </p>
             </div>
 

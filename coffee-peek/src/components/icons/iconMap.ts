@@ -141,7 +141,6 @@ export const MATERIAL_ICON_MAP: Record<string, PhosphorIconComponent> = {
   water_drop: Drop,
   wifi: WifiHigh,
   dark_mode: Moon,
-  briefcase: Briefcase,
   map: MapTrifold,
   home: House,
   info: WarningCircle,

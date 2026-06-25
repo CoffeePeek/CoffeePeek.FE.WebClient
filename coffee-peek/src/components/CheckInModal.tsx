@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { Icons } from '../constants';
 import { logger } from '../utils/logger';
 import { AppIcon, StarIcon } from './icons';
+import { X, Images, Calendar } from '@/components/Icon';
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -228,7 +229,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
               onClick={handleClose}
               className={`${themeClasses.text.secondary} ${themeClasses.primary.hover} text-2xl w-8 h-8 flex items-center justify-center rounded-lg ${themeClasses.bg.tertiary} hover:${themeClasses.bg.tertiary.replace('bg-', 'bg-')}`}
             >
-              ✕
+              <X size={20} />
             </button>
           </div>
 
@@ -268,7 +269,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                   Дата посещения
                 </label>
                 <div className="relative">
-                  <AppIcon name="calendar_today" size={18} color={colors.textMuted} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Calendar size={18} color={colors.textMuted} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="date"
                     id="visitedDate"
@@ -339,9 +340,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                   borderColor: colors.borderSubtle,
                 }}
               >
-                <svg className="mx-auto h-10 w-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: colors.textMuted }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                <Images size={40} color={colors.textMuted} className="mx-auto mb-2" />
                 <span className={`text-sm ${themeClasses.text.secondary}`}>Нажмите для выбора фотографий</span>
               </label>
             </div>

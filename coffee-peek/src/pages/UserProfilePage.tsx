@@ -9,11 +9,11 @@ import Button from '../components/Button';
 import { useUsersCache } from '../hooks/useUsersCache';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { StarIcon } from '../components/icons';
 import {
   ArrowLeft, SealCheck, ShoppingCart, ChatCircleText, Star,
   NotePencil, ArrowRight, CaretLeft, CaretRight,
 } from '@/components/Icon';
-import { StarIcon } from '@/components/icons';
 
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -366,7 +366,7 @@ const UserProfilePage: React.FC = () => {
           ) : (
             <div className={`${bgSurface} p-12 rounded-2xl border ${borderClass} text-center`}>
               <div className={`w-16 h-16 rounded-full ${theme === 'dark' ? themeClasses.bg.secondary : 'bg-stone-100'} ${textMuted} flex items-center justify-center mx-auto mb-4`}>
-                <span className="material-symbols-rounded text-4xl">rate_review</span>
+                <ChatCircleText size={40} />
               </div>
               <p className={`${textMuted} text-lg`}>
                 Пользователь пока не оставил ни одного отзыва

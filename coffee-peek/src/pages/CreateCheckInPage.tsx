@@ -12,7 +12,8 @@ import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { AppIcon } from '../components/icons';
+import { AppIcon, StarIcon } from '../components/icons';
+import { CheckCircle } from '@/components/Icon';
 
 interface ShopBasicInfo {
   name: string;
