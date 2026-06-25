@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
+import { AppIcon } from './icons';
 
 const QUICK_FILTERS = [
   { id: 'all',       label: 'Все',          icon: 'apps'                  },
@@ -153,9 +154,9 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             color: dark ? '#fff' : '#1C1917',
             borderColor,
           }}>
-            <span className="material-symbols-rounded" style={{ fontSize: 14, color: goldWarm, lineHeight: 1 }}>location_on</span>
+            <AppIcon name="location_on" size={14} color={goldWarm} />
             {currentCityName}
-            <span className="material-symbols-rounded" style={{ fontSize: 13, color: muted, lineHeight: 1, transition: 'transform .2s', transform: showCityDropdown ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+            <AppIcon name="expand_more" size={13} color={muted} style={{ transition: 'transform .2s', transform: showCityDropdown ? 'rotate(180deg)' : 'none' }} />
           </button>
           {showCityDropdown && (
             <>
@@ -164,7 +165,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                 {cities.map(city => (
                   <button key={city.id} onClick={() => { onCityChange(city.id); onCityDropdownToggle(); }}
                     style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : (dark ? '#fff' : '#1C1917'), border: 'none', cursor: 'pointer', fontFamily: '"Noto Sans"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {selectedCity === city.id && <span className="material-symbols-rounded" style={{ fontSize: 14, color: gold, lineHeight: 1 }}>check_circle</span>}
+                    {selectedCity === city.id && <AppIcon name="check_circle" size={14} color={gold} />}
                     <span style={{ marginLeft: selectedCity === city.id ? 0 : 22 }}>{city.name}</span>
                   </button>
                 ))}
@@ -185,7 +186,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
               color: active ? (dark ? '#1C1917' : '#fff') : (dark ? '#fff' : '#1C1917'),
               borderColor: active ? 'transparent' : borderColor,
             }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 14, color: active ? (dark ? goldWarm : '#fff') : goldWarm, lineHeight: 1 }}>{icon}</span>
+              <AppIcon name={icon} size={14} color={active ? (dark ? goldWarm : '#fff') : goldWarm} />
               {label}
             </button>
           );
@@ -250,7 +251,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                     <button key={value}
                       onClick={() => setDraft(d => ({ ...d, priceRange: active ? undefined : value }))}
                       style={draftChip(active)}>
-                      {active && <span className="material-symbols-rounded" style={{ fontSize: 13, lineHeight: 1 }}>check</span>}
+                      {active && <AppIcon name="check" size={13} />}
                       {label}
                     </button>
                   );
@@ -269,7 +270,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       <button key={eq.id}
                         onClick={() => setDraft(d => ({ ...d, equipments: toggle(d.equipments, eq.id) }))}
                         style={draftChip(active)}>
-                        {active && <span className="material-symbols-rounded" style={{ fontSize: 13, lineHeight: 1 }}>check</span>}
+                        {active && <AppIcon name="check" size={13} />}
                         {eq.name}
                       </button>
                     );
@@ -289,7 +290,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       <button key={b.id}
                         onClick={() => setDraft(d => ({ ...d, beans: toggle(d.beans, b.id) }))}
                         style={draftChip(active)}>
-                        {active && <span className="material-symbols-rounded" style={{ fontSize: 13, lineHeight: 1 }}>check</span>}
+                        {active && <AppIcon name="check" size={13} />}
                         {b.name}
                       </button>
                     );
@@ -309,7 +310,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       <button key={r.id}
                         onClick={() => setDraft(d => ({ ...d, roasters: toggle(d.roasters, r.id) }))}
                         style={draftChip(active)}>
-                        {active && <span className="material-symbols-rounded" style={{ fontSize: 13, lineHeight: 1 }}>check</span>}
+                        {active && <AppIcon name="check" size={13} />}
                         {r.name}
                       </button>
                     );
@@ -329,7 +330,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       <button key={m.id}
                         onClick={() => setDraft(d => ({ ...d, brewMethods: toggle(d.brewMethods, m.id) }))}
                         style={draftChip(active)}>
-                        {active && <span className="material-symbols-rounded" style={{ fontSize: 13, lineHeight: 1 }}>check</span>}
+                        {active && <AppIcon name="check" size={13} />}
                         {m.name}
                       </button>
                     );
@@ -346,7 +347,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >
-                <span className="material-symbols-rounded" style={{ fontSize: 16, lineHeight: 1 }}>check</span>
+                <AppIcon name="check" size={16} />
                 Применить{draftCount > 0 && ` (${draftCount})`}
               </button>
 
@@ -355,7 +356,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                   onClick={() => setDraft({ priceRange: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] })}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '10px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: muted, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
                 >
-                  <span className="material-symbols-rounded" style={{ fontSize: 15, lineHeight: 1 }}>close</span>
+                  <AppIcon name="close" size={15} />
                   Сбросить
                 </button>
               )}
@@ -381,7 +382,7 @@ const AppliedChip: React.FC<{ label: string; gold: string; onRemove: () => void 
   }}>
     {label}
     <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2 }}>
-      <span className="material-symbols-rounded" style={{ fontSize: 13, color: gold, lineHeight: 1 }}>close</span>
+      <AppIcon name="close" size={13} color={gold} />
     </button>
   </span>
 );

@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { Icons } from '../constants';
 import { COLORS } from '../constants/colors';
+import { User, Gear, SignOut, CaretDown } from '@/components/Icon';
 
 const PUBLIC_NAV = [
   { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
@@ -97,7 +98,7 @@ const Header: React.FC = () => {
                   <span className="hidden lg:block" style={{ fontFamily: '"Noto Sans",system-ui', fontWeight: 600, fontSize: 13, color: textColor, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {displayName}
                   </span>
-                  <span className="material-symbols-rounded" style={{ fontSize: 18, color: mutedColor, lineHeight: 1, transition: 'transform .2s', transform: profileOpen ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+                  <CaretDown size={18} color={mutedColor} style={{ transition: 'transform .2s', transform: profileOpen ? 'rotate(180deg)' : 'none' }} />
                 </button>
 
                 {profileOpen && (
@@ -121,10 +122,10 @@ const Header: React.FC = () => {
                       {/* Menu */}
                       <div style={{ padding: '6px 0' }}>
                         {user.id && (
-                          <DropdownItem icon="person" label="Мой профиль" hoverBg={hoverBg} textColor={textColor} mutedColor={mutedColor}
+                          <DropdownItem icon={<User size={18} color={mutedColor} />} label="Мой профиль" hoverBg={hoverBg} textColor={textColor} mutedColor={mutedColor}
                             onClick={() => { navigate(`/users/${user.id}`); setProfileOpen(false); }} />
                         )}
-                        <DropdownItem icon="settings" label="Настройки" hoverBg={hoverBg}
+                        <DropdownItem icon={<Gear size={18} color={isSettings ? gold : mutedColor} />} label="Настройки" hoverBg={hoverBg}
                           textColor={isSettings ? gold : textColor}
                           mutedColor={isSettings ? gold : mutedColor}
                           activeBg={isSettings ? `${gold}10` : undefined}
@@ -132,7 +133,7 @@ const Header: React.FC = () => {
                       </div>
 
                       <div style={{ borderTop: `1px solid ${borderColor}`, padding: '6px 0' }}>
-                        <DropdownItem icon="logout" label="Выйти" hoverBg="rgba(239,68,68,0.07)"
+                        <DropdownItem icon={<SignOut size={18} color="#EF4444" />} label="Выйти" hoverBg="rgba(239,68,68,0.07)"
                           textColor="#EF4444" mutedColor="#EF4444"
                           onClick={() => { logout(); navigate('/'); setProfileOpen(false); }} />
                       </div>
@@ -189,18 +190,18 @@ const Header: React.FC = () => {
                   {user.id && (
                     <button onClick={() => { navigate(`/users/${user.id}`); setIsMobileMenuOpen(false); }}
                       style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                      <span className="material-symbols-rounded" style={{ fontSize: 18, color: mutedColor, lineHeight: 1 }}>person</span>
+                      <User size={18} color={mutedColor} />
                       Профиль
                     </button>
                   )}
                   <button onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <span className="material-symbols-rounded" style={{ fontSize: 18, color: isSettings ? gold : mutedColor, lineHeight: 1 }}>settings</span>
+                    <Gear size={18} color={isSettings ? gold : mutedColor} />
                     Настройки
                   </button>
                   <button onClick={() => { logout(); navigate('/'); setIsMobileMenuOpen(false); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <span className="material-symbols-rounded" style={{ fontSize: 18, color: '#EF4444', lineHeight: 1 }}>logout</span>
+                    <SignOut size={18} color="#EF4444" />
                     Выйти
                   </button>
                 </>
@@ -225,7 +226,7 @@ const Header: React.FC = () => {
 };
 
 interface DropdownItemProps {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   onClick: () => void;
   textColor: string;
@@ -234,14 +235,14 @@ interface DropdownItemProps {
   activeBg?: string;
 }
 
-const DropdownItem: React.FC<DropdownItemProps> = ({ icon, label, onClick, textColor, mutedColor, hoverBg, activeBg }) => (
+const DropdownItem: React.FC<DropdownItemProps> = ({ icon, label, onClick, textColor, hoverBg, activeBg }) => (
   <button
     onClick={onClick}
     style={{ width: '100%', padding: '9px 16px', textAlign: 'left', background: activeBg ?? 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontFamily: '"Noto Sans"', fontSize: 14, color: textColor, transition: 'background .1s' }}
     onMouseEnter={e => !activeBg && (e.currentTarget.style.background = hoverBg)}
     onMouseLeave={e => !activeBg && (e.currentTarget.style.background = 'none')}
   >
-    <span className="material-symbols-rounded" style={{ fontSize: 18, color: mutedColor, lineHeight: 1 }}>{icon}</span>
+    {icon}
     {label}
   </button>
 );

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
 import Header from '../Header';
+import { AppIcon } from '../icons';
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -22,7 +23,7 @@ export const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ childr
       <Header />
       {user?.emailConfirmed === false && (
         <div style={{ background: 'rgba(234,179,8,0.09)', borderBottom: '1px solid rgba(234,179,8,0.25)', padding: '9px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span className="material-symbols-rounded" style={{ fontSize: 15, color: '#EAB308', lineHeight: 1, flexShrink: 0 }}>warning</span>
+          <AppIcon name="warning" size={15} color="#EAB308" style={{ flexShrink: 0 }} />
           <span style={{ fontFamily: '"Noto Sans",system-ui', fontSize: 13, color: '#EAB308' }}>
             Ваш email не подтверждён. Некоторые функции могут быть недоступны.
           </span>

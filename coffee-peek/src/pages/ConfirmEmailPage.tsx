@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { confirmEmail } from '../api/auth';
 import { isApiRequestError } from '../api/core/apiError';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { CheckCircle, SignIn, XCircle, ArrowLeft } from '@/components/Icon';
 
 function getEmailConfirmationToken(searchParams: URLSearchParams): string | null {
   const tokenFromQuery = searchParams.get('token');
@@ -100,7 +101,7 @@ const ConfirmEmailPage: React.FC = () => {
           {status === 'success' && (
             <>
               <div style={{ width: 88, height: 88, borderRadius: 99, background: 'rgba(34,197,94,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <span className="material-symbols-rounded star-filled" style={{ fontSize: 56, color: '#22C55E', lineHeight: 1 }}>check_circle</span>
+                <CheckCircle size={56} weight="fill" color="#22C55E" />
               </div>
               <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 28, color: textPrimary }}>
                 Email подтверждён
@@ -112,7 +113,7 @@ const ConfirmEmailPage: React.FC = () => {
               <button
                 onClick={() => navigate('/login')}
                 style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
-                <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>login</span>
+                <SignIn size={18} />
                 Войти
               </button>
             </>
@@ -121,7 +122,7 @@ const ConfirmEmailPage: React.FC = () => {
           {status === 'error' && (
             <>
               <div style={{ width: 88, height: 88, borderRadius: 99, background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <span className="material-symbols-rounded star-filled" style={{ fontSize: 56, color: '#EF4444', lineHeight: 1 }}>cancel</span>
+                <XCircle size={56} weight="fill" color="#EF4444" />
               </div>
               <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>
                 Ссылка недействительна
@@ -138,7 +139,7 @@ const ConfirmEmailPage: React.FC = () => {
               <button
                 onClick={() => navigate('/login')}
                 style={{ width: '100%', height: 48, borderRadius: 12, background: 'transparent', color: textPrimary, border: `1px solid ${cardBorder}`, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>arrow_back</span>
+                <ArrowLeft size={18} />
                 На страницу входа
               </button>
             </>

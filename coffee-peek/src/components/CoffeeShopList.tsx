@@ -10,6 +10,7 @@ import ShopCard from './ShopCard';
 import ShopSearchBar from './ShopSearchBar';
 import ShopFilterPanel from './ShopFilterPanel';
 import ShopPagination from './ShopPagination';
+import { AppIcon, StarIcon } from './icons';
 
 type PhotoInput = { fullUrl?: string; storageKey?: string } | string;
 
@@ -435,7 +436,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                     <div style={{ height: 112, background: photos[0] ? `url(${photos[0]}) center/cover` : `${COLORS.primary}20`, position: 'relative' }}>
                       {shop.rating && (
                         <span style={{ position: 'absolute', top: 8, left: 8, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 7px', borderRadius: 6, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, color: '#D4A84B' }}>
-                          <span className="material-symbols-rounded star-filled" style={{ fontSize: 12, color: '#D4A84B', lineHeight: 1 }}>star</span>
+                          <StarIcon filled size={12} color="#D4A84B" />
                           {shop.rating.toFixed(1)}
                         </span>
                       )}
@@ -459,7 +460,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               Кофейни рядом <span style={{ color: colors.textSecondary, fontWeight: 500, fontSize: 13 }}>· {shops.length}</span>
             </h2>
             <button style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: colors.textSecondary, fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>swap_vert</span>
+              <AppIcon name="swap_vert" size={14} />
               Сортировка
             </button>
           </div>
@@ -480,7 +481,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             </>
           ) : shops.length === 0 ? (
             <div className="rounded-2xl p-10 text-center border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 40, color: colors.textSecondary, lineHeight: 1 }}>coffee_maker</span>
+              <AppIcon name="coffee_maker" size={40} color={colors.textSecondary} />
               <p style={{ margin: '12px 0 0', fontFamily: '"Noto Sans"', fontSize: 14, color: colors.textSecondary }}>Ничего не найдено. Попробуйте другой фильтр.</p>
             </div>
           ) : (
@@ -506,7 +507,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                           <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h3>
                           {shop.rating && shop.rating > 0 && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: 'rgba(180,140,75,.12)', color: '#D4A84B', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' as const }}>
-                              <span className="material-symbols-rounded star-filled" style={{ fontSize: 13, color: '#D4A84B', lineHeight: 1 }}>star</span>
+                              <StarIcon filled size={13} color="#D4A84B" />
                               {shop.rating.toFixed(1)}
                             </span>
                           )}

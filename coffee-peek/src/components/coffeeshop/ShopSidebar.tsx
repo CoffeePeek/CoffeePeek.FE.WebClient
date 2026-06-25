@@ -5,6 +5,7 @@ import { formatDayOfWeek } from '../../utils/shopUtils';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
 import { COLORS } from '../../constants/colors';
+import { AppIcon } from '../icons';
 
 interface ShopSidebarProps {
   shop: DetailedCoffeeShop;
@@ -161,7 +162,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
       <div className="p-8">
         <div className="flex items-start gap-4 mb-8">
           <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} flex items-center justify-center shrink-0`}>
-            <span className={`material-symbols-rounded ${themeClasses.primary.text}`}>pin_drop</span>
+            <AppIcon name="pin_drop" size={20} className={themeClasses.primary.text} />
           </div>
           <div>
             <h3 className={`font-bold ${textMain} mb-1`}>{shop.location?.address || shop.address || 'Адрес не указан'}</h3>
@@ -177,7 +178,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
           <div className={`space-y-4 pt-6 border-t ${borderColor}`}>
             <div className={`flex items-center gap-4 ${textMain} font-bold`}>
               <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} flex items-center justify-center shrink-0`}>
-                <span className={`material-symbols-rounded ${themeClasses.primary.text}`}>schedule</span>
+                <AppIcon name="schedule" size={20} className={themeClasses.primary.text} />
               </div>
               <span>Часы работы</span>
             </div>

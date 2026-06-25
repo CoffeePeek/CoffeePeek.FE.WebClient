@@ -1,5 +1,6 @@
 import React from 'react';
 import { COLORS } from '../constants/colors';
+import { AppIcon } from './icons';
 
 interface ShopSearchBarProps {
   searchQuery: string;
@@ -55,7 +56,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
           {/* Search — fills all space */}
           <div style={{ flex: 1, position: 'relative' }}>
             <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 18, color: goldWarm, lineHeight: 1 }}>search</span>
+              <AppIcon name="search" size={18} color={goldWarm} />
             </span>
             <input
               value={searchQuery}
@@ -68,7 +69,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
 
           {/* Фильтры — right of search */}
           <button onClick={onFilterToggle} style={filterBtn(40)}>
-            <span className="material-symbols-rounded" style={{ fontSize: 16, color: showFilters ? '#1A1412' : gold, lineHeight: 1 }}>tune</span>
+            <AppIcon name="tune" size={16} color={showFilters ? '#1A1412' : gold} />
             Фильтры
             {activeFilterCount > 0 && (
               <span style={{ minWidth: 18, height: 18, borderRadius: 99, background: showFilters ? '#1A1412' : gold, color: showFilters ? gold : '#1A1412', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
@@ -86,7 +87,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
             Кофейни рядом
           </h1>
           <button style={{ position: 'relative', width: 38, height: 38, borderRadius: 99, background: colors.surface, border: `1px solid ${borderColor}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span className="material-symbols-rounded" style={{ fontSize: 20, color: dark ? '#fff' : '#1C1917', lineHeight: 1 }}>notifications</span>
+            <AppIcon name="notifications" size={20} color={dark ? '#fff' : '#1C1917'} />
             <span style={{ position: 'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: 99, background: gold, border: `2px solid ${colors.surface}` }} />
           </button>
         </div>
@@ -98,7 +99,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
           {/* Search — fills remaining */}
           <div style={{ flex: 1, position: 'relative' }}>
             <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 18, color: goldWarm, lineHeight: 1 }}>search</span>
+              <AppIcon name="search" size={18} color={goldWarm} />
             </span>
             <input
               value={searchQuery}
@@ -111,7 +112,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
 
           {/* Фильтры — right */}
           <button onClick={onFilterToggle} style={filterBtn(44)}>
-            <span className="material-symbols-rounded" style={{ fontSize: 16, color: showFilters ? '#1A1412' : gold, lineHeight: 1 }}>tune</span>
+            <AppIcon name="tune" size={16} color={showFilters ? '#1A1412' : gold} />
             Фильтры
             {activeFilterCount > 0 && (
               <span style={{ minWidth: 18, height: 18, borderRadius: 99, background: showFilters ? '#1A1412' : gold, color: showFilters ? gold : '#1A1412', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>

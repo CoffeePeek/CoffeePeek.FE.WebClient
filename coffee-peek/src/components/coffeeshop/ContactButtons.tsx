@@ -2,6 +2,7 @@ import React from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
+import { AppIcon } from '../icons';
 
 interface ContactButtonsProps {
   shop: DetailedCoffeeShop;
@@ -29,7 +30,7 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
           href={`tel:${shop.shopContact.phone}`}
           className={`flex items-center gap-3 ${themeClasses.primary.bg} ${themeClasses.primary.bgHover} ${themeClasses.text.inverse} px-8 py-4 rounded-2xl font-bold shadow-lg ${themeClasses.primary.shadow} transition-all transform active:scale-95`}
         >
-          <span className="material-symbols-rounded">call</span>
+          <AppIcon name="call" size={20} />
           Позвонить
         </a>
       )}
@@ -40,7 +41,7 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
           rel="noopener noreferrer"
           className={`flex items-center gap-3 ${cardBg} border ${borderColor} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} ${textMain} px-8 py-4 rounded-2xl font-bold transition-all`}
         >
-          <span className={`material-symbols-rounded ${themeClasses.primary.text}`}>language</span>
+          <AppIcon name="language" size={20} className={themeClasses.primary.text} />
           Веб-сайт
         </a>
       )}
@@ -51,7 +52,7 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
           rel="noopener noreferrer"
           className={`flex items-center gap-3 ${cardBg} border ${borderColor} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} ${textMain} px-8 py-4 rounded-2xl font-bold transition-all`}
         >
-          <span className={`material-symbols-rounded ${themeClasses.primary.text}`}>photo_camera</span>
+          <AppIcon name="photo_camera" size={20} className={themeClasses.primary.text} />
           Instagram
         </a>
       )}

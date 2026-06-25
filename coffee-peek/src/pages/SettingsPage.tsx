@@ -13,6 +13,7 @@ import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import WobbleRing from '../components/WobbleRing';
+import { AppIcon } from '../components/icons';
 
 // ── Section types ────────────────────────────────────────────────────
 type Section = 'profile' | 'security' | 'appearance' | 'cafes';
@@ -230,7 +231,7 @@ const SettingsPage: React.FC = () => {
           <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 18, color: textPrimary, letterSpacing: '-0.01em' }}>Настройки</h1>
           {saveSuccess && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: '#15803D', fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 700 }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>check_circle</span>
+              <AppIcon name="check_circle" size={14} />
               Сохранено
             </span>
           )}
@@ -249,7 +250,7 @@ const SettingsPage: React.FC = () => {
         {/* Pending email confirmation banner */}
         {pendingEmailConfirmation && !isEditing && (
           <div style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 12, background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.28)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <span className="material-symbols-rounded" style={{ fontSize: 18, color: '#EAB308', lineHeight: 1, flexShrink: 0, marginTop: 2 }}>mail</span>
+            <AppIcon name="mail" size={18} color="#EAB308" style={{ flexShrink: 0, marginTop: 2 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: '0 0 10px', fontFamily: '"Noto Sans"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
                 Письмо отправлено на{' '}
@@ -263,12 +264,12 @@ const SettingsPage: React.FC = () => {
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
                   {isResending
                     ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
-                    : <><span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>refresh</span>Отправить повторно</>
+                    : <><AppIcon name="refresh" size={14} />Отправить повторно</>
                   }
                 </button>
                 {resendSuccess && (
                   <span style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>check_circle</span>
+                    <AppIcon name="check_circle" size={14} />
                     Письмо отправлено
                   </span>
                 )}
@@ -277,7 +278,7 @@ const SettingsPage: React.FC = () => {
             <button
               onClick={() => setPendingEmailConfirmation(null)}
               style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#A39E93', flexShrink: 0 }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>close</span>
+              <AppIcon name="close" size={18} />
             </button>
           </div>
         )}
@@ -296,7 +297,7 @@ const SettingsPage: React.FC = () => {
                   borderColor: active ? `${gold}50` : border,
                   fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 13, cursor: 'pointer',
                 }}>
-                  <span className="material-symbols-rounded" style={{ fontSize: 15, lineHeight: 1 }}>{item.icon}</span>
+                  <AppIcon name={item.icon} size={15} />
                   {item.label}
                 </button>
               );
@@ -337,9 +338,9 @@ const SettingsPage: React.FC = () => {
                     background: active ? `${gold}10` : 'transparent',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s',
                   }}>
-                    <span className="material-symbols-rounded" style={{ fontSize: 18, color: active ? gold : textMuted, lineHeight: 1 }}>{item.icon}</span>
+                    <AppIcon name={item.icon} size={18} color={active ? gold : textMuted} />
                     <span style={{ fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, color: active ? gold : textPrimary, flex: 1 }}>{item.label}</span>
-                    {active && <span className="material-symbols-rounded" style={{ fontSize: 16, color: gold, lineHeight: 1 }}>chevron_right</span>}
+                    {active && <AppIcon name="chevron_right" size={16} color={gold} />}
                   </button>
                 );
               })}
@@ -350,7 +351,7 @@ const SettingsPage: React.FC = () => {
               style={{ width: '100%', padding: '11px 14px', textAlign: 'left', background: surface, border: `1px solid ${border}`, borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
               onMouseLeave={e => (e.currentTarget.style.background = surface)}>
-              <span className="material-symbols-rounded" style={{ fontSize: 18, color: '#EF4444', lineHeight: 1 }}>logout</span>
+              <AppIcon name="logout" size={18} color="#EF4444" />
               <span style={{ fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, color: '#EF4444' }}>Выйти</span>
             </button>
           </aside>
@@ -426,7 +427,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             {isEditing && (
               <label style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 99, background: gold, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: `2px solid ${surface}` }}>
                 <input type="file" accept="image/*" onChange={onAvatarSelect} disabled={isSaving} style={{ display: 'none' }} />
-                <span className="material-symbols-rounded" style={{ fontSize: 14, color: '#1A1412', lineHeight: 1 }}>photo_camera</span>
+                <AppIcon name="photo_camera" size={14} color="#1A1412" />
               </label>
             )}
           </div>
@@ -436,7 +437,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 22, color: textPrimary, letterSpacing: '-0.01em' }}>{profile.userName}</h2>
             <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: `${gold}15`, border: `1px solid ${gold}30` }}>
-                <span className="material-symbols-rounded" style={{ fontSize: 13, color: goldWarm, lineHeight: 1 }}>local_cafe</span>
+                <AppIcon name="local_cafe" size={13} color={goldWarm} />
                 <span style={{ fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, color: goldWarm, letterSpacing: '.05em', textTransform: 'uppercase' }}>Ценитель кофе</span>
               </span>
               {memberSince && (
@@ -449,7 +450,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
           <div style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
             {!isEditing ? (
               <button onClick={onEditStart} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
-                <span className="material-symbols-rounded" style={{ fontSize: 16, lineHeight: 1 }}>edit</span>
+                <AppIcon name="edit" size={16} />
                 Изменить
               </button>
             ) : (
@@ -460,7 +461,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                 <button onClick={onSave} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 13, cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}>
                   {isSaving
                     ? <><WobbleRing size={16} color="#1A1412" />Сохранение…</>
-                    : <><span className="material-symbols-rounded" style={{ fontSize: 15, lineHeight: 1 }}>check</span>Сохранить</>
+                    : <><AppIcon name="check" size={15} />Сохранить</>
                   }
                 </button>
               </>
@@ -477,7 +478,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
           ].map(stat => (
             <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `${gold}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="material-symbols-rounded" style={{ fontSize: 18, color: goldWarm, lineHeight: 1 }}>{stat.icon}</span>
+                <AppIcon name={stat.icon} size={18} color={goldWarm} />
               </div>
               <div>
                 <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 18, color: textPrimary, lineHeight: 1 }}>{stat.value}</p>
@@ -571,10 +572,10 @@ const AppearanceSection: React.FC<{
           <button key={opt.value} onClick={onToggleTheme}
             style={{ padding: '20px 16px', borderRadius: 16, border: `2px solid ${active ? gold : border}`, background: active ? `${gold}10` : (isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7'), cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, transition: 'all .2s' }}>
             <div style={{ width: 52, height: 36, borderRadius: 10, background: opt.preview, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.08)' }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 22, color: opt.accent, lineHeight: 1 }}>{opt.icon}</span>
+              <AppIcon name={opt.icon} size={22} color={opt.accent} />
             </div>
             <span style={{ fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 13, color: active ? gold : textPrimary }}>{opt.label}</span>
-            {active && <span className="material-symbols-rounded" style={{ fontSize: 16, color: gold, lineHeight: 1, marginTop: -4 }}>check_circle</span>}
+            {active && <AppIcon name="check_circle" size={16} color={gold} style={{ marginTop: -4 }} />}
           </button>
         );
       })}
@@ -595,7 +596,7 @@ const CafesSection: React.FC<{
       <button onClick={onAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'opacity .15s' }}
         onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
         onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-        <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>add_business</span>
+        <AppIcon name="add_business" size={18} />
         Добавить кофейню
       </button>
     </div>
@@ -604,7 +605,7 @@ const CafesSection: React.FC<{
       <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Каталог кофеен</h3>
       <p style={{ margin: '0 0 20px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted }}>Исследуйте все кофейни в каталоге</p>
       <button onClick={onBrowse} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-        <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>coffee</span>
+        <AppIcon name="coffee" size={18} />
         Открыть каталог
       </button>
     </div>

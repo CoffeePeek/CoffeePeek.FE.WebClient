@@ -1,6 +1,7 @@
 import React, { memo, useState } from 'react';
 import { CoffeeShop, getPhotoUrl, formatEquipmentName } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
+import { AppIcon, StarIcon } from './icons';
 
 interface ShopCardColors {
   surface: string;
@@ -78,7 +79,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
           </>
         ) : (
           <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, ${COLORS.primary}20, #D4A84B20)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span className="material-symbols-rounded" style={{ fontSize: 40, color: colors.textSecondary, lineHeight: 1 }}>local_cafe</span>
+            <AppIcon name="local_cafe" size={40} color={colors.textSecondary} />
           </div>
         )}
 
@@ -91,7 +92,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
               background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',
               fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, fontSize: 11, color: '#D4A84B',
             }}>
-              <span className="material-symbols-rounded star-filled" style={{ fontSize: 12, color: '#D4A84B', lineHeight: 1 }}>star</span>
+              <StarIcon filled size={12} color="#D4A84B" />
               {shop.rating.toFixed(1)}
             </span>
           )}
@@ -113,7 +114,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
             border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <span className={`material-symbols-rounded${fav ? ' star-filled' : ''}`} style={{ fontSize: 15, color: fav ? '#EF4444' : '#78716C', lineHeight: 1 }}>favorite</span>
+          <AppIcon name="favorite" filled={fav} size={15} color={fav ? '#EF4444' : '#78716C'} />
         </button>
       </div>
 
@@ -139,7 +140,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
 
         {/* Address */}
         <p style={{ margin: '4px 0 0', fontFamily: '"Noto Sans",system-ui', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          <span className="material-symbols-rounded" style={{ fontSize: 13, color: '#D4A84B', lineHeight: 1, flexShrink: 0 }}>location_on</span>
+          <AppIcon name="location_on" size={13} color="#D4A84B" style={{ flexShrink: 0 }} />
           {shop.address || shop.cityName || 'Адрес не указан'}
         </p>
 

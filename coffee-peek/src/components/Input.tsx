@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { AppIcon } from './icons';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -45,9 +46,7 @@ const Input: React.FC<InputProps> = ({ label, icon, className = '', type, ...pro
             className={`absolute right-4 top-1/2 -translate-y-1/2 ${themeClasses.text.secondary} ${themeClasses.primary.hover} transition-colors z-10`}
             aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
           >
-            <span className="material-symbols-rounded text-xl">
-              {showPassword ? 'visibility_off' : 'visibility'}
-            </span>
+            <AppIcon name={showPassword ? 'visibility_off' : 'visibility'} size={20} />
           </button>
         )}
       </div>

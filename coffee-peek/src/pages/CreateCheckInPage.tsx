@@ -12,6 +12,7 @@ import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { AppIcon } from '../components/icons';
 
 interface ShopBasicInfo {
   name: string;
@@ -186,9 +187,7 @@ const CreateCheckInPage: React.FC = () => {
                     <img alt={shop?.name || 'Кофейня'} className="w-full h-full object-cover" src={shopImage} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-                      <span className="material-symbols-rounded text-4xl" style={{ color: colors.textMuted }}>
-                        store
-                      </span>
+                      <AppIcon name="store" size={36} color={colors.textMuted} />
                     </div>
                   )}
                 </div>
@@ -202,7 +201,7 @@ const CreateCheckInPage: React.FC = () => {
               </h2>
 
               <div className="flex items-center justify-center gap-1.5 mb-8" style={{ color: colors.textMuted }}>
-                <span className={`material-symbols-rounded ${themeClasses.primary.text} text-lg`}>location_on</span>
+                <AppIcon name="location_on" size={18} className={themeClasses.primary.text} />
                 <span className="text-sm font-medium">
                   {shop?.address || 'Адрес не указан'}
                 </span>
@@ -236,7 +235,7 @@ const CreateCheckInPage: React.FC = () => {
                     maxLength={500}
                   />
                   <div className="absolute bottom-4 right-4 pointer-events-none" style={{ color: `${colors.textMuted}33` }}>
-                    <span className="material-symbols-rounded text-2xl">edit_note</span>
+                    <AppIcon name="edit_note" size={24} />
                   </div>
                 </div>
                 <p className="text-xs" style={{ color: colors.textMuted }}>
@@ -353,9 +352,7 @@ const CreateCheckInPage: React.FC = () => {
                 className={`px-10 py-5 ${themeClasses.primary.bg} ${themeClasses.primary.bgHover} text-white rounded-2xl font-bold text-lg flex items-center gap-3 shadow-lg ${themeClasses.primary.shadow} transition-all active:scale-95 group disabled:opacity-50`}
               >
                 {isSubmitting ? 'Создание...' : 'Чекиниться'}
-                <span className="material-symbols-rounded group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
-                  check_circle
-                </span>
+                <AppIcon name="check_circle" size={24} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
               </button>
             </div>
           </div>

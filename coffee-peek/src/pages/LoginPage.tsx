@@ -5,9 +5,13 @@ import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
 import { useUser } from '../contexts/UserContext';
 import { getErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
+import {
+  Envelope, Lock, WarningCircle, Eye, EyeSlash, Sun, Moon,
+  CheckCircle, Clock, ArrowClockwise, ArrowLeft,
+} from '@/components/Icon';
 
 interface AuthFieldProps {
-  icon?: string;
+  icon?: React.ReactNode;
   type?: string;
   placeholder?: string;
   value: string;
@@ -26,8 +30,8 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
       {label && <div style={{ fontFamily: '"Noto Sans",system-ui', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
       <div style={{ position: 'relative' }}>
         {icon && (
-          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }}>
-            <span className="material-symbols-rounded" style={{ fontSize: 20, color: dark ? '#D4A84B' : '#D4A84B', lineHeight: 1, verticalAlign: 'middle' }}>{icon}</span>
+          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+            {icon}
           </span>
         )}
         <input
@@ -48,7 +52,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
       </div>
       {error && (
         <div style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>error</span>{error}
+          <WarningCircle size={14} weight="fill" />{error}
         </div>
       )}
     </label>
@@ -171,9 +175,7 @@ const LoginPage: React.FC = () => {
   const PwdToggle = (
     <button type="button" onClick={() => setShowPwd(s => !s)} aria-label={showPwd ? 'Скрыть пароль' : 'Показать пароль'}
       style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-      <span className="material-symbols-rounded" style={{ fontSize: 20, color: textMuted, lineHeight: 1 }}>
-        {showPwd ? 'visibility_off' : 'visibility'}
-      </span>
+      {showPwd ? <EyeSlash size={20} color={textMuted} /> : <Eye size={20} color={textMuted} />}
     </button>
   );
 
@@ -188,9 +190,7 @@ const LoginPage: React.FC = () => {
       {/* Theme toggle */}
       <button onClick={() => setDark(d => !d)} aria-label="Переключить тему"
         style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 99, background: cardBg, border: `1px solid ${cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: dark ? 'blur(12px)' : 'none', transition: 'all .3s' }}>
-        <span className="material-symbols-rounded" style={{ fontSize: 20, color: textPrimary, lineHeight: 1 }}>
-          {dark ? 'light_mode' : 'dark_mode'}
-        </span>
+        {dark ? <Sun size={20} color={textPrimary} /> : <Moon size={20} color={textPrimary} />}
       </button>
 
       {/* Card */}
@@ -211,7 +211,7 @@ const LoginPage: React.FC = () => {
 
           {passedEmail && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: dark ? '#22C55E' : '#15803D', fontFamily: '"Noto Sans"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
-              <span className="material-symbols-rounded star-filled" style={{ fontSize: 14, lineHeight: 1 }}>check_circle</span>
+              <CheckCircle size={14} weight="fill" color="#22C55E" />
               Аккаунт найден
             </span>
           )}
@@ -228,7 +228,7 @@ const LoginPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: passedEmail ? 20 : 0 }}>
             <AuthField
-              icon="mail"
+              icon={<Envelope size={20} color={gold} />}
               type="email"
               placeholder="name@example.com"
               label="Email"
@@ -236,14 +236,13 @@ const LoginPage: React.FC = () => {
               onChange={e => { setEmail(e.target.value); setError(null); setEmailNotConfirmed(false); setResendState('idle'); setResendCooldown(0); }}
               dark={dark}
               trailing={emailValidDebounced ? (
-                <span className="material-symbols-rounded star-filled"
-                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#22C55E', lineHeight: 1, pointerEvents: 'none' }}>
-                  check_circle
+                <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex' }}>
+                  <CheckCircle size={18} weight="fill" color="#22C55E" />
                 </span>
               ) : undefined}
             />
 
-            <AuthField icon="lock" type={showPwd ? 'text' : 'password'} placeholder="Пароль" label="Пароль"
+            <AuthField icon={<Lock size={20} color={gold} />} type={showPwd ? 'text' : 'password'} placeholder="Пароль" label="Пароль"
               value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
 
             <div style={{ textAlign: 'right', marginTop: -6 }}>
@@ -271,8 +270,8 @@ const LoginPage: React.FC = () => {
                   {resendState === 'sending'
                     ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
                     : resendCooldown > 0
-                      ? <><span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>schedule</span>Повторно через {resendCooldown}с</>
-                      : <><span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>refresh</span>Отправить письмо повторно</>
+                      ? <><Clock size={14} />Повторно через {resendCooldown}с</>
+                      : <><ArrowClockwise size={14} />Отправить письмо повторно</>
                   }
                 </button>
               </div>
@@ -289,7 +288,7 @@ const LoginPage: React.FC = () => {
           <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <button type="button" onClick={() => navigate(passedEmail ? '/register' : '/')}
               style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"Noto Sans"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>arrow_back</span> Назад
+              <ArrowLeft size={14} /> Назад
             </button>
             <button type="button" onClick={() => navigate('/register')}
               style={{ background: 'none', border: 'none', color: gold, fontFamily: '"Noto Sans"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>

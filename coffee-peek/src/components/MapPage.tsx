@@ -3,6 +3,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getCoffeeShopsByMapBounds, getCoffeeShopById, MapShop, DetailedCoffeeShop } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
+import { AppIcon } from './icons';
 
 declare global {
   interface Window {
@@ -332,7 +333,7 @@ const MapPage: React.FC = () => {
           {shopsLoaded && shops.length === 0 && !isLoading && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-5 py-3 rounded-2xl shadow-lg border flex items-center gap-3"
                  style={{ backgroundColor: 'rgba(45,36,31,0.92)', borderColor: '#3D2F28', backdropFilter: 'blur(12px)' }}>
-              <span className="material-symbols-rounded text-[#EAB308]">search_off</span>
+              <AppIcon name="search_off" size={20} color="#EAB308" />
               <span className="text-white text-sm font-medium">Кофейни в этой области не найдены</span>
             </div>
           )}

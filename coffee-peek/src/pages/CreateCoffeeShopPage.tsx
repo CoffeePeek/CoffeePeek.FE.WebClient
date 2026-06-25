@@ -12,6 +12,7 @@ import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { AppIcon } from '../components/icons';
 import {
   buildShopSubmissionPayload,
   INITIAL_SHOP_FORM_DATA,
@@ -199,7 +200,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
             onClick={handleBack}
             className={`mb-6 flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
           >
-            <span className="material-symbols-rounded">arrow_back</span>
+            <AppIcon name="arrow_back" size={24} />
             <span>Назад</span>
           </button>
           <h1 className={`text-4xl font-bold ${themeClasses.text.primary} mb-2`}>Добавить кофейню</h1>

@@ -9,6 +9,7 @@ import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { Icons } from '../constants';
 import { logger } from '../utils/logger';
+import { AppIcon, StarIcon } from './icons';
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -242,9 +243,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                       <img alt={shop.name} className="w-full h-full object-cover" src={shopImage} />
                     ) : (
                       <div className={`w-full h-full flex items-center justify-center ${themeClasses.bg.tertiary}`}>
-                        <span className="material-symbols-rounded text-lg" style={{ color: colors.textMuted }}>
-                          store
-                        </span>
+                        <AppIcon name="store" size={18} color={colors.textMuted} />
                       </div>
                     )}
                   </div>
@@ -255,7 +254,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                 <div className="flex-1 min-w-0">
                   <h3 className={`font-bold text-sm ${themeClasses.text.primary} mb-0.5 truncate`}>{shop.name}</h3>
                   <div className="flex items-center gap-1">
-                    <span className={`material-symbols-rounded ${themeClasses.primary.text} text-xs`}>location_on</span>
+                    <AppIcon name="location_on" size={12} className={themeClasses.primary.text} />
                     <span className={`text-xs ${themeClasses.text.secondary} truncate`}>
                       {shop.location?.address || 'Адрес не указан'}
                     </span>
@@ -269,9 +268,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                   Дата посещения
                 </label>
                 <div className="relative">
-                  <span className="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-lg pointer-events-none" style={{ color: colors.textMuted }}>
-                    calendar_today
-                  </span>
+                  <AppIcon name="calendar_today" size={18} color={colors.textMuted} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="date"
                     id="visitedDate"
@@ -312,7 +309,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                 maxLength={500}
               />
               <div className="absolute bottom-3 right-3 pointer-events-none" style={{ color: `${colors.textMuted}33` }}>
-                <span className="material-symbols-rounded text-xl">edit_note</span>
+                <AppIcon name="edit_note" size={20} />
               </div>
             </div>
             <p className={`text-xs ${themeClasses.text.secondary}`}>
@@ -413,14 +410,12 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                         onClick={() => setRatingCoffee(star)}
                         className="hover:scale-110 transition-transform"
                       >
-                        <span
-                          className={`material-symbols-rounded text-[24px] ${
-                            star <= ratingCoffee ? `star-filled ${themeClasses.primary.text}` : ''
-                          }`}
-                          style={star > ratingCoffee ? { color: `${colors.primary}20` } : undefined}
-                        >
-                          star
-                        </span>
+                          <StarIcon
+                            filled={star <= ratingCoffee}
+                            size={24}
+                            className={star <= ratingCoffee ? themeClasses.primary.text : undefined}
+                            style={star > ratingCoffee ? { color: `${colors.primary}20` } : undefined}
+                          />
                       </button>
                     ))}
                   </div>

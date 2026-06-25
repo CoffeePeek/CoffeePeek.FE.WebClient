@@ -5,6 +5,7 @@ import { ReviewCardSkeleton } from '../skeletons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppUser } from '../../contexts/UserContext';
+import { StarIcon } from '../icons';
 
 interface ReviewsSectionProps {
   reviews: Review[];
@@ -103,9 +104,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   <div className="flex items-center gap-2">
                     <div className={`flex ${themeClasses.primary.text}`}>
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <span key={star} className={`material-symbols-rounded ${star <= avgReviewRating ? 'fill-1' : ''}`}>
-                          star
-                        </span>
+                        <StarIcon key={star} filled={star <= avgReviewRating} size={20} />
                       ))}
                     </div>
                     <span className={`text-lg font-bold ${textMain}`}>

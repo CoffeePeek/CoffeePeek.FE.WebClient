@@ -18,6 +18,7 @@ import { useToggleFavorite } from '../hooks/queries/useFavorites';
 import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { AppIcon } from '../components/icons';
 
 const CoffeeShopPage: React.FC = () => {
   const { shopId } = useParams<{ shopId: string }>();
@@ -198,7 +199,7 @@ const CoffeeShopPage: React.FC = () => {
                     href={`tel:${shop.shopContact.phone}`}
                     className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
                   >
-                    <span className="material-symbols-rounded text-[#D4A84B]">call</span>
+                    <AppIcon name="call" size={24} color="#D4A84B" />
                     <span className="font-medium break-all">{shop.shopContact.phone}</span>
                   </a>
                 )}
@@ -207,7 +208,7 @@ const CoffeeShopPage: React.FC = () => {
                     href={`mailto:${shop.shopContact.email}`}
                     className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
                   >
-                    <span className="material-symbols-rounded text-[#D4A84B]">mail</span>
+                    <AppIcon name="mail" size={24} color="#D4A84B" />
                     <span className="font-medium break-all">{shop.shopContact.email}</span>
                   </a>
                 )}
@@ -218,7 +219,7 @@ const CoffeeShopPage: React.FC = () => {
                     rel="noopener noreferrer"
                     className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
                   >
-                    <span className="material-symbols-rounded text-[#D4A84B]">language</span>
+                    <AppIcon name="language" size={24} color="#D4A84B" />
                     <span className="font-medium break-all">{shop.shopContact.website}</span>
                   </a>
                 )}
@@ -229,7 +230,7 @@ const CoffeeShopPage: React.FC = () => {
                     rel="noopener noreferrer"
                     className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
                   >
-                    <span className="material-symbols-rounded text-[#D4A84B]">photo_camera</span>
+                    <AppIcon name="photo_camera" size={24} color="#D4A84B" />
                     <span className="font-medium break-all">{shop.shopContact.instagram}</span>
                   </a>
                 )}
@@ -251,7 +252,7 @@ const CoffeeShopPage: React.FC = () => {
                 {shop.equipments && shop.equipments.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-rounded text-[#D4A84B]">precision_manufacturing</span>
+                      <AppIcon name="precision_manufacturing" size={24} color="#D4A84B" />
                       <h3 className={`font-bold ${textMain}`}>Оборудование</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -271,7 +272,7 @@ const CoffeeShopPage: React.FC = () => {
                 {shop.beans && shop.beans.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-rounded text-[#D4A84B]">energy</span>
+                      <AppIcon name="energy" size={24} color="#D4A84B" />
                       <h3 className={`font-bold ${textMain}`}>Кофейные зёрна</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -291,7 +292,7 @@ const CoffeeShopPage: React.FC = () => {
                 {shop.roasters && shop.roasters.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-rounded text-[#D4A84B]">local_fire_department</span>
+                      <AppIcon name="local_fire_department" size={24} color="#D4A84B" />
                       <h3 className={`font-bold ${textMain}`}>Обжарщики</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -311,7 +312,7 @@ const CoffeeShopPage: React.FC = () => {
                 {shop.brewMethods && shop.brewMethods.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="material-symbols-rounded text-[#D4A84B]">water_drop</span>
+                      <AppIcon name="water_drop" size={24} color="#D4A84B" />
                       <h3 className={`font-bold ${textMain}`}>Методы заваривания</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -367,7 +368,7 @@ const CoffeeShopPage: React.FC = () => {
           onClick={() => navigate('/shops')}
           className="bg-[#EAB308] hover:bg-[#FACC15] text-[#1A1412] px-6 py-3 rounded-2xl font-bold shadow-lg transition-all flex items-center gap-2"
         >
-          <span className="material-symbols-rounded">arrow_back</span>
+          <AppIcon name="arrow_back" size={24} />
           Назад
         </button>
       </div>

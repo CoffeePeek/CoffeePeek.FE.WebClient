@@ -18,7 +18,7 @@ export function formatStatCompact(value: number): string {
 }
 
 export function formatStatRating(value: number): string {
-  return `${value.toFixed(1)}★`;
+  return value.toFixed(1);
 }
 
 export function usePublicStats(enabled = true) {

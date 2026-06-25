@@ -11,6 +11,7 @@ import { useToast } from '../contexts/ToastContext';
 import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { AppIcon, StarIcon } from '../components/icons';
 
 interface ShopBasicInfo {
   name: string;
@@ -318,7 +319,7 @@ const CreateReviewPage: React.FC = () => {
             className="flex items-center gap-2 font-semibold hover:opacity-70 transition-opacity"
             style={{ color: colors.textMuted }}
           >
-            <span className="material-symbols-rounded">arrow_back</span>
+            <AppIcon name="arrow_back" size={24} />
             Назад
           </button>
         </div>
@@ -336,14 +337,12 @@ const CreateReviewPage: React.FC = () => {
                     <img alt={shop?.name || 'Кофейня'} className="w-full h-full object-cover" src={shopImage} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: colors.surface }}>
-                      <span className="material-symbols-rounded text-4xl" style={{ color: colors.textMuted }}>
-                        store
-                      </span>
+                      <AppIcon name="store" size={36} color={colors.textMuted} />
                     </div>
                   )}
                 </div>
                 <div className={`absolute -bottom-2 -right-2 ${themeClasses.primary.bg} text-white p-2 rounded-full shadow-lg`}>
-                  <span className="material-symbols-rounded text-sm block">verified</span>
+                  <AppIcon name="verified" size={14} className="block" />
                 </div>
               </div>
 
@@ -352,7 +351,7 @@ const CreateReviewPage: React.FC = () => {
               </h2>
 
               <div className="flex items-center justify-center gap-1.5 mb-8" style={{ color: colors.textMuted }}>
-                <span className={`material-symbols-rounded ${themeClasses.primary.text} text-lg`}>location_on</span>
+                <AppIcon name="location_on" size={18} className={themeClasses.primary.text} />
                 <span className="text-sm font-medium">
                   {shop?.address || 'Адрес не указан'}
                 </span>
@@ -364,15 +363,13 @@ const CreateReviewPage: React.FC = () => {
                 </p>
                 <div className="flex justify-center gap-2 mb-2">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <span
+                    <StarIcon
                       key={star}
-                      className={`material-symbols-rounded text-[32px] ${
-                        star <= parseFloat(getAverageRating()) ? `star-filled ${themeClasses.primary.text}` : ''
-                      }`}
+                      filled={star <= parseFloat(getAverageRating())}
+                      size={32}
+                      className={star <= parseFloat(getAverageRating()) ? themeClasses.primary.text : undefined}
                       style={star > parseFloat(getAverageRating()) ? { color: `${colors.primary}30` } : undefined}
-                    >
-                      star
-                    </span>
+                    />
                   ))}
                 </div>
                 <p className={`${themeClasses.primary.text} font-bold text-base mb-6`}>
@@ -385,9 +382,7 @@ const CreateReviewPage: React.FC = () => {
                     Дата посещения
                   </label>
                   <div className="relative">
-                    <span className="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-lg pointer-events-none" style={{ color: colors.textMuted }}>
-                      calendar_today
-                    </span>
+                    <AppIcon name="calendar_today" size={18} color={colors.textMuted} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="date"
                       id="visitedDate"
@@ -431,14 +426,12 @@ const CreateReviewPage: React.FC = () => {
                           onClick={() => setRatingCoffee(star)}
                           className="hover:scale-110 transition-transform"
                         >
-                          <span
-                            className={`material-symbols-rounded text-[28px] ${
-                              star <= ratingCoffee ? `star-filled ${themeClasses.primary.text}` : ''
-                            }`}
+                          <StarIcon
+                            filled={star <= ratingCoffee}
+                            size={28}
+                            className={star <= ratingCoffee ? themeClasses.primary.text : undefined}
                             style={star > ratingCoffee ? { color: `${colors.primary}20` } : undefined}
-                          >
-                            star
-                          </span>
+                          />
                         </button>
                       ))}
                     </div>
@@ -456,14 +449,12 @@ const CreateReviewPage: React.FC = () => {
                           onClick={() => setRatingService(star)}
                           className="hover:scale-110 transition-transform"
                         >
-                          <span
-                            className={`material-symbols-rounded text-[28px] ${
-                              star <= ratingService ? `star-filled ${themeClasses.primary.text}` : ''
-                            }`}
+                          <StarIcon
+                            filled={star <= ratingService}
+                            size={28}
+                            className={star <= ratingService ? themeClasses.primary.text : undefined}
                             style={star > ratingService ? { color: `${colors.primary}20` } : undefined}
-                          >
-                            star
-                          </span>
+                          />
                         </button>
                       ))}
                     </div>
@@ -481,14 +472,12 @@ const CreateReviewPage: React.FC = () => {
                           onClick={() => setRatingPlace(star)}
                           className="hover:scale-110 transition-transform"
                         >
-                          <span
-                            className={`material-symbols-rounded text-[28px] ${
-                              star <= ratingPlace ? `star-filled ${themeClasses.primary.text}` : ''
-                            }`}
+                          <StarIcon
+                            filled={star <= ratingPlace}
+                            size={28}
+                            className={star <= ratingPlace ? themeClasses.primary.text : undefined}
                             style={star > ratingPlace ? { color: `${colors.primary}20` } : undefined}
-                          >
-                            star
-                          </span>
+                          />
                         </button>
                       ))}
                     </div>
@@ -536,7 +525,7 @@ const CreateReviewPage: React.FC = () => {
                       placeholder="Поделитесь подробностями о вашем визите..."
                     />
                     <div className="absolute bottom-4 right-4 pointer-events-none" style={{ color: `${colors.textMuted}33` }}>
-                      <span className="material-symbols-rounded text-2xl">edit_note</span>
+                      <AppIcon name="edit_note" size={24} />
                     </div>
                   </div>
                 </div>
@@ -654,9 +643,7 @@ const CreateReviewPage: React.FC = () => {
                 className={`px-10 py-5 ${themeClasses.primary.bg} ${themeClasses.primary.bgHover} text-white rounded-2xl font-bold text-lg flex items-center gap-3 shadow-lg ${themeClasses.primary.shadow} transition-all active:scale-95 group disabled:opacity-50`}
               >
                 {isSubmitting ? (reviewId ? 'Сохранение...' : 'Публикация...') : (reviewId ? 'Сохранить изменения' : 'Опубликовать отзыв')}
-                <span className="material-symbols-rounded group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
-                  send
-                </span>
+                <AppIcon name="send" size={24} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
               </button>
             </div>
           </div>

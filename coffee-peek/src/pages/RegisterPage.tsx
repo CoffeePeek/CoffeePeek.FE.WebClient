@@ -5,12 +5,16 @@ import { getErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { LEGAL_ROUTES } from '../constants/legalRoutes';
 import { logger } from '../utils/logger';
+import {
+  Envelope, Lock, User, WarningCircle, Eye, EyeSlash, Sun, Moon,
+  EnvelopeOpen, SignIn, Globe, Sparkle, ArrowLeft,
+} from '@/components/Icon';
 
 type RegisterStep = 'email' | 'registration' | 'success';
 
 // ── Auth field ─────────────────────────────────────────────────────
 interface AuthFieldProps {
-  icon?: string; type?: string; placeholder?: string;
+  icon?: React.ReactNode; type?: string; placeholder?: string;
   value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   label?: string; trailing?: React.ReactNode; autoFocus?: boolean;
   error?: string; dark: boolean;
@@ -23,8 +27,8 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
       {label && <div style={{ fontFamily: '"Noto Sans",system-ui', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
       <div style={{ position: 'relative' }}>
         {icon && (
-          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }}>
-            <span className="material-symbols-rounded" style={{ fontSize: 20, color: dark ? '#D4A84B' : '#D4A84B', lineHeight: 1, verticalAlign: 'middle' }}>{icon}</span>
+          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+            {icon}
           </span>
         )}
         <input type={type} placeholder={placeholder} value={value} onChange={onChange} autoFocus={autoFocus}
@@ -43,7 +47,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
       </div>
       {error && (
         <div style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>error</span>{error}
+          <WarningCircle size={14} weight="fill" />{error}
         </div>
       )}
     </label>
@@ -155,7 +159,7 @@ const RegisterPage: React.FC = () => {
   const PwdToggle = (
     <button type="button" onClick={() => setShowPwd(s => !s)} aria-label={showPwd ? 'Скрыть пароль' : 'Показать пароль'}
       style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-      <span className="material-symbols-rounded" style={{ fontSize: 20, color: textMuted, lineHeight: 1 }}>{showPwd ? 'visibility_off' : 'visibility'}</span>
+      {showPwd ? <EyeSlash size={20} color={textMuted} /> : <Eye size={20} color={textMuted} />}
     </button>
   );
 
@@ -170,9 +174,7 @@ const RegisterPage: React.FC = () => {
       {/* Theme toggle */}
       <button onClick={() => setDark(d => !d)} aria-label="Переключить тему"
         style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 99, background: cardBg, border: `1px solid ${cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: dark ? 'blur(12px)' : 'none', transition: 'all .3s' }}>
-        <span className="material-symbols-rounded" style={{ fontSize: 20, color: textPrimary, lineHeight: 1 }}>
-          {dark ? 'light_mode' : 'dark_mode'}
-        </span>
+        {dark ? <Sun size={20} color={textPrimary} /> : <Moon size={20} color={textPrimary} />}
       </button>
 
       {/* Card */}
@@ -183,7 +185,7 @@ const RegisterPage: React.FC = () => {
           {step === 'success' ? (
             <div style={{ textAlign: 'center', padding: '8px 0' }}>
               <div style={{ width: 88, height: 88, borderRadius: 99, background: dark ? 'rgba(234,179,8,0.12)' : 'rgba(234,179,8,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                <span className="material-symbols-rounded star-filled" style={{ fontSize: 52, color: gold, lineHeight: 1 }}>mark_email_read</span>
+                <EnvelopeOpen size={52} color={gold} />
               </div>
               <h1 style={{ margin: '24px 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Проверьте почту</h1>
               <p style={{ margin: '0 0 28px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.6 }}>
@@ -195,7 +197,7 @@ const RegisterPage: React.FC = () => {
               <button
                 onClick={() => navigate('/login')}
                 style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
-                <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>login</span>
+                <SignIn size={18} />
                 На страницу входа
               </button>
             </div>
@@ -220,13 +222,13 @@ const RegisterPage: React.FC = () => {
                     Мы проверим, есть ли у вас уже аккаунт CoffeePeek.
                   </p>
                   <form onSubmit={handleEmailCheck} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <AuthField icon="mail" type="email" placeholder="name@example.com" autoFocus value={email} onChange={e => setEmail(e.target.value)} error={error || undefined} dark={dark} />
+                    <AuthField icon={<Envelope size={20} color={gold} />} type="email" placeholder="name@example.com" autoFocus value={email} onChange={e => setEmail(e.target.value)} error={error || undefined} dark={dark} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"Noto Sans"', margin: '2px 0' }}>
                       <div style={{ flex: 1, height: 1, background: cardBorder }} />ИЛИ<div style={{ flex: 1, height: 1, background: cardBorder }} />
                     </div>
                     <button type="button" onClick={() => navigate('/login')}
                       style={{ width: '100%', height: 48, borderRadius: 12, background: dark ? 'rgba(255,255,255,0.04)' : '#F9F8F6', color: textPrimary, border: `1px solid ${cardBorder}`, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                      <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>public</span>
+                      <Globe size={18} />
                       Войти через Google
                     </button>
                     <button type="submit" disabled={!emailValid || isLoading}
@@ -238,18 +240,18 @@ const RegisterPage: React.FC = () => {
               ) : (
                 <>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(180,140,75,.18)', color: gold, fontFamily: '"Noto Sans"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
-                    <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>auto_awesome</span> Новый профиль
+                    <Sparkle size={14} /> Новый профиль
                   </span>
                   <h1 style={{ margin: '14px 0 0', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Создайте аккаунт</h1>
                   <div style={{ margin: '8px 0 22px', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 12, background: dark ? 'rgba(255,255,255,0.03)' : '#F9F8F6', border: `1px solid ${cardBorder}` }}>
-                    <span className="material-symbols-rounded" style={{ fontSize: 16, color: '#D4A84B', lineHeight: 1 }}>mail</span>
+                    <Envelope size={16} color="#D4A84B" />
                     <span style={{ fontFamily: '"Noto Sans"', fontSize: 13, color: textPrimary, flex: 1 }}>{email}</span>
                     <button type="button" onClick={() => setStep('email')} style={{ background: 'none', border: 'none', color: gold, fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Изменить</button>
                   </div>
                   <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <AuthField icon="person" placeholder="Как вас зовут?" label="Имя" autoFocus value={userName} onChange={e => setUserName(e.target.value)} dark={dark} />
+                    <AuthField icon={<User size={20} color={gold} />} placeholder="Как вас зовут?" label="Имя" autoFocus value={userName} onChange={e => setUserName(e.target.value)} dark={dark} />
                     <div>
-                      <AuthField icon="lock" type={showPwd ? 'text' : 'password'} placeholder="Не менее 6 символов" label="Пароль"
+                      <AuthField icon={<Lock size={20} color={gold} />} type={showPwd ? 'text' : 'password'} placeholder="Не менее 6 символов" label="Пароль"
                         value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
                       <StrengthBar password={password} dark={dark} />
                     </div>
@@ -292,7 +294,7 @@ const RegisterPage: React.FC = () => {
               <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <button type="button" onClick={() => step === 'registration' ? setStep('email') : navigate('/')}
                   style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"Noto Sans"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>arrow_back</span> Назад
+                  <ArrowLeft size={14} /> Назад
                 </button>
                 <button type="button" onClick={() => navigate('/login')}
                   style={{ background: 'none', border: 'none', color: gold, fontFamily: '"Noto Sans"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>

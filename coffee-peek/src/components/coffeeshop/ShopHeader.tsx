@@ -3,6 +3,7 @@ import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { getCurrentStatus } from '../../utils/shopUtils';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
+import { AppIcon, StarIcon } from '../icons';
 
 interface ShopHeaderProps {
   shop: DetailedCoffeeShop;
@@ -41,7 +42,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
         </h1>
         <div className="flex items-center gap-3 text-sm flex-wrap">
           <span className={`${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-3 py-1 rounded-lg flex items-center gap-1`}>
-            <span className="material-symbols-rounded text-sm fill-1">star</span>
+            <StarIcon filled size={14} />
             {avgRating.toFixed(1)}
           </span>
           <span className={`${textMuted} font-medium border-b border-current/30`}>
@@ -75,7 +76,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
             onClick={onCheckIn}
             className={`px-4 py-2 rounded-2xl border ${borderColor} flex items-center justify-center gap-2 ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} transition-all ${themeClasses.primary.text} font-semibold text-sm`}
           >
-            <span className="material-symbols-rounded text-lg">check_circle</span>
+            <AppIcon name="check_circle" size={18} />
             Чекиниться
           </button>
         )}
@@ -88,10 +89,10 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
               : `${textMuted} ${themeClasses.primary.hover} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')}`
           }`}
         >
-          <span className={`material-symbols-rounded ${isFavorite ? 'fill-1' : ''}`}>favorite</span>
+          <AppIcon name="favorite" filled={isFavorite} size={20} />
         </button>
         <button className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} transition-all ${textMuted} ${themeClasses.primary.hover}`}>
-          <span className="material-symbols-rounded">share</span>
+          <AppIcon name="share" size={20} />
         </button>
       </div>
     </div>

@@ -17,6 +17,7 @@ import {
   formatStatCompact,
   formatStatRating,
 } from '../hooks/queries/usePublicStats';
+import { AppIcon, StarIcon } from '../components/icons';
 
 const ISO_MAP_PINS = [
   { x: 100, y: 150 }, { x: 165, y: 110 }, { x: 220, y: 80 },
@@ -42,7 +43,7 @@ const IsoMapWidget: React.FC = () => {
       {/* location pin */}
       <div className="absolute top-[22px] right-[22px] z-[4] w-11 h-11 rounded-full flex items-center justify-center"
         style={{ background: 'rgba(26,20,18,0.85)', border: '1px solid rgba(234,179,8,0.45)', boxShadow: '0 4px 12px rgba(234,179,8,0.18)' }}>
-        <span className="material-symbols-rounded star-filled text-[22px] text-[#EAB308]">location_on</span>
+        <AppIcon name="location_on" filled size={22} color="#EAB308" />
       </div>
       {/* iso map stage */}
       <div className="relative flex items-center justify-center mt-2 mb-[18px]"
@@ -94,7 +95,7 @@ const IsoMapWidget: React.FC = () => {
         <button
           onClick={() => navigate('/dashboard?page=map')}
           className="mt-4 w-full h-[52px] rounded-[14px] bg-[#1A1412] text-white border border-[#3D2F28] font-display font-semibold text-[15px] inline-flex items-center justify-center gap-[10px] hover:border-[#EAB308]/40 transition-colors">
-          Открыть карту <span className="material-symbols-rounded text-[16px]">arrow_forward</span>
+          Открыть карту <AppIcon name="arrow_forward" size={16} />
         </button>
       </div>
     </div>
@@ -240,6 +241,7 @@ const LandingPage: React.FC = () => {
       {
         value: publicStats ? formatStatRating(publicStats.averageRating) : '—',
         label: 'Средняя оценка',
+        isRating: true,
       },
     ];
 
@@ -259,6 +261,7 @@ const LandingPage: React.FC = () => {
       {
         value: publicStats ? formatStatRating(publicStats.averageRating) : '—',
         label: 'средняя оценка',
+        isRating: true,
       },
     ];
 
@@ -350,13 +353,13 @@ const LandingPage: React.FC = () => {
                   <button onClick={() => navigate('/register')}
                     className="h-[52px] px-7 rounded-[14px] bg-[#EAB308] text-[#1A1412] border-none font-display font-bold text-[15px] inline-flex items-center justify-center gap-2 hover:bg-[#FACC15] active:scale-[0.98] transition-all"
                     style={{ boxShadow: '0 4px 6px -4px rgba(180,140,75,.3), 0 10px 25px -3px rgba(234,179,8,.25)' }}>
-                    <span className="material-symbols-rounded text-[18px]">arrow_forward</span>
+                    <AppIcon name="arrow_forward" size={18} />
                     Создать аккаунт
                   </button>
                   <button onClick={() => navigate('/login')}
                     className="h-[52px] px-[26px] rounded-[14px] text-white font-display font-semibold text-[15px] inline-flex items-center justify-center gap-2 border border-[#3D2F28] hover:border-[#EAB308]/40 active:scale-[0.98] transition-all"
                     style={{ background: 'rgba(255,255,255,0.04)' }}>
-                    <span className="material-symbols-rounded text-[18px]">login</span>
+                    <AppIcon name="login" size={18} />
                     Войти
                   </button>
                 </div>
@@ -373,19 +376,25 @@ const LandingPage: React.FC = () => {
               style={{ background: 'rgba(45,36,31,0.55)', backdropFilter: 'blur(12px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
               {/* Mobile: 2x2 grid */}
               <div className="grid grid-cols-2 gap-4 lg:hidden">
-                {statsMobile.map(({ value, label }) => (
+                {statsMobile.map(({ value, label, isRating }) => (
                   <div key={label}>
-                    <div className={`font-display font-bold text-[22px] tracking-[-0.02em] text-white leading-none ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`}>{value}</div>
+                    <div className={`font-display font-bold text-[22px] tracking-[-0.02em] text-white leading-none inline-flex items-center gap-1.5 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`}>
+                      {isRating && value !== '—' && <StarIcon filled size={18} className="text-[#EAB308]" />}
+                      {value}
+                    </div>
                     <div className="mt-1 font-body text-[10px] text-[#A39E93] uppercase tracking-[.04em]">{label}</div>
                   </div>
                 ))}
               </div>
               {/* Desktop: row */}
               <div className="hidden lg:flex items-center justify-between gap-8">
-                {statsDesktop.map(({ value, label }, i) => (
+                {statsDesktop.map(({ value, label, isRating }, i) => (
                   <React.Fragment key={label}>
                     <div className="text-left">
-                      <div className={`font-display font-bold text-[32px] tracking-[-0.02em] text-white leading-none ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`}>{value}</div>
+                      <div className={`font-display font-bold text-[32px] tracking-[-0.02em] text-white leading-none inline-flex items-center gap-2 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`}>
+                        {isRating && value !== '—' && <StarIcon filled size={22} className="text-[#EAB308]" />}
+                        {value}
+                      </div>
                       <div className="mt-[6px] font-body text-[12px] text-[#A39E93] uppercase tracking-[.04em]">{label}</div>
                     </div>
                     {i < statsDesktop.length - 1 && <div className="w-px h-9 bg-[#3D2F28]" />}
@@ -403,7 +412,7 @@ const LandingPage: React.FC = () => {
                 <h2 className="mt-2 font-display font-bold text-[22px] lg:text-[36px] tracking-[-0.025em] text-white">Всё для жизни вокруг кофе</h2>
               </div>
               <button className="hidden lg:inline-flex items-center gap-[6px] px-4 py-[10px] rounded-xl border border-[#3D2F28] text-white font-display font-semibold text-[13px] bg-transparent hover:border-[#EAB308]/40 transition-colors">
-                Все возможности <span className="material-symbols-rounded text-[14px]">arrow_forward</span>
+                Все возможности <AppIcon name="arrow_forward" size={14} />
               </button>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-[10px] lg:gap-4">
@@ -417,12 +426,12 @@ const LandingPage: React.FC = () => {
                   )}
                   <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-[14px] flex items-center justify-center border border-[rgba(180,140,75,.25)]"
                     style={{ background: 'rgba(180,140,75,.14)' }}>
-                    <span className="material-symbols-rounded text-[22px] lg:text-[24px] text-[#EAB308]">{icon}</span>
+                    <AppIcon name={icon} size={22} color="#EAB308" />
                   </div>
                   <h3 className="mt-[14px] lg:mt-[18px] mb-1 font-display font-bold text-[15px] lg:text-[18px] tracking-[-0.01em] text-white">{title}</h3>
                   <p className="font-body text-[12px] lg:text-[13px] leading-[1.5] text-[#A39E93]">{desc}</p>
                   <div className="mt-[14px] hidden lg:inline-flex items-center gap-1 font-display font-semibold text-[12px] text-[#EAB308] opacity-60 group-hover:opacity-100 transition-opacity">
-                    Подробнее <span className="material-symbols-rounded text-[14px]">arrow_forward</span>
+                    Подробнее <AppIcon name="arrow_forward" size={14} />
                   </div>
                 </article>
               ))}
@@ -446,7 +455,7 @@ const LandingPage: React.FC = () => {
               <button onClick={() => navigate('/register')}
                 className="relative h-12 lg:h-[56px] px-6 lg:px-8 rounded-xl lg:rounded-[14px] bg-[#EAB308] text-[#1A1412] border-none font-display font-bold text-[14px] lg:text-[15px] inline-flex items-center justify-center gap-[8px] lg:gap-[10px] whitespace-nowrap hover:bg-[#FACC15] active:scale-[0.98] transition-all"
                 style={{ boxShadow: '0 4px 6px -4px rgba(180,140,75,.4), 0 10px 25px -3px rgba(234,179,8,.35)' }}>
-                <span className="material-symbols-rounded text-[16px] lg:text-[18px]">rocket_launch</span>
+                <AppIcon name="rocket_launch" size={18} />
                 Создать аккаунт
               </button>
             </div>
@@ -497,11 +506,11 @@ const LandingPage: React.FC = () => {
             <div className="mt-[18px] flex items-center justify-between font-body text-[12px] text-[#5C544F]">
               <span>© 2026 CoffeePeek</span>
               <div className="flex items-center gap-[14px]">
-                <span className="inline-flex items-center gap-[5px]"><span className="material-symbols-rounded text-[14px]">language</span>Русский</span>
+                <span className="inline-flex items-center gap-[5px]"><AppIcon name="language" size={14} />Русский</span>
                 <span>Минск</span>
                 <span>·</span>
                 <span className="text-[#22C55E] inline-flex items-center gap-1">
-                  <span className="material-symbols-rounded star-filled text-[8px]">circle</span>
+                  <AppIcon name="circle" filled size={8} color="#22C55E" />
                   Все системы работают
                 </span>
               </div>
@@ -513,7 +522,7 @@ const LandingPage: React.FC = () => {
             © 2026 CoffeePeek
             <br />
             <span className="text-[#22C55E] inline-flex items-center justify-center gap-1">
-              <span className="material-symbols-rounded star-filled text-[8px]">circle</span>
+              <AppIcon name="circle" filled size={8} color="#22C55E" />
               Все системы работают
             </span>
           </div>
