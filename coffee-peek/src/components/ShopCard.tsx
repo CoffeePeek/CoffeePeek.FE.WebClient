@@ -16,6 +16,8 @@ interface ShopCardProps {
   colors: ShopCardColors;
   favoriteShopIds: Set<string>;
   onSelect: (shopId: string) => void;
+  isAuthenticated?: boolean;
+  onRequireAuth?: () => void;
 }
 
 function extractPhotos(shop: CoffeeShop): string[] {
@@ -36,7 +38,7 @@ function extractPhotos(shop: CoffeeShop): string[] {
   return [];
 }
 
-const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds, onSelect }) => {
+const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds, onSelect, isAuthenticated = false, onRequireAuth }) => {
   const [hovered, setHovered] = useState(false);
   const [fav, setFav] = useState(favoriteShopIds.has(shop.id));
   const photos = extractPhotos(shop);
@@ -107,7 +109,14 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
 
         {/* Top-right: favorite */}
         <button
-          onClick={(e) => { e.stopPropagation(); setFav(v => !v); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isAuthenticated) {
+              onRequireAuth?.();
+              return;
+            }
+            setFav(v => !v);
+          }}
           style={{
             position: 'absolute', top: 10, right: 10, width: 30, height: 30, borderRadius: 99,
             background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',

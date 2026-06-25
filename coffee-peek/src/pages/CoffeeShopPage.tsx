@@ -9,7 +9,7 @@ import { ShopSidebar } from '../components/coffeeshop/ShopSidebar';
 import CheckInModal from '../components/CheckInModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
-import { useUser } from '../contexts/UserContext';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { useToast } from '../contexts/ToastContext';
 import { useShopData } from '../hooks/useShopData';
 import { useMyReview } from '../hooks/useMyReview';
@@ -18,6 +18,7 @@ import { useToggleFavorite } from '../hooks/queries/useFavorites';
 import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { AppIcon } from '../components/icons';
 
 const CoffeeShopPage: React.FC = () => {
@@ -29,7 +30,7 @@ const CoffeeShopPage: React.FC = () => {
     return null;
   }
   const { theme } = useTheme();
-  const { user } = useUser();
+  const { user, requireAuth } = useRequireAuth();
   const { showToast } = useToast();
   
   // Custom hooks
@@ -45,10 +46,7 @@ const CoffeeShopPage: React.FC = () => {
   const isFavorite = shop?.isFavorite ?? false;
   
   const handleToggleFavorite = async () => {
-    if (!user) {
-      showToast('Необходимо войти в систему', 'error');
-      return;
-    }
+    if (!requireAuth()) return;
 
     if (!shopId || !token) return;
 
@@ -82,7 +80,8 @@ const CoffeeShopPage: React.FC = () => {
 
 
   const handleWriteOrEditReview = () => {
-    if (!user || !shopId || !shop) return;
+    if (!requireAuth()) return;
+    if (!shopId || !shop) return;
     
     const shopBasicInfo = {
       name: shop.name,
@@ -100,14 +99,7 @@ const CoffeeShopPage: React.FC = () => {
 
   const handleCheckIn = () => {
     if (!shopId || !shop) return;
-    
-    // Если пользователь неавторизован, редиректим на регистрацию
-    if (!user) {
-      navigate('/register');
-      return;
-    }
-    
-    // Если авторизован, открываем модальное окно
+    if (!requireAuth()) return;
     setShowCheckInModal(true);
   };
 

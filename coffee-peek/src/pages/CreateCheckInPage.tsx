@@ -5,7 +5,7 @@ import { createCheckIn, CreateCheckInRequest } from '../api/coffeeshop';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getThemeColors, COLORS } from '../constants/colors';
-import { useUser } from '../contexts/UserContext';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { useToast } from '../contexts/ToastContext';
 import { Icons } from '../constants';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
@@ -32,7 +32,7 @@ const CreateCheckInPage: React.FC = () => {
   
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const { user } = useUser();
+  const { user, requireAuth } = useRequireAuth();
   const { showToast } = useToast();
 
   // Получаем данные о кофейне из navigation state
@@ -82,10 +82,7 @@ const CreateCheckInPage: React.FC = () => {
 
 
   const handleSubmit = async () => {
-    if (!user) {
-      showToast('Необходимо войти в систему', 'error');
-      return;
-    }
+    if (!requireAuth()) return;
 
     // Валидация: если публичный чекин, то рейтинги и заметка обязательны
     if (isPublic) {

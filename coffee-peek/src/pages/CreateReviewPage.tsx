@@ -6,7 +6,7 @@ import { getShopUploadUrls } from '../api/photos';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getThemeColors, COLORS } from '../constants/colors';
-import { useUser } from '../contexts/UserContext';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { useToast } from '../contexts/ToastContext';
 import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
@@ -34,7 +34,7 @@ const CreateReviewPage: React.FC = () => {
   usePageTitle(isEditMode ? 'Редактирование отзыва' : 'Создание отзыва');
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const { user } = useUser();
+  const { user, requireAuth } = useRequireAuth();
   const { showToast } = useToast();
 
   // Получаем данные о кофейне из navigation state
@@ -203,10 +203,7 @@ const CreateReviewPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!user) {
-      showToast('Необходимо войти в систему', 'error');
-      return;
-    }
+    if (!requireAuth()) return;
 
     if (!header.trim() || !description.trim()) {
       showToast('Заполните заголовок и описание', 'error');

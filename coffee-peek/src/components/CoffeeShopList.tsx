@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl } from '../api/coffeeshop';
 import { ShopCardSkeleton } from './skeletons';
 import { useTheme } from '../contexts/ThemeContext';
-import { useUser } from '../contexts/UserContext';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { getErrorMessage } from '../utils/errorHandler';
 import { COLORS, getThemeColors } from '../constants/colors';
 import { logger } from '../utils/logger';
@@ -48,7 +48,7 @@ interface CoffeeShopListProps {
 
 const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const { theme } = useTheme();
-  const { user } = useUser();
+  const { user, requireAuth } = useRequireAuth();
   const colors = getThemeColors(theme);
   const [allShops, setAllShops] = useState<CoffeeShop[]>([]); // Все кофейни с сервера (нефильтрованные)
   const [shops, setShops] = useState<CoffeeShop[]>([]); // Отфильтрованные кофейни для отображения
@@ -208,6 +208,9 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   };
   
   const toggleFilterTab = (filterId: 'open' | 'new' | 'favorite' | 'visited') => {
+    if ((filterId === 'favorite' || filterId === 'visited') && !requireAuth()) {
+      return;
+    }
     setActiveFilterTabs(prev => {
       const newSet = new Set(prev);
       if (newSet.has(filterId)) {
@@ -489,7 +492,15 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               {/* Desktop: 4-column grid */}
               <div className="hidden lg:grid gap-4 pb-12" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 {shops.map((shop) => (
-                  <ShopCard key={shop.id} shop={shop} colors={colors} favoriteShopIds={favoriteShopIds} onSelect={openShopDetails} />
+                  <ShopCard
+                    key={shop.id}
+                    shop={shop}
+                    colors={colors}
+                    favoriteShopIds={favoriteShopIds}
+                    onSelect={openShopDetails}
+                    isAuthenticated={!!user}
+                    onRequireAuth={requireAuth}
+                  />
                 ))}
               </div>
               {/* Mobile: list rows */}
