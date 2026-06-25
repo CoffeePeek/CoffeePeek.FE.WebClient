@@ -24,12 +24,12 @@ export const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ childr
       {user?.emailConfirmed === false && (
         <div style={{ background: 'rgba(234,179,8,0.09)', borderBottom: '1px solid rgba(234,179,8,0.25)', padding: '9px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
           <AppIcon name="warning" size={15} color="#EAB308" style={{ flexShrink: 0 }} />
-          <span style={{ fontFamily: '"Noto Sans",system-ui', fontSize: 13, color: '#EAB308' }}>
+          <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: '#EAB308' }}>
             Ваш email не подтверждён. Некоторые функции могут быть недоступны.
           </span>
           <Link
             to="/settings"
-            style={{ fontFamily: '"Noto Sans",system-ui', fontWeight: 600, fontSize: 13, color: '#EAB308', textDecoration: 'underline', whiteSpace: 'nowrap' }}>
+            style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, color: '#EAB308', textDecoration: 'underline', whiteSpace: 'nowrap' }}>
             Подтвердить в настройках →
           </Link>
         </div>

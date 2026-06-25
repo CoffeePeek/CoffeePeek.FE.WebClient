@@ -24,7 +24,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
   const [focused, setFocused] = useState(false);
   return (
     <label style={{ display: 'block', textAlign: 'left' }}>
-      {label && <div style={{ fontFamily: '"Noto Sans",system-ui', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
+      {label && <div style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
       <div style={{ position: 'relative' }}>
         {icon && (
           <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
@@ -39,14 +39,14 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
             background: dark ? 'rgba(255,255,255,0.03)' : '#fff',
             boxShadow: focused ? '0 0 0 4px rgba(234,179,8,0.08)' : 'none',
             padding: `0 ${trailing ? 44 : 16}px 0 ${icon ? 46 : 16}px`,
-            fontSize: 15, fontFamily: '"Noto Sans",system-ui',
+            fontSize: 15, fontFamily: '"RF Dewi Expanded"',
             color: dark ? '#fff' : '#1C1917',
             outline: 'none', boxSizing: 'border-box', transition: 'all .15s',
           }} />
         {trailing}
       </div>
       {error && (
-        <div style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
           <WarningCircle size={14} weight="fill" />{error}
         </div>
       )}
@@ -62,7 +62,7 @@ const Stepper: React.FC<{ step: 'email' | 'register'; dark: boolean }> = ({ step
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
       {steps.map((s, i) => (
         <React.Fragment key={s}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, background: i <= idx ? 'rgba(234,179,8,0.12)' : dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', color: i <= idx ? '#EAB308' : dark ? '#A39E93' : '#78716C', fontFamily: '"Noto Sans"', fontSize: 11, fontWeight: 600 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, background: i <= idx ? 'rgba(234,179,8,0.12)' : dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', color: i <= idx ? '#EAB308' : dark ? '#A39E93' : '#78716C', fontFamily: '"RF Dewi Expanded"', fontSize: 11, fontWeight: 600 }}>
             <span style={{ width: 16, height: 16, borderRadius: 99, background: i <= idx ? '#EAB308' : 'transparent', border: i <= idx ? 'none' : `1px solid ${dark ? '#3D2F28' : '#E7E5E4'}`, color: '#1A1412', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
               {i < idx ? <Check size={10} weight="bold" /> : i + 1}
             </span>
@@ -86,7 +86,7 @@ const StrengthBar: React.FC<{ password: string; dark: boolean }> = ({ password, 
       {[0,1,2].map(i => (
         <div key={i} style={{ flex: 1, height: 4, borderRadius: 99, background: i < score ? colors[score - 1] : dark ? '#3D2F28' : '#E7E5E4' }} />
       ))}
-      <span style={{ fontFamily: '"Noto Sans"', fontSize: 11, color: dark ? '#A39E93' : '#78716C', marginLeft: 8 }}>{labels[score - 1] || ''}</span>
+      <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: dark ? '#A39E93' : '#78716C', marginLeft: 8 }}>{labels[score - 1] || ''}</span>
     </div>
   );
 };
@@ -187,8 +187,8 @@ const RegisterPage: React.FC = () => {
               <div style={{ width: 88, height: 88, borderRadius: 99, background: dark ? 'rgba(234,179,8,0.12)' : 'rgba(234,179,8,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
                 <EnvelopeOpen size={52} color={gold} />
               </div>
-              <h1 style={{ margin: '24px 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Проверьте почту</h1>
-              <p style={{ margin: '0 0 28px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.6 }}>
+              <h1 style={{ margin: '24px 0 10px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Проверьте почту</h1>
+              <p style={{ margin: '0 0 28px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted, lineHeight: 1.6 }}>
                 Мы отправили ссылку на{' '}
                 <span style={{ color: textPrimary, fontWeight: 600 }}>{email}</span>.<br />
                 Перейдите по ссылке чтобы активировать аккаунт.<br />
@@ -196,7 +196,7 @@ const RegisterPage: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate('/login')}
-                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                 <SignIn size={18} />
                 На страницу входа
               </button>
@@ -208,7 +208,7 @@ const RegisterPage: React.FC = () => {
                 <div style={{ width: 36, height: 36, borderRadius: 11, background: dark ? '#1A1412' : '#F5F5F4', border: `1px solid ${cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <img src="/logo-mark.svg" alt="" style={{ width: 18, height: 18, filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
                 </div>
-                <span style={{ fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
+                <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
                   Coffee<span style={{ color: '#EAB308' }}>Peek</span>
                 </span>
               </div>
@@ -217,36 +217,36 @@ const RegisterPage: React.FC = () => {
 
               {step === 'email' ? (
                 <>
-                  <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Введите email</h1>
-                  <p style={{ margin: '8px 0 24px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
+                  <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Введите email</h1>
+                  <p style={{ margin: '8px 0 24px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
                     Мы проверим, есть ли у вас уже аккаунт CoffeePeek.
                   </p>
                   <form onSubmit={handleEmailCheck} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <AuthField icon={<Envelope size={20} color={gold} />} type="email" placeholder="name@example.com" autoFocus value={email} onChange={e => setEmail(e.target.value)} error={error || undefined} dark={dark} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"Noto Sans"', margin: '2px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"RF Dewi Expanded"', margin: '2px 0' }}>
                       <div style={{ flex: 1, height: 1, background: cardBorder }} />ИЛИ<div style={{ flex: 1, height: 1, background: cardBorder }} />
                     </div>
                     <button type="button" onClick={() => navigate('/login')}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: dark ? 'rgba(255,255,255,0.04)' : '#F9F8F6', color: textPrimary, border: `1px solid ${cardBorder}`, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                      style={{ width: '100%', height: 48, borderRadius: 12, background: dark ? 'rgba(255,255,255,0.04)' : '#F9F8F6', color: textPrimary, border: `1px solid ${cardBorder}`, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                       <Globe size={18} />
                       Войти через Google
                     </button>
                     <button type="submit" disabled={!emailValid || isLoading}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: !emailValid || isLoading ? 'not-allowed' : 'pointer', opacity: !emailValid ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: !emailValid || isLoading ? 'not-allowed' : 'pointer', opacity: !emailValid ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Проверяем…</> : 'Продолжить'}
                     </button>
                   </form>
                 </>
               ) : (
                 <>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(180,140,75,.18)', color: gold, fontFamily: '"Noto Sans"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(180,140,75,.18)', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
                     <Sparkle size={14} /> Новый профиль
                   </span>
-                  <h1 style={{ margin: '14px 0 0', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Создайте аккаунт</h1>
+                  <h1 style={{ margin: '14px 0 0', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Создайте аккаунт</h1>
                   <div style={{ margin: '8px 0 22px', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 12, background: dark ? 'rgba(255,255,255,0.03)' : '#F9F8F6', border: `1px solid ${cardBorder}` }}>
                     <Envelope size={16} color="#D4A84B" />
-                    <span style={{ fontFamily: '"Noto Sans"', fontSize: 13, color: textPrimary, flex: 1 }}>{email}</span>
-                    <button type="button" onClick={() => setStep('email')} style={{ background: 'none', border: 'none', color: gold, fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Изменить</button>
+                    <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: textPrimary, flex: 1 }}>{email}</span>
+                    <button type="button" onClick={() => setStep('email')} style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Изменить</button>
                   </div>
                   <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <AuthField icon={<User size={20} color={gold} />} placeholder="Как вас зовут?" label="Имя" autoFocus value={userName} onChange={e => setUserName(e.target.value)} dark={dark} />
@@ -263,7 +263,7 @@ const RegisterPage: React.FC = () => {
                         onChange={e => setAgreeToPrivacy(e.target.checked)}
                         style={{ marginTop: 2, width: 18, height: 18, accentColor: gold, flexShrink: 0 }}
                       />
-                      <label htmlFor="register-agree" style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: textMuted, lineHeight: 1.45, cursor: 'pointer' }}>
+                      <label htmlFor="register-agree" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted, lineHeight: 1.45, cursor: 'pointer' }}>
                         Я принимаю{' '}
                         <button
                           type="button"
@@ -284,7 +284,7 @@ const RegisterPage: React.FC = () => {
                       </label>
                     </div>
                     <button type="submit" disabled={isLoading || !canRegister}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: isLoading || !canRegister ? 'not-allowed' : 'pointer', opacity: !canRegister ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading || !canRegister ? 'not-allowed' : 'pointer', opacity: !canRegister ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Создаём…</> : 'Создать аккаунт'}
                     </button>
                   </form>
@@ -293,11 +293,11 @@ const RegisterPage: React.FC = () => {
 
               <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <button type="button" onClick={() => step === 'registration' ? setStep('email') : navigate('/')}
-                  style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"Noto Sans"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <ArrowLeft size={14} /> Назад
                 </button>
                 <button type="button" onClick={() => navigate('/login')}
-                  style={{ background: 'none', border: 'none', color: gold, fontFamily: '"Noto Sans"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                   Уже есть аккаунт
                 </button>
               </div>

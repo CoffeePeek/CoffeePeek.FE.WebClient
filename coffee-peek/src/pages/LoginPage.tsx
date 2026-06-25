@@ -27,7 +27,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
   const [focused, setFocused] = useState(false);
   return (
     <label style={{ display: 'block', textAlign: 'left' }}>
-      {label && <div style={{ fontFamily: '"Noto Sans",system-ui', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
+      {label && <div style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
       <div style={{ position: 'relative' }}>
         {icon && (
           <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
@@ -43,7 +43,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
             background: dark ? 'rgba(255,255,255,0.03)' : '#fff',
             boxShadow: focused ? '0 0 0 4px rgba(234,179,8,0.08)' : 'none',
             padding: `0 ${trailing ? 44 : 16}px 0 ${icon ? 46 : 16}px`,
-            fontSize: 15, fontFamily: '"Noto Sans",system-ui',
+            fontSize: 15, fontFamily: '"RF Dewi Expanded"',
             color: dark ? '#fff' : '#1C1917',
             outline: 'none', boxSizing: 'border-box', transition: 'all .15s',
           }}
@@ -51,7 +51,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
         {trailing}
       </div>
       {error && (
-        <div style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
           <WarningCircle size={14} weight="fill" />{error}
         </div>
       )}
@@ -69,7 +69,7 @@ const Stepper: React.FC<{ dark: boolean }> = ({ dark }) => {
             display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99,
             background: i <= 1 ? 'rgba(234,179,8,0.12)' : dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
             color: i <= 1 ? '#EAB308' : dark ? '#A39E93' : '#78716C',
-            fontFamily: '"Noto Sans"', fontSize: 11, fontWeight: 600,
+            fontFamily: '"RF Dewi Expanded"', fontSize: 11, fontWeight: 600,
           }}>
             <span style={{ width: 16, height: 16, borderRadius: 99, background: i <= 1 ? '#EAB308' : 'transparent', border: i <= 1 ? 'none' : `1px solid ${dark ? '#3D2F28' : '#E7E5E4'}`, color: '#1A1412', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
               {i < 1 ? <Check size={10} weight="bold" /> : i + 1}
@@ -202,7 +202,7 @@ const LoginPage: React.FC = () => {
             <div style={{ width: 36, height: 36, borderRadius: 11, background: dark ? '#1A1412' : '#F5F5F4', border: `1px solid ${cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src="/logo-mark.svg" alt="" style={{ width: 18, height: 18, filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
             </div>
-            <span style={{ fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
+            <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
               Coffee<span style={{ color: '#EAB308' }}>Peek</span>
             </span>
           </div>
@@ -210,18 +210,18 @@ const LoginPage: React.FC = () => {
           {passedEmail && <Stepper dark={dark} />}
 
           {passedEmail && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: dark ? '#22C55E' : '#15803D', fontFamily: '"Noto Sans"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: dark ? '#22C55E' : '#15803D', fontFamily: '"RF Dewi Expanded"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
               <CheckCircle size={14} weight="fill" color="#22C55E" />
               Аккаунт найден
             </span>
           )}
 
-          <h1 style={{ margin: passedEmail ? '14px 0 0' : '0 0 4px', fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>
+          <h1 style={{ margin: passedEmail ? '14px 0 0' : '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>
             {passedEmail ? 'С возвращением!' : 'Вход в аккаунт'}
           </h1>
 
           {!passedEmail && (
-            <p style={{ margin: '0 0 20px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
+            <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
               Войдите в свой аккаунт CoffeePeek.
             </p>
           )}
@@ -246,12 +246,12 @@ const LoginPage: React.FC = () => {
               value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
 
             <div style={{ textAlign: 'right', marginTop: -6 }}>
-              <a style={{ fontFamily: '"Noto Sans"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer' }}>Забыли пароль?</a>
+              <a style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer' }}>Забыли пароль?</a>
             </div>
 
             {emailNotConfirmed && (
               <div style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(234,179,8,0.09)', border: '1px solid rgba(234,179,8,0.30)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
+                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
                   <strong>Email не подтверждён.</strong>{' '}
                   {resendState === 'sending'
                     ? 'Отправляем письмо подтверждения…'
@@ -266,7 +266,7 @@ const LoginPage: React.FC = () => {
                   type="button"
                   onClick={handleResend}
                   disabled={resendState === 'sending' || resendCooldown > 0}
-                  style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 12, cursor: resendState === 'sending' || resendCooldown > 0 ? 'not-allowed' : 'pointer', opacity: resendState === 'sending' || resendCooldown > 0 ? 0.6 : 1 }}>
+                  style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12, cursor: resendState === 'sending' || resendCooldown > 0 ? 'not-allowed' : 'pointer', opacity: resendState === 'sending' || resendCooldown > 0 ? 0.6 : 1 }}>
                   {resendState === 'sending'
                     ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
                     : resendCooldown > 0
@@ -278,7 +278,7 @@ const LoginPage: React.FC = () => {
             )}
 
             <button type="submit" disabled={isLoading || !password}
-              style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'pointer', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>
+              style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'pointer', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>
               {isLoading ? (
                 <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Входим…</>
               ) : 'Войти'}
@@ -287,11 +287,11 @@ const LoginPage: React.FC = () => {
 
           <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <button type="button" onClick={() => navigate(passedEmail ? '/register' : '/')}
-              style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"Noto Sans"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <ArrowLeft size={14} /> Назад
             </button>
             <button type="button" onClick={() => navigate('/register')}
-              style={{ background: 'none', border: 'none', color: gold, fontFamily: '"Noto Sans"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               Создать аккаунт
             </button>
           </div>

@@ -424,8 +424,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         {!isLoading && featured.length > 0 && (
           <div className="lg:hidden mb-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-baseline justify-between mb-3">
-              <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>Подборка недели</h2>
-              <button style={{ background: 'none', border: 'none', color: '#D4A84B', fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Все →</button>
+              <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>Подборка недели</h2>
+              <button style={{ background: 'none', border: 'none', color: '#D4A84B', fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Все →</button>
             </div>
             <div className="pl-4 sm:pl-6 overflow-x-auto no-scrollbar" style={{ display: 'flex', gap: 12, paddingBottom: 4 }}>
               {featured.map(shop => {
@@ -435,15 +435,15 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                     style={{ flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden', border: `1px solid ${colors.border}`, background: colors.surface, cursor: 'pointer' }}>
                     <div style={{ height: 112, background: photos[0] ? `url(${photos[0]}) center/cover` : `${COLORS.primary}20`, position: 'relative' }}>
                       {shop.rating && (
-                        <span style={{ position: 'absolute', top: 8, left: 8, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 7px', borderRadius: 6, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, color: '#D4A84B' }}>
+                        <span style={{ position: 'absolute', top: 8, left: 8, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 7px', borderRadius: 6, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 11, color: '#D4A84B' }}>
                           <StarIcon filled size={12} color="#D4A84B" />
                           {shop.rating.toFixed(1)}
                         </span>
                       )}
                     </div>
                     <div style={{ padding: '9px 11px 11px' }}>
-                      <h4 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 13, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h4>
-                      <p style={{ margin: '3px 0 0', fontFamily: '"Noto Sans"', fontSize: 11, color: colors.textSecondary }}>{shop.address || shop.cityName || ''}</p>
+                      <h4 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h4>
+                      <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>{shop.address || shop.cityName || ''}</p>
                     </div>
                   </div>
                 );
@@ -456,10 +456,10 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         {/* ── Mobile: list section header ─────────────────────── */}
         {!isLoading && (
           <div className="lg:hidden max-w-7xl mx-auto px-4 sm:px-6 flex items-baseline justify-between mb-3">
-            <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>
+            <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>
               Кофейни рядом <span style={{ color: colors.textSecondary, fontWeight: 500, fontSize: 13 }}>· {shops.length}</span>
             </h2>
-            <button style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: colors.textSecondary, fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            <button style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: colors.textSecondary, fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
               <AppIcon name="swap_vert" size={14} />
               Сортировка
             </button>
@@ -482,7 +482,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           ) : shops.length === 0 ? (
             <div className="rounded-2xl p-10 text-center border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
               <AppIcon name="coffee_maker" size={40} color={colors.textSecondary} />
-              <p style={{ margin: '12px 0 0', fontFamily: '"Noto Sans"', fontSize: 14, color: colors.textSecondary }}>Ничего не найдено. Попробуйте другой фильтр.</p>
+              <p style={{ margin: '12px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: colors.textSecondary }}>Ничего не найдено. Попробуйте другой фильтр.</p>
             </div>
           ) : (
             <>
@@ -504,17 +504,17 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                          <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h3>
+                          <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h3>
                           {shop.rating && shop.rating > 0 && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: 'rgba(180,140,75,.12)', color: '#D4A84B', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' as const }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: 'rgba(180,140,75,.12)', color: '#D4A84B', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' as const }}>
                               <StarIcon filled size={13} color="#D4A84B" />
                               {shop.rating.toFixed(1)}
                             </span>
                           )}
                         </div>
-                        <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"Noto Sans"', fontSize: 11, color: colors.textSecondary }}>
+                        <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>
                           {typeof shop.isOpen !== 'undefined' && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: shop.isOpen ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)', color: shop.isOpen ? '#15803D' : '#B91C1C', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: shop.isOpen ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)', color: shop.isOpen ? '#15803D' : '#B91C1C', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const }}>
                               {shop.isOpen ? 'Открыто' : 'Закрыто'}
                             </span>
                           )}
@@ -522,7 +522,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                         </div>
                         <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
                           {(shop as unknown as Record<string, unknown[]>).tags?.slice(0, 3).map((t, i) => (
-                            <span key={i} style={{ padding: '3px 8px', borderRadius: 6, background: isDark ? 'rgba(255,255,255,0.06)' : '#F5F5F4', color: isDark ? '#A39E93' : '#57534E', fontFamily: '"Noto Sans"', fontSize: 10, fontWeight: 600 }}>{String(t)}</span>
+                            <span key={i} style={{ padding: '3px 8px', borderRadius: 6, background: isDark ? 'rgba(255,255,255,0.06)' : '#F5F5F4', color: isDark ? '#A39E93' : '#57534E', fontFamily: '"RF Dewi Expanded"', fontSize: 10, fontWeight: 600 }}>{String(t)}</span>
                           ))}
                         </div>
                       </div>

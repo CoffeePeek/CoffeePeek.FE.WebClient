@@ -63,10 +63,7 @@ export const dark = {
 export const typography = {
   fontFamily: {
     display: 'RF Dewi Expanded',
-    displayFallback: 'Sora',
-    body: 'Noto Sans',
-    bodyFallback: 'Inter',
-    icons: 'Material Symbols Rounded',
+    body: 'RF Dewi Expanded',
   },
   fontWeight: {
     ultralight: 200,

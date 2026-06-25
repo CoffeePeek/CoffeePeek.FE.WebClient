@@ -13,16 +13,21 @@ import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import WobbleRing from '../components/WobbleRing';
-import { AppIcon } from '../components/icons';
+import type { IconProps } from '@phosphor-icons/react';
+import {
+  User, Lock, Palette, Coffee, CaretRight, SignOut, Camera, PencilSimple, Check,
+  ShoppingCart, ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
+  ArrowClockwise, X,
+} from '@/components/Icon';
 
 // ── Section types ────────────────────────────────────────────────────
 type Section = 'profile' | 'security' | 'appearance' | 'cafes';
 
-const NAV_ITEMS: { id: Section; label: string; icon: string }[] = [
-  { id: 'profile',    label: 'Профиль',      icon: 'person'     },
-  { id: 'security',   label: 'Безопасность', icon: 'lock'       },
-  { id: 'appearance', label: 'Внешний вид',  icon: 'palette'    },
-  { id: 'cafes',      label: 'Кофейни',      icon: 'local_cafe' },
+const NAV_ITEMS: { id: Section; label: string; Icon: React.ComponentType<IconProps> }[] = [
+  { id: 'profile',    label: 'Профиль',      Icon: User    },
+  { id: 'security',   label: 'Безопасность', Icon: Lock    },
+  { id: 'appearance', label: 'Внешний вид',  Icon: Palette },
+  { id: 'cafes',      label: 'Кофейни',      Icon: Coffee  },
 ];
 
 // ── Main component ───────────────────────────────────────────────────
@@ -228,10 +233,10 @@ const SettingsPage: React.FC = () => {
       {/* ── Page title bar ──────────────────────────────────────── */}
       <div style={{ borderBottom: `1px solid ${border}`, background: isDark ? 'rgba(45,36,31,0.7)' : surface, backdropFilter: 'blur(12px)' }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8" style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 18, color: textPrimary, letterSpacing: '-0.01em' }}>Настройки</h1>
+          <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 18, color: textPrimary, letterSpacing: '-0.01em' }}>Настройки</h1>
           {saveSuccess && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: '#15803D', fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 700 }}>
-              <AppIcon name="check_circle" size={14} />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: '#15803D', fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 700 }}>
+              <CheckCircle size={14} />
               Сохранено
             </span>
           )}
@@ -243,16 +248,16 @@ const SettingsPage: React.FC = () => {
         {/* Error banner */}
         {error && (
           <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 14, color: '#EF4444' }}>{error}</p>
+            <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: '#EF4444' }}>{error}</p>
           </div>
         )}
 
         {/* Pending email confirmation banner */}
         {pendingEmailConfirmation && !isEditing && (
           <div style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 12, background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.28)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <AppIcon name="mail" size={18} color="#EAB308" style={{ flexShrink: 0, marginTop: 2 }} />
+            <Envelope size={18} color="#EAB308" style={{ flexShrink: 0, marginTop: 2 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: '0 0 10px', fontFamily: '"Noto Sans"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
+              <p style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
                 Письмо отправлено на{' '}
                 <strong>{pendingEmailConfirmation}</strong>.<br />
                 Старый email активен до подтверждения.
@@ -261,15 +266,15 @@ const SettingsPage: React.FC = () => {
                 <button
                   onClick={handleResendConfirmation}
                   disabled={isResending}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
                   {isResending
                     ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
-                    : <><AppIcon name="refresh" size={14} />Отправить повторно</>
+                    : <><ArrowClockwise size={14} />Отправить повторно</>
                   }
                 </button>
                 {resendSuccess && (
-                  <span style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <AppIcon name="check_circle" size={14} />
+                  <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <CheckCircle size={14} />
                     Письмо отправлено
                   </span>
                 )}
@@ -278,7 +283,7 @@ const SettingsPage: React.FC = () => {
             <button
               onClick={() => setPendingEmailConfirmation(null)}
               style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#A39E93', flexShrink: 0 }}>
-              <AppIcon name="close" size={18} />
+              <X size={18} />
             </button>
           </div>
         )}
@@ -295,9 +300,9 @@ const SettingsPage: React.FC = () => {
                   background: active ? `${gold}14` : 'transparent',
                   color: active ? gold : textMuted,
                   borderColor: active ? `${gold}50` : border,
-                  fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                  fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, cursor: 'pointer',
                 }}>
-                  <AppIcon name={item.icon} size={15} />
+                  <item.Icon size={15} color={active ? gold : textMuted} />
                   {item.label}
                 </button>
               );
@@ -316,13 +321,13 @@ const SettingsPage: React.FC = () => {
               <div style={{ width: 42, height: 42, borderRadius: 99, flexShrink: 0, overflow: 'hidden', background: displayAvatar ? 'transparent' : `${gold}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {displayAvatar
                   ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <span style={{ fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 800, fontSize: 17, color: goldWarm }}>{displayName[0]?.toUpperCase()}</span>
+                  : <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 17, color: goldWarm }}>{displayName[0]?.toUpperCase()}</span>
                 }
               </div>
               <div style={{ minWidth: 0 }}>
-                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 13, color: textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
+                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
                 {profile?.createdAtUtc && (
-                  <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 11, color: textMuted }}>с {new Date(profile.createdAtUtc).getFullYear()}</p>
+                  <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted }}>с {new Date(profile.createdAtUtc).getFullYear()}</p>
                 )}
               </div>
             </div>
@@ -338,9 +343,9 @@ const SettingsPage: React.FC = () => {
                     background: active ? `${gold}10` : 'transparent',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s',
                   }}>
-                    <AppIcon name={item.icon} size={18} color={active ? gold : textMuted} />
-                    <span style={{ fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, color: active ? gold : textPrimary, flex: 1 }}>{item.label}</span>
-                    {active && <AppIcon name="chevron_right" size={16} color={gold} />}
+                    <item.Icon size={18} color={active ? gold : textMuted} />
+                    <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: active ? gold : textPrimary, flex: 1 }}>{item.label}</span>
+                    {active && <CaretRight size={16} color={gold} />}
                   </button>
                 );
               })}
@@ -351,8 +356,8 @@ const SettingsPage: React.FC = () => {
               style={{ width: '100%', padding: '11px 14px', textAlign: 'left', background: surface, border: `1px solid ${border}`, borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
               onMouseLeave={e => (e.currentTarget.style.background = surface)}>
-              <AppIcon name="logout" size={18} color="#EF4444" />
-              <span style={{ fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, color: '#EF4444' }}>Выйти</span>
+              <SignOut size={18} color="#EF4444" />
+              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: '#EF4444' }}>Выйти</span>
             </button>
           </aside>
 
@@ -400,12 +405,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
   const inputStyle: React.CSSProperties = {
     width: '100%', height: 40, borderRadius: 10, border: `1px solid ${border}`,
     background: isDark ? 'rgba(255,255,255,0.05)' : '#F9F8F7',
-    color: textPrimary, fontFamily: '"Noto Sans"', fontSize: 14,
+    color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontSize: 14,
     padding: '0 14px', outline: 'none', boxSizing: 'border-box',
   };
 
   const labelStyle: React.CSSProperties = {
-    display: 'block', fontFamily: '"Noto Sans"', fontSize: 11, fontWeight: 700,
+    display: 'block', fontFamily: '"RF Dewi Expanded"', fontSize: 11, fontWeight: 700,
     color: textMuted, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 6,
   };
 
@@ -421,27 +426,27 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             <div style={{ width: 88, height: 88, borderRadius: 99, border: `3px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, overflow: 'hidden', background: displayAvatar ? 'transparent' : `${gold}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {displayAvatar
                 ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 800, fontSize: 32, color: goldWarm }}>{profile.userName?.[0]?.toUpperCase() ?? 'U'}</span>
+                : <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 32, color: goldWarm }}>{profile.userName?.[0]?.toUpperCase() ?? 'U'}</span>
               }
             </div>
             {isEditing && (
               <label style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 99, background: gold, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: `2px solid ${surface}` }}>
                 <input type="file" accept="image/*" onChange={onAvatarSelect} disabled={isSaving} style={{ display: 'none' }} />
-                <AppIcon name="photo_camera" size={14} color="#1A1412" />
+                <Camera size={14} color="#1A1412" />
               </label>
             )}
           </div>
 
           {/* Name + badge */}
           <div style={{ flex: 1, minWidth: 160 }}>
-            <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 22, color: textPrimary, letterSpacing: '-0.01em' }}>{profile.userName}</h2>
+            <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 22, color: textPrimary, letterSpacing: '-0.01em' }}>{profile.userName}</h2>
             <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: `${gold}15`, border: `1px solid ${gold}30` }}>
-                <AppIcon name="local_cafe" size={13} color={goldWarm} />
-                <span style={{ fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 11, color: goldWarm, letterSpacing: '.05em', textTransform: 'uppercase' }}>Ценитель кофе</span>
+                <Coffee size={13} color={goldWarm} />
+                <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 11, color: goldWarm, letterSpacing: '.05em', textTransform: 'uppercase' }}>Ценитель кофе</span>
               </span>
               {memberSince && (
-                <span style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: textMuted }}>С {memberSince}</span>
+                <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>С {memberSince}</span>
               )}
             </div>
           </div>
@@ -449,19 +454,19 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
           {/* Edit / Save buttons */}
           <div style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
             {!isEditing ? (
-              <button onClick={onEditStart} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
-                <AppIcon name="edit" size={16} />
+              <button onClick={onEditStart} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
+                <PencilSimple size={16} />
                 Изменить
               </button>
             ) : (
               <>
-                <button onClick={onEditCancel} disabled={isSaving} style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                <button onClick={onEditCancel} disabled={isSaving} style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
                   Отмена
                 </button>
-                <button onClick={onSave} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 13, cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}>
+                <button onClick={onSave} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}>
                   {isSaving
                     ? <><WobbleRing size={16} color="#1A1412" />Сохранение…</>
-                    : <><AppIcon name="check" size={15} />Сохранить</>
+                    : <><Check size={15} />Сохранить</>
                   }
                 </button>
               </>
@@ -472,17 +477,17 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
         {/* Stats row */}
         <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${border}`, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           {[
-            { icon: 'shopping_cart_checkout', value: profile.checkInCount ?? 0, label: 'Посещений' },
-            { icon: 'rate_review',           value: profile.reviewCount ?? 0,   label: 'Отзывов'   },
-            { icon: 'add_business',          value: profile.addedShopsCount ?? 0, label: 'Добавлено' },
+            { Icon: ShoppingCart, value: profile.checkInCount ?? 0, label: 'Посещений' },
+            { Icon: ChatCircleText, value: profile.reviewCount ?? 0, label: 'Отзывов' },
+            { Icon: Storefront, value: profile.addedShopsCount ?? 0, label: 'Добавлено' },
           ].map(stat => (
             <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `${gold}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AppIcon name={stat.icon} size={18} color={goldWarm} />
+                <stat.Icon size={18} color={goldWarm} />
               </div>
               <div>
-                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 18, color: textPrimary, lineHeight: 1 }}>{stat.value}</p>
-                <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 11, color: textMuted, marginTop: 2 }}>{stat.label}</p>
+                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 18, color: textPrimary, lineHeight: 1 }}>{stat.value}</p>
+                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted, marginTop: 2 }}>{stat.label}</p>
               </div>
             </div>
           ))}
@@ -491,7 +496,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
 
       {/* Editable fields */}
       <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-        <h3 style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Личная информация</h3>
+        <h3 style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Личная информация</h3>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 16 }} className="sm:!grid-cols-2">
           {/* Username */}
@@ -499,7 +504,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             <label style={labelStyle}>Имя пользователя</label>
             {isEditing
               ? <input value={editValues.userName ?? ''} onChange={e => onInputChange('userName', e.target.value)} disabled={isSaving} style={inputStyle} />
-              : <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 14, color: textPrimary }}>{profile.userName || '—'}</p>
+              : <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textPrimary }}>{profile.userName || '—'}</p>
             }
           </div>
 
@@ -508,7 +513,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             <label style={labelStyle}>Email</label>
             {isEditing
               ? <input type="email" value={editValues.email ?? ''} onChange={e => onInputChange('email', e.target.value)} disabled={isSaving} style={inputStyle} />
-              : <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 14, color: textPrimary }}>{profile.email || '—'}</p>
+              : <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textPrimary }}>{profile.email || '—'}</p>
             }
           </div>
         </div>
@@ -518,12 +523,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
           <label style={labelStyle}>О себе</label>
           {isEditing
             ? <textarea value={editValues.about ?? ''} onChange={e => onInputChange('about', e.target.value)} disabled={isSaving} placeholder="Расскажите немного о себе…" style={{ ...inputStyle, height: 'auto', minHeight: 90, padding: '10px 14px', resize: 'vertical' }} />
-            : <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 14, color: profile.about ? textPrimary : textMuted }}>{profile.about || 'Не указано'}</p>
+            : <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: profile.about ? textPrimary : textMuted }}>{profile.about || 'Не указано'}</p>
           }
         </div>
 
         {isEditing && selectedAvatarFile && (
-          <p style={{ margin: '12px 0 0', fontFamily: '"Noto Sans"', fontSize: 12, color: textMuted }}>Выбран файл: {selectedAvatarFile.name}</p>
+          <p style={{ margin: '12px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>Выбран файл: {selectedAvatarFile.name}</p>
         )}
       </div>
     </div>
@@ -536,15 +541,15 @@ const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: stri
   isDark, surface, border, textPrimary, textMuted,
 }) => (
   <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-    <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Безопасность</h3>
-    <p style={{ margin: '0 0 24px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted }}>Управляйте паролем и настройками входа</p>
+    <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Безопасность</h3>
+    <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Управляйте паролем и настройками входа</p>
 
     <div style={{ padding: '16px', borderRadius: 14, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
       <div>
-        <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, color: textPrimary }}>Пароль</p>
-        <p style={{ margin: '3px 0 0', fontFamily: '"Noto Sans"', fontSize: 12, color: textMuted }}>Последнее изменение — неизвестно</p>
+        <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: textPrimary }}>Пароль</p>
+        <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>Последнее изменение — неизвестно</p>
       </div>
-      <button style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+      <button style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}>
         Изменить
       </button>
     </div>
@@ -558,24 +563,24 @@ const AppearanceSection: React.FC<{
   gold: string; theme: string; onToggleTheme: () => void;
 }> = ({ isDark, surface, border, textPrimary, textMuted, gold, theme, onToggleTheme }) => (
   <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-    <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Внешний вид</h3>
-    <p style={{ margin: '0 0 24px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted }}>Выберите тему оформления</p>
+    <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Внешний вид</h3>
+    <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Выберите тему оформления</p>
 
     {/* Theme toggle cards */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
       {[
-        { value: 'light', label: 'Светлая', icon: 'light_mode',  preview: 'rgba(250,250,249,1)', accent: '#1C1917' },
-        { value: 'dark',  label: 'Тёмная',  icon: 'dark_mode',   preview: '#2D241F',             accent: '#fff'    },
+        { value: 'light', label: 'Светлая', Icon: Sun,  preview: 'rgba(250,250,249,1)', accent: '#1C1917' },
+        { value: 'dark',  label: 'Тёмная',  Icon: Moon, preview: '#2D241F',             accent: '#fff'    },
       ].map(opt => {
         const active = theme === opt.value;
         return (
           <button key={opt.value} onClick={onToggleTheme}
             style={{ padding: '20px 16px', borderRadius: 16, border: `2px solid ${active ? gold : border}`, background: active ? `${gold}10` : (isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7'), cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, transition: 'all .2s' }}>
             <div style={{ width: 52, height: 36, borderRadius: 10, background: opt.preview, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.08)' }}>
-              <AppIcon name={opt.icon} size={22} color={opt.accent} />
+              <opt.Icon size={22} color={opt.accent} />
             </div>
-            <span style={{ fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 13, color: active ? gold : textPrimary }}>{opt.label}</span>
-            {active && <AppIcon name="check_circle" size={16} color={gold} style={{ marginTop: -4 }} />}
+            <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, color: active ? gold : textPrimary }}>{opt.label}</span>
+            {active && <CheckCircle size={16} color={gold} style={{ marginTop: -4 }} />}
           </button>
         );
       })}
@@ -591,21 +596,21 @@ const CafesSection: React.FC<{
 }> = ({ isDark, surface, border, textPrimary, textMuted, gold, onAdd, onBrowse }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
     <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-      <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Добавить кофейню</h3>
-      <p style={{ margin: '0 0 20px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted }}>Отправьте новую кофейню на проверку модераторами</p>
-      <button onClick={onAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'opacity .15s' }}
+      <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Добавить кофейню</h3>
+      <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Отправьте новую кофейню на проверку модераторами</p>
+      <button onClick={onAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'opacity .15s' }}
         onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
         onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-        <AppIcon name="add_business" size={18} />
+        <Storefront size={18} />
         Добавить кофейню
       </button>
     </div>
 
     <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-      <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Каталог кофеен</h3>
-      <p style={{ margin: '0 0 20px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted }}>Исследуйте все кофейни в каталоге</p>
-      <button onClick={onBrowse} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-        <AppIcon name="coffee" size={18} />
+      <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Каталог кофеен</h3>
+      <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Исследуйте все кофейни в каталоге</p>
+      <button onClick={onBrowse} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+        <Coffee size={18} />
         Открыть каталог
       </button>
     </div>

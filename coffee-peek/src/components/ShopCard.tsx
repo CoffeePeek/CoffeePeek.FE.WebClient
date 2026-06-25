@@ -90,7 +90,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
               display: 'inline-flex', alignItems: 'center', gap: 3,
               padding: '3px 8px', borderRadius: 6,
               background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',
-              fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, fontSize: 11, color: '#D4A84B',
+              fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 11, color: '#D4A84B',
             }}>
               <StarIcon filled size={12} color="#D4A84B" />
               {shop.rating.toFixed(1)}
@@ -100,7 +100,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
             <span style={{
               padding: '3px 7px', borderRadius: 6,
               background: 'rgba(234,179,8,0.92)', color: '#1A1412',
-              fontFamily: '"Noto Sans",system-ui', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const,
+              fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const,
             }}>Хит</span>
           )}
         </div>
@@ -122,7 +122,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
       <div style={{ padding: '12px 14px 14px' }}>
         {/* Name + open/closed */}
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
-          <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {shop.name}
           </h3>
           {typeof shop.isOpen !== 'undefined' && (
@@ -131,7 +131,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
               padding: '3px 8px', borderRadius: 6, whiteSpace: 'nowrap' as const,
               background: shop.isOpen ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)',
               color: shop.isOpen ? '#4ADE80' : '#FCA5A5',
-              fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const,
+              fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const,
             }}>
               {shop.isOpen ? 'Открыто' : 'Закрыто'}
             </span>
@@ -139,13 +139,13 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
         </div>
 
         {/* Address */}
-        <p style={{ margin: '4px 0 0', fontFamily: '"Noto Sans",system-ui', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <p style={{ margin: '4px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <AppIcon name="location_on" size={13} color="#D4A84B" style={{ flexShrink: 0 }} />
           {shop.address || shop.cityName || 'Адрес не указан'}
         </p>
 
         {/* Meta row */}
-        <p style={{ margin: '2px 0 0', fontFamily: '"Noto Sans",system-ui', fontSize: 11, color: colors.textSecondary, opacity: 0.7 }}>
+        <p style={{ margin: '2px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary, opacity: 0.7 }}>
           {[shop.description ? undefined : null, priceLabel, shop.reviewCount ? `${shop.reviewCount} отзывов` : null].filter(Boolean).join(' · ')}
         </p>
 
@@ -175,7 +175,7 @@ const TagChip: React.FC<{ color: string; bg: string; border: string; children: R
     display: 'inline-flex', alignItems: 'center', gap: 4,
     padding: '4px 10px', borderRadius: 8,
     background: bg, color, border: `1px solid ${border}`,
-    fontFamily: '"Noto Sans",system-ui', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' as const,
+    fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' as const,
   }}>
     {children}
   </span>

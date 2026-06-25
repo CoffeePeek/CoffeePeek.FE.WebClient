@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
-import { AppIcon } from './icons';
+import type { IconProps } from '@phosphor-icons/react';
+import {
+  GridFour, Clock, Coffee, Flame, WifiHigh, SunHorizon, Leaf, PawPrint,
+  MapPin, CaretDown, CheckCircle, Check, X,
+} from '@/components/Icon';
 
-const QUICK_FILTERS = [
-  { id: 'all',       label: 'Все',          icon: 'apps'                  },
-  { id: 'open',      label: 'Открыто',      icon: 'schedule'              },
-  { id: 'specialty', label: 'Спешелти',     icon: 'coffee'                },
-  { id: 'roastery',  label: 'Обжарка',      icon: 'local_fire_department' },
-  { id: 'wifi',      label: 'Wi-Fi',        icon: 'wifi'                  },
-  { id: 'outdoor',   label: 'Терраса',      icon: 'deck'                  },
-  { id: 'vegan',     label: 'Веган',        icon: 'eco'                   },
-  { id: 'pets',      label: 'Pet-friendly', icon: 'pets'                  },
-] as const;
+const QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
+  { id: 'all',       label: 'Все',          Icon: GridFour          },
+  { id: 'open',      label: 'Открыто',      Icon: Clock             },
+  { id: 'specialty', label: 'Спешелти',     Icon: Coffee            },
+  { id: 'roastery',  label: 'Обжарка',      Icon: Flame             },
+  { id: 'wifi',      label: 'Wi-Fi',        Icon: WifiHigh          },
+  { id: 'outdoor',   label: 'Терраса',      Icon: SunHorizon        },
+  { id: 'vegan',     label: 'Веган',        Icon: Leaf              },
+  { id: 'pets',      label: 'Pet-friendly', Icon: PawPrint          },
+];
 
 const PRICE_OPTIONS = [
   { value: 'Budget',   label: '$ Бюджетный' },
@@ -120,12 +124,12 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   const chipBase: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 5,
     padding: '6px 12px', borderRadius: 99, whiteSpace: 'nowrap',
-    fontFamily: '"Noto Sans",system-ui', fontWeight: 600, fontSize: 12,
+    fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12,
     cursor: 'pointer', transition: 'all .15s', border: '1px solid',
   };
 
   const sectionLabel: React.CSSProperties = {
-    fontFamily: '"Noto Sans"', fontSize: 10, fontWeight: 700,
+    fontFamily: '"RF Dewi Expanded"', fontSize: 10, fontWeight: 700,
     color: muted, letterSpacing: '.06em', textTransform: 'uppercase',
     marginBottom: 8,
   };
@@ -133,7 +137,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   const draftChip = (active: boolean): React.CSSProperties => ({
     display: 'inline-flex', alignItems: 'center', gap: 4,
     padding: '6px 12px', borderRadius: 99, cursor: 'pointer',
-    fontFamily: '"Noto Sans",system-ui', fontWeight: 600, fontSize: 13,
+    fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13,
     transition: 'all .15s', border: '1px solid',
     background: active ? `${gold}18` : (dark ? 'rgba(255,255,255,0.05)' : colors.background),
     color: active ? gold : (dark ? '#E5DDD8' : '#44403C'),
@@ -154,9 +158,9 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             color: dark ? '#fff' : '#1C1917',
             borderColor,
           }}>
-            <AppIcon name="location_on" size={14} color={goldWarm} />
+            <MapPin size={14} color={goldWarm} />
             {currentCityName}
-            <AppIcon name="expand_more" size={13} color={muted} style={{ transition: 'transform .2s', transform: showCityDropdown ? 'rotate(180deg)' : 'none' }} />
+            <CaretDown size={13} color={muted} style={{ transition: 'transform .2s', transform: showCityDropdown ? 'rotate(180deg)' : 'none' }} />
           </button>
           {showCityDropdown && (
             <>
@@ -164,8 +168,8 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
               <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)', borderRadius: 12, border: `1px solid ${borderColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 20, minWidth: 160, maxHeight: 280, overflowY: 'auto' as const, background: dark ? '#2D241F' : '#fff' }}>
                 {cities.map(city => (
                   <button key={city.id} onClick={() => { onCityChange(city.id); onCityDropdownToggle(); }}
-                    style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : (dark ? '#fff' : '#1C1917'), border: 'none', cursor: 'pointer', fontFamily: '"Noto Sans"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {selectedCity === city.id && <AppIcon name="check_circle" size={14} color={gold} />}
+                    style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : (dark ? '#fff' : '#1C1917'), border: 'none', cursor: 'pointer', fontFamily: '"RF Dewi Expanded"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {selectedCity === city.id && <CheckCircle size={14} color={gold} />}
                     <span style={{ marginLeft: selectedCity === city.id ? 0 : 22 }}>{city.name}</span>
                   </button>
                 ))}
@@ -177,7 +181,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
         {/* Divider */}
         <div style={{ width: 1, height: 20, background: borderColor, flexShrink: 0 }} />
 
-        {QUICK_FILTERS.map(({ id, label, icon }) => {
+        {QUICK_FILTERS.map(({ id, label, Icon }) => {
           const active = activeQuick.includes(id);
           return (
             <button key={id} onClick={() => onQuickChange(id)} style={{
@@ -186,7 +190,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
               color: active ? (dark ? '#1C1917' : '#fff') : (dark ? '#fff' : '#1C1917'),
               borderColor: active ? 'transparent' : borderColor,
             }}>
-              <AppIcon name={icon} size={14} color={active ? (dark ? goldWarm : '#fff') : goldWarm} />
+              <Icon size={14} color={active ? (dark ? goldWarm : '#fff') : goldWarm} />
               {label}
             </button>
           );
@@ -251,7 +255,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                     <button key={value}
                       onClick={() => setDraft(d => ({ ...d, priceRange: active ? undefined : value }))}
                       style={draftChip(active)}>
-                      {active && <AppIcon name="check" size={13} />}
+                      {active && <Check size={13} />}
                       {label}
                     </button>
                   );
@@ -270,7 +274,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       <button key={eq.id}
                         onClick={() => setDraft(d => ({ ...d, equipments: toggle(d.equipments, eq.id) }))}
                         style={draftChip(active)}>
-                        {active && <AppIcon name="check" size={13} />}
+                        {active && <Check size={13} />}
                         {eq.name}
                       </button>
                     );
@@ -290,7 +294,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       <button key={b.id}
                         onClick={() => setDraft(d => ({ ...d, beans: toggle(d.beans, b.id) }))}
                         style={draftChip(active)}>
-                        {active && <AppIcon name="check" size={13} />}
+                        {active && <Check size={13} />}
                         {b.name}
                       </button>
                     );
@@ -310,7 +314,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       <button key={r.id}
                         onClick={() => setDraft(d => ({ ...d, roasters: toggle(d.roasters, r.id) }))}
                         style={draftChip(active)}>
-                        {active && <AppIcon name="check" size={13} />}
+                        {active && <Check size={13} />}
                         {r.name}
                       </button>
                     );
@@ -330,7 +334,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       <button key={m.id}
                         onClick={() => setDraft(d => ({ ...d, brewMethods: toggle(d.brewMethods, m.id) }))}
                         style={draftChip(active)}>
-                        {active && <AppIcon name="check" size={13} />}
+                        {active && <Check size={13} />}
                         {m.name}
                       </button>
                     );
@@ -343,25 +347,25 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 20, borderTop: `1px solid ${borderColor}`, paddingTop: 16 }}>
               <button
                 onClick={() => onApplyFilters(draft)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 22px', borderRadius: 10, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'opacity .15s' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 22px', borderRadius: 10, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'opacity .15s' }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >
-                <AppIcon name="check" size={16} />
+                <Check size={16} />
                 Применить{draftCount > 0 && ` (${draftCount})`}
               </button>
 
               {draftCount > 0 && (
                 <button
                   onClick={() => setDraft({ priceRange: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] })}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '10px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: muted, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '10px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: muted, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
                 >
-                  <AppIcon name="close" size={15} />
+                  <X size={15} />
                   Сбросить
                 </button>
               )}
 
-              <span style={{ fontFamily: '"Noto Sans"', fontSize: 12, color: muted, marginLeft: 'auto' }}>
+              <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: muted, marginLeft: 'auto' }}>
                 {draftCount > 0 ? `${draftCount} ${draftCount === 1 ? 'фильтр' : draftCount < 5 ? 'фильтра' : 'фильтров'} выбрано` : 'Фильтры не выбраны'}
               </span>
             </div>
@@ -378,11 +382,11 @@ const AppliedChip: React.FC<{ label: string; gold: string; onRemove: () => void 
     display: 'inline-flex', alignItems: 'center', gap: 4,
     padding: '5px 8px 5px 12px', borderRadius: 99, whiteSpace: 'nowrap',
     background: `${gold}15`, color: gold, border: `1px solid ${gold}40`,
-    fontFamily: '"Noto Sans",system-ui', fontWeight: 600, fontSize: 12,
+    fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12,
   }}>
     {label}
     <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2 }}>
-      <AppIcon name="close" size={13} color={gold} />
+      <X size={13} color={gold} />
     </button>
   </span>
 );

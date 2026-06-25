@@ -13,7 +13,6 @@ import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon, StarIcon } from '../components/icons';
-import { CheckCircle } from '@/components/Icon';
 
 interface ShopBasicInfo {
   name: string;

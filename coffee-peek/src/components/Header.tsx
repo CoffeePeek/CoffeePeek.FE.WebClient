@@ -45,7 +45,7 @@ const Header: React.FC = () => {
     border: active ? `1px solid ${gold}` : '1px solid transparent',
     background: active ? (isDark ? '#1A1412' : '#fff') : 'transparent',
     color: active ? gold : mutedColor,
-    fontFamily: '"Noto Sans",system-ui', fontWeight: 600, fontSize: 14,
+    fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14,
     cursor: 'pointer', transition: 'all .15s',
   });
 
@@ -60,7 +60,7 @@ const Header: React.FC = () => {
               <div style={{ width: 40, height: 40, background: isDark ? '#1A1412' : '#fff', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${borderColor}` }}>
                 <div style={{ color: gold, width: 20, height: 20 }}><Icons.Coffee /></div>
               </div>
-              <span style={{ fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 800, fontSize: 20, letterSpacing: '-0.045em', color: textColor }}>
+              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 20, letterSpacing: '-0.045em', color: textColor }}>
                 Coffee<span style={{ color: gold }}>Peek</span>
               </span>
             </button>
@@ -93,9 +93,9 @@ const Header: React.FC = () => {
                 >
                   {/* Avatar */}
                   <div style={{ width: 30, height: 30, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 800, fontSize: 13, color: goldWarm }}>{initial}</span>
+                    <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 13, color: goldWarm }}>{initial}</span>
                   </div>
-                  <span className="hidden lg:block" style={{ fontFamily: '"Noto Sans",system-ui', fontWeight: 600, fontSize: 13, color: textColor, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span className="hidden lg:block" style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, color: textColor, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {displayName}
                   </span>
                   <CaretDown size={18} color={mutedColor} style={{ transition: 'transform .2s', transform: profileOpen ? 'rotate(180deg)' : 'none' }} />
@@ -110,11 +110,11 @@ const Header: React.FC = () => {
                       <div style={{ padding: '14px 16px', borderBottom: `1px solid ${borderColor}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{ width: 38, height: 38, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <span style={{ fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 800, fontSize: 16, color: goldWarm }}>{initial}</span>
+                            <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 16, color: goldWarm }}>{initial}</span>
                           </div>
                           <div style={{ minWidth: 0 }}>
-                            <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 14, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
-                            <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 11, color: mutedColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayEmail}</p>
+                            <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
+                            <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: mutedColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayEmail}</p>
                           </div>
                         </div>
                       </div>
@@ -145,11 +145,11 @@ const Header: React.FC = () => {
               /* ── Login / Register ── */
               <div className="hidden lg:flex" style={{ gap: 8, alignItems: 'center' }}>
                 <button onClick={() => navigate('/login')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
                   Войти
                 </button>
                 <button onClick={() => navigate('/register')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
                   Регистрация
                 </button>
               </div>
@@ -189,18 +189,18 @@ const Header: React.FC = () => {
                 <>
                   {user.id && (
                     <button onClick={() => { navigate(`/users/${user.id}`); setIsMobileMenuOpen(false); }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                       <User size={18} color={mutedColor} />
                       Профиль
                     </button>
                   )}
                   <button onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <Gear size={18} color={isSettings ? gold : mutedColor} />
                     Настройки
                   </button>
                   <button onClick={() => { logout(); navigate('/'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <SignOut size={18} color="#EF4444" />
                     Выйти
                   </button>
@@ -208,11 +208,11 @@ const Header: React.FC = () => {
               ) : (
                 <>
                   <button onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     Войти
                   </button>
                   <button onClick={() => { navigate('/register'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: `${gold}15`, color: gold, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: `${gold}15`, color: gold, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     Регистрация
                   </button>
                 </>
@@ -238,7 +238,7 @@ interface DropdownItemProps {
 const DropdownItem: React.FC<DropdownItemProps> = ({ icon, label, onClick, textColor, hoverBg, activeBg }) => (
   <button
     onClick={onClick}
-    style={{ width: '100%', padding: '9px 16px', textAlign: 'left', background: activeBg ?? 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontFamily: '"Noto Sans"', fontSize: 14, color: textColor, transition: 'background .1s' }}
+    style={{ width: '100%', padding: '9px 16px', textAlign: 'left', background: activeBg ?? 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textColor, transition: 'background .1s' }}
     onMouseEnter={e => !activeBg && (e.currentTarget.style.background = hoverBg)}
     onMouseLeave={e => !activeBg && (e.currentTarget.style.background = 'none')}
   >

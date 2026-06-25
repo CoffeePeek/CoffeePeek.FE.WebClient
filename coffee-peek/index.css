@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html,
+  body {
+    font-family: "RF Dewi Expanded", sans-serif;
+  }
+}
+
 /* ── RF Dewi Expanded — display family (Magazine Stamp) ────────── */
 @font-face {
   font-family: "RF Dewi Expanded";
@@ -40,7 +47,7 @@
 }
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "RF Dewi Expanded", sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -148,7 +155,7 @@ button:focus-visible {
 /* ── Magazine Stamp typography system ──────────────────────────── */
 /* Wordmark: RF Dewi Expanded Ultrabold, tight tracking            */
 .wordmark {
-  font-family: "RF Dewi Expanded", "Sora", sans-serif;
+  font-family: "RF Dewi Expanded", sans-serif;
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 1;
@@ -156,7 +163,7 @@ button:focus-visible {
 
 /* Hero / h1: ALL CAPS, Regular 400, dense line-height            */
 .hero-text {
-  font-family: "RF Dewi Expanded", "Sora", sans-serif;
+  font-family: "RF Dewi Expanded", sans-serif;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: -0.01em;
@@ -171,16 +178,11 @@ button:focus-visible {
 
 /* Large numeral (ratings, stats): Ultrabold, tabular              */
 .numeral {
-  font-family: "RF Dewi Expanded", "Sora", sans-serif;
+  font-family: "RF Dewi Expanded", sans-serif;
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 0.84;
   font-variant-numeric: tabular-nums;
-}
-
-/* Material Icons filled stars */
-.star-filled {
-  font-variation-settings: 'FILL' 1;
 }
 
 /* Hide scrollbar but keep functionality */

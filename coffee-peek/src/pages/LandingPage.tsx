@@ -18,6 +18,8 @@ import {
   formatStatRating,
 } from '../hooks/queries/usePublicStats';
 import { AppIcon, StarIcon } from '../components/icons';
+import type { IconProps } from '@phosphor-icons/react';
+import { Compass, Flask, ChatCircleText, TrendUp, UsersThree } from '@/components/Icon';
 
 const ISO_MAP_PINS = [
   { x: 100, y: 150 }, { x: 165, y: 110 }, { x: 220, y: 80 },
@@ -202,12 +204,12 @@ const LandingPage: React.FC = () => {
   );
 
   if (step === VerificationStep.LANDING) {
-    const features = [
-      { icon: 'explore',      title: 'Карта кофеен',    desc: 'Найди лучшие кофейни поблизости с подробной информацией, фото и живыми отзывами.' },
-      { icon: 'science',      title: 'Инструменты',     desc: 'Подробные описания всех инструментов и методов приготовления кофе.' },
-      { icon: 'rate_review',  title: 'Чек-ины и отзывы', desc: 'Оценивай кофейни, оставляй отзывы и делись впечатлениями с друзьями.' },
-      { icon: 'trending_up',  title: 'Рейтинги',        desc: 'Персональная система оценок и рекомендаций на основе твоих предпочтений.' },
-      { icon: 'groups',       title: 'Сообщество',      desc: 'Общайся с другими любителями кофе, делись опытом и находи единомышленников.' },
+    const features: { Icon: React.ComponentType<IconProps>; title: string; desc: string }[] = [
+      { Icon: Compass,        title: 'Карта кофеен',    desc: 'Найди лучшие кофейни поблизости с подробной информацией, фото и живыми отзывами.' },
+      { Icon: Flask,          title: 'Инструменты',     desc: 'Подробные описания всех инструментов и методов приготовления кофе.' },
+      { Icon: ChatCircleText, title: 'Чек-ины и отзывы', desc: 'Оценивай кофейни, оставляй отзывы и делись впечатлениями с друзьями.' },
+      { Icon: TrendUp,        title: 'Рейтинги',        desc: 'Персональная система оценок и рекомендаций на основе твоих предпочтений.' },
+      { Icon: UsersThree,     title: 'Сообщество',      desc: 'Общайся с другими любителями кофе, делись опытом и находи единомышленников.' },
     ];
 
     const navTabs = [
@@ -416,7 +418,7 @@ const LandingPage: React.FC = () => {
               </button>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-[10px] lg:gap-4">
-              {features.map(({ icon, title, desc }, i) => (
+              {features.map(({ Icon, title, desc }, i) => (
                 <article key={title}
                   className="relative rounded-[18px] lg:rounded-[20px] p-4 lg:p-[22px] border border-[#3D2F28] transition-all duration-200 hover:-translate-y-[2px] cursor-pointer group"
                   style={{ background: '#2D241F', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
@@ -426,7 +428,7 @@ const LandingPage: React.FC = () => {
                   )}
                   <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-[14px] flex items-center justify-center border border-[rgba(180,140,75,.25)]"
                     style={{ background: 'rgba(180,140,75,.14)' }}>
-                    <AppIcon name={icon} size={22} color="#EAB308" />
+                    <Icon size={22} color="#EAB308" className="lg:w-6 lg:h-6" />
                   </div>
                   <h3 className="mt-[14px] lg:mt-[18px] mb-1 font-display font-bold text-[15px] lg:text-[18px] tracking-[-0.01em] text-white">{title}</h3>
                   <p className="font-body text-[12px] lg:text-[13px] leading-[1.5] text-[#A39E93]">{desc}</p>

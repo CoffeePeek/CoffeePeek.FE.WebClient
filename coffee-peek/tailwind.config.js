@@ -36,8 +36,9 @@ export default {
         },
       },
       fontFamily: {
-        display: ["RF Dewi Expanded", "Sora", "sans-serif"],
-        body: ["Noto Sans", "Inter", "sans-serif"],
+        sans: ["RF Dewi Expanded", "sans-serif"],
+        display: ["RF Dewi Expanded", "sans-serif"],
+        body: ["RF Dewi Expanded", "sans-serif"],
       },
       letterSpacing: {
         wordmark: "-0.045em",
