@@ -42,6 +42,12 @@ const QuickAction: React.FC<{ to: string; label: string; description: string; ic
     </Link>
   );
 
+const IconMap = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+  </svg>
+);
+
 export const DashboardPage: React.FC = () => {
   const { user, isAdmin, isModerator } = useUser();
   const { data, isLoading } = useQuery({
@@ -111,6 +117,24 @@ export const DashboardPage: React.FC = () => {
           Быстрые действия
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {!isModerator && (
+            <>
+              <QuickAction
+                to="/coffee-shops"
+                label="Каталог кофеен"
+                description="Просмотр опубликованных кофеен"
+                icon={<IconShop />}
+                color="text-primary"
+              />
+              <QuickAction
+                to="/map"
+                label="Карта кофеен"
+                description="Найти кофейни на карте"
+                icon={<IconMap />}
+                color="text-blue-500"
+              />
+            </>
+          )}
           {isModerator && (
             <>
               <QuickAction

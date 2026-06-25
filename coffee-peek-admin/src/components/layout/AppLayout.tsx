@@ -6,6 +6,8 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const ROUTE_TITLES: Record<string, string> = {
   '/dashboard': 'Дашборд',
+  '/coffee-shops': 'Кофейни',
+  '/map': 'Карта',
   '/shops': 'Модерация',
   '/reviews': 'Отзывы',
   '/published-shops': 'Опубликованные',

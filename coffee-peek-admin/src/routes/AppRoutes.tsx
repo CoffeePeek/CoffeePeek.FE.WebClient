@@ -15,6 +15,9 @@ const PublishedShopsPage = lazy(() => import('../pages/PublishedShopsPage').then
 const PublishedShopEditPage = lazy(() => import('../pages/PublishedShopEditPage').then((m) => ({ default: m.PublishedShopEditPage })));
 const OwnerShopsPage = lazy(() => import('../pages/OwnerShopsPage').then((m) => ({ default: m.OwnerShopsPage })));
 const OwnerShopEditPage = lazy(() => import('../pages/OwnerShopEditPage').then((m) => ({ default: m.OwnerShopEditPage })));
+const BrowseShopsPage = lazy(() => import('../pages/BrowseShopsPage').then((m) => ({ default: m.BrowseShopsPage })));
+const BrowseShopPage = lazy(() => import('../pages/BrowseShopPage').then((m) => ({ default: m.BrowseShopPage })));
+const BrowseMapPage = lazy(() => import('../pages/BrowseMapPage').then((m) => ({ default: m.BrowseMapPage })));
 
 const Loader = () => (
   <div className="flex-1 flex items-center justify-center">
@@ -35,6 +38,10 @@ export const AppRoutes: React.FC = () => (
         }
       >
         <Route path="/dashboard" element={<DashboardPage />} />
+
+        <Route path="/coffee-shops" element={<BrowseShopsPage />} />
+        <Route path="/coffee-shops/:id" element={<BrowseShopPage />} />
+        <Route path="/map" element={<BrowseMapPage />} />
 
         <Route
           path="/shops"

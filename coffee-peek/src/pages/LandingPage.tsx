@@ -11,6 +11,12 @@ import { getThemeClasses } from '../utils/theme';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { logger } from '../utils/logger';
 import { LEGAL_ROUTES } from '../constants/legalRoutes';
+import {
+  usePublicStats,
+  formatStatCount,
+  formatStatCompact,
+  formatStatRating,
+} from '../hooks/queries/usePublicStats';
 
 const ISO_MAP_PINS = [
   { x: 100, y: 150 }, { x: 165, y: 110 }, { x: 220, y: 80 },
@@ -101,6 +107,9 @@ const LandingPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   const [step, setStep] = useState<VerificationStep>(VerificationStep.LANDING);
+  const { data: publicStats, isLoading: isStatsLoading } = usePublicStats(
+    step === VerificationStep.LANDING,
+  );
   const [userState, setUserState] = useState<UserState>({ email: '', code: '' });
   const [isFormLoading, setIsFormLoading] = useState(false);
   const [timer, setTimer] = useState(59);
@@ -205,9 +214,8 @@ const LandingPage: React.FC = () => {
       { label: 'Карта',   href: '/dashboard?page=map' },
     ];
     const footerCols = [
-      { t: 'Продукт',  items: ['Кофейни', 'Карта', 'Журнал', 'Инструменты'] },
-      { t: 'Компания', items: ['О нас', 'Блог', 'Контакты'] },
-      { t: 'Помощь',   items: ['FAQ', 'Поддержка', 'Условия', 'Политика'] },
+      { t: 'Продукт', items: ['Кофейни', 'Карта'] },
+      { t: 'Помощь',  items: ['Условия', 'Политика'] },
     ];
     const footerLinks: Record<string, string> = {
       Кофейни: '/shops',
@@ -215,6 +223,44 @@ const LandingPage: React.FC = () => {
       Условия: LEGAL_ROUTES.terms,
       Политика: LEGAL_ROUTES.privacy,
     };
+
+    const statsMobile = [
+      {
+        value: publicStats ? formatStatCount(publicStats.totalCoffeeShops) : '—',
+        label: 'Кофеен',
+      },
+      {
+        value: publicStats ? formatStatCompact(publicStats.totalReviews) : '—',
+        label: 'Отзывов',
+      },
+      {
+        value: publicStats ? formatStatCompact(publicStats.totalCheckIns) : '—',
+        label: 'Чек-инов',
+      },
+      {
+        value: publicStats ? formatStatRating(publicStats.averageRating) : '—',
+        label: 'Средняя оценка',
+      },
+    ];
+
+    const statsDesktop = [
+      {
+        value: publicStats ? formatStatCount(publicStats.totalCoffeeShops) : '—',
+        label: 'кофеен на карте',
+      },
+      {
+        value: publicStats ? formatStatCompact(publicStats.totalReviews) : '—',
+        label: 'отзывов',
+      },
+      {
+        value: publicStats ? formatStatCompact(publicStats.totalCheckIns) : '—',
+        label: 'чек-инов',
+      },
+      {
+        value: publicStats ? formatStatRating(publicStats.averageRating) : '—',
+        label: 'средняя оценка',
+      },
+    ];
 
     return (
       <div className="min-h-screen bg-[#1A1412] relative overflow-x-hidden text-white">
@@ -327,22 +373,22 @@ const LandingPage: React.FC = () => {
               style={{ background: 'rgba(45,36,31,0.55)', backdropFilter: 'blur(12px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
               {/* Mobile: 2x2 grid */}
               <div className="grid grid-cols-2 gap-4 lg:hidden">
-                {[['2 480+','Кофеен'],['58 тыс.','Отзывов'],['12 тыс.+','Чек-инов'],['4.8★','Средняя оценка']].map(([v,l]) => (
-                  <div key={l}>
-                    <div className="font-display font-bold text-[22px] tracking-[-0.02em] text-white leading-none">{v}</div>
-                    <div className="mt-1 font-body text-[10px] text-[#A39E93] uppercase tracking-[.04em]">{l}</div>
+                {statsMobile.map(({ value, label }) => (
+                  <div key={label}>
+                    <div className={`font-display font-bold text-[22px] tracking-[-0.02em] text-white leading-none ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`}>{value}</div>
+                    <div className="mt-1 font-body text-[10px] text-[#A39E93] uppercase tracking-[.04em]">{label}</div>
                   </div>
                 ))}
               </div>
               {/* Desktop: row */}
               <div className="hidden lg:flex items-center justify-between gap-8">
-                {[['2 480+','кофеен на карте'],['58 тыс.','отзывов'],['12 тыс.+','чек-инов'],['4.8★','средняя оценка']].map(([v,l], i, arr) => (
-                  <React.Fragment key={l}>
+                {statsDesktop.map(({ value, label }, i) => (
+                  <React.Fragment key={label}>
                     <div className="text-left">
-                      <div className="font-display font-bold text-[32px] tracking-[-0.02em] text-white leading-none">{v}</div>
-                      <div className="mt-[6px] font-body text-[12px] text-[#A39E93] uppercase tracking-[.04em]">{l}</div>
+                      <div className={`font-display font-bold text-[32px] tracking-[-0.02em] text-white leading-none ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`}>{value}</div>
+                      <div className="mt-[6px] font-body text-[12px] text-[#A39E93] uppercase tracking-[.04em]">{label}</div>
                     </div>
-                    {i < arr.length - 1 && <div className="w-px h-9 bg-[#3D2F28]" />}
+                    {i < statsDesktop.length - 1 && <div className="w-px h-9 bg-[#3D2F28]" />}
                   </React.Fragment>
                 ))}
               </div>
@@ -420,7 +466,7 @@ const LandingPage: React.FC = () => {
                   Проводник в мире кофе. Карта, отзывы, инструменты и сообщество — в одном приложении.
                 </p>
               </div>
-              <div className="grid grid-cols-3 gap-14">
+              <div className="grid grid-cols-2 gap-14">
                 {footerCols.map((col) => (
                   <div key={col.t}>
                     <div className="font-body font-bold text-[11px] uppercase tracking-[.08em] text-[#A39E93] mb-3">{col.t}</div>
@@ -449,10 +495,10 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
             <div className="mt-[18px] flex items-center justify-between font-body text-[12px] text-[#5C544F]">
-              <span>© 2026 CoffeePeek · v 2.4.1</span>
+              <span>© 2026 CoffeePeek</span>
               <div className="flex items-center gap-[14px]">
                 <span className="inline-flex items-center gap-[5px]"><span className="material-symbols-rounded text-[14px]">language</span>Русский</span>
-                <span>Москва</span>
+                <span>Минск</span>
                 <span>·</span>
                 <span className="text-[#22C55E] inline-flex items-center gap-1">
                   <span className="material-symbols-rounded star-filled text-[8px]">circle</span>

@@ -49,33 +49,27 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <DashboardPage />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
+            <AuthenticatedLayout>
+              <DashboardPage />
+            </AuthenticatedLayout>
           }
         />
 
         <Route
           path="/shops"
           element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <CoffeeShopListPage />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
+            <AuthenticatedLayout>
+              <CoffeeShopListPage />
+            </AuthenticatedLayout>
           }
         />
 
         <Route
           path="/shops/:shopId"
           element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <CoffeeShopDetailPage />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
+            <AuthenticatedLayout>
+              <CoffeeShopDetailPage />
+            </AuthenticatedLayout>
           }
         />
 

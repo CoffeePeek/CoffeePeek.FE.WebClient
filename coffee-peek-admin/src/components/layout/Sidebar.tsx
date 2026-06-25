@@ -10,6 +10,7 @@ interface NavItem {
   adminOnly?: boolean;
   moderatorOnly?: boolean;
   ownerOnly?: boolean;
+  browseOnly?: boolean;
 }
 
 const IconDashboard = () => (
@@ -42,9 +43,16 @@ const IconAudit = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
   </svg>
 );
+const IconMap = () => (
+  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+  </svg>
+);
 
 const NAV_ITEMS: NavItem[] = [
   { path: '/dashboard', label: 'Дашборд', icon: <IconDashboard /> },
+  { path: '/coffee-shops', label: 'Кофейни', icon: <IconShop />, browseOnly: true },
+  { path: '/map', label: 'Карта', icon: <IconMap />, browseOnly: true },
   { path: '/shops', label: 'Модерация', icon: <IconShop />, moderatorOnly: true },
   { path: '/reviews', label: 'Отзывы', icon: <IconReview />, moderatorOnly: true },
   { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
@@ -79,6 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
     if (item.adminOnly) return isAdmin;
     if (item.moderatorOnly) return isModerator;
     if (item.ownerOnly) return isOwner;
+    if (item.browseOnly) return !isAdmin && !isModerator;
     return true;
   });
 

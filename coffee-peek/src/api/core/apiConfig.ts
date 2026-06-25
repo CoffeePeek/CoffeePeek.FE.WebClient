@@ -77,6 +77,10 @@ export const API_ENDPOINTS = {
     REVIEWS: "/api/ModerationReviews",
     REVIEW_UPDATE: (reviewId: string) => `/api/ModerationReviews/${reviewId}`,
   },
+
+  PUBLIC: {
+    STATS: "/api/public/stats",
+  },
 } as const;
 
 export function buildUrlWithParams(

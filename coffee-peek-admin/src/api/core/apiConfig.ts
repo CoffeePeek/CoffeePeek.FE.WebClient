@@ -40,6 +40,15 @@ export const API_ENDPOINTS = {
     REVIEW_BY_ID: (id: string) => `/api/ModerationReviews/${id}`,
   },
 
+  COFFEE_SHOP: {
+    BASE: '/api/CoffeeShops',
+    BY_ID: (id: string) => `/api/CoffeeShops/${id}`,
+  },
+
+  MAP: {
+    BASE: '/api/Map',
+  },
+
   CATALOGS: {
     CITIES: '/api/Catalogs/cities',
     EQUIPMENTS: '/api/Catalogs/equipments',
