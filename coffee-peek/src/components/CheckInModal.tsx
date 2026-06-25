@@ -434,14 +434,12 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                         onClick={() => setRatingService(star)}
                         className="hover:scale-110 transition-transform"
                       >
-                        <span
-                          className={`material-symbols-rounded text-[24px] ${
-                            star <= ratingService ? `star-filled ${themeClasses.primary.text}` : ''
-                          }`}
-                          style={star > ratingService ? { color: `${colors.primary}20` } : undefined}
-                        >
-                          star
-                        </span>
+                          <StarIcon
+                            filled={star <= ratingService}
+                            size={24}
+                            className={star <= ratingService ? themeClasses.primary.text : undefined}
+                            style={star > ratingService ? { color: `${colors.primary}20` } : undefined}
+                          />
                       </button>
                     ))}
                   </div>
@@ -460,14 +458,12 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                         onClick={() => setRatingPlace(star)}
                         className="hover:scale-110 transition-transform"
                       >
-                        <span
-                          className={`material-symbols-rounded text-[24px] ${
-                            star <= ratingPlace ? `star-filled ${themeClasses.primary.text}` : ''
-                          }`}
-                          style={star > ratingPlace ? { color: `${colors.primary}20` } : undefined}
-                        >
-                          star
-                        </span>
+                          <StarIcon
+                            filled={star <= ratingPlace}
+                            size={24}
+                            className={star <= ratingPlace ? themeClasses.primary.text : undefined}
+                            style={star > ratingPlace ? { color: `${colors.primary}20` } : undefined}
+                          />
                       </button>
                     ))}
                   </div>
@@ -516,7 +512,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-rounded text-lg">check_circle</span>
+                  <AppIcon name="check_circle" size={18} />
                   Чекиниться
                 </>
               )}

@@ -76,6 +76,7 @@ import {
   Moon,
   DeviceMobile,
   BookmarkSimple,
+  Calendar,
 } from '@phosphor-icons/react';
 
 export type { IconProps };
@@ -157,6 +158,7 @@ export {
   Moon,
   DeviceMobile,
   BookmarkSimple,
+  Calendar,
 };
 
 /** Backward-compatible aliases used across the app */
