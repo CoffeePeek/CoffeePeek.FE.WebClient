@@ -1,7 +1,7 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
-import { PublishedShop } from './admin';
+import { mapPublishedShop, PublishedShop } from './admin';
 
 export interface UpdateOwnerShopRequest {
   name: string;
@@ -10,26 +10,6 @@ export interface UpdateOwnerShopRequest {
   email?: string | null;
   siteLink?: string | null;
   instagramLink?: string | null;
-}
-
-function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
-  const mapStatus = (value: unknown): PublishedShop['status'] => {
-    if (typeof value === 'string') return value as PublishedShop['status'];
-    const labels: PublishedShop['status'][] = ['Active', 'TemporarilyClosed', 'PermanentlyClosed'];
-    return labels[Number(value)] ?? 'Active';
-  };
-
-  return {
-    id: String(shop.id),
-    name: String(shop.name),
-    cityId: String(shop.cityId),
-    status: mapStatus(shop.status),
-    creatorId: String(shop.creatorId),
-    ownerUserId: shop.ownerUserId ? String(shop.ownerUserId) : null,
-    moderationId: shop.moderationId ? String(shop.moderationId) : null,
-    createdAtUtc: String(shop.createdAtUtc),
-    isHidden: Boolean(shop.isHidden),
-  };
 }
 
 export async function getOwnerShops(): Promise<ApiResponse<PublishedShop[]>> {
@@ -59,5 +39,16 @@ export async function updateOwnerShop(
     data
   );
 
+  return { ...response, data: mapPublishedShop(response.data) };
+}
+
+export async function reorderOwnerShopPhotos(
+  id: string,
+  photoIds: string[]
+): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.put<Record<string, unknown>>(
+    `${API_ENDPOINTS.OWNER.SHOP_BY_ID(id)}/photos/order`,
+    { photoIds }
+  );
   return { ...response, data: mapPublishedShop(response.data) };
 }

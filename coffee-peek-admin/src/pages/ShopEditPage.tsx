@@ -20,6 +20,8 @@ import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { PhotoGallery } from '../components/moderation/PhotoGallery';
 import { ScheduleEditor, getDefaultSchedules } from '../components/moderation/ScheduleEditor';
 import { CatalogMultiSelect } from '../components/moderation/CatalogMultiSelect';
+import { PriceRangePicker } from '../components/PriceRangePicker';
+import { getPriceRangeLabel } from '../constants/priceRange';
 
 const schema = z.object({
   name: z.string().min(1, 'Обязательное поле'),
@@ -34,13 +36,6 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-
-const PRICE_RANGE_LABELS: Record<number, string> = {
-  1: '₽ — Бюджетно',
-  2: '₽₽ — Средне',
-  3: '₽₽₽ — Дорого',
-  4: '₽₽₽₽ — Премиум',
-};
 
 type PendingAction = 'approve' | 'reject';
 
@@ -73,6 +68,8 @@ export const ShopEditPage: React.FC = () => {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
@@ -241,7 +238,7 @@ export const ShopEditPage: React.FC = () => {
               />
               <MetaItem
                 label="Ценовой диапазон"
-                value={shop.priceRange ? PRICE_RANGE_LABELS[shop.priceRange] ?? String(shop.priceRange) : '—'}
+                value={getPriceRangeLabel(shop.priceRange)}
               />
               <MetaItem label="Фото" value={String(shop.photos?.length ?? 0)} />
             </dl>
@@ -288,12 +285,13 @@ export const ShopEditPage: React.FC = () => {
               </Field>
 
               <Field label="Ценовой диапазон">
-                <select {...register('priceRange')} className={inputClass}>
-                  <option value="">Не указано</option>
-                  {[1, 2, 3, 4].map((v) => (
-                    <option key={v} value={v}>{PRICE_RANGE_LABELS[v]}</option>
-                  ))}
-                </select>
+                <PriceRangePicker
+                  value={watch('priceRange')}
+                  onChange={(value) =>
+                    setValue('priceRange', value ?? '', { shouldValidate: true, shouldDirty: true })
+                  }
+                  allowEmpty
+                />
               </Field>
             </div>
           </Card>

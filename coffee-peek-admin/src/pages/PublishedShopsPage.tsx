@@ -6,21 +6,19 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
+import {
+  COFFEE_SHOP_STATUS_LABELS,
+  coffeeShopStatusBadgeVariant,
+} from '../constants/coffeeShopStatus';
 
 const PAGE_SIZE = 20;
 
 const STATUS_OPTIONS: { value: CoffeeShopStatus | ''; label: string }[] = [
   { value: '', label: 'Все' },
-  { value: 'Active', label: 'Active' },
-  { value: 'TemporarilyClosed', label: 'Скрыта' },
-  { value: 'PermanentlyClosed', label: 'Закрыта' },
+  { value: 'Active', label: 'Открыта' },
+  { value: 'TemporarilyClosed', label: 'Временно закрыта' },
+  { value: 'PermanentlyClosed', label: 'Закрыта навсегда' },
 ];
-
-const STATUS_LABELS: Record<CoffeeShopStatus, string> = {
-  Active: 'Active',
-  TemporarilyClosed: 'TemporarilyClosed',
-  PermanentlyClosed: 'PermanentlyClosed',
-};
 
 export const PublishedShopsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,7 +51,7 @@ export const PublishedShopsPage: React.FC = () => {
       <div>
         <h2 className="page-header-title">Опубликованные кофейни</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
-          Управление live-кофейнями, видимостью и владельцами
+          Управление опубликованными кофейнями и владельцами
         </p>
       </div>
 
@@ -107,7 +105,6 @@ export const PublishedShopsPage: React.FC = () => {
                   <tr className="border-b border-border-light dark:border-border-dark">
                     <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Название</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Статус</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Видимость</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Владелец</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Создана</th>
                     <th className="px-4 py-3" />
@@ -120,13 +117,8 @@ export const PublishedShopsPage: React.FC = () => {
                         {shop.name}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={shop.status === 'Active' ? 'approved' : 'pending'}>
-                          {STATUS_LABELS[shop.status]}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        <Badge variant={shop.isHidden ? 'rejected' : 'approved'}>
-                          {shop.isHidden ? 'Скрыта' : 'Видна'}
+                        <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>
+                          {COFFEE_SHOP_STATUS_LABELS[shop.status]}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-xs font-mono text-text-muted dark:text-stone-400 hidden lg:table-cell">

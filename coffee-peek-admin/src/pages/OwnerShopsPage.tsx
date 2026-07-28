@@ -5,6 +5,10 @@ import { getOwnerShops } from '../api/owner';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import {
+  COFFEE_SHOP_STATUS_LABELS,
+  coffeeShopStatusBadgeVariant,
+} from '../constants/coffeeShopStatus';
 
 export const OwnerShopsPage: React.FC = () => {
   const { data: shops, isLoading } = useQuery({
@@ -43,8 +47,8 @@ export const OwnerShopsPage: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-text-main dark:text-white font-body">{shop.name}</p>
                   <div className="flex gap-2 mt-1">
-                    <Badge variant={shop.isHidden ? 'rejected' : 'approved'}>
-                      {shop.isHidden ? 'Скрыта' : 'Active'}
+                    <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>
+                      {COFFEE_SHOP_STATUS_LABELS[shop.status]}
                     </Badge>
                     <span className="text-xs text-text-muted dark:text-stone-400 font-body">
                       {new Date(shop.createdAtUtc).toLocaleDateString('ru')}

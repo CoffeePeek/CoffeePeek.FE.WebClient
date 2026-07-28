@@ -4,11 +4,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { getOwnerShopById, updateOwnerShop } from '../api/owner';
+import { getOwnerShopById, reorderOwnerShopPhotos, updateOwnerShop } from '../api/owner';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { PhotoOrderEditor } from '../components/PhotoOrderEditor';
+import {
+  COFFEE_SHOP_STATUS_HINTS,
+  COFFEE_SHOP_STATUS_LABELS,
+  coffeeShopStatusBadgeVariant,
+} from '../constants/coffeeShopStatus';
 
 const schema = z.object({
   name: z.string().min(1, 'Обязательное поле'),
@@ -70,6 +76,16 @@ export const OwnerShopEditPage: React.FC = () => {
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
   });
 
+  const photoOrderMutation = useMutation({
+    mutationFn: (photoIds: string[]) => reorderOwnerShopPhotos(id!, photoIds),
+    onSuccess: (response) => {
+      qc.setQueryData(['owner', 'shop', id], response.data);
+      qc.invalidateQueries({ queryKey: ['owner', 'shops'] });
+      showToast('Порядок фотографий сохранён', 'success');
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить порядок фотографий', 'error'),
+  });
+
   if (isLoading || !shop) {
     return (
       <div className="max-w-2xl space-y-4">
@@ -87,9 +103,14 @@ export const OwnerShopEditPage: React.FC = () => {
         </Button>
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-text-main dark:text-white font-display">{shop.name}</h2>
-          <Badge variant={shop.isHidden ? 'rejected' : 'approved'} className="mt-1">
-            {shop.isHidden ? 'Скрыта администратором' : 'Опубликована'}
-          </Badge>
+          <div className="mt-1">
+            <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>
+              {COFFEE_SHOP_STATUS_LABELS[shop.status]}
+            </Badge>
+            <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1">
+              {COFFEE_SHOP_STATUS_HINTS[shop.status]}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -135,6 +156,12 @@ export const OwnerShopEditPage: React.FC = () => {
           </Button>
         </form>
       </Card>
+
+      <PhotoOrderEditor
+        photos={shop.photos}
+        isSaving={photoOrderMutation.isPending}
+        onSave={(photoIds) => photoOrderMutation.mutateAsync(photoIds)}
+      />
     </div>
   );
 };

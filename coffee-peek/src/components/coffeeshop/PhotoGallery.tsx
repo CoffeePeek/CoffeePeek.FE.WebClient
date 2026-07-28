@@ -18,7 +18,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ shop, cardBg, border
     return null;
   }
 
-  const photos = shop.photos;
+  const photos = [...shop.photos].sort(
+    (left, right) => (left.sortIndex ?? Number.MAX_SAFE_INTEGER) - (right.sortIndex ?? Number.MAX_SAFE_INTEGER)
+  );
   const photoCount = photos.length;
 
   // Если одна фотография - показываем во всю область

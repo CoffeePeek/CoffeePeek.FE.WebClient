@@ -1,6 +1,8 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse, PaginatedMeta } from './core/types';
+import type { PriceRangeLevel } from '../constants/priceRange';
+import { parsePriceRange, toPriceRangeLevel } from '../constants/priceRange';
 
 // ==================== Types ====================
 
@@ -270,7 +272,7 @@ export interface ClearCacheResponse {
 }
 
 export type CoffeeShopStatus = 'Active' | 'TemporarilyClosed' | 'PermanentlyClosed';
-export type PriceRangeLevel = 'Cheap' | 'Moderate' | 'Expensive' | 'Luxury';
+export type { PriceRangeLevel } from '../constants/priceRange';
 export type AuditEntityType = 'Shop' | 'Review' | 'CommunityPost';
 export type AuditAction = 'Approved' | 'Rejected' | 'Pending';
 
@@ -284,6 +286,19 @@ export interface PublishedShop {
   moderationId: string | null;
   createdAtUtc: string;
   isHidden: boolean;
+  priceRange?: 1 | 2 | 3 | 4;
+  description?: string;
+  photos: PublishedShopPhoto[];
+}
+
+export interface PublishedShopPhoto {
+  id: string;
+  fileName: string;
+  contentType: string;
+  storageKey: string;
+  fullUrl: string;
+  sizeBytes: number;
+  sortIndex: number;
 }
 
 export interface UpdatePublishedShopRequest {
@@ -763,7 +778,8 @@ function mapEnumStatus<T extends string>(value: T | number | undefined, labels: 
   return (labels[value] ?? labels[0]) as T;
 }
 
-function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
+export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
+  const photos = Array.isArray(shop.photos) ? shop.photos as Record<string, unknown>[] : [];
   return {
     id: String(shop.id),
     name: String(shop.name),
@@ -778,6 +794,19 @@ function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
     moderationId: shop.moderationId ? String(shop.moderationId) : null,
     createdAtUtc: String(shop.createdAtUtc),
     isHidden: Boolean(shop.isHidden),
+    priceRange: parsePriceRange(shop.priceRange),
+    description: shop.description ? String(shop.description) : undefined,
+    photos: photos
+      .map((photo) => ({
+        id: String(photo.id),
+        fileName: String(photo.fileName ?? ''),
+        contentType: String(photo.contentType ?? ''),
+        storageKey: String(photo.storageKey ?? ''),
+        fullUrl: String(photo.fullUrl ?? ''),
+        sizeBytes: Number(photo.sizeBytes ?? 0),
+        sortIndex: Number(photo.sortIndex ?? 0),
+      }))
+      .sort((left, right) => left.sortIndex - right.sortIndex),
   };
 }
 
@@ -871,16 +900,19 @@ export async function getPublishedShopById(id: string): Promise<ApiResponse<Publ
   return { ...response, data: mapPublishedShop(response.data) };
 }
 
-const PRICE_RANGE_MAP: Record<number, PriceRangeLevel> = {
-  1: 'Cheap',
-  2: 'Moderate',
-  3: 'Expensive',
-  4: 'Luxury',
-};
+export async function reorderPublishedShopPhotos(
+  id: string,
+  photoIds: string[]
+): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.put<Record<string, unknown>>(
+    `${API_ENDPOINTS.ADMIN.SHOP_BY_ID(id)}/photos/order`,
+    { photoIds }
+  );
+  return { ...response, data: mapPublishedShop(response.data) };
+}
 
 function normalizePriceRange(value: PriceRangeLevel | number): PriceRangeLevel {
-  if (typeof value === 'number') return PRICE_RANGE_MAP[value] ?? 'Moderate';
-  return value;
+  return toPriceRangeLevel(value);
 }
 
 export async function updatePublishedShop(

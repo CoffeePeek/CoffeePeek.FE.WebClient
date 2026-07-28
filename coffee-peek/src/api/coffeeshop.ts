@@ -11,12 +11,15 @@ import { logger } from '../utils/logger';
 
 // DTO для фотографий
 export interface ShortPhotoMetadataDto {
+  id?: string;
   fileName: string;
   storageKey: string;
   fullUrl: string | null;
+  sortIndex?: number;
 }
 
 export interface PhotoMetadataDto {
+  id?: string;
   fileName: string;
   contentType: string;
   storageKey: string;
@@ -24,6 +27,7 @@ export interface PhotoMetadataDto {
   sizeBytes: number;
   ownerId: string;
   uploadedAt: string; // ISO date string
+  sortIndex?: number;
 }
 
 /**

@@ -274,10 +274,19 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
 
         if (Array.isArray(responseData.coffeeShops)) {
           const shops = responseData.coffeeShops.map((shop) => {
-            const shopPhotos = ((shop.photos ?? []) as unknown[])
+            const orderedPhotos = [...((shop.photos ?? []) as unknown[])].sort((left, right) => {
+              const leftIndex = typeof left === 'object' && left !== null && 'sortIndex' in left
+                ? Number((left as { sortIndex?: number }).sortIndex ?? Number.MAX_SAFE_INTEGER)
+                : Number.MAX_SAFE_INTEGER;
+              const rightIndex = typeof right === 'object' && right !== null && 'sortIndex' in right
+                ? Number((right as { sortIndex?: number }).sortIndex ?? Number.MAX_SAFE_INTEGER)
+                : Number.MAX_SAFE_INTEGER;
+              return leftIndex - rightIndex;
+            });
+            const shopPhotos = orderedPhotos
               .map(normalizeShopPhoto)
               .filter(Boolean);
-            return { ...shop, shopPhotos, photos: shop.photos, rating: (shop.rating as number) ?? 0 } as unknown as CoffeeShop;
+            return { ...shop, shopPhotos, photos: orderedPhotos, rating: (shop.rating as number) ?? 0 } as unknown as CoffeeShop;
           });
           setAllShops(shops);
           const filtered = filterShopsByActiveTabs(shops);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ModerationStatus } from '../../api/admin';
 
-type BadgeVariant = 'pending' | 'approved' | 'rejected' | 'info' | 'default';
+export type BadgeVariant = 'pending' | 'approved' | 'rejected' | 'info' | 'default';
 
 interface BadgeProps {
   variant?: BadgeVariant;
