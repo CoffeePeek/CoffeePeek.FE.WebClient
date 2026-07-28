@@ -29,6 +29,12 @@ const POST_TYPES: Array<{ value: CommunityPostType; label: string }> = [
   { value: 'Tip', label: 'Совет' },
 ];
 
+const REACTIONS = [
+  { type: 'WantToTry', label: 'Хочу попробовать', countKey: 'wantToTry', icon: 'coffee' },
+  { type: 'GreatFind', label: 'Находка', countKey: 'greatFind', icon: 'star' },
+  { type: 'Helpful', label: 'Полезно', countKey: 'helpful', icon: 'thumb_up' },
+] as const;
+
 const itemTypeLabel = (type: CommunityFeedItem['type']) => {
   if (type === 'Post' || type === 3) return 'Пост';
   if (type === 'Review' || type === 1) return 'Отзыв';
@@ -76,13 +82,21 @@ const CommunityPage: React.FC = () => {
   });
 
   const reactionMutation = useMutation({
-    mutationFn: ({ item, active }: { item: CommunityFeedItem; active: boolean }) =>
+    mutationFn: ({
+      item,
+      reactionType,
+      active,
+    }: {
+      item: CommunityFeedItem;
+      reactionType: 'WantToTry' | 'GreatFind' | 'Helpful';
+      active: boolean;
+    }) =>
       setCommunityReaction({
         targetType: itemTypeLabel(item.type) === 'Пост'
           ? 'Post'
           : itemTypeLabel(item.type) === 'Отзыв' ? 'Review' : 'CheckIn',
         targetId: item.id,
-        reactionType: active ? null : 'Helpful',
+        reactionType: active ? null : reactionType,
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['community-feed'] }),
     onError: (error: Error) => showToast(error.message || 'Не удалось обновить реакцию', 'error'),
@@ -206,7 +220,6 @@ const CommunityPage: React.FC = () => {
             </div>
           )}
           {feedQuery.data?.items.map((item) => {
-            const isHelpful = item.viewerReaction === 'Helpful' || item.viewerReaction === 3;
             return (
               <article key={`${item.type}-${item.id}`} className="rounded-2xl border border-[#3D2F28] bg-[#2D241F] p-5">
                 <div className="flex items-start justify-between gap-4">
@@ -227,20 +240,31 @@ const CommunityPage: React.FC = () => {
                 </div>
                 {item.header && <h2 className="mt-4 text-lg font-bold">{item.header}</h2>}
                 {itemText(item) && <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#D1CBC4]">{itemText(item)}</p>}
-                <div className="mt-5 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!requireAuth()) return;
-                      reactionMutation.mutate({ item, active: isHelpful });
-                    }}
-                    className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold ${
-                      isHelpful ? 'bg-[#EAB308]/15 text-[#EAB308]' : 'bg-[#1A1412] text-[#A39E93]'
-                    }`}
-                  >
-                    <AppIcon name="thumb_up" filled={isHelpful} size={16} />
-                    Полезно {item.reactions.helpful ?? 0}
-                  </button>
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  {REACTIONS.map(({ type, label, countKey, icon }) => {
+                    const active = user != null && (
+                      item.viewerReaction === type
+                      || item.viewerReaction === (type === 'WantToTry' ? 1 : type === 'GreatFind' ? 2 : 3)
+                    );
+                    const count = item.reactions?.[countKey] ?? 0;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => {
+                          if (!requireAuth()) return;
+                          reactionMutation.mutate({ item, reactionType: type, active });
+                        }}
+                        className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold ${
+                          active ? 'bg-[#EAB308]/15 text-[#EAB308]' : 'bg-[#1A1412] text-[#A39E93] hover:text-white'
+                        }`}
+                      >
+                        <AppIcon name={icon} filled={active} size={16} />
+                        {label} {count}
+                      </button>
+                    );
+                  })}
                   <span className="inline-flex items-center gap-1 text-xs text-[#A39E93]">
                     <AppIcon name="rate_review" size={16} />
                     {item.commentCount}
