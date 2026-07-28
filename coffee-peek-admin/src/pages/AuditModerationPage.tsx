@@ -17,6 +17,7 @@ const ENTITY_OPTIONS: { value: AuditEntityType | ''; label: string }[] = [
   { value: '', label: 'Все типы' },
   { value: 'Shop', label: 'Кофейни' },
   { value: 'Review', label: 'Отзывы' },
+  { value: 'CommunityPost', label: 'Посты' },
 ];
 
 const ACTION_OPTIONS: { value: AuditAction | ''; label: string }[] = [
@@ -44,7 +45,11 @@ const AuditRow: React.FC<{ entry: ModerationAuditEntry }> = ({ entry }) => (
       {new Date(entry.createdAtUtc).toLocaleString('ru')}
     </td>
     <td className="px-4 py-3">
-      <Badge>{entry.entityType === 'Shop' ? 'Кофейня' : 'Отзыв'}</Badge>
+      <Badge>
+        {entry.entityType === 'Shop'
+          ? 'Кофейня'
+          : entry.entityType === 'Review' ? 'Отзыв' : 'Пост'}
+      </Badge>
     </td>
     <td className="px-4 py-3 text-sm text-text-main dark:text-white font-body max-w-[200px] truncate">
       {entry.entityName}
@@ -91,7 +96,7 @@ export const AuditModerationPage: React.FC = () => {
       <div>
         <h2 className="page-header-title">Audit log модерации</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
-          История approve / reject / pending по кофейням и отзывам
+          История approve / reject / pending по кофейням, отзывам и постам
         </p>
       </div>
 

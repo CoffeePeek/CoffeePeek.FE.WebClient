@@ -9,6 +9,7 @@ import { User, Gear, SignOut, CaretDown } from '@/components/Icon';
 const PUBLIC_NAV = [
   { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
   { id: 'map',         label: 'Карта',   route: '/dashboard?page=map',  match: (p: string) => p.includes('map')        },
+  { id: 'community',   label: 'Сообщество', route: '/community',        match: (p: string) => p.startsWith('/community') },
 ] as const;
 
 const Header: React.FC = () => {

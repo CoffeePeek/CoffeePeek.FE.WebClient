@@ -10,6 +10,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/map': 'Карта',
   '/shops': 'Модерация',
   '/reviews': 'Отзывы',
+  '/community-posts': 'Посты сообщества',
   '/published-shops': 'Опубликованные',
   '/audit': 'Audit log',
   '/users': 'Пользователи',
