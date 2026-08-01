@@ -269,7 +269,7 @@ const LandingPage: React.FC = () => {
     ];
 
     return (
-      <div className="min-h-screen bg-[#1A1412] relative overflow-x-hidden text-white">
+      <div className="min-h-screen bg-[#1A1412] relative overflow-x-clip text-white">
         {/* Dotted background */}
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.55 }} />
         {/* Gold glows */}

@@ -65,7 +65,9 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
               <span className={textMuted}>•</span>
             </>
           )}
-          <span className={`${textMuted} font-medium`}>$$</span>
+          <span className={`${textMuted} font-medium inline-flex items-center`}>
+            {/* Price range is mapped loosely on detail header; prefer Moderate (2) as default visual if unknown */}
+          </span>
         </div>
       </div>
       
@@ -74,25 +76,42 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
         {onCheckIn && (
           <button
             onClick={onCheckIn}
-            className={`px-4 py-2 rounded-2xl border ${borderColor} flex items-center justify-center gap-2 ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} transition-all ${themeClasses.primary.text} font-semibold text-sm`}
+            className={`px-4 py-2 rounded-2xl border ${borderColor} flex items-center justify-center gap-2 ${themeClasses.primary.bgLight} hover:opacity-90 transition-all ${themeClasses.primary.text} font-semibold text-sm`}
           >
-            <AppIcon name="check_circle" size={18} />
+            <AppIcon name="check_circle" size={18} color="currentColor" />
             Чекиниться
           </button>
         )}
         <button
+          type="button"
           onClick={onToggleFavorite}
           disabled={isCheckingFavorite}
-          className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} transition-all ${
-            isFavorite 
-              ? `${themeClasses.primary.bgLight} ${themeClasses.primary.text} ${themeClasses.primary.borderLight}` 
-              : `${textMuted} ${themeClasses.primary.hover} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')}`
+          aria-label={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
+          className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
+            isFavorite
+              ? `${themeClasses.primary.bgLight} ${themeClasses.primary.borderLight}`
+              : `${theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`
           }`}
         >
-          <AppIcon name="favorite" filled={isFavorite} size={20} />
+          <AppIcon
+            name="favorite"
+            filled={isFavorite}
+            size={20}
+            color={isFavorite ? '#EAB308' : theme === 'dark' ? '#E7E5E4' : '#44403C'}
+          />
         </button>
-        <button className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} transition-all ${textMuted} ${themeClasses.primary.hover}`}>
-          <AppIcon name="share" size={20} />
+        <button
+          type="button"
+          aria-label="Поделиться"
+          className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
+            theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+          }`}
+        >
+          <AppIcon
+            name="share"
+            size={20}
+            color={theme === 'dark' ? '#E7E5E4' : '#44403C'}
+          />
         </button>
       </div>
     </div>

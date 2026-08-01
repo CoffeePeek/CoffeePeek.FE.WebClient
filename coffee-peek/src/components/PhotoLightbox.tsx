@@ -1,0 +1,128 @@
+import React, { useEffect, useCallback } from 'react';
+import { getPhotoUrl, PhotoMetadataDto, ShortPhotoMetadataDto } from '../api/coffeeshop';
+import { AppIcon } from './icons';
+
+type PhotoInput = string | PhotoMetadataDto | ShortPhotoMetadataDto;
+
+interface PhotoLightboxProps {
+  images: PhotoInput[];
+  shopName: string;
+  initialIndex?: number;
+  onClose: () => void;
+}
+
+function toUrl(img: PhotoInput): string {
+  if (img && typeof img === 'object' && ('fullUrl' in img || 'storageKey' in img)) {
+    return getPhotoUrl(img as PhotoMetadataDto | ShortPhotoMetadataDto);
+  }
+  if (typeof img === 'string') return img.trim();
+  return img ? String(img).trim() : '';
+}
+
+const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
+  images,
+  shopName,
+  initialIndex = 0,
+  onClose,
+}) => {
+  const urls = images.map(toUrl).filter((url) => url.length > 0);
+  const [index, setIndex] = React.useState(() =>
+    Math.min(Math.max(initialIndex, 0), Math.max(urls.length - 1, 0))
+  );
+
+  const goPrev = useCallback(() => {
+    setIndex((i) => (i <= 0 ? urls.length - 1 : i - 1));
+  }, [urls.length]);
+
+  const goNext = useCallback(() => {
+    setIndex((i) => (i >= urls.length - 1 ? 0 : i + 1));
+  }, [urls.length]);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') goPrev();
+      if (e.key === 'ArrowRight') goNext();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose, goPrev, goNext]);
+
+  if (urls.length === 0) return null;
+
+  const current = urls[index];
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/92 p-3 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Фото: ${shopName}`}
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25"
+        aria-label="Закрыть"
+      >
+        <AppIcon name="close" size={22} />
+      </button>
+
+      {urls.length > 1 && (
+        <div className="absolute top-4 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-md">
+          {index + 1} / {urls.length}
+        </div>
+      )}
+
+      {urls.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              goPrev();
+            }}
+            className="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25 sm:left-6"
+            aria-label="Предыдущее фото"
+          >
+            <AppIcon name="chevron_left" size={28} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              goNext();
+            }}
+            className="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25 sm:right-6"
+            aria-label="Следующее фото"
+          >
+            <AppIcon name="chevron_right" size={28} />
+          </button>
+        </>
+      )}
+
+      <div
+        className="flex h-full w-full max-w-6xl items-center justify-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={current}
+          alt={`${shopName} — фото ${index + 1}`}
+          className="max-h-[min(90vh,900px)] max-w-full object-contain select-none"
+          draggable={false}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default PhotoLightbox;
