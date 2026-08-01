@@ -30,7 +30,7 @@ export const ErrorCodes = {
   },
   429: {
     title: 'Слишком много запросов',
-    message: 'Превышен лимит запросов. Подождите немного и попробуйте снова.'
+    message: 'Слишком много запросов. Подождите минуту и попробуйте снова.'
   },
   500: {
     title: 'Ошибка сервера',
@@ -168,6 +168,49 @@ export function getErrorMessage(error: any, context?: 'login' | 'register'): str
   }
   
   return ErrorCodes.UNKNOWN.message;
+}
+
+const OAUTH_PASSWORD_HINT =
+  'У этого аккаунта нет пароля — вход через Google. Смена и сброс пароля недоступны.';
+
+/**
+ * Friendly message for OAuth-only accounts that have no local password.
+ * Returns null when the error is unrelated so callers can fall back to getErrorMessage.
+ */
+export function getPasswordErrorMessage(error: unknown): string | null {
+  const err = error as {
+    status?: number;
+    message?: string;
+    errors?: Record<string, string[] | string>;
+    body?: { message?: string; errors?: Record<string, string[] | string> };
+    response?: { status?: number; data?: { message?: string; errors?: Record<string, string[] | string> } };
+  };
+
+  const status = err?.status ?? err?.response?.status;
+  if (status !== 400 && status !== 403) return null;
+
+  const parts: string[] = [];
+  if (err?.message) parts.push(err.message);
+  if (err?.body?.message) parts.push(err.body.message);
+  if (err?.response?.data?.message) parts.push(err.response.data.message);
+
+  const collectErrors = (errors?: Record<string, string[] | string>) => {
+    if (!errors || typeof errors !== 'object') return;
+    for (const value of Object.values(errors)) {
+      if (Array.isArray(value)) parts.push(...value.map(String));
+      else if (typeof value === 'string') parts.push(value);
+    }
+    parts.push(...Object.keys(errors));
+  };
+  collectErrors(err?.errors);
+  collectErrors(err?.body?.errors);
+  collectErrors(err?.response?.data?.errors);
+
+  const haystack = parts.join(' ').toLowerCase();
+  if (/oauth|google|password/.test(haystack)) {
+    return OAUTH_PASSWORD_HINT;
+  }
+  return null;
 }
 
 

@@ -78,7 +78,7 @@ const Stepper: React.FC<{ step: 'email' | 'register'; dark: boolean }> = ({ step
 // ── Password strength bar ────────────────────────────────────────────
 const StrengthBar: React.FC<{ password: string; dark: boolean }> = ({ password, dark }) => {
   if (!password) return null;
-  const score = (password.length >= 6 ? 1 : 0) + (/\d/.test(password) ? 1 : 0) + (/[A-ZА-Я]/.test(password) ? 1 : 0);
+  const score = (password.length >= 8 ? 1 : 0) + (/\d/.test(password) ? 1 : 0) + (/[A-ZА-Я]/.test(password) ? 1 : 0);
   const colors = ['#EF4444', '#EAB308', '#22C55E'];
   const labels = ['слабый', 'средний', 'надёжный'];
   return (
@@ -106,7 +106,7 @@ const RegisterPage: React.FC = () => {
   const [dark, setDark] = useState(true);
 
   const emailValid = /\S+@\S+\.\S+/.test(email.trim());
-  const canRegister = userName.trim().length >= 2 && password.length >= 6 && agreeToPrivacy;
+  const canRegister = userName.trim().length >= 2 && password.length >= 8 && agreeToPrivacy;
 
   const handleEmailCheck = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +132,7 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     if (!agreeToPrivacy) { setError('Необходимо согласиться с условиями'); return; }
-    if (password.length < 6) { setError('Пароль должен содержать минимум 6 символов'); return; }
+    if (password.length < 8) { setError('Пароль должен содержать минимум 8 символов'); return; }
     setIsLoading(true);
     try {
       localStorage.setItem('privacyConsent', 'accepted');
@@ -251,7 +251,7 @@ const RegisterPage: React.FC = () => {
                   <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <AuthField icon={<User size={20} color={gold} />} placeholder="Как вас зовут?" label="Имя" autoFocus value={userName} onChange={e => setUserName(e.target.value)} dark={dark} />
                     <div>
-                      <AuthField icon={<Lock size={20} color={gold} />} type={showPwd ? 'text' : 'password'} placeholder="Не менее 6 символов" label="Пароль"
+                      <AuthField icon={<Lock size={20} color={gold} />} type={showPwd ? 'text' : 'password'} placeholder="Не менее 8 символов" label="Пароль"
                         value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
                       <StrengthBar password={password} dark={dark} />
                     </div>

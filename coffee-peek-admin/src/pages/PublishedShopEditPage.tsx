@@ -9,11 +9,14 @@ import {
   updatePublishedShop,
   assignPublishedShopOwner,
   reorderPublishedShopPhotos,
+  assignShopTags,
 } from '../api/admin';
+import { getShopTags } from '../api/catalogs';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { CatalogMultiSelect } from '../components/moderation/CatalogMultiSelect';
 import { PhotoOrderEditor } from '../components/PhotoOrderEditor';
 import { PriceRangePicker } from '../components/PriceRangePicker';
 import {
@@ -23,6 +26,8 @@ import {
   coffeeShopStatusBadgeVariant,
 } from '../constants/coffeeShopStatus';
 import { parsePriceRange } from '../constants/priceRange';
+
+const MAX_SHOP_TAGS = 20;
 
 const schema = z.object({
   name: z.string().min(1, 'Обязательное поле'),
@@ -40,11 +45,18 @@ export const PublishedShopEditPage: React.FC = () => {
   const { showToast } = useToast();
   const qc = useQueryClient();
   const [ownerInput, setOwnerInput] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['admin', 'published-shop', id],
     queryFn: () => getPublishedShopById(id!).then((r) => r.data),
     enabled: !!id,
+  });
+
+  const { data: catalogTags = [] } = useQuery({
+    queryKey: ['catalogs', 'shop-tags'],
+    queryFn: () => getShopTags().then((r) => r.data ?? []),
+    staleTime: 5 * 60 * 1000,
   });
 
   const {
@@ -69,6 +81,7 @@ export const PublishedShopEditPage: React.FC = () => {
         ownerUserId: shop.ownerUserId ?? '',
       });
       setOwnerInput(shop.ownerUserId ?? '');
+      setSelectedTagIds((shop.tags ?? []).map((t) => t.id));
     }
   }, [shop, reset]);
 
@@ -107,6 +120,24 @@ export const PublishedShopEditPage: React.FC = () => {
     onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить порядок фотографий', 'error'),
   });
 
+  const tagsMutation = useMutation({
+    mutationFn: (tagIds: string[]) => assignShopTags(id!, tagIds),
+    onSuccess: () => {
+      showToast('Теги сохранены', 'success');
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] });
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить теги', 'error'),
+  });
+
+  const handleTagChange = (ids: string[]) => {
+    if (ids.length > MAX_SHOP_TAGS) {
+      showToast(`Максимум ${MAX_SHOP_TAGS} тегов`, 'error');
+      setSelectedTagIds(ids.slice(0, MAX_SHOP_TAGS));
+      return;
+    }
+    setSelectedTagIds(ids);
+  };
+
   if (isLoading || !shop) {
     return (
       <div className="max-w-2xl space-y-4">
@@ -115,6 +146,15 @@ export const PublishedShopEditPage: React.FC = () => {
       </div>
     );
   }
+
+  const tagItems = catalogTags
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .map((tag) => ({
+      id: tag.id,
+      name: tag.name,
+      subtitle: tag.slug,
+    }));
 
   return (
     <div className="space-y-5 w-full min-w-0 max-w-2xl">
@@ -175,6 +215,31 @@ export const PublishedShopEditPage: React.FC = () => {
             Сохранить
           </Button>
         </form>
+      </Card>
+
+      <Card>
+        <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Теги</h3>
+        <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
+          Полная замена набора тегов. Не более {MAX_SHOP_TAGS} штук.
+        </p>
+        <CatalogMultiSelect
+          label="Активные теги"
+          items={tagItems}
+          selectedIds={selectedTagIds}
+          onChange={handleTagChange}
+          emptyLabel="Теги не выбраны"
+        />
+        <div className="mt-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={tagsMutation.isPending}
+            onClick={() => tagsMutation.mutate(selectedTagIds)}
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+          >
+            Сохранить теги
+          </Button>
+        </div>
       </Card>
 
       <PhotoOrderEditor

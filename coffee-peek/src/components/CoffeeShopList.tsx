@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl } from '../api/coffeeshop';
+import { searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, getShopTags, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto, getPhotoUrl } from '../api/coffeeshop';
 import { ShopCardSkeleton } from './skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRequireAuth } from '../hooks/useRequireAuth';
@@ -12,8 +12,6 @@ import ShopFilterPanel from './ShopFilterPanel';
 import ShopPagination from './ShopPagination';
 import { AppIcon, StarIcon } from './icons';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
-
-type PhotoInput = { fullUrl?: string; storageKey?: string } | string;
 
 type ShopsPage = Record<string, unknown> & {
   coffeeShops?: Record<string, unknown>[];
@@ -63,6 +61,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([]);
   const [roasters, setRoasters] = useState<Roaster[]>([]);
   const [brewMethods, setBrewMethods] = useState<BrewMethod[]>([]);
+  const [shopTags, setShopTags] = useState<ShopTagDto[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const [filters, setFilters] = useState<CoffeeShopFilters>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +71,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [activeQuick, setActiveQuick] = useState<string[]>(['all']);
 
   const handleQuickChange = (id: string) => {
+    if (id === 'visited' && !requireAuth()) return;
     setActiveQuick(prev => {
       if (id === 'all') return ['all'];
       const without = prev.filter(x => x !== 'all');
@@ -78,6 +79,13 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       return next.length === 0 ? ['all'] : next;
     });
   };
+
+  const handleTagToggle = (tagId: string) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId) ? prev.filter(x => x !== tagId) : [...prev, tagId]
+    );
+  };
+
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
   const [selectedBeans, setSelectedBeans] = useState<string[]>([]);
@@ -85,8 +93,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [selectedBrewMethods, setSelectedBrewMethods] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [activeFilterTabs, setActiveFilterTabs] = useState<Set<'open' | 'new' | 'favorite' | 'visited'>>(new Set());
-  const [visitedShopIds, setVisitedShopIds] = useState<Set<string>>(new Set());
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
@@ -133,13 +139,17 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       roasterIds: selectedRoasters.length ? selectedRoasters : undefined,
       brewMethodIds: selectedBrewMethods.length ? selectedBrewMethods : undefined,
       priceRange: filters.priceRange,
+      isOpen: activeQuick.includes('open') ? true : undefined,
+      isNew: activeQuick.includes('new') ? true : undefined,
+      isVisited: activeQuick.includes('visited') ? true : undefined,
+      tagIds: selectedTagIds.length ? selectedTagIds : undefined,
     };
 
     if (JSON.stringify(filters) !== JSON.stringify(updatedFilters)) {
       setFilters(updatedFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCity, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods]);
+  }, [selectedCity, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods, activeQuick, selectedTagIds]);
 
   // Only trigger shop loading from filter changes after initial load is complete
   useEffect(() => {
@@ -157,9 +167,12 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     filters.coffeeBeanIds?.length ?? 0,
     filters.roasterIds?.length ?? 0,
     filters.brewMethodIds?.length ?? 0,
-    debouncedSearchQuery, // Загружаем данные при изменении debounced поискового запроса
-    initialDataLoaded, // This ensures the effect only runs after initial data is loaded
-    // activeFilterTab НЕ добавлен - фильтрация происходит на клиенте без перезагрузки
+    filters.tagIds?.join(',') ?? '',
+    filters.isOpen,
+    filters.isNew,
+    filters.isVisited,
+    debouncedSearchQuery,
+    initialDataLoaded,
   ]);
 
   useEffect(() => {
@@ -170,69 +183,29 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, initialDataLoaded]);
 
-  // Применяем клиентскую фильтрацию при изменении вкладки / локального избранного
+  const applyFavoriteFilter = useCallback((shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
+    if (!activeQuick.includes('favorite')) return shopsToFilter;
+    return shopsToFilter.filter(shop => favoriteIds.has(shop.id));
+  }, [activeQuick, favoriteIds]);
+
+  // Favorite is local-only — re-apply after load or when favorite chip / ids change
   useEffect(() => {
     if (allShops.length > 0) {
-      const filtered = filterShopsByActiveTabs(allShops);
+      const filtered = applyFavoriteFilter(allShops);
       setShops(filtered);
       setTotalItems(filtered.length);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilterTabs, allShops.length, favoriteIds]);
-
-  const filterShopsByActiveTabs = (shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
-    let filtered = shopsToFilter;
-    
-    // Если нет активных фильтров, показываем все кофейни
-    if (activeFilterTabs.size === 0) {
-      return filtered;
-    }
-    
-    // Применяем все активные фильтры (AND логика - кофейня должна соответствовать всем выбранным фильтрам)
-    if (activeFilterTabs.has('open')) {
-      filtered = filtered.filter(shop => shop.isOpen === true);
-    }
-    
-    if (activeFilterTabs.has('new')) {
-      filtered = filtered.filter(shop => shop.isNew === true);
-    }
-    
-    if (activeFilterTabs.has('favorite')) {
-      filtered = filtered.filter(shop => favoriteIds.has(shop.id));
-    }
-    
-    if (activeFilterTabs.has('visited')) {
-      filtered = filtered.filter(shop => shop.isVisited === true);
-    }
-    
-    return filtered;
-  };
-  
-  const toggleFilterTab = (filterId: 'open' | 'new' | 'favorite' | 'visited') => {
-    if ((filterId === 'favorite' || filterId === 'visited') && !requireAuth()) {
-      return;
-    }
-    setActiveFilterTabs(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(filterId)) {
-        // Если фильтр уже активен, снимаем его
-        newSet.delete(filterId);
-      } else {
-        // Если фильтр не активен, добавляем его
-        newSet.add(filterId);
-      }
-      return newSet;
-    });
-  };
+  }, [applyFavoriteFilter, allShops]);
 
   const loadInitialData = async () => {
     try {
-      const [citiesRes, equipmentsRes, beansRes, roastersRes, methodsRes] = await Promise.all([
+      const [citiesRes, equipmentsRes, beansRes, roastersRes, methodsRes, tagsRes] = await Promise.all([
         getCities(),
         getEquipments(),
         getCoffeeBeans(),
         getRoasters(),
         getBrewMethods(),
+        getShopTags(),
       ]);
 
       const citiesData = extractList<City>(citiesRes.data, 'cities');
@@ -240,12 +213,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       const beansData = extractList<CoffeeBean>(beansRes.data, 'beans');
       const roastersData = extractList<Roaster>(roastersRes.data, 'roasters');
       const methodsData = extractList<BrewMethod>(methodsRes.data, 'methods');
+      const tagsData = extractList<ShopTagDto>(tagsRes.data, 'shopTags', 'items');
 
       setCities(Array.isArray(citiesData) ? citiesData : []);
       setEquipments(Array.isArray(equipmentsData) ? equipmentsData : []);
       setCoffeeBeans(Array.isArray(beansData) ? beansData : []);
       setRoasters(Array.isArray(roastersData) ? roastersData : []);
       setBrewMethods(Array.isArray(methodsData) ? methodsData : []);
+      setShopTags(Array.isArray(tagsData) ? tagsData : (Array.isArray(tagsRes.data) ? tagsRes.data : []));
     } catch (err) {
       logger.error('Error loading initial data:', err);
       // Set empty arrays to prevent errors
@@ -254,6 +229,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       setCoffeeBeans([]);
       setRoasters([]);
       setBrewMethods([]);
+      setShopTags([]);
     }
   };
 
@@ -290,7 +266,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             return { ...shop, shopPhotos, photos: orderedPhotos, rating: (shop.rating as number) ?? 0 } as unknown as CoffeeShop;
           });
           setAllShops(shops);
-          const filtered = filterShopsByActiveTabs(shops);
+          const filtered = applyFavoriteFilter(shops);
           setShops(filtered);
           setTotalItems(filtered.length);
           const p = pagination(responseData);
@@ -303,7 +279,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             rating: (shop.rating as number) ?? (shop.averageRating as number) ?? 0,
           })) as unknown as CoffeeShop[];
           setAllShops(items);
-          const filtered = filterShopsByActiveTabs(items);
+          const filtered = applyFavoriteFilter(items);
           setShops(filtered);
           setTotalItems(filtered.length);
           const p = pagination(responseData);
@@ -314,7 +290,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             rating: (shop.rating as number) ?? (shop.averageRating as number) ?? 0,
           })) as unknown as CoffeeShop[];
           setAllShops(content);
-          const filtered = filterShopsByActiveTabs(content);
+          const filtered = applyFavoriteFilter(content);
           setShops(filtered);
           setTotalItems(filtered.length);
           const p = pagination(responseData);
@@ -323,7 +299,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           // Fallback for direct array
           if (Array.isArray(responseData)) {
             setAllShops(responseData);
-            const filteredShops = filterShopsByActiveTabs(responseData);
+            const filteredShops = applyFavoriteFilter(responseData);
             setShops(filteredShops);
             setTotalItems(filteredShops.length);
             setTotalPages(1);
@@ -338,7 +314,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         // Fallback for old response format
         if (Array.isArray(response.data)) {
           setAllShops(response.data);
-          const filteredShops = filterShopsByActiveTabs(response.data);
+          const filteredShops = applyFavoriteFilter(response.data);
           setShops(filteredShops);
           setTotalItems(filteredShops.length);
           setTotalPages(1);
@@ -406,6 +382,10 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         <ShopFilterPanel
           activeQuick={activeQuick}
           onQuickChange={handleQuickChange}
+          shopTags={shopTags}
+          selectedTagIds={selectedTagIds}
+          onTagToggle={handleTagToggle}
+          isAuthenticated={!!user}
           showFilters={showFilters}
           filters={filters}
           equipments={equipments}

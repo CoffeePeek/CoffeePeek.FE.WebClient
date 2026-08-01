@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters } from '../api/coffeeshop';
+import { City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
 import type { IconProps } from '@phosphor-icons/react';
 import {
-  GridFour, Clock, Coffee, Flame, WifiHigh, SunHorizon, Leaf, PawPrint,
-  MapPin, CaretDown, CheckCircle, Check, X,
+  GridFour, Clock, Sparkle, CheckCircle, Heart,
+  MapPin, CaretDown, Check, X,
 } from '@/components/Icon';
 
-const QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
-  { id: 'all',       label: 'Все',          Icon: GridFour          },
-  { id: 'open',      label: 'Открыто',      Icon: Clock             },
-  { id: 'specialty', label: 'Спешелти',     Icon: Coffee            },
-  { id: 'roastery',  label: 'Обжарка',      Icon: Flame             },
-  { id: 'wifi',      label: 'Wi-Fi',        Icon: WifiHigh          },
-  { id: 'outdoor',   label: 'Терраса',      Icon: SunHorizon        },
-  { id: 'vegan',     label: 'Веган',        Icon: Leaf              },
-  { id: 'pets',      label: 'Pet-friendly', Icon: PawPrint          },
+const FIXED_QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
+  { id: 'all',      label: 'Все',        Icon: GridFour     },
+  { id: 'open',     label: 'Открыто',    Icon: Clock        },
+  { id: 'new',      label: 'Новые',      Icon: Sparkle      },
+  { id: 'visited',  label: 'Уже был',    Icon: CheckCircle },
+  { id: 'favorite', label: 'Избранное',  Icon: Heart        },
 ];
 
 const PRICE_OPTIONS = [
@@ -36,6 +33,11 @@ interface ShopFilterPanelProps {
   // Quick filter chips
   activeQuick: string[];
   onQuickChange: (id: string) => void;
+  // Shop tags (multi-select)
+  shopTags: ShopTagDto[];
+  selectedTagIds: string[];
+  onTagToggle: (tagId: string) => void;
+  isAuthenticated: boolean;
   // Panel toggle
   showFilters: boolean;
   // Currently applied values (for active chips + draft init)
@@ -68,6 +70,7 @@ function toggle(arr: string[], id: string): string[] {
 
 const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   activeQuick, onQuickChange,
+  shopTags, selectedTagIds, onTagToggle, isAuthenticated,
   showFilters,
   filters, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods,
   equipments, coffeeBeans, roasters, brewMethods,
@@ -81,7 +84,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   const borderColor = dark ? '#3D2F28' : colors.border;
   const muted = dark ? '#A39E93' : '#78716C';
   const surface = dark ? '#2D241F' : '#fff';
-  const textPrimary = dark ? '#fff' : '#1C1917';
 
   // ── Draft state (local — only committed on "Применить") ──────────
   const [draft, setDraft] = useState<AppliedFilters>({
@@ -144,6 +146,13 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     borderColor: active ? `${gold}55` : borderColor,
   });
 
+  const quickChipStyle = (active: boolean): React.CSSProperties => ({
+    ...chipBase,
+    background: active ? (dark ? '#fff' : '#1C1917') : (dark ? 'rgba(255,255,255,0.04)' : '#fff'),
+    color: active ? (dark ? '#1C1917' : '#fff') : (dark ? '#fff' : '#1C1917'),
+    borderColor: active ? 'transparent' : borderColor,
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-2">
 
@@ -181,17 +190,28 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
         {/* Divider */}
         <div style={{ width: 1, height: 20, background: borderColor, flexShrink: 0 }} />
 
-        {QUICK_FILTERS.map(({ id, label, Icon }) => {
+        {FIXED_QUICK_FILTERS.map(({ id, label, Icon }) => {
           const active = activeQuick.includes(id);
+          const needsAuth = id === 'visited' && !isAuthenticated;
           return (
-            <button key={id} onClick={() => onQuickChange(id)} style={{
-              ...chipBase,
-              background: active ? (dark ? '#fff' : '#1C1917') : (dark ? 'rgba(255,255,255,0.04)' : '#fff'),
-              color: active ? (dark ? '#1C1917' : '#fff') : (dark ? '#fff' : '#1C1917'),
-              borderColor: active ? 'transparent' : borderColor,
-            }}>
+            <button
+              key={id}
+              onClick={() => onQuickChange(id)}
+              style={{ ...quickChipStyle(active), opacity: needsAuth ? 0.75 : 1 }}
+              title={needsAuth ? 'Требуется вход' : undefined}
+            >
               <Icon size={14} color={active ? (dark ? goldWarm : '#fff') : goldWarm} />
               {label}
+            </button>
+          );
+        })}
+
+        {/* Dynamic shop tags */}
+        {shopTags.map(tag => {
+          const active = selectedTagIds.includes(tag.id);
+          return (
+            <button key={tag.id} onClick={() => onTagToggle(tag.id)} style={quickChipStyle(active)}>
+              {tag.name}
             </button>
           );
         })}

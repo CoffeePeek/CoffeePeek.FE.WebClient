@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../api/auth';
-import { getErrorMessage } from '../utils/errorHandler';
+import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const ForgotPasswordPage: React.FC = () => {
@@ -29,7 +29,7 @@ const ForgotPasswordPage: React.FC = () => {
       await forgotPassword({ email: email.trim() });
       setSent(true);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(getPasswordErrorMessage(err) ?? getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

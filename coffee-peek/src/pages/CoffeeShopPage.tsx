@@ -145,6 +145,19 @@ const CoffeeShopPage: React.FC = () => {
                 borderColor={borderColor}
               />
 
+              {shop.tags && shop.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {shop.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-display font-semibold border ${borderColor} ${textMuted}`}
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <ContactButtons
                 shop={shop}
                 cardBg={cardBg}

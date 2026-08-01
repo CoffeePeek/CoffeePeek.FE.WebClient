@@ -7,8 +7,12 @@ import {
   updateUserRole,
   deleteAdminUser,
   blockUser,
+  getUserSessions,
+  revokeUserSession,
+  revokeAllUserSessions,
   AdminUser,
   UserRole,
+  UserSession,
 } from '../api/admin';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
@@ -41,6 +45,158 @@ const IconUsers = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
   </svg>
 );
+
+function formatSessionDate(value: string): string {
+  try {
+    return new Date(value).toLocaleString('ru');
+  } catch {
+    return value;
+  }
+}
+
+const UserSessionsModal: React.FC<{
+  user: AdminUser | null;
+  onClose: () => void;
+}> = ({ user, onClose }) => {
+  const { showToast } = useToast();
+  const qc = useQueryClient();
+  const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
+  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
+
+  const { data: sessions, isLoading } = useQuery({
+    queryKey: ['admin', 'users', user?.id, 'sessions'],
+    queryFn: () => getUserSessions(user!.id).then((r) => r.data ?? []),
+    enabled: !!user,
+  });
+
+  const revokeOneMutation = useMutation({
+    mutationFn: (sessionId: string) => revokeUserSession(user!.id, sessionId),
+    onSuccess: () => {
+      showToast('Сессия отозвана', 'success');
+      setRevokingSessionId(null);
+      qc.invalidateQueries({ queryKey: ['admin', 'users', user?.id, 'sessions'] });
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+  });
+
+  const revokeAllMutation = useMutation({
+    mutationFn: () => revokeAllUserSessions(user!.id),
+    onSuccess: () => {
+      showToast('Все сессии отозваны', 'success');
+      setConfirmRevokeAll(false);
+      qc.invalidateQueries({ queryKey: ['admin', 'users', user?.id, 'sessions'] });
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+  });
+
+  if (!user) return null;
+
+  const list: UserSession[] = sessions ?? [];
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+        <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg p-5 sm:p-6 border border-border-light dark:border-border-dark max-h-[90dvh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-text-main dark:text-white font-display">
+                Сессии
+              </h3>
+              <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-0.5 truncate">
+                {user.email}
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose} className="shrink-0">
+              Закрыть
+            </Button>
+          </div>
+
+          <div className="flex justify-end mb-3">
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={!list.some((s) => !s.isRevoked) || revokeAllMutation.isPending}
+              onClick={() => setConfirmRevokeAll(true)}
+              className="min-h-[44px] sm:min-h-0"
+            >
+              Отозвать все
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-16 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
+              ))}
+            </div>
+          ) : !list.length ? (
+            <p className="text-sm text-text-muted dark:text-stone-400 font-body text-center py-8">
+              Сессий нет
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {list.map((session) => (
+                <div
+                  key={session.id}
+                  className="rounded-lg border border-border-light dark:border-border-dark p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 space-y-1">
+                      <p className="text-sm font-medium text-text-main dark:text-white font-body truncate">
+                        {session.deviceName || 'Неизвестное устройство'}
+                      </p>
+                      <p className="text-xs text-text-muted dark:text-stone-400 font-mono">
+                        {session.ipAddress || '—'}
+                      </p>
+                      <p className="text-xs text-text-muted dark:text-stone-500 font-body">
+                        Создана: {formatSessionDate(session.createdAtUtc)}
+                      </p>
+                      <p className="text-xs text-text-muted dark:text-stone-500 font-body">
+                        Истекает: {formatSessionDate(session.expiryDate)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <Badge variant={session.isRevoked ? 'rejected' : 'approved'}>
+                        {session.isRevoked ? 'Отозвана' : 'Активна'}
+                      </Badge>
+                      {!session.isRevoked && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:text-red-500"
+                          loading={revokingSessionId === session.id && revokeOneMutation.isPending}
+                          onClick={() => {
+                            setRevokingSessionId(session.id);
+                            revokeOneMutation.mutate(session.id);
+                          }}
+                        >
+                          Отозвать
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ConfirmModal
+        isOpen={confirmRevokeAll}
+        title="Отозвать все сессии?"
+        message="Пользователь будет разлогинен на всех устройствах."
+        confirmLabel="Отозвать все"
+        variant="danger"
+        onConfirm={async () => {
+          await revokeAllMutation.mutateAsync();
+        }}
+        onCancel={() => setConfirmRevokeAll(false)}
+      />
+    </>
+  );
+};
 
 const EditRoleModal: React.FC<{
   user: AdminUser | null;
@@ -118,6 +274,7 @@ export const UsersPage: React.FC = () => {
   const roleFilter = (searchParams.get('role') ?? '') as UserRole | '';
   const [localSearch, setLocalSearch] = useState(search);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [sessionsUser, setSessionsUser] = useState<AdminUser | null>(null);
   const [blockingUser, setBlockingUser] = useState<AdminUser | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
@@ -298,7 +455,14 @@ export const UsersPage: React.FC = () => {
                         {new Date(user.createdAtUtc).toLocaleDateString('ru')}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="action-buttons min-w-[120px]">
+                        <div className="action-buttons min-w-[160px]">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSessionsUser(user)}
+                          >
+                            Сессии
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -348,6 +512,11 @@ export const UsersPage: React.FC = () => {
           await updateRoleMutation.mutateAsync({ id, role });
         }}
         onClose={() => setEditingUser(null)}
+      />
+
+      <UserSessionsModal
+        user={sessionsUser}
+        onClose={() => setSessionsUser(null)}
       />
 
       <ConfirmModal

@@ -98,6 +98,14 @@ export interface GetShopsInBoundsResponse {
   shops: MapShop[];
 }
 
+export interface ShopTagDto {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  sortOrder: number;
+}
+
 export interface DetailedCoffeeShop {
   id: string;
   cityId: string;
@@ -114,6 +122,7 @@ export interface DetailedCoffeeShop {
   existingReviewId?: string | null;
   isNew?: boolean;
   priceRange: number | string;
+  tags?: ShopTagDto[];
   location?: {
     address?: string;
     latitude?: number;
@@ -143,7 +152,12 @@ export interface CoffeeShopFilters {
   roasterIds?: string[];
   brewMethodIds?: string[];
   priceRange?: string;
+  /** Catalog tag ids — AND semantics on the backend */
+  tagIds?: string[];
   isOpen?: boolean;
+  isNew?: boolean;
+  /** Only honored when JWT is present */
+  isVisited?: boolean;
 }
 
 export interface ShortShopDto {
@@ -157,6 +171,7 @@ export interface ShortShopDto {
   isNew: boolean;
   isOpen: boolean;
   priceRange: number | string;
+  tags?: ShopTagDto[];
   location?: {
     address?: string;
     latitude?: number;
@@ -346,6 +361,7 @@ const referenceDataCache: {
   coffeeBeans?: { data: CoffeeBean[]; promise?: Promise<ApiResponse<CoffeeBean[]>> };
   roasters?: { data: Roaster[]; promise?: Promise<ApiResponse<Roaster[]>> };
   brewMethods?: { data: BrewMethod[]; promise?: Promise<ApiResponse<BrewMethod[]>> };
+  shopTags?: { data: ShopTagDto[]; promise?: Promise<ApiResponse<ShopTagDto[]>> };
 } = {};
 
 // ==================== API Functions ====================
@@ -366,10 +382,14 @@ export async function getCoffeeShops(
   if (filters) {
     if (filters.cityId) params.cityId = filters.cityId;
     if (filters.priceRange) params.priceRange = filters.priceRange;
-    if (filters.equipmentIds) params.equipmentIds = filters.equipmentIds;
-    if (filters.coffeeBeanIds) params.coffeeBeanIds = filters.coffeeBeanIds;
-    if (filters.roasterIds) params.roasterIds = filters.roasterIds;
-    if (filters.brewMethodIds) params.brewMethodIds = filters.brewMethodIds;
+    if (filters.equipmentIds) params.equipments = filters.equipmentIds;
+    if (filters.coffeeBeanIds) params.beans = filters.coffeeBeanIds;
+    if (filters.roasterIds) params.roasters = filters.roasterIds;
+    if (filters.brewMethodIds) params.brewMethods = filters.brewMethodIds;
+    if (filters.tagIds?.length) params.tags = filters.tagIds;
+    if (filters.isOpen !== undefined) params.isOpen = filters.isOpen;
+    if (filters.isNew !== undefined) params.isNew = filters.isNew;
+    if (filters.isVisited !== undefined) params.isVisited = filters.isVisited;
   }
 
   return httpClient.get<GetCoffeeShopsResponse>(API_ENDPOINTS.COFFEE_SHOP.BASE, {
@@ -403,10 +423,14 @@ export async function searchCoffeeShops(
   if (filters) {
     if (filters.cityId) params.cityId = filters.cityId;
     if (filters.priceRange) params.priceRange = filters.priceRange;
-    if (filters.equipmentIds) params.equipmentIds = filters.equipmentIds;
-    if (filters.coffeeBeanIds) params.coffeeBeanIds = filters.coffeeBeanIds;
-    if (filters.roasterIds) params.roasterIds = filters.roasterIds;
-    if (filters.brewMethodIds) params.brewMethodIds = filters.brewMethodIds;
+    if (filters.equipmentIds) params.equipments = filters.equipmentIds;
+    if (filters.coffeeBeanIds) params.beans = filters.coffeeBeanIds;
+    if (filters.roasterIds) params.roasters = filters.roasterIds;
+    if (filters.brewMethodIds) params.brewMethods = filters.brewMethodIds;
+    if (filters.tagIds?.length) params.tags = filters.tagIds;
+    if (filters.isOpen !== undefined) params.isOpen = filters.isOpen;
+    if (filters.isNew !== undefined) params.isNew = filters.isNew;
+    if (filters.isVisited !== undefined) params.isVisited = filters.isVisited;
   }
 
   // Добавляем минимальный рейтинг
@@ -593,6 +617,44 @@ export async function getBrewMethods(): Promise<ApiResponse<BrewMethod[]>> {
   })();
   
   referenceDataCache.brewMethods = { data: [], promise };
+  return promise;
+}
+
+/**
+ * Активные теги атмосферы для фильтров (GET /api/Catalogs/shop-tags)
+ */
+export async function getShopTags(): Promise<ApiResponse<ShopTagDto[]>> {
+  if (referenceDataCache.shopTags?.data) {
+    return { success: true, message: '', data: referenceDataCache.shopTags.data };
+  }
+
+  if (referenceDataCache.shopTags?.promise) {
+    return referenceDataCache.shopTags.promise;
+  }
+
+  const promise = (async () => {
+    const result = await httpClient.get<ShopTagDto[] | { shopTags?: ShopTagDto[]; items?: ShopTagDto[] }>(
+      API_ENDPOINTS.CATALOGS.SHOP_TAGS,
+      { requiresAuth: false }
+    );
+
+    let tags: ShopTagDto[] = [];
+    if (Array.isArray(result.data)) {
+      tags = result.data;
+    } else if (result.data && typeof result.data === 'object') {
+      const obj = result.data as { shopTags?: ShopTagDto[]; items?: ShopTagDto[] };
+      tags = obj.shopTags ?? obj.items ?? [];
+    }
+
+    if (result.success) {
+      referenceDataCache.shopTags = { data: tags };
+    }
+
+    delete referenceDataCache.shopTags?.promise;
+    return { ...result, data: tags };
+  })();
+
+  referenceDataCache.shopTags = { data: [], promise };
   return promise;
 }
 

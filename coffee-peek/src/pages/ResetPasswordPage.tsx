@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { resetPassword } from '../api/auth';
 import { TokenManager } from '../api/core/httpClient';
-import { getErrorMessage } from '../utils/errorHandler';
+import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const ResetPasswordPage: React.FC = () => {
@@ -30,8 +30,8 @@ const ResetPasswordPage: React.FC = () => {
       setError('Ссылка недействительна: отсутствует токен.');
       return;
     }
-    if (newPassword.length < 6) {
-      setError('Пароль должен содержать минимум 6 символов');
+    if (newPassword.length < 8) {
+      setError('Пароль должен содержать минимум 8 символов');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -46,7 +46,7 @@ const ResetPasswordPage: React.FC = () => {
       TokenManager.clearTokens();
       setDone(true);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(getPasswordErrorMessage(err) ?? getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +109,7 @@ const ResetPasswordPage: React.FC = () => {
                     type={showPwd ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Не менее 6 символов"
+                    placeholder="Не менее 8 символов"
                     autoFocus
                     style={{
                       width: '100%', height: 50, borderRadius: 12, padding: '0 48px 0 16px',
@@ -149,12 +149,12 @@ const ResetPasswordPage: React.FC = () => {
 
               <button
                 type="submit"
-                disabled={isLoading || newPassword.length < 6}
+                disabled={isLoading || newPassword.length < 8}
                 style={{
                   width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none',
                   fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15,
-                  cursor: isLoading || newPassword.length < 6 ? 'not-allowed' : 'pointer',
-                  opacity: newPassword.length < 6 ? 0.5 : 1,
+                  cursor: isLoading || newPassword.length < 8 ? 'not-allowed' : 'pointer',
+                  opacity: newPassword.length < 8 ? 0.5 : 1,
                 }}
               >
                 {isLoading ? 'Сохраняем…' : 'Сохранить пароль'}

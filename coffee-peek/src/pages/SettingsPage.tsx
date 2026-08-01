@@ -9,7 +9,7 @@ import {
 import { getAvatarUploadUrl } from '../api/photos';
 import { useTheme } from '../contexts/ThemeContext';
 import { COLORS } from '../constants/colors';
-import { getErrorMessage } from '../utils/errorHandler';
+import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -576,8 +576,8 @@ const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: stri
   const handleSave = async () => {
     setError('');
     setSuccess('');
-    if (newPassword.length < 6) {
-      setError('Новый пароль должен содержать минимум 6 символов');
+    if (newPassword.length < 8) {
+      setError('Новый пароль должен содержать минимум 8 символов');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -593,7 +593,7 @@ const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: stri
       setConfirmPassword('');
       setOpen(false);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(getPasswordErrorMessage(err) ?? getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -624,18 +624,18 @@ const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: stri
         {open && (
           <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <input type="password" placeholder="Текущий пароль" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle} />
-            <input type="password" placeholder="Новый пароль" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+            <input type="password" placeholder="Не менее 8 символов" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
             <input type="password" placeholder="Повторите новый пароль" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={inputStyle} />
             {error && <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: '#EF4444' }}>{error}</p>}
             <button
               type="button"
               onClick={handleSave}
-              disabled={isSaving || !currentPassword || newPassword.length < 6}
+              disabled={isSaving || !currentPassword || newPassword.length < 8}
               style={{
                 alignSelf: 'flex-start', padding: '10px 18px', borderRadius: 10, border: 'none',
                 background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14,
-                cursor: isSaving || !currentPassword || newPassword.length < 6 ? 'not-allowed' : 'pointer',
-                opacity: !currentPassword || newPassword.length < 6 ? 0.5 : 1,
+                cursor: isSaving || !currentPassword || newPassword.length < 8 ? 'not-allowed' : 'pointer',
+                opacity: !currentPassword || newPassword.length < 8 ? 0.5 : 1,
               }}
             >
               {isSaving ? 'Сохраняем…' : 'Сохранить пароль'}

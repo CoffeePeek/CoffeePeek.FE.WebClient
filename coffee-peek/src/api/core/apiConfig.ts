@@ -50,6 +50,7 @@ export const API_ENDPOINTS = {
     BEANS: "/api/Catalogs/beans",
     ROASTERS: "/api/Catalogs/roasters",
     BREW_METHODS: "/api/Catalogs/brew-methods",
+    SHOP_TAGS: "/api/Catalogs/shop-tags",
   },
 
   REVIEW: {

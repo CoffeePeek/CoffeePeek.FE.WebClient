@@ -17,11 +17,17 @@ export const API_ENDPOINTS = {
     USER_ROLE: (id: string) => `/api/admin/users/${id}/role`,
     USER_BLOCK: (id: string) => `/api/admin/users/${id}/block`,
     USER_DELETE: (id: string) => `/api/admin/users/${id}`,
+    USER_SESSIONS: (userId: string) => `/api/admin/users/${userId}/sessions`,
+    USER_SESSION_BY_ID: (userId: string, sessionId: string) =>
+      `/api/admin/users/${userId}/sessions/${sessionId}`,
     AUDIT_MODERATION: '/api/admin/audit/moderation',
     SHOPS: '/api/admin/shops',
     SHOP_BY_ID: (id: string) => `/api/admin/shops/${id}`,
     SHOP_VISIBILITY: (id: string) => `/api/admin/shops/${id}/visibility`,
     SHOP_OWNER: (id: string) => `/api/admin/shops/${id}/owner`,
+    SHOP_TAGS: '/api/admin/shop-tags',
+    SHOP_TAG_BY_ID: (id: string) => `/api/admin/shop-tags/${id}`,
+    SHOP_TAGS_ASSIGN: (shopId: string) => `/api/admin/shops/${shopId}/tags`,
     CACHE_KEYS: '/api/admin/cache/keys',
     CACHE_CLEAR: '/api/admin/cache/clear',
     CACHE_CLEAR_KEY: (key: string) => `/api/admin/cache/clear/${encodeURIComponent(key)}`,
@@ -56,6 +62,7 @@ export const API_ENDPOINTS = {
     BEANS: '/api/Catalogs/beans',
     ROASTERS: '/api/Catalogs/roasters',
     BREW_METHODS: '/api/Catalogs/brew-methods',
+    SHOP_TAGS: '/api/Catalogs/shop-tags',
   },
 } as const;
 

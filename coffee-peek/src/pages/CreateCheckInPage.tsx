@@ -132,7 +132,14 @@ const CreateCheckInPage: React.FC = () => {
       }
     } catch (err) {
       logger.error('Error submitting check-in:', err);
-      showToast('Не удалось создать чекин', 'error');
+      const status = (err as { status?: number })?.status;
+      const msg = err instanceof Error ? err.message : '';
+      showToast(
+        status === 429 || msg.includes('Слишком много запросов')
+          ? 'Слишком много запросов. Подождите минуту и попробуйте снова.'
+          : 'Не удалось создать чекин',
+        'error'
+      );
     } finally {
       setIsSubmitting(false);
     }
