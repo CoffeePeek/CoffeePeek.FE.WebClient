@@ -39,6 +39,7 @@ function extractPhotos(shop: CoffeeShop): string[] {
 
 const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
   const [hovered, setHovered] = useState(false);
+  const [favHovered, setFavHovered] = useState(false);
   const { isFavorite, toggleFavorite } = useLocalFavorites();
   const fav = isFavorite(shop.id);
   const photos = extractPhotos(shop);
@@ -47,6 +48,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
   const beans = Array.isArray(s.beans) ? (s.beans as { name: string }[]) : [];
   const equipments = Array.isArray(s.equipments) ? (s.equipments as object[]) : [];
   const showRating = (shop.rating ?? 0) > 0 && (shop.reviewCount ?? 0) > 0;
+  const address = shop.location?.address || shop.address || shop.cityName || '';
 
   return (
     <article
@@ -105,15 +107,24 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
           type="button"
           aria-label={fav ? 'Убрать из избранного' : 'В избранное'}
           onClick={(e) => { e.stopPropagation(); toggleFavorite(shop.id); }}
+          onMouseEnter={() => setFavHovered(true)}
+          onMouseLeave={() => setFavHovered(false)}
           style={{
             position: 'absolute', top: 8, right: 8,
             width: 32, height: 32, padding: 0,
             background: 'none', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
+            transform: favHovered ? 'scale(1.18)' : 'scale(1)',
+            transition: 'transform .15s ease',
           }}
         >
-          <AppIcon name="favorite" filled={fav} size={22} color={fav ? '#EF4444' : '#fff'} />
+          <AppIcon
+            name="favorite"
+            filled={fav || favHovered}
+            size={22}
+            color={fav ? '#EF4444' : favHovered ? '#F87171' : '#fff'}
+          />
         </button>
       </div>
 
@@ -136,10 +147,12 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
           )}
         </div>
 
-        <p style={{ margin: '4px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          <AppIcon name="location_on" size={13} color={COLORS.primary} style={{ flexShrink: 0 }} />
-          {shop.address || shop.cityName || 'Адрес не указан'}
-        </p>
+        {address ? (
+          <p style={{ margin: '4px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <AppIcon name="location_on" size={13} color={COLORS.primary} style={{ flexShrink: 0 }} />
+            {address}
+          </p>
+        ) : null}
 
         {/* Price + reviews — once */}
         {(priceTiers || shop.reviewCount) ? (

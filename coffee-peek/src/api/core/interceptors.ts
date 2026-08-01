@@ -234,6 +234,12 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
   const shopData = shop as BackendShopData;
   const normalized: Record<string, unknown> = { ...shopData };
 
+  // Flatten location.address → address for list cards / legacy fields
+  const loc = (shopData as { location?: { address?: string } }).location;
+  if (loc?.address && !normalized.address) {
+    normalized.address = loc.address;
+  }
+
   // Нормализуем адрес: на бэкенде может быть "address" или "Address", на фронтенде для модерации используется "notValidatedAddress"
   if ('address' in shop && !('notValidatedAddress' in shop)) {
     normalized.notValidatedAddress = shop.address;

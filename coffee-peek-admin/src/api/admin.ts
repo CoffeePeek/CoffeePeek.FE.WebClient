@@ -697,16 +697,19 @@ export async function getModerationReviewById(id: string): Promise<ApiResponse<A
 export async function approveReview(id: string, data?: ModerationActionRequest): Promise<ApiResponse<void>> {
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
-    moderationStatus: 'Approved',
-    ...(data?.comment?.trim() ? { comment: data.comment.trim() } : {}),
+    moderationStatus: 1, // Approved
+    comment: data?.comment?.trim() || null,
+    rejectReason: null,
   });
 }
 
 export async function rejectReview(id: string, data?: ModerationActionRequest): Promise<ApiResponse<void>> {
+  const reason = data?.comment?.trim() || null;
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
-    moderationStatus: 'Rejected',
-    comment: data?.comment?.trim() || undefined,
+    moderationStatus: 2, // Rejected
+    comment: reason,
+    rejectReason: reason,
   });
 }
 

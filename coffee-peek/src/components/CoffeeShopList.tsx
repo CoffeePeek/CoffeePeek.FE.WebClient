@@ -436,7 +436,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                     </div>
                     <div style={{ padding: '9px 11px 11px' }}>
                       <h4 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h4>
-                      <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>{shop.address || shop.cityName || ''}</p>
+                      <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>{shop.location?.address || shop.address || shop.cityName || ''}</p>
                     </div>
                   </div>
                 );
@@ -448,7 +448,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
 
         {/* ── Mobile: list section header ─────────────────────── */}
         {!isLoading && (
-          <div className="lg:hidden max-w-7xl mx-auto px-4 sm:px-6 flex items-baseline justify-between mb-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-baseline justify-between mb-3">
             <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>
               Кофейни рядом <span style={{ color: colors.textSecondary, fontWeight: 500, fontSize: 13 }}>· {shops.length}</span>
             </h2>
@@ -459,71 +459,23 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           </div>
         )}
 
-        {/* ── Shop grid (desktop 4-col, tablet 2-col) / list (mobile) ── */}
+        {/* ── Shop grid: 1 / 2 / 3 / 4 cols ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {isLoading ? (
-            <>
-              {/* Desktop skeleton */}
-              <div className="hidden lg:grid gap-4" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                <ShopCardSkeleton count={8} />
-              </div>
-              {/* Mobile skeleton */}
-              <div className="lg:hidden flex flex-col gap-3">
-                <ShopCardSkeleton count={4} variant="row" />
-              </div>
-            </>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-12">
+              <ShopCardSkeleton count={8} />
+            </div>
           ) : shops.length === 0 ? (
             <div className="rounded-2xl p-10 text-center border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
               <AppIcon name="coffee_maker" size={40} color={colors.textSecondary} />
               <p style={{ margin: '12px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: colors.textSecondary }}>Ничего не найдено. Попробуйте другой фильтр.</p>
             </div>
           ) : (
-            <>
-              {/* Desktop: 4-column grid */}
-              <div className="hidden lg:grid gap-4 pb-12" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                {shops.map((shop) => (
-                  <ShopCard key={shop.id} shop={shop} colors={colors} onSelect={openShopDetails} />
-                ))}
-              </div>
-              {/* Mobile: list rows */}
-              <div className="lg:hidden flex flex-col gap-3 pb-24">
-                {shops.map((shop) => {
-                  const photos = shop.shopPhotos?.filter((p): p is string => typeof p === 'string') ?? [];
-                  return (
-                    <article key={shop.id} onClick={() => openShopDetails(shop.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, cursor: 'pointer' }}>
-                      <div style={{ width: 84, height: 84, flexShrink: 0, borderRadius: 12, background: photos[0] ? `url(${photos[0]}) center/cover` : `${COLORS.primary}20`, overflow: 'hidden' }}>
-                        {photos[0] && <img src={photos[0]} alt={shop.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                          <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h3>
-                          {shop.rating && shop.rating > 0 && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: 'rgba(180,140,75,.12)', color: '#D4A84B', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' as const }}>
-                              <StarIcon filled size={13} color="#D4A84B" />
-                              {shop.rating.toFixed(1)}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>
-                          {typeof shop.isOpen !== 'undefined' && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: shop.isOpen ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)', color: shop.isOpen ? '#15803D' : '#B91C1C', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const }}>
-                              {shop.isOpen ? 'Открыто' : 'Закрыто'}
-                            </span>
-                          )}
-                          <span>{shop.address || shop.cityName || ''}</span>
-                        </div>
-                        <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
-                          {(shop as unknown as Record<string, unknown[]>).tags?.slice(0, 3).map((t, i) => (
-                            <span key={i} style={{ padding: '3px 8px', borderRadius: 6, background: isDark ? 'rgba(255,255,255,0.06)' : '#F5F5F4', color: isDark ? '#A39E93' : '#57534E', fontFamily: '"RF Dewi Expanded"', fontSize: 10, fontWeight: 600 }}>{String(t)}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-12 sm:pb-12">
+              {shops.map((shop) => (
+                <ShopCard key={shop.id} shop={shop} colors={colors} onSelect={openShopDetails} />
+              ))}
+            </div>
           )}
         </div>
 
