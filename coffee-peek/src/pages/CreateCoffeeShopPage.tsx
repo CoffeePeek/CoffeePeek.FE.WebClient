@@ -12,9 +12,9 @@ import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { AppIcon } from '../components/icons';
+import { AppIcon, BynSign } from '../components/icons';
 import {
-  MapPin, CurrencyDollar, Images, Factory, Leaf, Flame, Drop, Lightbulb,
+  MapPin, Images, Factory, Leaf, Flame, Drop, Lightbulb,
 } from '@/components/Icon';
 import {
   buildShopSubmissionPayload,
@@ -292,7 +292,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
                   { value: 'Moderate', label: 'Средний' },
                   { value: 'Premium', label: 'Премиум' }
                 ]}
-                icon={<CurrencyDollar size={20} />}
+                icon={<BynSign size={20} />}
               />
             </div>
           </div>

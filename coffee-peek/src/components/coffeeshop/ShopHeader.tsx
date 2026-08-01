@@ -1,9 +1,9 @@
 import React from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
-import { getCurrentStatus } from '../../utils/shopUtils';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
-import { AppIcon, StarIcon } from '../icons';
+import { AppIcon, StarIcon, BynPriceMarks } from '../icons';
+import { getPriceRangeTier } from '../../utils/priceRange';
 
 interface ShopHeaderProps {
   shop: DetailedCoffeeShop;
@@ -32,7 +32,8 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const status = getCurrentStatus(shop);
+  const priceTiers = getPriceRangeTier(shop.priceRange);
+  const iconMuted = theme === 'dark' ? '#E7E5E4' : '#44403C';
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-6 mb-6">
@@ -65,13 +66,12 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
               <span className={textMuted}>•</span>
             </>
           )}
-          <span className={`${textMuted} font-medium inline-flex items-center`}>
-            {/* Price range is mapped loosely on detail header; prefer Moderate (2) as default visual if unknown */}
-          </span>
+          {priceTiers && (
+            <BynPriceMarks count={priceTiers} size={14} color={iconMuted} />
+          )}
         </div>
       </div>
-      
-      {/* Кнопки действий */}
+
       <div className="flex gap-3">
         {onCheckIn && (
           <button
@@ -97,7 +97,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
             name="favorite"
             filled={isFavorite}
             size={20}
-            color={isFavorite ? '#EAB308' : theme === 'dark' ? '#E7E5E4' : '#44403C'}
+            color={isFavorite ? '#EAB308' : iconMuted}
           />
         </button>
         <button
@@ -107,14 +107,9 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
             theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
           }`}
         >
-          <AppIcon
-            name="share"
-            size={20}
-            color={theme === 'dark' ? '#E7E5E4' : '#44403C'}
-          />
+          <AppIcon name="share" size={20} color={iconMuted} />
         </button>
       </div>
     </div>
   );
 };
-

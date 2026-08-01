@@ -5,14 +5,10 @@ interface BynSignProps {
   className?: string;
   color?: string;
   style?: React.CSSProperties;
-  /** Decorative repeats should pass title={null} */
   title?: string | null;
 }
 
-/**
- * Graphic symbol of the Belarusian ruble (NBRB, 2026): Cyrillic «Б» with a mid bar.
- * Not yet reliable as Unicode in all fonts — render as SVG.
- */
+/** Belarusian ruble graphic (NBRB 2026): Cyrillic «Б» with mid bar. */
 export const BynSign: React.FC<BynSignProps> = ({
   size = 14,
   className,
@@ -32,42 +28,24 @@ export const BynSign: React.FC<BynSignProps> = ({
     role={title ? 'img' : undefined}
   >
     {title ? <title>{title}</title> : null}
-    {/* Stem + top bar + bottom bowl (Б) */}
     <path d="M6.5 2.5h11.5v3.1H9.6v5.35h7.35c3.55 0 6.05 2.2 6.05 5.35 0 3.2-2.55 5.45-6.15 5.45H6.5V2.5zm3.1 11.55v4.25h4.15c1.85 0 3.05-1.05 3.05-2.15s-1.2-2.1-3.05-2.1H9.6z" />
-    {/* Currency crossbar through the stem */}
     <rect x="2" y="10.55" width="9.2" height="2.75" rx="0.2" />
   </svg>
 );
 
-interface BynPriceMarksProps {
+export const BynPriceMarks: React.FC<{
   count: number;
   size?: number;
   className?: string;
   color?: string;
-  gap?: number;
-}
-
-/** Repeat the BYN sign for price-range tiers. */
-export const BynPriceMarks: React.FC<BynPriceMarksProps> = ({
-  count,
-  size = 13,
-  className,
-  color,
-  gap = 1,
-}) => {
+}> = ({ count, size = 13, className, color }) => {
   const n = Math.max(0, Math.min(4, Math.floor(count)));
   if (n === 0) return null;
   return (
-    <span
-      className={className}
-      style={{ display: 'inline-flex', alignItems: 'center', gap }}
-      aria-label={`${n}`}
-    >
+    <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
       {Array.from({ length: n }, (_, i) => (
         <BynSign key={i} size={size} color={color} title={null} />
       ))}
     </span>
   );
 };
-
-export default BynSign;

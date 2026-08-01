@@ -1,8 +1,9 @@
 import React, { memo, useState } from 'react';
 import { CoffeeShop, getPhotoUrl, formatEquipmentName } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
-import { AppIcon, StarIcon } from './icons';
+import { AppIcon, StarIcon, BynPriceMarks } from './icons';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
+import { getPriceRangeTier } from '../utils/priceRange';
 
 interface ShopCardColors {
   surface: string;
@@ -44,10 +45,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
   const s = shop as Record<string, unknown>;
   const isFeatured = shop.rating && shop.rating >= 4.7;
 
-  const priceLabel =
-    shop.priceRange === 'Budget' || shop.priceRange === 1 ? '$' :
-    shop.priceRange === 'Moderate' || shop.priceRange === 2 ? '$$' :
-    shop.priceRange ? '$$$' : null;
+  const priceTiers = getPriceRangeTier(shop.priceRange);
 
   return (
     <article
@@ -146,8 +144,9 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
         </p>
 
         {/* Meta row */}
-        <p style={{ margin: '2px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary, opacity: 0.7 }}>
-          {[shop.description ? undefined : null, priceLabel, shop.reviewCount ? `${shop.reviewCount} отзывов` : null].filter(Boolean).join(' · ')}
+        <p style={{ margin: '2px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
+          {priceTiers ? <BynPriceMarks count={priceTiers} size={11} color={colors.textSecondary} /> : null}
+          {shop.reviewCount ? <span>{shop.reviewCount} отзывов</span> : null}
         </p>
 
         {/* Tags */}
@@ -160,8 +159,10 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
               {formatEquipmentName(eq as Parameters<typeof formatEquipmentName>[0])}
             </TagChip>
           ))}
-          {(!Array.isArray(s.beans) || !(s.beans as unknown[]).length) && (!Array.isArray(s.equipments) || !(s.equipments as unknown[]).length) && priceLabel && (
-            <TagChip color={COLORS.primary} bg={`${COLORS.primary}10`} border={`${COLORS.primary}30`}>{priceLabel}</TagChip>
+          {(!Array.isArray(s.beans) || !(s.beans as unknown[]).length) && (!Array.isArray(s.equipments) || !(s.equipments as unknown[]).length) && priceTiers && (
+            <TagChip color={COLORS.primary} bg={`${COLORS.primary}10`} border={`${COLORS.primary}30`}>
+              <BynPriceMarks count={priceTiers} size={11} color={COLORS.primary} />
+            </TagChip>
           )}
         </div>
       </div>

@@ -6,6 +6,8 @@ import {
   GridFour, Clock, Sparkle, CheckCircle, Heart,
   MapPin, CaretDown, Check, X,
 } from '@/components/Icon';
+import { BynPriceMarks } from './icons';
+import { PRICE_FILTER_OPTIONS } from '../utils/priceRange';
 
 const FIXED_QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
   { id: 'all',      label: 'Все',        Icon: GridFour     },
@@ -15,11 +17,11 @@ const FIXED_QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentTyp
   { id: 'favorite', label: 'Избранное',  Icon: Heart        },
 ];
 
-const PRICE_OPTIONS = [
-  { value: 'Budget',   label: '$ Бюджетный' },
-  { value: 'Moderate', label: '$$ Средний'  },
-  { value: 'Premium',  label: '$$$ Премиум' },
-];
+const PRICE_OPTIONS = PRICE_FILTER_OPTIONS.map((o) => ({
+  value: o.value,
+  label: o.label,
+  tiers: o.tiers,
+}));
 
 export interface AppliedFilters {
   priceRange?: string;
@@ -218,7 +220,18 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
 
         {/* Applied filter chips with individual X */}
         {appliedPrice && (
-          <AppliedChip label={PRICE_OPTIONS.find(p => p.value === appliedPrice)?.label ?? appliedPrice} gold={gold}
+          <AppliedChip
+            label={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <BynPriceMarks
+                  count={PRICE_OPTIONS.find(p => p.value === appliedPrice)?.tiers ?? 1}
+                  size={11}
+                  color={gold}
+                />
+                {PRICE_OPTIONS.find(p => p.value === appliedPrice)?.label ?? appliedPrice}
+              </span>
+            }
+            gold={gold}
             onRemove={() => onApplyFilters({ priceRange: undefined, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods })} />
         )}
         {appliedEquipments.map(id => {
@@ -269,13 +282,14 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             <div style={{ marginBottom: 20 }}>
               <div style={sectionLabel}>Цена</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {PRICE_OPTIONS.map(({ value, label }) => {
+                {PRICE_OPTIONS.map(({ value, label, tiers }) => {
                   const active = draft.priceRange === value;
                   return (
                     <button key={value}
                       onClick={() => setDraft(d => ({ ...d, priceRange: active ? undefined : value }))}
                       style={draftChip(active)}>
                       {active && <Check size={13} />}
+                      <BynPriceMarks count={tiers} size={12} color={active ? gold : undefined} />
                       {label}
                     </button>
                   );
@@ -397,7 +411,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
 };
 
 // ── Active chip (applied, with X) ────────────────────────────────────
-const AppliedChip: React.FC<{ label: string; gold: string; onRemove: () => void }> = ({ label, gold, onRemove }) => (
+const AppliedChip: React.FC<{ label: React.ReactNode; gold: string; onRemove: () => void }> = ({ label, gold, onRemove }) => (
   <span style={{
     display: 'inline-flex', alignItems: 'center', gap: 4,
     padding: '5px 8px 5px 12px', borderRadius: 99, whiteSpace: 'nowrap',

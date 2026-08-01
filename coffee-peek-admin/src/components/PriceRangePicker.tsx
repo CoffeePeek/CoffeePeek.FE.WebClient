@@ -4,18 +4,17 @@ import {
   parsePriceRange,
   type PriceRangeOption,
 } from '../constants/priceRange';
+import { BynPriceMarks } from './ui/BynSign';
 
 function PriceRangeSymbols({ count, active }: { count: number; active: boolean }) {
   return (
     <span
-      className={`inline-flex items-center gap-0.5 text-base font-semibold leading-none ${
+      className={`inline-flex items-center leading-none ${
         active ? 'text-black' : 'text-primary'
       }`}
       aria-hidden
     >
-      {Array.from({ length: count }, (_, index) => (
-        <span key={index}>₽</span>
-      ))}
+      <BynPriceMarks count={count} size={16} color="currentColor" />
     </span>
   );
 }
