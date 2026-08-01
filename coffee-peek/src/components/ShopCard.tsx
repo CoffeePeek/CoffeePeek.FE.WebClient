@@ -43,10 +43,10 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
   const fav = isFavorite(shop.id);
   const photos = extractPhotos(shop);
   const s = shop as Record<string, unknown>;
-  const isFeatured = shop.rating && shop.rating >= 4.7;
   const priceTiers = getPriceRangeTier(shop.priceRange);
   const beans = Array.isArray(s.beans) ? (s.beans as { name: string }[]) : [];
   const equipments = Array.isArray(s.equipments) ? (s.equipments as object[]) : [];
+  const showRating = (shop.rating ?? 0) > 0 && (shop.reviewCount ?? 0) > 0;
 
   return (
     <article
@@ -83,44 +83,37 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
           </div>
         )}
 
-        {/* Top-left: rating (+ optional «Хит») */}
-        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 5 }}>
-          {shop.rating != null && shop.rating > 0 && (
-            <span
-              aria-label={`Рейтинг ${shop.rating.toFixed(1)}`}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                padding: '4px 8px', borderRadius: 8,
-                background: 'rgba(26,20,18,0.72)', backdropFilter: 'blur(12px)',
-                fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 12, color: COLORS.primary,
-              }}
-            >
-              <StarIcon filled size={13} color={COLORS.primary} />
-              {shop.rating.toFixed(1)}
-            </span>
-          )}
-          {isFeatured && (
-            <span style={{
-              padding: '4px 8px', borderRadius: 8,
-              background: COLORS.primary, color: '#1A1412',
-              fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase' as const,
-            }}>Хит</span>
-          )}
-        </div>
+        {/* Top-left: rating — only if there are reviews */}
+        {showRating && (
+          <span
+            aria-label={`Рейтинг ${shop.rating!.toFixed(1)}`}
+            style={{
+              position: 'absolute', top: 10, left: 10,
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13,
+              color: '#fff',
+              textShadow: '0 1px 3px rgba(0,0,0,0.55)',
+            }}
+          >
+            <StarIcon filled size={14} color={COLORS.primary} />
+            {shop.rating!.toFixed(1)}
+          </span>
+        )}
 
-        {/* Top-right: favorite */}
+        {/* Top-right: favorite heart only */}
         <button
           type="button"
           aria-label={fav ? 'Убрать из избранного' : 'В избранное'}
           onClick={(e) => { e.stopPropagation(); toggleFavorite(shop.id); }}
           style={{
-            position: 'absolute', top: 10, right: 10, width: 36, height: 36, borderRadius: 99,
-            background: fav ? 'rgba(234,179,8,0.95)' : 'rgba(26,20,18,0.72)',
-            backdropFilter: 'blur(12px)',
-            border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'absolute', top: 8, right: 8,
+            width: 32, height: 32, padding: 0,
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
           }}
         >
-          <AppIcon name="favorite" filled={fav} size={18} color={fav ? '#1A1412' : '#F5F5F4'} />
+          <AppIcon name="favorite" filled={fav} size={22} color={fav ? '#EF4444' : '#fff'} />
         </button>
       </div>
 
