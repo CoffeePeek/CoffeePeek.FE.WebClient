@@ -8,6 +8,7 @@ import { AppRoutes } from './routes/AppRoutes';
 import { useToast } from './contexts/ToastContext';
 import { queryClient } from './lib/queryClient';
 import CookieBanner from './components/CookieBanner';
+import { ScrollToTop } from './components/ScrollToTop';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 
@@ -45,6 +46,7 @@ const AuthRedirect: React.FC = () => {
 const AppContent: React.FC = () => {
   return (
     <>
+      <ScrollToTop />
       <GlobalErrorHandler />
       <AuthRedirect />
       <AppRoutes />

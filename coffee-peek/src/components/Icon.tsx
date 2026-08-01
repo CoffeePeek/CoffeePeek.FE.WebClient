@@ -1,5 +1,5 @@
 ﻿import type { IconProps } from '@phosphor-icons/react';
-import { BynPriceMarks } from './icons/BynSign';
+import { BeanPriceMarks } from './icons/CoffeeBeanSign';
 import {
   ArrowClockwise,
   ArrowLeft,
@@ -179,5 +179,5 @@ export const Icons = {
 };
 
 export function PriceRangeLabel({ level }: { level: 1 | 2 | 3 }) {
-  return <BynPriceMarks count={level} size={14} color="currentColor" />;
+  return <BeanPriceMarks count={level} size={14} color="currentColor" />;
 }

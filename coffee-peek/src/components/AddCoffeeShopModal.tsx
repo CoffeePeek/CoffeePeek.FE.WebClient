@@ -9,7 +9,7 @@ import { getThemeClasses } from '../utils/theme';
 import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
-import { BynSign } from './icons';
+import { CoffeeBeanSign } from './icons';
 import {
   MapPin, Images, Factory, Leaf, Flame, Drop, Lightbulb, X,
 } from '@/components/Icon';
@@ -256,7 +256,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                     { value: 'Moderate', label: 'Средний' },
                     { value: 'Premium', label: 'Премиум' }
                   ]}
-                  icon={<BynSign size={20} />}
+                  icon={<CoffeeBeanSign size={20} />}
                 />
               </div>
             </div>

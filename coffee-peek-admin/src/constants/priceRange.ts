@@ -9,10 +9,10 @@ export interface PriceRangeOption {
 }
 
 export const PRICE_RANGE_OPTIONS: PriceRangeOption[] = [
-  { value: 1, level: 'Cheap', label: 'Бюджетно', shortLabel: 'Br', symbolCount: 1 },
-  { value: 2, level: 'Moderate', label: 'Средне', shortLabel: 'Br Br', symbolCount: 2 },
-  { value: 3, level: 'Expensive', label: 'Дорого', shortLabel: 'Br Br Br', symbolCount: 3 },
-  { value: 4, level: 'Luxury', label: 'Премиум', shortLabel: 'Br Br Br Br', symbolCount: 4 },
+  { value: 1, level: 'Cheap', label: 'Бюджетно', shortLabel: '●', symbolCount: 1 },
+  { value: 2, level: 'Moderate', label: 'Средне', shortLabel: '●●', symbolCount: 2 },
+  { value: 3, level: 'Expensive', label: 'Дорого', shortLabel: '●●●', symbolCount: 3 },
+  { value: 4, level: 'Luxury', label: 'Премиум', shortLabel: '●●●●', symbolCount: 4 },
 ];
 
 export const PRICE_RANGE_LEVEL_TO_NUMBER: Record<PriceRangeLevel, 1 | 2 | 3 | 4> = {

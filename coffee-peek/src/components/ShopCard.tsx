@@ -1,7 +1,7 @@
 import React, { memo, useState } from 'react';
 import { CoffeeShop, getPhotoUrl, formatEquipmentName } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
-import { AppIcon, StarIcon, BynPriceMarks } from './icons';
+import { AppIcon, StarIcon, BeanPriceMarks } from './icons';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { getPriceRangeTier } from '../utils/priceRange';
 
@@ -145,7 +145,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
 
         {/* Meta row */}
         <p style={{ margin: '2px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
-          {priceTiers ? <BynPriceMarks count={priceTiers} size={11} color={colors.textSecondary} /> : null}
+          {priceTiers ? <BeanPriceMarks count={priceTiers} size={11} color={colors.textSecondary} /> : null}
           {shop.reviewCount ? <span>{shop.reviewCount} отзывов</span> : null}
         </p>
 
@@ -161,7 +161,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
           ))}
           {(!Array.isArray(s.beans) || !(s.beans as unknown[]).length) && (!Array.isArray(s.equipments) || !(s.equipments as unknown[]).length) && priceTiers && (
             <TagChip color={COLORS.primary} bg={`${COLORS.primary}10`} border={`${COLORS.primary}30`}>
-              <BynPriceMarks count={priceTiers} size={11} color={COLORS.primary} />
+              <BeanPriceMarks count={priceTiers} size={11} color={COLORS.primary} />
             </TagChip>
           )}
         </div>

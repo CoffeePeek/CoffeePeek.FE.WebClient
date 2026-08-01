@@ -6,7 +6,7 @@ import {
   GridFour, Clock, Sparkle, CheckCircle, Heart,
   MapPin, CaretDown, Check, X,
 } from '@/components/Icon';
-import { BynPriceMarks } from './icons';
+import { BeanPriceMarks } from './icons';
 import { PRICE_FILTER_OPTIONS } from '../utils/priceRange';
 
 const FIXED_QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
@@ -223,7 +223,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
           <AppliedChip
             label={
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <BynPriceMarks
+                <BeanPriceMarks
                   count={PRICE_OPTIONS.find(p => p.value === appliedPrice)?.tiers ?? 1}
                   size={11}
                   color={gold}
@@ -289,7 +289,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       onClick={() => setDraft(d => ({ ...d, priceRange: active ? undefined : value }))}
                       style={draftChip(active)}>
                       {active && <Check size={13} />}
-                      <BynPriceMarks count={tiers} size={12} color={active ? gold : undefined} />
+                      <BeanPriceMarks count={tiers} size={12} color={active ? gold : undefined} />
                       {label}
                     </button>
                   );

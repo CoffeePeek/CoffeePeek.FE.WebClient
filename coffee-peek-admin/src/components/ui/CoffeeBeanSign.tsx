@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface BynSignProps {
+interface CoffeeBeanSignProps {
   size?: number | string;
   className?: string;
   color?: string;
@@ -8,13 +8,13 @@ interface BynSignProps {
   title?: string | null;
 }
 
-/** Belarusian ruble graphic (NBRB 2026): Cyrillic «Б» with mid bar. */
-export const BynSign: React.FC<BynSignProps> = ({
+/** Coffee bean mark used for price-range tiers. */
+export const CoffeeBeanSign: React.FC<CoffeeBeanSignProps> = ({
   size = 14,
   className,
   color = 'currentColor',
   style,
-  title = 'Белорусский рубль',
+  title = 'Кофейное зерно',
 }) => (
   <svg
     width={size}
@@ -23,17 +23,19 @@ export const BynSign: React.FC<BynSignProps> = ({
     fill={color}
     xmlns="http://www.w3.org/2000/svg"
     className={className}
-    style={{ display: 'inline-block', verticalAlign: '-0.15em', flexShrink: 0, ...style }}
+    style={{ display: 'inline-block', verticalAlign: '-0.12em', flexShrink: 0, ...style }}
     aria-hidden={title ? undefined : true}
     role={title ? 'img' : undefined}
   >
     {title ? <title>{title}</title> : null}
-    <path d="M6.5 2.5h11.5v3.1H9.6v5.35h7.35c3.55 0 6.05 2.2 6.05 5.35 0 3.2-2.55 5.45-6.15 5.45H6.5V2.5zm3.1 11.55v4.25h4.15c1.85 0 3.05-1.05 3.05-2.15s-1.2-2.1-3.05-2.1H9.6z" />
-    <rect x="2" y="10.55" width="9.2" height="2.75" rx="0.2" />
+    <path
+      fillRule="evenodd"
+      d="M12 1.75c-3.55 0-6.75 3.05-7.85 7.15-1.15 4.25-.15 8.85 2.85 11.55 1.95 1.75 3.55 2.3 5 2.3s3.05-.55 5-2.3c3-2.7 4-7.3 2.85-11.55C18.75 4.8 15.55 1.75 12 1.75zm0 2.4c-.85 3.1-1.05 6.55-.2 9.85.55 2.15 1.55 3.95 2.75 5.2C13.7 19.75 12.9 20 12 20s-1.7-.25-2.55-.8c1.2-1.25 2.2-3.05 2.75-5.2.85-3.3.65-6.75-.2-9.85z"
+    />
   </svg>
 );
 
-export const BynPriceMarks: React.FC<{
+export const BeanPriceMarks: React.FC<{
   count: number;
   size?: number;
   className?: string;
@@ -44,7 +46,7 @@ export const BynPriceMarks: React.FC<{
   return (
     <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
       {Array.from({ length: n }, (_, i) => (
-        <BynSign key={i} size={size} color={color} title={null} />
+        <CoffeeBeanSign key={i} size={size} color={color} title={null} />
       ))}
     </span>
   );

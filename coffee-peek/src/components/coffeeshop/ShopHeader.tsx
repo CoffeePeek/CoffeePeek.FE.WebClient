@@ -2,7 +2,7 @@ import React from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
-import { AppIcon, StarIcon, BynPriceMarks } from '../icons';
+import { AppIcon, StarIcon, BeanPriceMarks } from '../icons';
 import { getPriceRangeTier } from '../../utils/priceRange';
 
 interface ShopHeaderProps {
@@ -67,7 +67,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
             </>
           )}
           {priceTiers && (
-            <BynPriceMarks count={priceTiers} size={14} color={iconMuted} />
+            <BeanPriceMarks count={priceTiers} size={14} color={iconMuted} />
           )}
         </div>
       </div>
@@ -87,7 +87,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
           onClick={onToggleFavorite}
           disabled={isCheckingFavorite}
           aria-label={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
-          className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
+          className={`w-14 h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
             isFavorite
               ? `${themeClasses.primary.bgLight} ${themeClasses.primary.borderLight}`
               : `${theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`
@@ -96,18 +96,18 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
           <AppIcon
             name="favorite"
             filled={isFavorite}
-            size={20}
+            size={26}
             color={isFavorite ? '#EAB308' : iconMuted}
           />
         </button>
         <button
           type="button"
           aria-label="Поделиться"
-          className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
+          className={`w-14 h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
             theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
           }`}
         >
-          <AppIcon name="share" size={20} color={iconMuted} />
+          <AppIcon name="share" size={26} color={iconMuted} />
         </button>
       </div>
     </div>

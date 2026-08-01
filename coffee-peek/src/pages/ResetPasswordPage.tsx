@@ -54,7 +54,7 @@ const ResetPasswordPage: React.FC = () => {
 
   if (!token) {
     return (
-      <div style={{ minHeight: '100vh', background: '#1A1412', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ minHeight: '100dvh', background: '#1A1412', display: 'grid', placeItems: 'center', padding: 16 }}>
         <div style={{ maxWidth: 460, width: '100%', padding: 40, borderRadius: 24, background: 'rgba(45,36,31,0.6)', border: `1px solid ${cardBorder}`, textAlign: 'center' }}>
           <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>Ссылка недействительна</h1>
           <p style={{ margin: '0 0 24px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted }}>В ссылке нет токена сброса пароля.</p>
@@ -65,7 +65,7 @@ const ResetPasswordPage: React.FC = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#1A1412', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100dvh', background: '#1A1412', display: 'grid', placeItems: 'center', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, pointerEvents: 'none' }} />
 
       <div style={{ width: '100%', maxWidth: 460, margin: '0 auto', padding: 16, position: 'relative', zIndex: 2 }}>

@@ -164,7 +164,7 @@ const RegisterPage: React.FC = () => {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', transition: 'background .3s' }}>
+    <div style={{ minHeight: '100dvh', background: bg, display: 'grid', placeItems: 'center', position: 'relative', overflow: 'hidden', transition: 'background .3s' }}>
       {/* Dotted pattern */}
       {dark && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, pointerEvents: 'none' }} />}
       {/* Glows */}
@@ -178,7 +178,7 @@ const RegisterPage: React.FC = () => {
       </button>
 
       {/* Card */}
-      <div style={{ width: '100%', maxWidth: 460, margin: '0 auto', padding: '16px', position: 'relative', zIndex: 2 }}>
+      <div style={{ width: 'min(100%, 460px)', padding: '16px', position: 'relative', zIndex: 2, boxSizing: 'border-box' }}>
         <div style={{ padding: 40, borderRadius: 24, background: cardBg, backdropFilter: dark ? 'blur(24px)' : 'none', border: `1px solid ${cardBorder}`, boxShadow: dark ? '0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 32px rgba(0,0,0,0.08)', transition: 'all .3s' }}>
 
           {/* Success screen */}

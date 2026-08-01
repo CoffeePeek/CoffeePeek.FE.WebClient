@@ -4,7 +4,7 @@ import {
   parsePriceRange,
   type PriceRangeOption,
 } from '../constants/priceRange';
-import { BynPriceMarks } from './ui/BynSign';
+import { BeanPriceMarks } from './ui/CoffeeBeanSign';
 
 function PriceRangeSymbols({ count, active }: { count: number; active: boolean }) {
   return (
@@ -14,7 +14,7 @@ function PriceRangeSymbols({ count, active }: { count: number; active: boolean }
       }`}
       aria-hidden
     >
-      <BynPriceMarks count={count} size={16} color="currentColor" />
+      <BeanPriceMarks count={count} size={16} color="currentColor" />
     </span>
   );
 }
