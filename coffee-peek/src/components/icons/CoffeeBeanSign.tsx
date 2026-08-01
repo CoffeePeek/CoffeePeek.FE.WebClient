@@ -1,26 +1,31 @@
 import React from 'react';
+import { brand } from '../../design-system/tokens';
 
 interface CoffeeBeanSignProps {
   size?: number | string;
   className?: string;
+  /** Defaults to brand gold accent */
   color?: string;
   style?: React.CSSProperties;
   /** Decorative repeats should pass title={null} */
   title?: string | null;
 }
 
-/** Coffee bean mark used for price-range tiers. */
+/**
+ * Coffee bean (SVG Repo «coffee-bean-for-a-coffee-break»).
+ * Fill uses accent colors — pass `color` or inherit brand gold.
+ */
 export const CoffeeBeanSign: React.FC<CoffeeBeanSignProps> = ({
   size = 14,
   className,
-  color = 'currentColor',
+  color = brand.primary,
   style,
   title = 'Кофейное зерно',
 }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 24 24"
+    viewBox="0 0 326.05 326.05"
     fill={color}
     xmlns="http://www.w3.org/2000/svg"
     className={className}
@@ -29,11 +34,7 @@ export const CoffeeBeanSign: React.FC<CoffeeBeanSignProps> = ({
     role={title ? 'img' : undefined}
   >
     {title ? <title>{title}</title> : null}
-    {/* Bean silhouette with S-crease cutout */}
-    <path
-      fillRule="evenodd"
-      d="M12 1.75c-3.55 0-6.75 3.05-7.85 7.15-1.15 4.25-.15 8.85 2.85 11.55 1.95 1.75 3.55 2.3 5 2.3s3.05-.55 5-2.3c3-2.7 4-7.3 2.85-11.55C18.75 4.8 15.55 1.75 12 1.75zm0 2.4c-.85 3.1-1.05 6.55-.2 9.85.55 2.15 1.55 3.95 2.75 5.2C13.7 19.75 12.9 20 12 20s-1.7-.25-2.55-.8c1.2-1.25 2.2-3.05 2.75-5.2.85-3.3.65-6.75-.2-9.85z"
-    />
+    <path d="M14.257,275.602C-17.052,220.391,4.253,133.798,69.023,69.01c73.553-73.543,175.256-91.076,227.182-39.16c0.061,0.068,0.112,0.145,0.195,0.214c-10.392,30.235-43.486,94.567-142.686,129.348C62.842,191.29,27.788,241.972,14.257,275.602z M310.81,48.75c-7.871,18.361-21.57,42.356-45.173,65.957c-23.725,23.735-57.445,47.046-105.208,63.8C63.49,212.5,36.405,268.149,28.848,295.116c0.357,0.36,0.664,0.733,1.011,1.083c51.921,51.918,153.628,34.386,227.176-39.169C322.479,191.585,343.526,103.869,310.81,48.75z" />
   </svg>
 );
 
@@ -45,13 +46,13 @@ interface BeanPriceMarksProps {
   gap?: number;
 }
 
-/** Repeat coffee beans for price-range tiers. */
+/** Repeat coffee beans for price-range tiers (accent gold by default). */
 export const BeanPriceMarks: React.FC<BeanPriceMarksProps> = ({
   count,
   size = 13,
   className,
-  color,
-  gap = 1,
+  color = brand.primary,
+  gap = 2,
 }) => {
   const n = Math.max(0, Math.min(4, Math.floor(count)));
   if (n === 0) return null;
@@ -59,7 +60,7 @@ export const BeanPriceMarks: React.FC<BeanPriceMarksProps> = ({
     <span
       className={className}
       style={{ display: 'inline-flex', alignItems: 'center', gap }}
-      aria-label={`${n}`}
+      aria-label={`Ценовой уровень ${n}`}
     >
       {Array.from({ length: n }, (_, i) => (
         <CoffeeBeanSign key={i} size={size} color={color} title={null} />

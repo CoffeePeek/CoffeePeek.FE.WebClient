@@ -44,8 +44,9 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
   const photos = extractPhotos(shop);
   const s = shop as Record<string, unknown>;
   const isFeatured = shop.rating && shop.rating >= 4.7;
-
   const priceTiers = getPriceRangeTier(shop.priceRange);
+  const beans = Array.isArray(s.beans) ? (s.beans as { name: string }[]) : [];
+  const equipments = Array.isArray(s.equipments) ? (s.equipments as object[]) : [];
 
   return (
     <article
@@ -82,44 +83,49 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
           </div>
         )}
 
-        {/* Top-left: rating + "Хит" */}
+        {/* Top-left: rating (+ optional «Хит») */}
         <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 5 }}>
-          {shop.rating && shop.rating > 0 && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 3,
-              padding: '3px 8px', borderRadius: 6,
-              background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',
-              fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 11, color: '#D4A84B',
-            }}>
-              <StarIcon filled size={12} color="#D4A84B" />
+          {shop.rating != null && shop.rating > 0 && (
+            <span
+              aria-label={`Рейтинг ${shop.rating.toFixed(1)}`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '4px 8px', borderRadius: 8,
+                background: 'rgba(26,20,18,0.72)', backdropFilter: 'blur(12px)',
+                fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 12, color: COLORS.primary,
+              }}
+            >
+              <StarIcon filled size={13} color={COLORS.primary} />
               {shop.rating.toFixed(1)}
             </span>
           )}
           {isFeatured && (
             <span style={{
-              padding: '3px 7px', borderRadius: 6,
-              background: 'rgba(234,179,8,0.92)', color: '#1A1412',
-              fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const,
+              padding: '4px 8px', borderRadius: 8,
+              background: COLORS.primary, color: '#1A1412',
+              fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase' as const,
             }}>Хит</span>
           )}
         </div>
 
         {/* Top-right: favorite */}
         <button
+          type="button"
+          aria-label={fav ? 'Убрать из избранного' : 'В избранное'}
           onClick={(e) => { e.stopPropagation(); toggleFavorite(shop.id); }}
           style={{
             position: 'absolute', top: 10, right: 10, width: 36, height: 36, borderRadius: 99,
-            background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',
+            background: fav ? 'rgba(234,179,8,0.95)' : 'rgba(26,20,18,0.72)',
+            backdropFilter: 'blur(12px)',
             border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <AppIcon name="favorite" filled={fav} size={18} color={fav ? '#EF4444' : '#78716C'} />
+          <AppIcon name="favorite" filled={fav} size={18} color={fav ? '#1A1412' : '#F5F5F4'} />
         </button>
       </div>
 
       {/* Body */}
       <div style={{ padding: '12px 14px 14px' }}>
-        {/* Name + open/closed */}
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
           <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {shop.name}
@@ -137,34 +143,32 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
           )}
         </div>
 
-        {/* Address */}
         <p style={{ margin: '4px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          <AppIcon name="location_on" size={13} color="#D4A84B" style={{ flexShrink: 0 }} />
+          <AppIcon name="location_on" size={13} color={COLORS.primary} style={{ flexShrink: 0 }} />
           {shop.address || shop.cityName || 'Адрес не указан'}
         </p>
 
-        {/* Meta row */}
-        <p style={{ margin: '2px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
-          {priceTiers ? <BeanPriceMarks count={priceTiers} size={11} color={colors.textSecondary} /> : null}
-          {shop.reviewCount ? <span>{shop.reviewCount} отзывов</span> : null}
-        </p>
+        {/* Price + reviews — once */}
+        {(priceTiers || shop.reviewCount) ? (
+          <p style={{ margin: '6px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+            {priceTiers ? <BeanPriceMarks count={priceTiers} size={12} color={COLORS.primary} /> : null}
+            {shop.reviewCount ? <span>{shop.reviewCount} отзывов</span> : null}
+          </p>
+        ) : null}
 
-        {/* Tags */}
-        <div style={{ marginTop: 10, display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
-          {Array.isArray(s.beans) && (s.beans as {name: string}[]).slice(0, 1).map(b => (
-            <TagChip key={b.name} color={colors.textSecondary} bg={colors.background} border={colors.border}>{b.name}</TagChip>
-          ))}
-          {Array.isArray(s.equipments) && (s.equipments as object[]).slice(0, 1).map((eq, i) => (
-            <TagChip key={i} color={colors.textSecondary} bg={colors.background} border={colors.border}>
-              {formatEquipmentName(eq as Parameters<typeof formatEquipmentName>[0])}
-            </TagChip>
-          ))}
-          {(!Array.isArray(s.beans) || !(s.beans as unknown[]).length) && (!Array.isArray(s.equipments) || !(s.equipments as unknown[]).length) && priceTiers && (
-            <TagChip color={COLORS.primary} bg={`${COLORS.primary}10`} border={`${COLORS.primary}30`}>
-              <BeanPriceMarks count={priceTiers} size={11} color={COLORS.primary} />
-            </TagChip>
-          )}
-        </div>
+        {/* Tags: beans / equipment only — no price duplicate */}
+        {(beans.length > 0 || equipments.length > 0) && (
+          <div style={{ marginTop: 10, display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+            {beans.slice(0, 1).map(b => (
+              <TagChip key={b.name} color={colors.textSecondary} bg={colors.background} border={colors.border}>{b.name}</TagChip>
+            ))}
+            {equipments.slice(0, 1).map((eq, i) => (
+              <TagChip key={i} color={colors.textSecondary} bg={colors.background} border={colors.border}>
+                {formatEquipmentName(eq as Parameters<typeof formatEquipmentName>[0])}
+              </TagChip>
+            ))}
+          </div>
+        )}
       </div>
     </article>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
+import { COLORS } from '../../constants/colors';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getThemeClasses } from '../../utils/theme';
@@ -107,7 +108,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
             </>
           )}
           {priceTiers && (
-            <BeanPriceMarks count={priceTiers} size={14} color={iconMuted} />
+            <BeanPriceMarks count={priceTiers} size={14} color={COLORS.primary} />
           )}
         </div>
       </div>

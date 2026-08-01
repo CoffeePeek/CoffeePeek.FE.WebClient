@@ -289,7 +289,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                       onClick={() => setDraft(d => ({ ...d, priceRange: active ? undefined : value }))}
                       style={draftChip(active)}>
                       {active && <Check size={13} />}
-                      <BeanPriceMarks count={tiers} size={12} color={active ? gold : undefined} />
+                      <BeanPriceMarks count={tiers} size={12} color={active ? gold : COLORS.primary} />
                       {label}
                     </button>
                   );
