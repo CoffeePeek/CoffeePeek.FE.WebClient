@@ -108,12 +108,12 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
         <button
           onClick={(e) => { e.stopPropagation(); toggleFavorite(shop.id); }}
           style={{
-            position: 'absolute', top: 10, right: 10, width: 30, height: 30, borderRadius: 99,
+            position: 'absolute', top: 10, right: 10, width: 36, height: 36, borderRadius: 99,
             background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',
             border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <AppIcon name="favorite" filled={fav} size={15} color={fav ? '#EF4444' : '#78716C'} />
+          <AppIcon name="favorite" filled={fav} size={18} color={fav ? '#EF4444' : '#78716C'} />
         </button>
       </div>
 

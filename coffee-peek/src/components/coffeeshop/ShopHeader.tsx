@@ -1,6 +1,7 @@
 import React from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useToast } from '../../contexts/ToastContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppIcon, StarIcon, BeanPriceMarks } from '../icons';
 import { getPriceRangeTier } from '../../utils/priceRange';
@@ -18,6 +19,32 @@ interface ShopHeaderProps {
   borderColor: string;
 }
 
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to legacy path
+  }
+
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 export const ShopHeader: React.FC<ShopHeaderProps> = ({
   shop,
   avgRating,
@@ -31,9 +58,22 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   borderColor,
 }) => {
   const { theme } = useTheme();
+  const { showToast } = useToast();
   const themeClasses = getThemeClasses(theme);
   const priceTiers = getPriceRangeTier(shop.priceRange);
   const iconMuted = theme === 'dark' ? '#E7E5E4' : '#44403C';
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/shops/${shop.id}`;
+    const text = `Нашёл отличную кофейню «${shop.name}» на CoffeePeek — загляни:\n${url}`;
+
+    const copied = await copyText(text);
+    if (copied) {
+      showToast('Ссылка скопирована — можно отправить друзьям', 'success');
+      return;
+    }
+    showToast('Не удалось скопировать ссылку', 'error');
+  };
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-6 mb-6">
@@ -102,6 +142,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
         </button>
         <button
           type="button"
+          onClick={handleShare}
           aria-label="Поделиться"
           className={`w-14 h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
             theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
