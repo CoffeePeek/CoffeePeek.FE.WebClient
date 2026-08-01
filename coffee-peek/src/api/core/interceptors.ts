@@ -58,7 +58,7 @@ export function requestInterceptor(
   }
 
   // Добавляем Authorization заголовок если токен доступен
-  // Даже для публичных эндпоинтов токен нужен для персонализации (isFavorite, isVisited и т.д.)
+  // Даже для публичных эндпоинтов токен нужен для персонализации (isVisited и т.д.)
   const token = TokenManager.getAccessToken();
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);

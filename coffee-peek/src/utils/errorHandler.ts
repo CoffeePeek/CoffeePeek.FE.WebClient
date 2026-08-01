@@ -28,6 +28,10 @@ export const ErrorCodes = {
     title: 'Страница не найдена',
     message: 'К сожалению, запрашиваемая страница не существует. Возможно, она была перемещена или удалена.'
   },
+  429: {
+    title: 'Слишком много запросов',
+    message: 'Превышен лимит запросов. Подождите немного и попробуйте снова.'
+  },
   500: {
     title: 'Ошибка сервера',
     message: 'Произошла внутренняя ошибка сервера. Мы уже работаем над её устранением.'
@@ -78,6 +82,7 @@ export function getErrorMessageByStatus(status: number | undefined): string {
     if (status === 401) return ErrorCodes[401].message;
     if (status === 403) return ErrorCodes[403].message;
     if (status === 404) return ErrorCodes[404].message;
+    if (status === 429) return ErrorCodes[429].message;
     return 'Ошибка запроса. Пожалуйста, проверьте введённые данные.';
   }
 

@@ -4,7 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { Icons } from '../constants';
 import { COLORS } from '../constants/colors';
-import { User, Gear, SignOut, CaretDown } from '@/components/Icon';
+import { User, Gear, SignOut, CaretDown, ShoppingCart } from '@/components/Icon';
 
 const PUBLIC_NAV = [
   { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
@@ -126,6 +126,8 @@ const Header: React.FC = () => {
                           <DropdownItem icon={<User size={18} color={mutedColor} />} label="Мой профиль" hoverBg={hoverBg} textColor={textColor} mutedColor={mutedColor}
                             onClick={() => { navigate(`/users/${user.id}`); setProfileOpen(false); }} />
                         )}
+                        <DropdownItem icon={<ShoppingCart size={18} color={mutedColor} />} label="Посещения" hoverBg={hoverBg} textColor={textColor} mutedColor={mutedColor}
+                          onClick={() => { navigate('/check-ins'); setProfileOpen(false); }} />
                         <DropdownItem icon={<Gear size={18} color={isSettings ? gold : mutedColor} />} label="Настройки" hoverBg={hoverBg}
                           textColor={isSettings ? gold : textColor}
                           mutedColor={isSettings ? gold : mutedColor}
@@ -195,6 +197,11 @@ const Header: React.FC = () => {
                       Профиль
                     </button>
                   )}
+                  <button onClick={() => { navigate('/check-ins'); setIsMobileMenuOpen(false); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    <ShoppingCart size={18} color={mutedColor} />
+                    Посещения
+                  </button>
                   <button onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <Gear size={18} color={isSettings ? gold : mutedColor} />

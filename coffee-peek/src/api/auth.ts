@@ -79,6 +79,20 @@ export interface UpdateUsernameRequest {
   username: string;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
 export interface UploadedPhotoDto {
   fileName: string;
   contentType: string;
@@ -341,6 +355,41 @@ export async function confirmEmail(token: string): Promise<ApiResponse<void>> {
       requiresAuth: false,
     }
   );
+}
+
+/**
+ * Смена пароля авторизованного пользователя.
+ * Текущая сессия обычно остаётся живой.
+ */
+export async function changePassword(
+  data: ChangePasswordRequest
+): Promise<ApiResponse<void>> {
+  return httpClient.put<void>(API_ENDPOINTS.USER.UPDATE_PASSWORD, data, {
+    requiresAuth: true,
+  });
+}
+
+/**
+ * Запрос сброса пароля. API всегда отвечает успехом (письмо — если аккаунт с паролем).
+ */
+export async function forgotPassword(
+  data: ForgotPasswordRequest
+): Promise<ApiResponse<void>> {
+  return httpClient.post<void>(API_ENDPOINTS.USER.PASSWORD_FORGOT, data, {
+    requiresAuth: false,
+  });
+}
+
+/**
+ * Сброс пароля по токену из письма (.../reset-password?token=).
+ * После успеха все сессии сбрасываются — нужен повторный логин.
+ */
+export async function resetPassword(
+  data: ResetPasswordRequest
+): Promise<ApiResponse<void>> {
+  return httpClient.post<void>(API_ENDPOINTS.USER.PASSWORD_RESET, data, {
+    requiresAuth: false,
+  });
 }
 
 

@@ -2,6 +2,7 @@ import React, { memo, useState } from 'react';
 import { CoffeeShop, getPhotoUrl, formatEquipmentName } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
 import { AppIcon, StarIcon } from './icons';
+import { useLocalFavorites } from '../hooks/useLocalFavorites';
 
 interface ShopCardColors {
   surface: string;
@@ -14,10 +15,7 @@ interface ShopCardColors {
 interface ShopCardProps {
   shop: CoffeeShop;
   colors: ShopCardColors;
-  favoriteShopIds: Set<string>;
   onSelect: (shopId: string) => void;
-  isAuthenticated?: boolean;
-  onRequireAuth?: () => void;
 }
 
 function extractPhotos(shop: CoffeeShop): string[] {
@@ -38,9 +36,10 @@ function extractPhotos(shop: CoffeeShop): string[] {
   return [];
 }
 
-const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds, onSelect, isAuthenticated = false, onRequireAuth }) => {
+const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
   const [hovered, setHovered] = useState(false);
-  const [fav, setFav] = useState(favoriteShopIds.has(shop.id));
+  const { isFavorite, toggleFavorite } = useLocalFavorites();
+  const fav = isFavorite(shop.id);
   const photos = extractPhotos(shop);
   const s = shop as Record<string, unknown>;
   const isFeatured = shop.rating && shop.rating >= 4.7;
@@ -109,14 +108,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, favoriteShopIds,
 
         {/* Top-right: favorite */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isAuthenticated) {
-              onRequireAuth?.();
-              return;
-            }
-            setFav(v => !v);
-          }}
+          onClick={(e) => { e.stopPropagation(); toggleFavorite(shop.id); }}
           style={{
             position: 'absolute', top: 10, right: 10, width: 30, height: 30, borderRadius: 99,
             background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)',

@@ -14,11 +14,8 @@ import { useToast } from '../contexts/ToastContext';
 import { useShopData } from '../hooks/useShopData';
 import { useMyReview } from '../hooks/useMyReview';
 import { useUsersCache } from '../hooks/useUsersCache';
-import { useToggleFavorite } from '../hooks/queries/useFavorites';
-import { TokenManager } from '../api/core/httpClient';
-import { logger } from '../utils/logger';
+import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { useRequireAuth } from '../hooks/useRequireAuth';
 import { AppIcon } from '../components/icons';
 
 const CoffeeShopPage: React.FC = () => {
@@ -40,27 +37,16 @@ const CoffeeShopPage: React.FC = () => {
   // Устанавливаем title с названием кофейни
   usePageTitle(shop?.name || 'Кофейня');
   
-  // Favorite logic
-  const token = user ? TokenManager.getAccessToken() : null;
-  const { toggle, isLoading: isTogglingFavorite } = useToggleFavorite();
-  const isFavorite = shop?.isFavorite ?? false;
+  // Local-only favorites (device storage, no API)
+  const { isFavorite, toggleFavorite } = useLocalFavorites();
+  const shopIsFavorite = isFavorite(shopId);
   
-  const handleToggleFavorite = async () => {
-    if (!requireAuth()) return;
-
-    if (!shopId || !token) return;
-
-    try {
-      await toggle({ shopId, isFavorite, token });
-      showToast(
-        isFavorite ? 'Удалено из избранного' : 'Добавлено в избранное',
-        'success'
-      );
-      await reloadShop();
-    } catch (err: unknown) {
-      logger.error('Error toggling favorite:', err);
-      showToast('Не удалось изменить статус избранного', 'error');
-    }
+  const handleToggleFavorite = () => {
+    const nowFavorite = toggleFavorite(shopId);
+    showToast(
+      nowFavorite ? 'Добавлено в избранное' : 'Удалено из избранного',
+      'success'
+    );
   };
   
   // Check-in modal state
@@ -150,8 +136,8 @@ const CoffeeShopPage: React.FC = () => {
                 shop={shop}
                 avgRating={avgRating}
                 reviewsTotalCount={reviewsTotalCount}
-                isFavorite={isFavorite}
-                isCheckingFavorite={isTogglingFavorite}
+                isFavorite={shopIsFavorite}
+                isCheckingFavorite={false}
                 onToggleFavorite={handleToggleFavorite}
                 onCheckIn={handleCheckIn}
                 textMain={textMain}

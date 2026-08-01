@@ -19,7 +19,7 @@ import {
 } from '../hooks/queries/usePublicStats';
 import { AppIcon, StarIcon } from '../components/icons';
 import type { IconProps } from '@phosphor-icons/react';
-import { Compass, Flask, ChatCircleText, TrendUp, UsersThree } from '@/components/Icon';
+import { Compass, Flask, ChatCircleText, TrendUp, UsersThree, Heart } from '@/components/Icon';
 
 const ISO_MAP_PINS = [
   { x: 100, y: 150 }, { x: 165, y: 110 }, { x: 220, y: 80 },
@@ -210,6 +210,7 @@ const LandingPage: React.FC = () => {
       { Icon: ChatCircleText, title: 'Чек-ины и отзывы', desc: 'Оценивай кофейни, оставляй отзывы и делись впечатлениями с друзьями.' },
       { Icon: TrendUp,        title: 'Рейтинги',        desc: 'Персональная система оценок и рекомендаций на основе твоих предпочтений.' },
       { Icon: UsersThree,     title: 'Сообщество',      desc: 'Общайся с другими любителями кофе, делись опытом и находи единомышленников.' },
+      { Icon: Heart,          title: 'Избранное',       desc: 'Сохраняй любимые кофейни на устройстве и быстро возвращайся к ним.' },
     ];
 
     const navTabs = [

@@ -23,6 +23,9 @@ const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage'));
 const TermsOfServicePage = lazy(() => import('../pages/TermsOfServicePage'));
 const ConfirmEmailPage = lazy(() => import('../pages/ConfirmEmailPage'));
 const CommunityPage = lazy(() => import('../pages/CommunityPage'));
+const ForgotPasswordPage = lazy(() => import('../pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('../pages/ResetPasswordPage'));
+const CheckInsPage = lazy(() => import('../pages/CheckInsPage'));
 
 const LoadingFallback = () => {
   const { theme } = useTheme();
@@ -45,6 +48,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/error" element={<ErrorPage />} />
         <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
           path="/community"
           element={
@@ -144,6 +149,17 @@ export const AppRoutes: React.FC = () => {
             <ProtectedRoute>
               <AuthenticatedLayout>
                 <SettingsPage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/check-ins"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <CheckInsPage />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

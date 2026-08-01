@@ -11,6 +11,7 @@ import ShopSearchBar from './ShopSearchBar';
 import ShopFilterPanel from './ShopFilterPanel';
 import ShopPagination from './ShopPagination';
 import { AppIcon, StarIcon } from './icons';
+import { useLocalFavorites } from '../hooks/useLocalFavorites';
 
 type PhotoInput = { fullUrl?: string; storageKey?: string } | string;
 
@@ -50,6 +51,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const { theme } = useTheme();
   const { user, requireAuth } = useRequireAuth();
   const colors = getThemeColors(theme);
+  const { favoriteIds } = useLocalFavorites();
   const [allShops, setAllShops] = useState<CoffeeShop[]>([]); // Все кофейни с сервера (нефильтрованные)
   const [shops, setShops] = useState<CoffeeShop[]>([]); // Отфильтрованные кофейни для отображения
   const [totalItems, setTotalItems] = useState<number>(0);
@@ -84,7 +86,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [activeFilterTabs, setActiveFilterTabs] = useState<Set<'open' | 'new' | 'favorite' | 'visited'>>(new Set());
-  const [favoriteShopIds, setFavoriteShopIds] = useState<Set<string>>(new Set());
   const [visitedShopIds, setVisitedShopIds] = useState<Set<string>>(new Set());
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   
@@ -169,7 +170,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, initialDataLoaded]);
 
-  // Применяем клиентскую фильтрацию при изменении вкладки
+  // Применяем клиентскую фильтрацию при изменении вкладки / локального избранного
   useEffect(() => {
     if (allShops.length > 0) {
       const filtered = filterShopsByActiveTabs(allShops);
@@ -177,7 +178,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       setTotalItems(filtered.length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilterTabs, allShops.length]);
+  }, [activeFilterTabs, allShops.length, favoriteIds]);
 
   const filterShopsByActiveTabs = (shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
     let filtered = shopsToFilter;
@@ -197,7 +198,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     }
     
     if (activeFilterTabs.has('favorite')) {
-      filtered = filtered.filter(shop => shop.isFavorite === true);
+      filtered = filtered.filter(shop => favoriteIds.has(shop.id));
     }
     
     if (activeFilterTabs.has('visited')) {
@@ -501,15 +502,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               {/* Desktop: 4-column grid */}
               <div className="hidden lg:grid gap-4 pb-12" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 {shops.map((shop) => (
-                  <ShopCard
-                    key={shop.id}
-                    shop={shop}
-                    colors={colors}
-                    favoriteShopIds={favoriteShopIds}
-                    onSelect={openShopDetails}
-                    isAuthenticated={!!user}
-                    onRequireAuth={requireAuth}
-                  />
+                  <ShopCard key={shop.id} shop={shop} colors={colors} onSelect={openShopDetails} />
                 ))}
               </div>
               {/* Mobile: list rows */}

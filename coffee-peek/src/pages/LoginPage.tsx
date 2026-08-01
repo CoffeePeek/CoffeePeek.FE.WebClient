@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { login, resendEmailConfirmationByEmail } from '../api/auth';
 import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
 import { useUser } from '../contexts/UserContext';
@@ -246,7 +246,7 @@ const LoginPage: React.FC = () => {
               value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
 
             <div style={{ textAlign: 'right', marginTop: -6 }}>
-              <a style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer' }}>Забыли пароль?</a>
+              <Link to="/forgot-password" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>Забыли пароль?</Link>
             </div>
 
             {emailNotConfirmed && (

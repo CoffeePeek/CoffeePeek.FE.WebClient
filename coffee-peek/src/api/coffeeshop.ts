@@ -75,7 +75,6 @@ export interface CoffeeShop {
   rating?: number;
   reviewCount?: number;
   isOpen?: boolean;
-  isFavorite?: boolean;
   isVisited?: boolean;
   isNew?: boolean;
   location?: {
@@ -110,7 +109,6 @@ export interface DetailedCoffeeShop {
   reviewCount: number;
   reviews?: Review[];
   isOpen: boolean;
-  isFavorite?: boolean;
   isVisited?: boolean;
   canCreateReview?: boolean | null;
   existingReviewId?: string | null;
@@ -155,7 +153,6 @@ export interface ShortShopDto {
   photos: ShortPhotoMetadataDto[];
   rating: number;
   reviewCount: number;
-  isFavorite: boolean;
   isVisited: boolean;
   isNew: boolean;
   isOpen: boolean;
@@ -323,8 +320,22 @@ export interface CreateCheckInRequest {
   rating?: RatingDto; // Optional, but required if isPublic = true
 }
 
-export interface FavoriteResponse {
-  isFavorite: boolean;
+export interface CheckInDto {
+  id: string;
+  userId: string;
+  shopId: string;
+  shopName: string;
+  note?: string;
+  createdAt: string;
+  reviewId?: string | null;
+}
+
+export interface GetCheckInsResponse {
+  items: CheckInDto[];
+  totalItems: number;
+  totalPages: number;
+  currentPage?: number;
+  pageSize?: number;
 }
 
 // ==================== Кэш для справочных данных ====================
@@ -674,33 +685,60 @@ export async function createCheckIn(
 }
 
 /**
- * Добавляет кофейню в избранное
- * POST /api/FavoriteCoffeeShops?id={coffeeShopId}
+ * Список чек-инов текущего пользователя.
+ * Пагинация: X-Page-Number / X-Page-Size.
+ * Totals: X-Total-Count / X-Total-Pages или TotalItems/TotalPages в body — не длина страницы.
  */
-export async function addToFavorite(
-  coffeeShopId: string,
-  token: string
-): Promise<ApiResponse<{ entityId: string }>> {
-  return httpClient.post<{ entityId: string }>(
-    API_ENDPOINTS.FAVORITE.BASE,
-    undefined, // Тело запроса не требуется, используется query параметр
-    {
-      params: { id: coffeeShopId },
-      requiresAuth: true,
-    }
-  );
-}
+export async function getCheckIns(
+  page: number = 1,
+  pageSize: number = 10
+): Promise<ApiResponse<GetCheckInsResponse>> {
+  const headers: Record<string, string> = {
+    'X-Page-Number': page.toString(),
+    'X-Page-Size': pageSize.toString(),
+  };
 
-/**
- * Удаляет кофейню из избранного
- * DELETE /api/FavoriteCoffeeShops?id={coffeeShopId}
- */
-export async function removeFromFavorite(
-  coffeeShopId: string,
-  token: string
-): Promise<ApiResponse<void>> {
-  return httpClient.delete<void>(API_ENDPOINTS.FAVORITE.BASE, {
-    params: { id: coffeeShopId },
-    requiresAuth: true,
-  });
+  const response = await httpClient.get<CheckInDto[] | GetCheckInsResponse | { items?: CheckInDto[]; checkIns?: CheckInDto[] }>(
+    API_ENDPOINTS.CHECK_IN.BASE,
+    { headers, requiresAuth: true }
+  );
+
+  const raw = response.data;
+  let items: CheckInDto[] = [];
+  let bodyTotalItems: number | undefined;
+  let bodyTotalPages: number | undefined;
+  let bodyPage: number | undefined;
+  let bodyPageSize: number | undefined;
+
+  if (Array.isArray(raw)) {
+    items = raw;
+  } else if (raw && typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    if (Array.isArray(obj.items)) items = obj.items as CheckInDto[];
+    else if (Array.isArray(obj.checkIns)) items = obj.checkIns as CheckInDto[];
+    bodyTotalItems = (obj.totalItems ?? obj.TotalItems ?? obj.totalCount) as number | undefined;
+    bodyTotalPages = (obj.totalPages ?? obj.TotalPages) as number | undefined;
+    bodyPage = (obj.currentPage ?? obj.page) as number | undefined;
+    bodyPageSize = obj.pageSize as number | undefined;
+  }
+
+  const totalItems =
+    response.pagination?.totalItems ??
+    bodyTotalItems ??
+    0;
+  const totalPages =
+    response.pagination?.totalPages ??
+    bodyTotalPages ??
+    (pageSize > 0 ? Math.max(1, Math.ceil(totalItems / pageSize)) : 1);
+
+  return {
+    ...response,
+    data: {
+      items,
+      totalItems,
+      totalPages,
+      currentPage: bodyPage ?? page,
+      pageSize: bodyPageSize ?? pageSize,
+    },
+  };
 }
