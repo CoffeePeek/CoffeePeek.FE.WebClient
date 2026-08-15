@@ -59,6 +59,8 @@ export interface ImportCandidatesQuery {
   bucket?: CollectorBucket;
   focus?: CoffeeFocus;
   search?: string;
+  /** When true, only candidates with a non-empty address. */
+  hasAddress?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -217,6 +219,7 @@ export async function getImportCandidates(
       bucket: params.bucket !== undefined ? BUCKET_TO_API[params.bucket] : undefined,
       focus: params.focus !== undefined ? COFFEE_FOCUS_TO_API[params.focus] : undefined,
       search: params.search,
+      hasAddress: params.hasAddress === true ? true : undefined,
       page,
       pageSize,
     },

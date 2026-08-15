@@ -43,15 +43,18 @@ export const GOOGLE_STATUS_LABELS: Record<GoogleBusinessStatus, string> = {
 };
 
 export const CATALOG_TAG_OPTIONS: { slug: string; label: string }[] = [
-  { slug: 'to_go', label: 'С собой' },
-  { slug: 'roastery', label: 'Обжарка' },
-  { slug: 'bakery', label: 'Пекарня' },
   { slug: 'laptop_friendly', label: 'Ноутбук' },
+  { slug: 'specialty', label: 'Specialty' },
   { slug: 'pet_friendly', label: 'С животными' },
   { slug: 'pour_over', label: 'Пуровер' },
   { slug: 'quiet_work', label: 'Тихая работа' },
-  { slug: 'specialty', label: 'Specialty' },
 ];
+
+/** Prefer Russian labels when slug is known; otherwise use API name. */
+export function catalogTagLabel(slug: string, fallbackName?: string): string {
+  const known = CATALOG_TAG_OPTIONS.find((t) => t.slug === slug);
+  return known?.label ?? fallbackName?.trim() ?? slug;
+}
 
 const FOCUS_ALIASES: Record<string, CoffeeFocus> = {
   specialty: 'specialty',
@@ -94,8 +97,9 @@ export function parseImportListSearch(searchParams: URLSearchParams) {
   const bucket = (searchParams.get('bucket') ?? 'priority') as CollectorBucket | 'all';
   const focus = (searchParams.get('focus') ?? '') as CoffeeFocus | '';
   const search = searchParams.get('search') ?? '';
+  const hasAddress = searchParams.get('hasAddress') === '1';
   const page = parseInt(searchParams.get('page') ?? '1', 10) || 1;
-  return { status, bucket, focus, search, page };
+  return { status, bucket, focus, search, hasAddress, page };
 }
 
 const BUCKET_ALIASES: Record<string, CollectorBucket> = {

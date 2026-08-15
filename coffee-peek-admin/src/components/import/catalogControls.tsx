@@ -65,13 +65,16 @@ export const CoffeeFocusPicker: React.FC<{
   </div>
 );
 
+export type CatalogTagOption = { slug: string; label: string };
+
 export const CatalogTagChips: React.FC<{
   value: string[];
   onChange: (next: string[]) => void;
+  options?: CatalogTagOption[];
   disabled?: boolean;
-}> = ({ value, onChange, disabled }) => (
+}> = ({ value, onChange, options = CATALOG_TAG_OPTIONS, disabled }) => (
   <div className="flex flex-wrap gap-2">
-    {CATALOG_TAG_OPTIONS.map((tag) => {
+    {options.map((tag) => {
       const active = value.includes(tag.slug);
       return (
         <button

@@ -8,6 +8,7 @@ import {
   refreshCandidateGoogle,
   ImportCandidate,
 } from '../api/import';
+import { getShopTags } from '../api/catalogs';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -21,9 +22,11 @@ import {
 } from '../components/import/catalogControls';
 import {
   BUCKET_LABELS,
+  CATALOG_TAG_OPTIONS,
   CoffeeFocus,
   IMPORT_LIST_PAGE_SIZE,
   QUEUE_STATUS_LABELS,
+  catalogTagLabel,
   displayShopName,
   isClosedPermanently,
   isUsableShopName,
@@ -70,6 +73,7 @@ export const ImportQueuePage: React.FC = () => {
         bucket: listFilters.bucket === 'all' ? undefined : listFilters.bucket,
         focus: listFilters.focus || undefined,
         search: listFilters.search || undefined,
+        hasAddress: listFilters.hasAddress || undefined,
         page: listFilters.page,
         pageSize: IMPORT_LIST_PAGE_SIZE,
       }).then((r) => r.data),
@@ -90,6 +94,7 @@ export const ImportQueuePage: React.FC = () => {
         bucket: listFilters.bucket === 'all' ? undefined : listFilters.bucket,
         focus: listFilters.focus || undefined,
         search: listFilters.search || undefined,
+        hasAddress: listFilters.hasAddress || undefined,
         page: listFilters.page + 1,
         pageSize: IMPORT_LIST_PAGE_SIZE,
       }).then((r) => r.data),
@@ -115,6 +120,19 @@ export const ImportQueuePage: React.FC = () => {
     queryFn: () => getImportCandidate(id!).then((r) => r.data),
     enabled: Boolean(id),
   });
+
+  const tagsQuery = useQuery({
+    queryKey: ['catalogs', 'shop-tags'],
+    queryFn: () => getShopTags().then((r) => r.data ?? []),
+  });
+
+  const tagOptions = useMemo(() => {
+    const fromApi = (tagsQuery.data ?? [])
+      .slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ru'))
+      .map((tag) => ({ slug: tag.slug, label: catalogTagLabel(tag.slug, tag.name) }));
+    return fromApi.length > 0 ? fromApi : CATALOG_TAG_OPTIONS;
+  }, [tagsQuery.data]);
 
   const candidate = candidateQuery.data;
 
@@ -366,7 +384,12 @@ export const ImportQueuePage: React.FC = () => {
 
       <Card>
         <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Теги</h3>
-        <CatalogTagChips value={tagSlugs} onChange={setTagSlugs} disabled={Boolean(decided)} />
+        <CatalogTagChips
+          value={tagSlugs}
+          onChange={setTagSlugs}
+          options={tagOptions}
+          disabled={Boolean(decided)}
+        />
       </Card>
     </div>
 

@@ -80,30 +80,34 @@ const SortButton: React.FC<{
 export const ImportInboxPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { status, bucket, focus, search, page } = parseImportListSearch(searchParams);
+  const { status, bucket, focus, search, hasAddress, page } = parseImportListSearch(searchParams);
   const sortKey = (searchParams.get('sort') ?? '') as SortKey | '';
   const sortDir = (searchParams.get('dir') === 'desc' ? 'desc' : 'asc') as SortDir;
   const [localSearch, setLocalSearch] = useState(search);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['admin', 'import', 'inbox', { status, bucket, focus, search, page }],
+    queryKey: ['admin', 'import', 'inbox', { status, bucket, focus, search, hasAddress, page }],
     queryFn: () =>
       getImportCandidates({
         status: status === 'all' ? undefined : status,
         bucket: bucket === 'all' ? undefined : bucket,
         focus: focus || undefined,
         search: search || undefined,
+        hasAddress: hasAddress || undefined,
         page,
         pageSize: PAGE_SIZE,
       }).then((r) => r.data),
   });
 
   const items = useMemo(() => {
-    const list = data?.items ?? [];
+    let list = data?.items ?? [];
+    if (hasAddress) {
+      list = list.filter((item) => Boolean(item.address?.trim()));
+    }
     if (!sortKey) return list;
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...list].sort((a, b) => compareItems(a, b, sortKey) * dir);
-  }, [data?.items, sortKey, sortDir]);
+  }, [data?.items, hasAddress, sortKey, sortDir]);
 
   const patchParams = (patch: Record<string, string>, resetPage = true) => {
     const next = new URLSearchParams(searchParams);
@@ -163,6 +167,15 @@ export const ImportInboxPage: React.FC = () => {
                       placeholder="Название, адрес..."
                       className={`${headerControl} min-w-[12rem]`}
                     />
+                    <select
+                      value={hasAddress ? '1' : ''}
+                      onChange={(e) => patchParams({ hasAddress: e.target.value })}
+                      className={headerControl}
+                      aria-label="Фильтр по адресу"
+                    >
+                      <option value="">Все адреса</option>
+                      <option value="1">Только с адресами</option>
+                    </select>
                   </div>
                 </th>
                 <th className="text-left px-4 py-3">
