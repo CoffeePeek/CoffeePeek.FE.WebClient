@@ -10,6 +10,7 @@ import {
   COFFEE_SHOP_STATUS_LABELS,
   coffeeShopStatusBadgeVariant,
 } from '../constants/coffeeShopStatus';
+import { FocusBadge } from '../components/import/catalogControls';
 
 const PAGE_SIZE = 20;
 
@@ -104,6 +105,7 @@ export const PublishedShopsPage: React.FC = () => {
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
                     <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Название</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Focus</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Статус</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Владелец</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Создана</th>
@@ -115,6 +117,9 @@ export const PublishedShopsPage: React.FC = () => {
                     <tr key={shop.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
                       <td className="px-5 py-3 font-medium text-text-main dark:text-white font-body text-sm">
                         {shop.name}
+                      </td>
+                      <td className="px-4 py-3">
+                        <FocusBadge focus={shop.coffeeFocus} />
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>

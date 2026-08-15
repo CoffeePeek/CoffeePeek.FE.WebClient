@@ -24,8 +24,15 @@ const PRICE_OPTIONS = [
   { value: 'Premium',  label: '$$$ Премиум' },
 ];
 
+const FOCUS_OPTIONS = [
+  { value: 'specialty', label: 'Specialty' },
+  { value: 'coffee_bar', label: 'Кофейня' },
+  { value: 'cafe', label: 'Кафе' },
+];
+
 export interface AppliedFilters {
   priceRange?: string;
+  coffeeFocus?: string;
   equipments: string[];
   beans: string[];
   roasters: string[];
@@ -86,6 +93,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   // ── Draft state (local — only committed on "Применить") ──────────
   const [draft, setDraft] = useState<AppliedFilters>({
     priceRange: undefined,
+    coffeeFocus: undefined,
     equipments: [],
     beans: [],
     roasters: [],
@@ -97,6 +105,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     if (showFilters) {
       setDraft({
         priceRange: filters.priceRange,
+        coffeeFocus: filters.coffeeFocus,
         equipments: selectedEquipments,
         beans: selectedBeans,
         roasters: selectedRoasters,
@@ -108,7 +117,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   const draftCount =
     draft.equipments.length + draft.beans.length +
     draft.roasters.length + draft.brewMethods.length +
-    (draft.priceRange ? 1 : 0);
+    (draft.priceRange ? 1 : 0) + (draft.coffeeFocus ? 1 : 0);
 
   // Applied count (for active chips row)
   const appliedEquipments = selectedEquipments;
@@ -116,9 +125,10 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   const appliedRoasters = selectedRoasters;
   const appliedBrewMethods = selectedBrewMethods;
   const appliedPrice = filters.priceRange;
+  const appliedFocus = filters.coffeeFocus;
 
   const hasApplied = appliedEquipments.length > 0 || appliedBeans.length > 0 ||
-    appliedRoasters.length > 0 || appliedBrewMethods.length > 0 || !!appliedPrice;
+    appliedRoasters.length > 0 || appliedBrewMethods.length > 0 || !!appliedPrice || !!appliedFocus;
 
   // ── Helpers ───────────────────────────────────────────────────────
   const chipBase: React.CSSProperties = {
@@ -199,30 +209,34 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
         {/* Applied filter chips with individual X */}
         {appliedPrice && (
           <AppliedChip label={PRICE_OPTIONS.find(p => p.value === appliedPrice)?.label ?? appliedPrice} gold={gold}
-            onRemove={() => onApplyFilters({ priceRange: undefined, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods })} />
+            onRemove={() => onApplyFilters({ priceRange: undefined, coffeeFocus: appliedFocus, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods })} />
+        )}
+        {appliedFocus && (
+          <AppliedChip label={FOCUS_OPTIONS.find(p => p.value === appliedFocus)?.label ?? appliedFocus} gold={gold}
+            onRemove={() => onApplyFilters({ priceRange: appliedPrice, coffeeFocus: undefined, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods })} />
         )}
         {appliedEquipments.map(id => {
           const eq = equipments.find(e => e.id === id);
           return eq ? <AppliedChip key={id} label={eq.name} gold={gold}
-            onRemove={() => onApplyFilters({ priceRange: appliedPrice, equipments: appliedEquipments.filter(x => x !== id), beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods })} /> : null;
+            onRemove={() => onApplyFilters({ priceRange: appliedPrice, coffeeFocus: appliedFocus, equipments: appliedEquipments.filter(x => x !== id), beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods })} /> : null;
         })}
         {appliedBeans.map(id => {
           const b = coffeeBeans.find(b => b.id === id);
           return b ? <AppliedChip key={id} label={b.name} gold={gold}
-            onRemove={() => onApplyFilters({ priceRange: appliedPrice, equipments: appliedEquipments, beans: appliedBeans.filter(x => x !== id), roasters: appliedRoasters, brewMethods: appliedBrewMethods })} /> : null;
+            onRemove={() => onApplyFilters({ priceRange: appliedPrice, coffeeFocus: appliedFocus, equipments: appliedEquipments, beans: appliedBeans.filter(x => x !== id), roasters: appliedRoasters, brewMethods: appliedBrewMethods })} /> : null;
         })}
         {appliedRoasters.map(id => {
           const r = roasters.find(r => r.id === id);
           return r ? <AppliedChip key={id} label={r.name} gold={gold}
-            onRemove={() => onApplyFilters({ priceRange: appliedPrice, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters.filter(x => x !== id), brewMethods: appliedBrewMethods })} /> : null;
+            onRemove={() => onApplyFilters({ priceRange: appliedPrice, coffeeFocus: appliedFocus, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters.filter(x => x !== id), brewMethods: appliedBrewMethods })} /> : null;
         })}
         {appliedBrewMethods.map(id => {
           const m = brewMethods.find(m => m.id === id);
           return m ? <AppliedChip key={id} label={m.name} gold={gold}
-            onRemove={() => onApplyFilters({ priceRange: appliedPrice, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods.filter(x => x !== id) })} /> : null;
+            onRemove={() => onApplyFilters({ priceRange: appliedPrice, coffeeFocus: appliedFocus, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods.filter(x => x !== id) })} /> : null;
         })}
         {hasApplied && (
-          <button onClick={() => onApplyFilters({ priceRange: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] })}
+          <button onClick={() => onApplyFilters({ priceRange: undefined, coffeeFocus: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] })}
             style={{ ...chipBase, background: 'transparent', color: muted, borderColor: 'transparent', fontSize: 11 }}>
             Сбросить всё
           </button>
@@ -244,6 +258,24 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             background: dark ? 'rgba(45,36,31,0.75)' : surface,
             backdropFilter: dark ? 'blur(12px)' : 'none',
           }}>
+
+            {/* Focus */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={sectionLabel}>Тип</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {FOCUS_OPTIONS.map(({ value, label }) => {
+                  const active = draft.coffeeFocus === value;
+                  return (
+                    <button key={value}
+                      onClick={() => setDraft(d => ({ ...d, coffeeFocus: active ? undefined : value }))}
+                      style={draftChip(active)}>
+                      {active && <Check size={13} />}
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Price */}
             <div style={{ marginBottom: 20 }}>
@@ -357,7 +389,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
 
               {draftCount > 0 && (
                 <button
-                  onClick={() => setDraft({ priceRange: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] })}
+                  onClick={() => setDraft({ priceRange: undefined, coffeeFocus: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] })}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '10px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: muted, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
                 >
                   <X size={15} />

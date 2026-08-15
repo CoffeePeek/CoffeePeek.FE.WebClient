@@ -9,6 +9,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/coffee-shops': 'Кофейни',
   '/map': 'Карта',
   '/shops': 'Модерация',
+  '/import': 'Каталог OSM',
   '/reviews': 'Отзывы',
   '/community-posts': 'Посты сообщества',
   '/published-shops': 'Опубликованные',

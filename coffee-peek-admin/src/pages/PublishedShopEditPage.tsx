@@ -9,6 +9,8 @@ import {
   updatePublishedShop,
   assignPublishedShopOwner,
   reorderPublishedShopPhotos,
+  patchPublishedShopFocus,
+  updatePublishedShopTags,
 } from '../api/admin';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
@@ -23,6 +25,8 @@ import {
   coffeeShopStatusBadgeVariant,
 } from '../constants/coffeeShopStatus';
 import { parsePriceRange } from '../constants/priceRange';
+import { CoffeeFocus } from '../constants/catalogIngest';
+import { CatalogTagChips, CoffeeFocusPicker } from '../components/import/catalogControls';
 
 const schema = z.object({
   name: z.string().min(1, 'Обязательное поле'),
@@ -40,6 +44,8 @@ export const PublishedShopEditPage: React.FC = () => {
   const { showToast } = useToast();
   const qc = useQueryClient();
   const [ownerInput, setOwnerInput] = useState('');
+  const [focus, setFocus] = useState<CoffeeFocus | undefined>();
+  const [tagSlugs, setTagSlugs] = useState<string[]>([]);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['admin', 'published-shop', id],
@@ -69,6 +75,8 @@ export const PublishedShopEditPage: React.FC = () => {
         ownerUserId: shop.ownerUserId ?? '',
       });
       setOwnerInput(shop.ownerUserId ?? '');
+      setFocus(shop.coffeeFocus);
+      setTagSlugs(shop.tagSlugs ?? []);
     }
   }, [shop, reset]);
 
@@ -95,6 +103,24 @@ export const PublishedShopEditPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] });
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+  });
+
+  const focusMutation = useMutation({
+    mutationFn: (coffeeFocus: CoffeeFocus) => patchPublishedShopFocus(id!, coffeeFocus),
+    onSuccess: (response) => {
+      qc.setQueryData(['admin', 'published-shop', id], response.data);
+      showToast('Coffee focus сохранён', 'success');
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить focus', 'error'),
+  });
+
+  const tagsMutation = useMutation({
+    mutationFn: (slugs: string[]) => updatePublishedShopTags(id!, slugs),
+    onSuccess: (response) => {
+      qc.setQueryData(['admin', 'published-shop', id], response.data);
+      showToast('Теги сохранены', 'success');
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить теги', 'error'),
   });
 
   const photoOrderMutation = useMutation({
@@ -175,6 +201,53 @@ export const PublishedShopEditPage: React.FC = () => {
             Сохранить
           </Button>
         </form>
+      </Card>
+
+      <Card>
+        <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Coffee focus</h3>
+        <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
+          Одна категория для ленты. Specialty синхронизирует тег specialty.
+        </p>
+        <CoffeeFocusPicker
+          value={focus}
+          onChange={(next) => {
+            setFocus(next);
+            setTagSlugs((current) => {
+              const without = current.filter((slug) => slug !== 'specialty');
+              return next === 'specialty' ? [...without, 'specialty'] : without;
+            });
+          }}
+        />
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-3"
+          disabled={!focus}
+          loading={focusMutation.isPending}
+          onClick={() => focus && focusMutation.mutate(focus)}
+        >
+          Сохранить focus
+        </Button>
+      </Card>
+
+      <Card>
+        <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Теги</h3>
+        <CatalogTagChips value={tagSlugs} onChange={setTagSlugs} />
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-3"
+          loading={tagsMutation.isPending}
+          onClick={() => {
+            const slugs =
+              focus === 'specialty'
+                ? Array.from(new Set([...tagSlugs, 'specialty']))
+                : tagSlugs.filter((slug) => slug !== 'specialty');
+            tagsMutation.mutate(slugs);
+          }}
+        >
+          Сохранить теги
+        </Button>
       </Card>
 
       <PhotoOrderEditor

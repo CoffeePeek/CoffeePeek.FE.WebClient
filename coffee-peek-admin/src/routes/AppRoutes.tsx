@@ -19,6 +19,9 @@ const OwnerShopEditPage = lazy(() => import('../pages/OwnerShopEditPage').then((
 const BrowseShopsPage = lazy(() => import('../pages/BrowseShopsPage').then((m) => ({ default: m.BrowseShopsPage })));
 const BrowseShopPage = lazy(() => import('../pages/BrowseShopPage').then((m) => ({ default: m.BrowseShopPage })));
 const BrowseMapPage = lazy(() => import('../pages/BrowseMapPage').then((m) => ({ default: m.BrowseMapPage })));
+const ImportQueuePage = lazy(() => import('../pages/ImportQueuePage').then((m) => ({ default: m.ImportQueuePage })));
+const ImportInboxPage = lazy(() => import('../pages/ImportInboxPage').then((m) => ({ default: m.ImportInboxPage })));
+const ImportStatsPage = lazy(() => import('../pages/ImportStatsPage').then((m) => ({ default: m.ImportStatsPage })));
 
 const Loader = () => (
   <div className="flex-1 flex items-center justify-center">
@@ -57,6 +60,39 @@ export const AppRoutes: React.FC = () => (
           element={
             <ProtectedRoute requireModerator>
               <ShopEditPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/import/inbox"
+          element={
+            <ProtectedRoute requireModerator>
+              <ImportInboxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/import/stats"
+          element={
+            <ProtectedRoute requireModerator>
+              <ImportStatsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/import"
+          element={
+            <ProtectedRoute requireModerator>
+              <ImportQueuePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/import/:id"
+          element={
+            <ProtectedRoute requireModerator>
+              <ImportQueuePage />
             </ProtectedRoute>
           }
         />

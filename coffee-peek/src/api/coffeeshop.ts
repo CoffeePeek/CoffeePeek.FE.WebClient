@@ -146,6 +146,7 @@ export interface CoffeeShopFilters {
   brewMethodIds?: string[];
   priceRange?: string;
   isOpen?: boolean;
+  coffeeFocus?: string;
 }
 
 export interface ShortShopDto {
@@ -359,6 +360,7 @@ export async function getCoffeeShops(
     if (filters.coffeeBeanIds) params.coffeeBeanIds = filters.coffeeBeanIds;
     if (filters.roasterIds) params.roasterIds = filters.roasterIds;
     if (filters.brewMethodIds) params.brewMethodIds = filters.brewMethodIds;
+    if (filters.coffeeFocus) params.coffeeFocus = filters.coffeeFocus;
   }
 
   return httpClient.get<GetCoffeeShopsResponse>(API_ENDPOINTS.COFFEE_SHOP.BASE, {
@@ -396,6 +398,7 @@ export async function searchCoffeeShops(
     if (filters.coffeeBeanIds) params.coffeeBeanIds = filters.coffeeBeanIds;
     if (filters.roasterIds) params.roasterIds = filters.roasterIds;
     if (filters.brewMethodIds) params.brewMethodIds = filters.brewMethodIds;
+    if (filters.coffeeFocus) params.coffeeFocus = filters.coffeeFocus;
   }
 
   // Добавляем минимальный рейтинг

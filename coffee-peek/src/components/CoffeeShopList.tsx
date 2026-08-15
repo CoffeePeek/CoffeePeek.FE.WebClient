@@ -132,6 +132,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       roasterIds: selectedRoasters.length ? selectedRoasters : undefined,
       brewMethodIds: selectedBrewMethods.length ? selectedBrewMethods : undefined,
       priceRange: filters.priceRange,
+      coffeeFocus: filters.coffeeFocus,
     };
 
     if (JSON.stringify(filters) !== JSON.stringify(updatedFilters)) {
@@ -152,6 +153,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   }, [
     filters.cityId,
     filters.priceRange,
+    filters.coffeeFocus,
     filters.equipmentIds?.length ?? 0,
     filters.coffeeBeanIds?.length ?? 0,
     filters.roasterIds?.length ?? 0,
@@ -362,12 +364,12 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     }
   };
 
-  const handleApplyFilters = (applied: { priceRange?: string; equipments: string[]; beans: string[]; roasters: string[]; brewMethods: string[] }) => {
+  const handleApplyFilters = (applied: { priceRange?: string; coffeeFocus?: string; equipments: string[]; beans: string[]; roasters: string[]; brewMethods: string[] }) => {
     setSelectedEquipments(applied.equipments);
     setSelectedBeans(applied.beans);
     setSelectedRoasters(applied.roasters);
     setSelectedBrewMethods(applied.brewMethods);
-    setFilters(prev => ({ ...prev, priceRange: applied.priceRange }));
+    setFilters(prev => ({ ...prev, priceRange: applied.priceRange, coffeeFocus: applied.coffeeFocus }));
     setShowFilters(false);
   };
 
@@ -381,7 +383,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const activeFilterCount =
     selectedEquipments.length + selectedBeans.length +
     selectedRoasters.length + selectedBrewMethods.length +
-    (filters.priceRange ? 1 : 0);
+    (filters.priceRange ? 1 : 0) + (filters.coffeeFocus ? 1 : 0);
 
   return (
     <>

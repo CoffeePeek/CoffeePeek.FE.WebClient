@@ -138,9 +138,16 @@ export const DashboardPage: React.FC = () => {
           {isModerator && (
             <>
               <QuickAction
+                to="/import"
+                label="Каталог OSM"
+                description="Очередь ingest: одна карточка, research, в ленту"
+                icon={<IconShop />}
+                color="text-primary"
+              />
+              <QuickAction
                 to="/shops?status=Pending"
                 label="Кофейни на модерации"
-                description="Просмотр и одобрение новых кофеен"
+                description="Заявки владельцев, не OSM"
                 icon={<IconShop />}
                 color="text-primary"
               />

@@ -3,6 +3,8 @@ import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse, PaginatedMeta } from './core/types';
 import type { PriceRangeLevel } from '../constants/priceRange';
 import { parsePriceRange, toPriceRangeLevel } from '../constants/priceRange';
+import type { CoffeeFocus } from '../constants/catalogIngest';
+import { parseCoffeeFocus } from '../constants/catalogIngest';
 
 // ==================== Types ====================
 
@@ -288,6 +290,8 @@ export interface PublishedShop {
   isHidden: boolean;
   priceRange?: 1 | 2 | 3 | 4;
   description?: string;
+  coffeeFocus?: CoffeeFocus;
+  tagSlugs: string[];
   photos: PublishedShopPhoto[];
 }
 
@@ -796,6 +800,12 @@ export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
     isHidden: Boolean(shop.isHidden),
     priceRange: parsePriceRange(shop.priceRange),
     description: shop.description ? String(shop.description) : undefined,
+    coffeeFocus: parseCoffeeFocus(shop.coffeeFocus ?? shop.CoffeeFocus),
+    tagSlugs: Array.isArray(shop.tagSlugs)
+      ? (shop.tagSlugs as unknown[]).map(String)
+      : Array.isArray(shop.TagSlugs)
+        ? (shop.TagSlugs as unknown[]).map(String)
+        : [],
     photos: photos
       .map((photo) => ({
         id: String(photo.id),
@@ -926,6 +936,28 @@ export async function updatePublishedShop(
     status: data.status,
   });
 
+  return { ...response, data: mapPublishedShop(response.data) };
+}
+
+export async function patchPublishedShopFocus(
+  id: string,
+  coffeeFocus: CoffeeFocus
+): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.patch<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.SHOP_FOCUS(id),
+    { coffeeFocus }
+  );
+  return { ...response, data: mapPublishedShop(response.data) };
+}
+
+export async function updatePublishedShopTags(
+  id: string,
+  tagSlugs: string[]
+): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.put<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.SHOP_TAGS(id),
+    { tagSlugs }
+  );
   return { ...response, data: mapPublishedShop(response.data) };
 }
 
