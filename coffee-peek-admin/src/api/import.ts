@@ -6,13 +6,16 @@ import {
   CollectorBucket,
   GoogleBusinessStatus,
   QueueStatus,
+  RejectReason,
   BUCKET_TO_API,
   COFFEE_FOCUS_TO_API,
   QUEUE_STATUS_TO_API,
+  REJECT_REASON_TO_API,
   fallbackResearchLinks,
   parseBucket,
   parseCoffeeFocus,
   parseGoogleStatus,
+  parseRejectReason,
 } from '../constants/catalogIngest';
 
 export interface ResearchLinks {
@@ -48,6 +51,7 @@ export interface ImportCandidate {
   googleBusinessStatus?: GoogleBusinessStatus;
   googleMapsUri?: string;
   googleFetchedAt?: string;
+  rejectReason?: RejectReason;
   reviewedByUserId?: string;
   reviewedAtUtc?: string;
   resultingShopId?: string;
@@ -61,6 +65,7 @@ export interface ImportCandidatesQuery {
   search?: string;
   /** When true, only candidates with a non-empty address. */
   hasAddress?: boolean;
+  rejectReason?: RejectReason;
   page?: number;
   pageSize?: number;
 }
@@ -87,6 +92,8 @@ export interface DecideCandidateRequest {
   coffeeFocus?: CoffeeFocus;
   tagSlugs?: string[];
   overrideClosed?: boolean;
+  /** Required when status is Rejected. */
+  rejectReason?: RejectReason;
 }
 
 function pick(raw: Record<string, unknown>, ...keys: string[]): unknown {
@@ -174,6 +181,7 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
     ),
     googleMapsUri,
     googleFetchedAt: asString(pick(raw, 'googleFetchedAt', 'GoogleFetchedAt')),
+    rejectReason: parseRejectReason(pick(raw, 'rejectReason', 'RejectReason')),
     reviewedByUserId: asString(pick(raw, 'reviewedByUserId', 'ReviewedByUserId')),
     reviewedAtUtc: asString(pick(raw, 'reviewedAtUtc', 'ReviewedAtUtc')),
     resultingShopId: asString(pick(raw, 'resultingShopId', 'ResultingShopId')),
@@ -220,6 +228,8 @@ export async function getImportCandidates(
       focus: params.focus !== undefined ? COFFEE_FOCUS_TO_API[params.focus] : undefined,
       search: params.search,
       hasAddress: params.hasAddress === true ? true : undefined,
+      rejectReason:
+        params.rejectReason !== undefined ? REJECT_REASON_TO_API[params.rejectReason] : undefined,
       page,
       pageSize,
     },
@@ -252,6 +262,9 @@ export async function decideImportCandidate(
   };
   if (body.coffeeFocus) payload.coffeeFocus = COFFEE_FOCUS_TO_API[body.coffeeFocus];
   if (body.tagSlugs) payload.tagSlugs = body.tagSlugs;
+  if (body.status === 'Rejected' && body.rejectReason) {
+    payload.rejectReason = REJECT_REASON_TO_API[body.rejectReason];
+  }
 
   const response = await httpClient.post<Record<string, unknown>>(
     API_ENDPOINTS.ADMIN.IMPORT_CANDIDATE_DECIDE(id),
