@@ -8,7 +8,6 @@ const DashboardPage = lazy(() => import('../pages/DashboardPage').then((m) => ({
 const ShopsModerationPage = lazy(() => import('../pages/ShopsModerationPage').then((m) => ({ default: m.ShopsModerationPage })));
 const ShopEditPage = lazy(() => import('../pages/ShopEditPage').then((m) => ({ default: m.ShopEditPage })));
 const ReviewsModerationPage = lazy(() => import('../pages/ReviewsModerationPage').then((m) => ({ default: m.ReviewsModerationPage })));
-const CommunityPostsModerationPage = lazy(() => import('../pages/CommunityPostsModerationPage').then((m) => ({ default: m.CommunityPostsModerationPage })));
 const UsersPage = lazy(() => import('../pages/UsersPage').then((m) => ({ default: m.UsersPage })));
 const CachePage = lazy(() => import('../pages/CachePage').then((m) => ({ default: m.CachePage })));
 const AuditModerationPage = lazy(() => import('../pages/AuditModerationPage').then((m) => ({ default: m.AuditModerationPage })));
@@ -67,11 +66,7 @@ export const AppRoutes: React.FC = () => (
 
         <Route
           path="/import/inbox"
-          element={
-            <ProtectedRoute requireModerator>
-              <ImportInboxPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/import" replace />}
         />
         <Route
           path="/import/stats"
@@ -85,7 +80,7 @@ export const AppRoutes: React.FC = () => (
           path="/import"
           element={
             <ProtectedRoute requireModerator>
-              <ImportQueuePage />
+              <ImportInboxPage />
             </ProtectedRoute>
           }
         />
@@ -103,14 +98,6 @@ export const AppRoutes: React.FC = () => (
           element={
             <ProtectedRoute requireModerator>
               <ReviewsModerationPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/community-posts"
-          element={
-            <ProtectedRoute requireModerator>
-              <CommunityPostsModerationPage />
             </ProtectedRoute>
           }
         />

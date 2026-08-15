@@ -6,6 +6,7 @@ import {
   CollectorBucket,
   GoogleBusinessStatus,
   QueueStatus,
+  BUCKET_TO_API,
   COFFEE_FOCUS_TO_API,
   QUEUE_STATUS_TO_API,
   fallbackResearchLinks,
@@ -212,9 +213,9 @@ export async function getImportCandidates(
   const pageSize = params.pageSize ?? 20;
   const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.IMPORT_CANDIDATES, {
     params: {
-      status: params.status,
-      bucket: params.bucket,
-      focus: params.focus,
+      status: params.status !== undefined ? QUEUE_STATUS_TO_API[params.status] : undefined,
+      bucket: params.bucket !== undefined ? BUCKET_TO_API[params.bucket] : undefined,
+      focus: params.focus !== undefined ? COFFEE_FOCUS_TO_API[params.focus] : undefined,
       search: params.search,
       page,
       pageSize,

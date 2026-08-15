@@ -80,28 +80,6 @@ interface BackendModerationReview {
   moderationStatus: ModerationStatus | number;
 }
 
-interface BackendModerationCommunityPost {
-  id: string;
-  userId: string;
-  userName: string;
-  postType: 'Discussion' | 'Question' | 'Tip' | number;
-  title: string;
-  body: string;
-  linkedShopId?: string | null;
-  rejectedReason?: string | null;
-  createdAtUtc: string;
-  moderatedAt?: string | null;
-  moderationStatus: ModerationStatus | number;
-}
-
-interface GetAllModerationCommunityPostsResponse {
-  items: BackendModerationCommunityPost[];
-  totalItems: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
 interface GetAllModerationShopsResponse {
   moderationShops: BackendModerationShop[];
   totalItems: number;
@@ -214,19 +192,6 @@ export interface AdminReview {
   ratingCoffee: number;
   ratingService: number;
   ratingPlace: number;
-  status: ModerationStatus;
-  createdAtUtc: string;
-}
-
-export interface AdminCommunityPost {
-  id: string;
-  userId: string;
-  userName: string;
-  postType: 'Discussion' | 'Question' | 'Tip';
-  title: string;
-  body: string;
-  linkedShopId?: string | null;
-  rejectedReason?: string | null;
   status: ModerationStatus;
   createdAtUtc: string;
 }
@@ -463,24 +428,6 @@ function mapReviewToAdmin(review: BackendModerationReview): AdminReview {
   };
 }
 
-function mapCommunityPostToAdmin(post: BackendModerationCommunityPost): AdminCommunityPost {
-  const postTypes = ['Discussion', 'Question', 'Tip'] as const;
-  return {
-    id: post.id,
-    userId: post.userId,
-    userName: post.userName,
-    postType: typeof post.postType === 'number'
-      ? postTypes[post.postType - 1] ?? 'Discussion'
-      : post.postType,
-    title: post.title,
-    body: post.body,
-    linkedShopId: post.linkedShopId,
-    rejectedReason: post.rejectedReason,
-    status: mapModerationStatus(post.moderationStatus),
-    createdAtUtc: post.createdAtUtc,
-  };
-}
-
 function mapUserToAdmin(user: BackendAdminUser): AdminUser {
   return {
     id: user.id,
@@ -714,52 +661,6 @@ export async function rejectReview(id: string, data?: ModerationActionRequest): 
     moderationStatus: 2, // Rejected
     comment: reason,
     rejectReason: reason,
-  });
-}
-
-// ==================== Community post moderation ====================
-
-export async function getModerationCommunityPosts(
-  params: ListParams = {}
-): Promise<ApiResponse<PaginatedResult<AdminCommunityPost>>> {
-  const page = params.page ?? 1;
-  const pageSize = params.pageSize ?? 20;
-  const response = await httpClient.get<GetAllModerationCommunityPostsResponse>(
-    API_ENDPOINTS.MODERATION.COMMUNITY_POSTS,
-    { params }
-  );
-  const raw = response.data as unknown as GetAllModerationCommunityPostsResponse;
-
-  return {
-    ...response,
-    data: toPaginatedResult(
-      (raw.items ?? []).map(mapCommunityPostToAdmin),
-      response.meta,
-      page,
-      pageSize
-    ),
-  };
-}
-
-export async function approveCommunityPost(
-  id: string,
-  data?: ModerationActionRequest
-): Promise<ApiResponse<void>> {
-  return httpClient.put<void>(API_ENDPOINTS.MODERATION.COMMUNITY_POSTS, {
-    moderationCommunityPostId: id,
-    moderationStatus: 'Approved',
-    ...(data?.comment?.trim() ? { comment: data.comment.trim() } : {}),
-  });
-}
-
-export async function rejectCommunityPost(
-  id: string,
-  data?: ModerationActionRequest
-): Promise<ApiResponse<void>> {
-  return httpClient.put<void>(API_ENDPOINTS.MODERATION.COMMUNITY_POSTS, {
-    moderationCommunityPostId: id,
-    moderationStatus: 'Rejected',
-    rejectReason: data?.comment?.trim() || undefined,
   });
 }
 

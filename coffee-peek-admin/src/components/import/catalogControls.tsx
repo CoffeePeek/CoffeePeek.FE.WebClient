@@ -11,26 +11,19 @@ import {
 import { Badge, BadgeVariant } from '../ui/Badge';
 
 export const ImportTabs: React.FC = () => {
-  const { pathname } = useLocation();
-  const queueActive =
-    pathname === '/import' ||
-    (pathname.startsWith('/import/') &&
-      !pathname.startsWith('/import/inbox') &&
-      !pathname.startsWith('/import/stats'));
+  const { pathname, search } = useLocation();
+  const listActive = pathname === '/import' || (pathname.startsWith('/import/') && !pathname.startsWith('/import/stats'));
 
   const tabClass = (active: boolean) =>
     `px-3 py-2 rounded-lg text-sm font-body min-h-[40px] ${
       active
         ? 'bg-primary/20 text-primary'
-        : 'text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white hover:bg-white/5'
+        : 'text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5'
     }`;
 
   return (
     <div className="flex gap-1 overflow-x-auto">
-      <NavLink to="/import" className={tabClass(queueActive)}>
-        Очередь
-      </NavLink>
-      <NavLink to="/import/inbox" className={({ isActive }) => tabClass(isActive)}>
+      <NavLink to={{ pathname: '/import', search: pathname.startsWith('/import/stats') ? '' : search }} className={tabClass(listActive)}>
         Список
       </NavLink>
       <NavLink to="/import/stats" className={({ isActive }) => tabClass(isActive)}>
@@ -58,7 +51,7 @@ export const CoffeeFocusPicker: React.FC<{
           className={[
             'flex flex-col items-start gap-1 rounded-xl border px-3 py-3 text-left min-h-[72px] transition-colors',
             active
-              ? 'border-primary bg-primary/15 ring-1 ring-primary/40'
+              ? 'border-primary bg-primary/10'
               : 'border-border-light dark:border-border-dark hover:border-primary/60',
           ].join(' ')}
         >
@@ -88,7 +81,7 @@ export const CatalogTagChips: React.FC<{
           onClick={() =>
             onChange(active ? value.filter((slug) => slug !== tag.slug) : [...value, tag.slug])
           }
-          className={`filter-chip ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium font-body whitespace-nowrap transition-colors ${
             active
               ? 'bg-primary text-black'
               : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'

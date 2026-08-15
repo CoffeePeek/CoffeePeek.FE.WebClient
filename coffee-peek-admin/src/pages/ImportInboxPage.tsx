@@ -1,45 +1,88 @@
-import React, { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getImportCandidates } from '../api/import';
+import { getImportCandidates, ImportCandidate } from '../api/import';
 import { Badge } from '../components/ui/Badge';
-import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
 import { FocusBadge, GoogleStatusBadge, ImportTabs } from '../components/import/catalogControls';
 import {
   BUCKET_LABELS,
   COFFEE_FOCUS_OPTIONS,
-  CoffeeFocus,
   CollectorBucket,
+  IMPORT_LIST_PAGE_SIZE,
   QUEUE_STATUS_LABELS,
   QueueStatus,
   displayShopName,
+  parseImportListSearch,
 } from '../constants/catalogIngest';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = IMPORT_LIST_PAGE_SIZE;
+
+type SortKey = 'name' | 'focus' | 'google' | 'osm' | 'bucket' | 'status';
+type SortDir = 'asc' | 'desc';
+
 const STATUSES: { value: QueueStatus | 'all'; label: string }[] = [
+  { value: 'all', label: 'Все' },
   { value: 'Pending', label: 'Ожидает' },
   { value: 'Skipped', label: 'Позже' },
   { value: 'Published', label: 'В ленте' },
   { value: 'Rejected', label: 'Не в ленту' },
-  { value: 'all', label: 'Все' },
 ];
 const BUCKETS: { value: CollectorBucket | 'all'; label: string }[] = [
+  { value: 'all', label: 'Все' },
   { value: 'priority', label: 'Приоритет' },
   { value: 'review', label: 'Проверить' },
   { value: 'noise', label: 'Шум' },
   { value: 'vending', label: 'Вендинг' },
-  { value: 'all', label: 'Все корзины' },
 ];
 
+const headerControl =
+  'w-full min-w-[7.5rem] rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-text-main dark:text-white text-xs py-1.5 px-2 font-body focus:outline-none focus:ring-2 focus:ring-primary/30';
+
+function compareItems(a: ImportCandidate, b: ImportCandidate, key: SortKey): number {
+  const emptyLast = (value?: string) => value || '\uffff';
+  switch (key) {
+    case 'name':
+      return displayShopName(a.name, a.brand).localeCompare(displayShopName(b.name, b.brand), 'ru');
+    case 'focus':
+      return emptyLast(a.coffeeFocus).localeCompare(emptyLast(b.coffeeFocus));
+    case 'google':
+      return emptyLast(a.googleBusinessStatus).localeCompare(emptyLast(b.googleBusinessStatus));
+    case 'osm':
+      return (a.osmAgeDays ?? Number.MAX_SAFE_INTEGER) - (b.osmAgeDays ?? Number.MAX_SAFE_INTEGER);
+    case 'bucket':
+      return emptyLast(a.collectorBucket).localeCompare(emptyLast(b.collectorBucket));
+    case 'status':
+      return a.queueStatus.localeCompare(b.queueStatus);
+  }
+}
+
+const SortButton: React.FC<{
+  label: string;
+  column: SortKey;
+  sortKey: SortKey | '';
+  sortDir: SortDir;
+  onSort: (column: SortKey) => void;
+}> = ({ label, column, sortKey, sortDir, onSort }) => (
+  <button
+    type="button"
+    onClick={() => onSort(column)}
+    className="inline-flex items-center gap-1 text-xs font-medium text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white font-body"
+  >
+    {label}
+    <span className="text-[10px] leading-none w-2.5">
+      {sortKey === column ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+    </span>
+  </button>
+);
+
 export const ImportInboxPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const status = (searchParams.get('status') ?? 'Pending') as QueueStatus | 'all';
-  const bucket = (searchParams.get('bucket') ?? 'priority') as CollectorBucket | 'all';
-  const focus = (searchParams.get('focus') ?? '') as CoffeeFocus | '';
-  const search = searchParams.get('search') ?? '';
-  const page = parseInt(searchParams.get('page') ?? '1');
+  const { status, bucket, focus, search, page } = parseImportListSearch(searchParams);
+  const sortKey = (searchParams.get('sort') ?? '') as SortKey | '';
+  const sortDir = (searchParams.get('dir') === 'desc' ? 'desc' : 'asc') as SortDir;
   const [localSearch, setLocalSearch] = useState(search);
 
   const { data, isLoading, isError } = useQuery({
@@ -55,142 +98,204 @@ export const ImportInboxPage: React.FC = () => {
       }).then((r) => r.data),
   });
 
-  const setParam = (key: string, value: string) => {
+  const items = useMemo(() => {
+    const list = data?.items ?? [];
+    if (!sortKey) return list;
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => compareItems(a, b, sortKey) * dir);
+  }, [data?.items, sortKey, sortDir]);
+
+  const patchParams = (patch: Record<string, string>, resetPage = true) => {
     const next = new URLSearchParams(searchParams);
-    if (value) next.set(key, value);
-    else next.delete(key);
-    if (key !== 'page') next.delete('page');
+    Object.entries(patch).forEach(([key, value]) => {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    });
+    if (resetPage) next.delete('page');
     setSearchParams(next);
+  };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (localSearch !== search) patchParams({ search: localSearch });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [localSearch]);
+
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  const onSort = (column: SortKey) => {
+    if (sortKey === column) {
+      patchParams({ sort: column, dir: sortDir === 'asc' ? 'desc' : 'asc' }, false);
+    } else {
+      patchParams({ sort: column, dir: 'asc' }, false);
+    }
   };
 
   return (
     <div className="page-container">
       <ImportTabs />
       <div>
-        <h2 className="page-header-title">Входящие OSM</h2>
+        <h2 className="page-header-title">Каталог OSM</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
-          Не смешивается с заявками владельцев. По умолчанию: ожидает + приоритет.
+          Кандидаты из OpenStreetMap. Клик по строке — карточка, по заголовку — сортировка.
         </p>
-      </div>
-
-      <div className="filter-bar">
-        <div className="filter-chips">
-          {STATUSES.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setParam('status', opt.value)}
-              className={`filter-chip ${status === opt.value ? 'bg-primary text-black' : 'bg-white/10 text-stone-400'}`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <div className="filter-chips">
-          {BUCKETS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setParam('bucket', opt.value)}
-              className={`filter-chip ${bucket === opt.value ? 'bg-primary text-black' : 'bg-white/10 text-stone-400'}`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <div className="filter-chips">
-          <button
-            onClick={() => setParam('focus', '')}
-            className={`filter-chip ${!focus ? 'bg-primary text-black' : 'bg-white/10 text-stone-400'}`}
-          >
-            Любой focus
-          </button>
-          {COFFEE_FOCUS_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setParam('focus', opt.value)}
-              className={`filter-chip ${focus === opt.value ? 'bg-primary text-black' : 'bg-white/10 text-stone-400'}`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setParam('search', localSearch);
-          }}
-          className="search-form"
-        >
-          <input
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Название, адрес..."
-            className="search-input"
-          />
-          <Button type="submit" variant="secondary" size="sm">Найти</Button>
-        </form>
       </div>
 
       <Card padding="none">
         {isError && (
-          <p className="p-6 text-sm text-red-400">Не удалось загрузить очередь. Проверьте, что backend import API уже выкатили.</p>
+          <p className="p-6 text-sm text-red-600 dark:text-red-400">
+            Не удалось загрузить список. Проверьте, что backend import API уже выкатили.
+          </p>
         )}
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-12 rounded bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        ) : !data?.items.length ? (
-          <p className="p-12 text-center text-sm text-stone-400">Ничего не найдено</p>
-        ) : (
-          <>
-            <div className="table-scroll">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border-dark">
-                    <th className="text-left px-5 py-3 text-xs text-stone-400 font-body">Название</th>
-                    <th className="text-left px-4 py-3 text-xs text-stone-400 font-body">Focus</th>
-                    <th className="text-left px-4 py-3 text-xs text-stone-400 font-body hidden md:table-cell">Google</th>
-                    <th className="text-left px-4 py-3 text-xs text-stone-400 font-body hidden lg:table-cell">OSM</th>
-                    <th className="text-left px-4 py-3 text-xs text-stone-400 font-body hidden md:table-cell">Корзина</th>
-                    <th className="text-left px-4 py-3 text-xs text-stone-400 font-body">Статус</th>
+        <div className="table-scroll">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border-light dark:border-border-dark align-bottom">
+                <th className="text-left px-5 py-3">
+                  <div className="flex flex-col gap-1.5">
+                    <SortButton label="Название" column="name" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                    <input
+                      value={localSearch}
+                      onChange={(e) => setLocalSearch(e.target.value)}
+                      placeholder="Название, адрес..."
+                      className={`${headerControl} min-w-[12rem]`}
+                    />
+                  </div>
+                </th>
+                <th className="text-left px-4 py-3">
+                  <div className="flex flex-col gap-1.5">
+                    <SortButton label="Focus" column="focus" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                    <select
+                      value={focus}
+                      onChange={(e) => patchParams({ focus: e.target.value })}
+                      className={headerControl}
+                    >
+                      <option value="">Любой</option>
+                      {COFFEE_FOCUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </th>
+                <th className="text-left px-4 py-3 hidden md:table-cell">
+                  <SortButton label="Google" column="google" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                </th>
+                <th className="text-left px-4 py-3 hidden lg:table-cell">
+                  <SortButton label="OSM" column="osm" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                </th>
+                <th className="text-left px-4 py-3 hidden md:table-cell">
+                  <div className="flex flex-col gap-1.5">
+                    <SortButton label="Корзина" column="bucket" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                    <select
+                      value={bucket}
+                      onChange={(e) => patchParams({ bucket: e.target.value })}
+                      className={headerControl}
+                    >
+                      {BUCKETS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </th>
+                <th className="text-left px-4 py-3">
+                  <div className="flex flex-col gap-1.5">
+                    <SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                    <select
+                      value={status}
+                      onChange={(e) => patchParams({ status: e.target.value })}
+                      className={headerControl}
+                    >
+                      {STATUSES.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-light dark:divide-border-dark">
+              {isLoading ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={i}>
+                    <td colSpan={6} className="px-5 py-2">
+                      <div className="h-8 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border-dark">
-                  {data.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-white/3">
-                      <td className="px-5 py-3">
-                        <Link to={`/import/${item.id}`} className="text-white hover:text-primary font-medium">
-                          {displayShopName(item.name, item.brand)}
-                        </Link>
-                        {item.address && (
-                          <p className="text-xs text-stone-500 truncate max-w-xs">{item.address}</p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3"><FocusBadge focus={item.coffeeFocus} /></td>
-                      <td className="px-4 py-3 hidden md:table-cell">
+                ))
+              ) : !items.length ? (
+                <tr>
+                  <td colSpan={6} className="p-12 text-center text-sm text-text-muted dark:text-stone-400">
+                    Ничего не найдено
+                  </td>
+                </tr>
+              ) : (
+                items.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="hover:bg-gray-50 dark:hover:bg-white/3 cursor-pointer"
+                    onClick={() =>
+                      navigate({ pathname: `/import/${item.id}`, search: searchParams.toString() })
+                    }
+                  >
+                    <td className="px-5 py-2">
+                      <Link
+                        to={{ pathname: `/import/${item.id}`, search: searchParams.toString() }}
+                        className="text-text-main dark:text-white hover:text-primary font-medium"
+                      >
+                        {displayShopName(item.name, item.brand)}
+                      </Link>
+                      {item.address && (
+                        <p className="text-xs text-text-muted dark:text-stone-500 truncate max-w-xs">{item.address}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      <FocusBadge focus={item.coffeeFocus} />
+                    </td>
+                    <td className="px-4 py-2 hidden md:table-cell">
+                      {item.googleBusinessStatus ? (
                         <GoogleStatusBadge status={item.googleBusinessStatus} />
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell text-xs text-stone-400">
-                        {item.osmAgeDays != null ? `${item.osmAgeDays} дн.` : '—'}
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-xs text-stone-400">
-                        {item.collectorBucket ? BUCKET_LABELS[item.collectorBucket] : '—'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={item.queueStatus === 'Published' ? 'approved' : item.queueStatus === 'Rejected' ? 'rejected' : 'pending'}>
-                          {QUEUE_STATUS_LABELS[item.queueStatus]}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="px-5 py-3 border-t border-border-dark">
-              <Pagination page={page} totalPages={data.totalPages} onPageChange={(p) => setParam('page', String(p))} />
-            </div>
-          </>
+                      ) : (
+                        <span className="text-xs text-text-muted dark:text-stone-500">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 hidden lg:table-cell text-xs text-text-muted dark:text-stone-400">
+                      {item.osmAgeDays != null ? `${item.osmAgeDays} дн.` : '—'}
+                    </td>
+                    <td className="px-4 py-2 hidden md:table-cell text-xs text-text-muted dark:text-stone-400">
+                      {item.collectorBucket ? BUCKET_LABELS[item.collectorBucket] : '—'}
+                    </td>
+                    <td className="px-4 py-2">
+                      <Badge
+                        variant={
+                          item.queueStatus === 'Published'
+                            ? 'approved'
+                            : item.queueStatus === 'Rejected'
+                              ? 'rejected'
+                              : 'pending'
+                        }
+                      >
+                        {QUEUE_STATUS_LABELS[item.queueStatus]}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        {data && data.totalPages > 1 && (
+          <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
+            <Pagination page={page} totalPages={data.totalPages} onPageChange={(p) => patchParams({ page: String(p) }, false)} />
+          </div>
         )}
       </Card>
     </div>

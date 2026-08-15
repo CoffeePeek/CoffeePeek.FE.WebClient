@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   decideImportCandidate,
@@ -22,10 +22,12 @@ import {
 import {
   BUCKET_LABELS,
   CoffeeFocus,
+  IMPORT_LIST_PAGE_SIZE,
   QUEUE_STATUS_LABELS,
   displayShopName,
   isClosedPermanently,
   isUsableShopName,
+  parseImportListSearch,
 } from '../constants/catalogIngest';
 
 function openResearch(candidate: ImportCandidate) {
@@ -40,9 +42,9 @@ function openResearch(candidate: ImportCandidate) {
 function DossierRow({ label, value }: { label: string; value?: React.ReactNode }) {
   if (value === undefined || value === null || value === '') return null;
   return (
-    <div className="flex flex-col sm:flex-row sm:gap-3 py-1.5">
-      <dt className="text-xs uppercase tracking-wide text-stone-500 w-40 shrink-0">{label}</dt>
-      <dd className="text-sm text-text-main dark:text-stone-200 break-words">{value}</dd>
+    <div className="grid grid-cols-[5.5rem_1fr] sm:grid-cols-[6.5rem_1fr] gap-x-3 gap-y-0.5 py-1.5 items-start">
+      <dt className="text-[11px] uppercase tracking-wide text-text-muted dark:text-stone-500 pt-0.5">{label}</dt>
+      <dd className="text-sm text-text-main dark:text-stone-200 break-words min-w-0">{value}</dd>
     </div>
   );
 }
@@ -50,27 +52,63 @@ function DossierRow({ label, value }: { label: string; value?: React.ReactNode }
 export const ImportQueuePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const qc = useQueryClient();
   const [focus, setFocus] = useState<CoffeeFocus | undefined>();
   const [tagSlugs, setTagSlugs] = useState<string[]>([]);
   const [confirmPublishClosed, setConfirmPublishClosed] = useState(false);
 
-  const nextQuery = useQuery({
-    queryKey: ['admin', 'import', 'next'],
-    queryFn: async () => {
-      const priority = await getImportCandidates({
-        status: 'Pending',
-        bucket: 'priority',
-        page: 1,
-        pageSize: 1,
-      });
-      if (priority.data.items[0]) return priority.data.items[0];
-      const pending = await getImportCandidates({ status: 'Pending', page: 1, pageSize: 1 });
-      return pending.data.items[0] ?? null;
-    },
-    enabled: !id,
+  const listFilters = parseImportListSearch(searchParams);
+  const listQueryKey = ['admin', 'import', 'inbox', listFilters] as const;
+
+  const listQuery = useQuery({
+    queryKey: listQueryKey,
+    queryFn: () =>
+      getImportCandidates({
+        status: listFilters.status === 'all' ? undefined : listFilters.status,
+        bucket: listFilters.bucket === 'all' ? undefined : listFilters.bucket,
+        focus: listFilters.focus || undefined,
+        search: listFilters.search || undefined,
+        page: listFilters.page,
+        pageSize: IMPORT_LIST_PAGE_SIZE,
+      }).then((r) => r.data),
+    enabled: Boolean(id),
   });
+
+  const items = listQuery.data?.items ?? [];
+  const currentIndex = items.findIndex((item) => item.id === id);
+  const nextOnPage = currentIndex >= 0 ? items[currentIndex + 1] : undefined;
+  const needsNextPage =
+    currentIndex === items.length - 1 && listFilters.page < (listQuery.data?.totalPages ?? 1);
+
+  const nextPageQuery = useQuery({
+    queryKey: ['admin', 'import', 'inbox', { ...listFilters, page: listFilters.page + 1 }],
+    queryFn: () =>
+      getImportCandidates({
+        status: listFilters.status === 'all' ? undefined : listFilters.status,
+        bucket: listFilters.bucket === 'all' ? undefined : listFilters.bucket,
+        focus: listFilters.focus || undefined,
+        search: listFilters.search || undefined,
+        page: listFilters.page + 1,
+        pageSize: IMPORT_LIST_PAGE_SIZE,
+      }).then((r) => r.data),
+    enabled: Boolean(id) && needsNextPage,
+  });
+
+  const nextId = nextOnPage?.id ?? nextPageQuery.data?.items[0]?.id;
+  const listSearch = searchParams.toString();
+  const nextSearch = (() => {
+    if (nextOnPage) return listSearch;
+    if (nextPageQuery.data?.items[0]) {
+      const next = new URLSearchParams(searchParams);
+      next.set('page', String(listFilters.page + 1));
+      return next.toString();
+    }
+    return listSearch;
+  })();
+  const listHref = `/import${listSearch ? `?${listSearch}` : ''}`;
+  const nextHref = nextId ? `/import/${nextId}${nextSearch ? `?${nextSearch}` : ''}` : listHref;
 
   const candidateQuery = useQuery({
     queryKey: ['admin', 'import', 'candidate', id],
@@ -121,7 +159,7 @@ export const ImportQueuePage: React.FC = () => {
       };
       showToast(messages[status], 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'import'] });
-      navigate('/import', { replace: true });
+      navigate(nextHref, { replace: true });
     },
     onError: (err: { message?: string }) => showToast(err?.message ?? 'Ошибка решения', 'error'),
   });
@@ -174,45 +212,22 @@ export const ImportQueuePage: React.FC = () => {
     ];
   }, [candidate]);
 
-  if (!id) {
-    if (nextQuery.isLoading) {
-      return (
-        <div className="page-container max-w-3xl">
-          <ImportTabs />
-          <div className="h-64 rounded-xl bg-white/5 animate-pulse" />
-        </div>
-      );
-    }
-    if (nextQuery.data) return <Navigate to={`/import/${nextQuery.data.id}`} replace />;
-    return (
-      <div className="page-container max-w-3xl">
-        <ImportTabs />
-        <Card>
-          <p className="text-sm text-text-muted dark:text-stone-400 font-body">
-            Очередь пуста. Pending с приоритетом закончились.
-          </p>
-          <Link to="/import/inbox" className="inline-block mt-3">
-            <Button variant="secondary" size="sm">Открыть список</Button>
-          </Link>
-        </Card>
-      </div>
-    );
-  }
+  if (!id) return null;
 
   if (candidateQuery.isLoading) {
     return (
-      <div className="page-container max-w-3xl">
+      <div className="page-container max-w-5xl mx-auto">
         <ImportTabs />
-        <div className="h-64 rounded-xl bg-white/5 animate-pulse" />
+        <div className="h-64 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
       </div>
     );
   }
 
   if (!candidate) {
     return (
-      <div className="page-container max-w-3xl">
+      <div className="page-container max-w-5xl mx-auto">
         <ImportTabs />
-        <p className="text-red-400 text-sm">Карточка не найдена</p>
+        <p className="text-red-600 dark:text-red-400 text-sm">Карточка не найдена</p>
       </div>
     );
   }
@@ -220,13 +235,31 @@ export const ImportQueuePage: React.FC = () => {
   const title = displayShopName(candidate.name, candidate.brand);
 
   return (
-    <div className="page-container max-w-3xl">
+    <>
+    <div className="page-container max-w-5xl mx-auto">
       <ImportTabs />
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Link
+          to={listHref}
+          className="text-sm font-body text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white"
+        >
+          ← К списку
+        </Link>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!nextId}
+          onClick={() => navigate(nextHref)}
+        >
+          Дальше
+        </Button>
+      </div>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="page-header-title">{title}</h2>
-          <p className="text-xs text-stone-500 mt-1 font-mono">{candidate.externalId}</p>
+          <p className="text-xs text-text-muted dark:text-stone-500 mt-1 font-mono">{candidate.externalId}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <GoogleStatusBadge status={candidate.googleBusinessStatus} />
@@ -240,23 +273,29 @@ export const ImportQueuePage: React.FC = () => {
       </div>
 
       {closed && (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-800 dark:text-red-300 text-sm">
           Google: закрыто навсегда. По умолчанию — «Не в ленту». Публикация только с подтверждением.
         </div>
       )}
 
       <Card>
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2">
           <Button variant="primary" size="sm" onClick={() => openResearch(candidate)}>
             Исследовать
           </Button>
           {researchButtons.map((item) => (
-            <a key={item.label} href={item.href} target="_blank" rel="noreferrer">
-              <Button variant="secondary" size="sm">{item.label}</Button>
+            <a
+              key={item.label}
+              href={item.href}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-medium font-body bg-gray-100 dark:bg-white/10 text-text-main dark:text-white hover:bg-gray-200 dark:hover:bg-white/15"
+            >
+              {item.label}
             </a>
           ))}
         </div>
-        <p className="text-xs text-stone-500 font-body">
+        <p className="text-xs text-text-muted dark:text-stone-500 font-body mt-3">
           Сначала Google, Instagram и Яндекс. Теги — после просмотра.
         </p>
       </Card>
@@ -271,7 +310,7 @@ export const ImportQueuePage: React.FC = () => {
             label="Сайт"
             value={
               candidate.website ? (
-                <a href={candidate.website} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                <a href={candidate.website} target="_blank" rel="noreferrer" className="text-primary-dark dark:text-primary hover:underline break-all">
                   {candidate.website}
                 </a>
               ) : undefined
@@ -307,8 +346,8 @@ export const ImportQueuePage: React.FC = () => {
       </Card>
 
       <Card>
-        <h3 className="text-sm font-semibold text-white font-display mb-1">Coffee focus</h3>
-        <p className="text-xs text-stone-500 mb-3">Обязательно для публикации. 1 / 2 / 3</p>
+        <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Coffee focus</h3>
+        <p className="text-xs text-text-muted dark:text-stone-500 mb-3">Обязательно для публикации. 1 / 2 / 3</p>
         <CoffeeFocusPicker
           value={focus}
           onChange={(next) => {
@@ -326,38 +365,41 @@ export const ImportQueuePage: React.FC = () => {
       </Card>
 
       <Card>
-        <h3 className="text-sm font-semibold text-white font-display mb-3">Теги</h3>
+        <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Теги</h3>
         <CatalogTagChips value={tagSlugs} onChange={setTagSlugs} disabled={Boolean(decided)} />
       </Card>
+    </div>
 
-      <div className="sticky bottom-0 py-3 bg-background-dark/95 backdrop-blur border-t border-border-dark flex flex-col sm:flex-row gap-2">
-        <Button
-          variant="primary"
-          disabled={!canPublish || Boolean(decided)}
-          loading={decideMutation.isPending}
-          onClick={() => (closed ? setConfirmPublishClosed(true) : decideMutation.mutate({ status: 'Published' }))}
-          className="flex-1 min-h-[44px]"
-        >
-          В ленту ↵
-        </Button>
-        <Button
-          variant={closed ? 'danger' : 'secondary'}
-          disabled={Boolean(decided)}
-          loading={decideMutation.isPending}
-          onClick={() => decideMutation.mutate({ status: 'Rejected' })}
-          className="flex-1 min-h-[44px]"
-        >
-          Не в ленту R
-        </Button>
-        <Button
-          variant="ghost"
-          disabled={Boolean(decided)}
-          loading={decideMutation.isPending}
-          onClick={() => decideMutation.mutate({ status: 'Skipped' })}
-          className="flex-1 min-h-[44px]"
-        >
-          Позже S
-        </Button>
+      <div className="sticky bottom-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur border-t border-border-light dark:border-border-dark">
+        <div className="grid grid-cols-3 gap-2 max-w-5xl mx-auto">
+          <Button
+            variant="primary"
+            disabled={!canPublish || Boolean(decided)}
+            loading={decideMutation.isPending}
+            onClick={() => (closed ? setConfirmPublishClosed(true) : decideMutation.mutate({ status: 'Published' }))}
+            className="min-h-[44px] min-w-0 px-2 text-center"
+          >
+            В ленту ↵
+          </Button>
+          <Button
+            variant={closed ? 'danger' : 'secondary'}
+            disabled={Boolean(decided)}
+            loading={decideMutation.isPending}
+            onClick={() => decideMutation.mutate({ status: 'Rejected' })}
+            className="min-h-[44px] min-w-0 px-2 text-center"
+          >
+            Не в ленту R
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={Boolean(decided)}
+            loading={decideMutation.isPending}
+            onClick={() => decideMutation.mutate({ status: 'Skipped' })}
+            className="min-h-[44px] min-w-0 px-2 text-center"
+          >
+            Позже S
+          </Button>
+        </div>
       </div>
 
       <ConfirmModal
@@ -372,6 +414,6 @@ export const ImportQueuePage: React.FC = () => {
           decideMutation.mutate({ status: 'Published', overrideClosed: true });
         }}
       />
-    </div>
+    </>
   );
 };

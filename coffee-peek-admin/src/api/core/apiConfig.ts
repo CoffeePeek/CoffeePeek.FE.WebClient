@@ -52,7 +52,6 @@ export const API_ENDPOINTS = {
     SHOP_STATUS: '/api/ModerationShops/status',
     REVIEWS: '/api/ModerationReviews',
     REVIEW_BY_ID: (id: string) => `/api/ModerationReviews/${id}`,
-    COMMUNITY_POSTS: '/api/community/posts',
   },
 
   COFFEE_SHOP: {

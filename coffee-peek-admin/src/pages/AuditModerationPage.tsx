@@ -17,7 +17,6 @@ const ENTITY_OPTIONS: { value: AuditEntityType | ''; label: string }[] = [
   { value: '', label: 'Все типы' },
   { value: 'Shop', label: 'Кофейни' },
   { value: 'Review', label: 'Отзывы' },
-  { value: 'CommunityPost', label: 'Посты' },
 ];
 
 const ACTION_OPTIONS: { value: AuditAction | ''; label: string }[] = [

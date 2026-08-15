@@ -50,7 +50,7 @@ export const CATALOG_TAG_OPTIONS: { slug: string; label: string }[] = [
   { slug: 'pet_friendly', label: 'С животными' },
   { slug: 'pour_over', label: 'Пуровер' },
   { slug: 'quiet_work', label: 'Тихая работа' },
-  { slug: 'specialty', label: 'Specialty-тег' },
+  { slug: 'specialty', label: 'Specialty' },
 ];
 
 const FOCUS_ALIASES: Record<string, CoffeeFocus> = {
@@ -73,11 +73,30 @@ export const COFFEE_FOCUS_TO_API: Record<CoffeeFocus, number> = {
   cafe: 3,
 };
 
-export const QUEUE_STATUS_TO_API: Record<Exclude<QueueStatus, 'Pending'>, number> = {
+export const QUEUE_STATUS_TO_API: Record<QueueStatus, number> = {
+  Pending: 0,
   Skipped: 1,
   Published: 2,
   Rejected: 3,
 };
+
+export const BUCKET_TO_API: Record<CollectorBucket, number> = {
+  priority: 0,
+  review: 1,
+  noise: 2,
+  vending: 3,
+};
+
+export const IMPORT_LIST_PAGE_SIZE = 20;
+
+export function parseImportListSearch(searchParams: URLSearchParams) {
+  const status = (searchParams.get('status') ?? 'Pending') as QueueStatus | 'all';
+  const bucket = (searchParams.get('bucket') ?? 'priority') as CollectorBucket | 'all';
+  const focus = (searchParams.get('focus') ?? '') as CoffeeFocus | '';
+  const search = searchParams.get('search') ?? '';
+  const page = parseInt(searchParams.get('page') ?? '1', 10) || 1;
+  return { status, bucket, focus, search, page };
+}
 
 const BUCKET_ALIASES: Record<string, CollectorBucket> = {
   priority: 'priority',
