@@ -645,8 +645,8 @@ export async function getShopTags(): Promise<ApiResponse<ShopTagDto[]>> {
     if (Array.isArray(result.data)) {
       tags = result.data;
     } else if (result.data && typeof result.data === 'object') {
-      const obj = result.data as { shopTags?: ShopTagDto[]; items?: ShopTagDto[] };
-      tags = obj.shopTags ?? obj.items ?? [];
+      const obj = result.data as { tags?: ShopTagDto[]; shopTags?: ShopTagDto[]; items?: ShopTagDto[] };
+      tags = obj.tags ?? obj.shopTags ?? obj.items ?? [];
     }
 
     if (result.success) {

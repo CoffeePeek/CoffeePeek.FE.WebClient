@@ -136,6 +136,25 @@ export function isAuthError(error: any): boolean {
 }
 
 /**
+ * Сообщение для ошибок входа через Google.
+ */
+export function getGoogleAuthErrorMessage(error: unknown): string {
+  const err = error as { status?: number; message?: string };
+  const message = err?.message || '';
+
+  if (/already exists/i.test(message) || /email and password/i.test(message)) {
+    return 'Аккаунт с этим email уже есть. Войдите по почте и паролю.';
+  }
+  if (/invalid token/i.test(message) || err?.status === 400) {
+    return 'Не удалось подтвердить аккаунт Google. Попробуйте ещё раз.';
+  }
+  if (err?.status === 401) {
+    return 'Аккаунт с этим email уже есть. Войдите по почте и паролю.';
+  }
+  return getErrorMessage(error);
+}
+
+/**
  * Получает сообщение об ошибке из объекта ошибки
  * Использует статус-код для определения сообщения, игнорируя сообщения с бэкенда
  */

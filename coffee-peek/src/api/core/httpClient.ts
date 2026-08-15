@@ -71,14 +71,18 @@ class HttpClient {
     endpoint: string,
     options: RequestOptions = {}
   ): Promise<ApiResponse<T>> {
-    const { params, requiresAuth = true, ...fetchOptions } = options;
+    const { params, requiresAuth = true, skipAuthHeader, ...fetchOptions } = options;
 
     // Строим URL с параметрами
     const urlWithParams = buildUrlWithParams(endpoint, params);
     const fullUrl = `${this.baseURL}${urlWithParams}`;
 
     // Применяем request interceptor
-    const requestOptions = requestInterceptor(fullUrl, fetchOptions, requiresAuth);
+    const requestOptions = requestInterceptor(
+      fullUrl,
+      { ...fetchOptions, skipAuthHeader },
+      requiresAuth
+    );
 
     try {
       // Выполняем запрос
@@ -141,6 +145,7 @@ class HttpClient {
       params: config?.params,
       headers: config?.headers,
       requiresAuth: config?.requiresAuth,
+      skipAuthHeader: config?.skipAuthHeader,
       signal: config?.signal,
     });
   }

@@ -16,6 +16,8 @@ export interface ApiConfig {
   headers?: Record<string, string>;
   params?: Record<string, any>;
   requiresAuth?: boolean;
+  /** Do not attach the stored access token (e.g. Google ID-token login). */
+  skipAuthHeader?: boolean;
   signal?: AbortSignal;
 }
 
@@ -44,4 +46,5 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 export interface RequestOptions extends RequestInit {
   params?: Record<string, any>;
   requiresAuth?: boolean;
+  skipAuthHeader?: boolean;
 }

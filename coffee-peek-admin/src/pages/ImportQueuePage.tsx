@@ -8,6 +8,7 @@ import {
   refreshCandidateGoogle,
   ImportCandidate,
 } from '../api/import';
+import { getAdminShopTags } from '../api/admin';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -21,9 +22,14 @@ import {
 } from '../components/import/catalogControls';
 import {
   BUCKET_LABELS,
+  CATALOG_TAG_OPTIONS,
   CoffeeFocus,
   IMPORT_LIST_PAGE_SIZE,
   QUEUE_STATUS_LABELS,
+  REJECT_REASON_LABELS,
+  REJECT_REASON_OPTIONS,
+  RejectReason,
+  catalogTagLabel,
   displayShopName,
   isClosedPermanently,
   isUsableShopName,
@@ -58,6 +64,7 @@ export const ImportQueuePage: React.FC = () => {
   const [focus, setFocus] = useState<CoffeeFocus | undefined>();
   const [tagSlugs, setTagSlugs] = useState<string[]>([]);
   const [confirmPublishClosed, setConfirmPublishClosed] = useState(false);
+  const [rejectPickerOpen, setRejectPickerOpen] = useState(false);
 
   const listFilters = parseImportListSearch(searchParams);
   const listQueryKey = ['admin', 'import', 'inbox', listFilters] as const;
@@ -70,6 +77,8 @@ export const ImportQueuePage: React.FC = () => {
         bucket: listFilters.bucket === 'all' ? undefined : listFilters.bucket,
         focus: listFilters.focus || undefined,
         search: listFilters.search || undefined,
+        hasAddress: listFilters.hasAddress || undefined,
+        rejectReason: listFilters.rejectReason || undefined,
         page: listFilters.page,
         pageSize: IMPORT_LIST_PAGE_SIZE,
       }).then((r) => r.data),
@@ -90,6 +99,8 @@ export const ImportQueuePage: React.FC = () => {
         bucket: listFilters.bucket === 'all' ? undefined : listFilters.bucket,
         focus: listFilters.focus || undefined,
         search: listFilters.search || undefined,
+        hasAddress: listFilters.hasAddress || undefined,
+        rejectReason: listFilters.rejectReason || undefined,
         page: listFilters.page + 1,
         pageSize: IMPORT_LIST_PAGE_SIZE,
       }).then((r) => r.data),
@@ -116,6 +127,20 @@ export const ImportQueuePage: React.FC = () => {
     enabled: Boolean(id),
   });
 
+  const tagsQuery = useQuery({
+    queryKey: ['admin', 'shop-tags'],
+    queryFn: () => getAdminShopTags().then((r) => r.data ?? []),
+  });
+
+  const tagOptions = useMemo(() => {
+    const fromApi = (tagsQuery.data ?? [])
+      .filter((tag) => tag.isActive)
+      .slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ru'))
+      .map((tag) => ({ slug: tag.slug, label: catalogTagLabel(tag.slug, tag.name) }));
+    return fromApi.length > 0 ? fromApi : CATALOG_TAG_OPTIONS;
+  }, [tagsQuery.data]);
+
   const candidate = candidateQuery.data;
 
   useEffect(() => {
@@ -136,9 +161,11 @@ export const ImportQueuePage: React.FC = () => {
     mutationFn: ({
       status,
       overrideClosed,
+      rejectReason,
     }: {
       status: 'Published' | 'Rejected' | 'Skipped';
       overrideClosed?: boolean;
+      rejectReason?: RejectReason;
     }) => {
       const slugs =
         focus === 'specialty'
@@ -149,15 +176,19 @@ export const ImportQueuePage: React.FC = () => {
         coffeeFocus: status === 'Published' ? focus : undefined,
         tagSlugs: status === 'Published' ? slugs : undefined,
         overrideClosed: status === 'Published' ? overrideClosed : undefined,
+        rejectReason: status === 'Rejected' ? rejectReason : undefined,
       });
     },
-    onSuccess: (_, { status }) => {
+    onSuccess: (_, { status, rejectReason }) => {
       const messages = {
         Published: 'В ленте',
-        Rejected: 'Не в ленту',
+        Rejected: rejectReason
+          ? `Не в ленту · ${REJECT_REASON_LABELS[rejectReason]}`
+          : 'Не в ленту',
         Skipped: 'Отложено',
       };
       showToast(messages[status], 'success');
+      setRejectPickerOpen(false);
       qc.invalidateQueries({ queryKey: ['admin', 'import'] });
       navigate(nextHref, { replace: true });
     },
@@ -179,6 +210,20 @@ export const ImportQueuePage: React.FC = () => {
       const target = event.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
 
+      if (rejectPickerOpen) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setRejectPickerOpen(false);
+          return;
+        }
+        const reason = REJECT_REASON_OPTIONS.find((opt) => opt.key === event.key)?.value;
+        if (reason) {
+          event.preventDefault();
+          decideMutation.mutate({ status: 'Rejected', rejectReason: reason });
+        }
+        return;
+      }
+
       if (event.key === '1') setFocus('specialty');
       if (event.key === '2') setFocus('coffee_bar');
       if (event.key === '3') setFocus('cafe');
@@ -188,7 +233,7 @@ export const ImportQueuePage: React.FC = () => {
       }
       if (event.key === 'r' || event.key === 'R') {
         event.preventDefault();
-        decideMutation.mutate({ status: 'Rejected' });
+        setRejectPickerOpen(true);
       }
       if (event.key === 'Enter') {
         event.preventDefault();
@@ -199,7 +244,7 @@ export const ImportQueuePage: React.FC = () => {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [id, canPublish, closed, decideMutation]);
+  }, [id, canPublish, closed, decideMutation, rejectPickerOpen]);
 
   const researchButtons = useMemo(() => {
     if (!candidate) return [];
@@ -268,6 +313,9 @@ export const ImportQueuePage: React.FC = () => {
           )}
           <Badge variant={candidate.queueStatus === 'Rejected' ? 'rejected' : 'pending'}>
             {QUEUE_STATUS_LABELS[candidate.queueStatus]}
+            {candidate.queueStatus === 'Rejected' && candidate.rejectReason
+              ? ` · ${REJECT_REASON_LABELS[candidate.rejectReason]}`
+              : ''}
           </Badge>
         </div>
       </div>
@@ -366,7 +414,12 @@ export const ImportQueuePage: React.FC = () => {
 
       <Card>
         <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Теги</h3>
-        <CatalogTagChips value={tagSlugs} onChange={setTagSlugs} disabled={Boolean(decided)} />
+        <CatalogTagChips
+          value={tagSlugs}
+          onChange={setTagSlugs}
+          options={tagOptions}
+          disabled={Boolean(decided)}
+        />
       </Card>
     </div>
 
@@ -385,7 +438,7 @@ export const ImportQueuePage: React.FC = () => {
             variant={closed ? 'danger' : 'secondary'}
             disabled={Boolean(decided)}
             loading={decideMutation.isPending}
-            onClick={() => decideMutation.mutate({ status: 'Rejected' })}
+            onClick={() => setRejectPickerOpen(true)}
             className="min-h-[44px] min-w-0 px-2 text-center"
           >
             Не в ленту R
@@ -401,6 +454,50 @@ export const ImportQueuePage: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {rejectPickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setRejectPickerOpen(false)} />
+          <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 border border-border-light dark:border-border-dark pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-1">
+              Почему не в ленту?
+            </h3>
+            <p className="text-sm text-text-muted dark:text-stone-400 font-body mb-4">
+              Выберите причину. Клавиши 1 / 2 / 3.
+            </p>
+            <div className="flex flex-col gap-2">
+              {REJECT_REASON_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={decideMutation.isPending}
+                  onClick={() => decideMutation.mutate({ status: 'Rejected', rejectReason: opt.value })}
+                  className={[
+                    'flex flex-col items-start gap-0.5 rounded-xl border px-3 py-3 text-left min-h-[56px] transition-colors',
+                    closed && opt.value === 'closed'
+                      ? 'border-red-500/50 bg-red-500/10'
+                      : 'border-border-light dark:border-border-dark hover:border-primary/60',
+                  ].join(' ')}
+                >
+                  <span className="text-sm font-semibold text-text-main dark:text-white font-display">
+                    {opt.key}. {opt.label}
+                  </span>
+                  <span className="text-xs text-text-muted dark:text-stone-400 font-body">{opt.hint}</span>
+                </button>
+              ))}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3 w-full min-h-[44px]"
+              onClick={() => setRejectPickerOpen(false)}
+              disabled={decideMutation.isPending}
+            >
+              Отмена Esc
+            </Button>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={confirmPublishClosed}

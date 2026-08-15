@@ -184,25 +184,15 @@ export async function register(userData: RegisterRequest): Promise<CreateEntityR
 }
 
 /**
- * Google OAuth логин
+ * Google OAuth логин. Бэкенд ждёт Google ID token: { idToken }.
  */
-export async function googleLogin(googleToken?: string): Promise<AuthResponse> {
-  const config = googleToken
-    ? {
-        headers: { Authorization: `Bearer ${googleToken}` },
-        requiresAuth: false,
-      }
-    : { requiresAuth: false };
-
-  const body = googleToken ? { token: googleToken } : undefined;
-
+export async function googleLogin(idToken: string): Promise<AuthResponse> {
   const response = await httpClient.post<AuthData>(
     API_ENDPOINTS.AUTH.GOOGLE_LOGIN,
-    body,
-    config
+    { idToken },
+    { requiresAuth: false, skipAuthHeader: true }
   );
 
-  // Сохраняем токены после успешного логина
   if (response.success && response.data.accessToken) {
     TokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
   }

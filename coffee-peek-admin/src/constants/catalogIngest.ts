@@ -1,6 +1,8 @@
 export type QueueStatus = 'Pending' | 'Skipped' | 'Published' | 'Rejected';
 export type CoffeeFocus = 'specialty' | 'coffee_bar' | 'cafe';
 export type CollectorBucket = 'priority' | 'review' | 'noise' | 'vending';
+/** Why an OSM candidate was rejected (not published). */
+export type RejectReason = 'closed' | 'invalid' | 'not_coffee';
 export type GoogleBusinessStatus =
   | 'Operational'
   | 'ClosedPermanently'
@@ -13,6 +15,30 @@ export const QUEUE_STATUS_LABELS: Record<QueueStatus, string> = {
   Skipped: 'Позже',
   Published: 'В ленте',
   Rejected: 'Не в ленту',
+};
+
+export const REJECT_REASON_OPTIONS: {
+  value: RejectReason;
+  label: string;
+  hint: string;
+  key: string;
+}[] = [
+  { value: 'closed', label: 'Закрыта', hint: 'Больше не работает', key: '1' },
+  { value: 'invalid', label: 'Невалидные данные', hint: 'Нет адреса / имени / мусор в OSM', key: '2' },
+  { value: 'not_coffee', label: 'Не кофейня', hint: 'Не про кофе / не наш формат', key: '3' },
+];
+
+export const REJECT_REASON_LABELS: Record<RejectReason, string> = {
+  closed: 'Закрыта',
+  invalid: 'Невалидные данные',
+  not_coffee: 'Не кофейня',
+};
+
+/** Numeric enum for decide + list filter. Backend contract: 1=Closed, 2=Invalid, 3=NotCoffee. */
+export const REJECT_REASON_TO_API: Record<RejectReason, number> = {
+  closed: 1,
+  invalid: 2,
+  not_coffee: 3,
 };
 
 export const COFFEE_FOCUS_OPTIONS: { value: CoffeeFocus; label: string; hint: string; key: string }[] = [
@@ -43,15 +69,22 @@ export const GOOGLE_STATUS_LABELS: Record<GoogleBusinessStatus, string> = {
 };
 
 export const CATALOG_TAG_OPTIONS: { slug: string; label: string }[] = [
-  { slug: 'to_go', label: 'С собой' },
-  { slug: 'roastery', label: 'Обжарка' },
-  { slug: 'bakery', label: 'Пекарня' },
   { slug: 'laptop_friendly', label: 'Ноутбук' },
+  { slug: 'specialty', label: 'Specialty' },
   { slug: 'pet_friendly', label: 'С животными' },
   { slug: 'pour_over', label: 'Пуровер' },
   { slug: 'quiet_work', label: 'Тихая работа' },
-  { slug: 'specialty', label: 'Specialty' },
+  { slug: 'to_go', label: 'С собой' },
+  { slug: 'roastery', label: 'Обжарка' },
+  { slug: 'confectionery', label: 'Кондитерская' },
+  { slug: 'bakery', label: 'Пекарня' },
 ];
+
+/** Prefer Russian labels when slug is known; otherwise use API name. */
+export function catalogTagLabel(slug: string, fallbackName?: string): string {
+  const known = CATALOG_TAG_OPTIONS.find((t) => t.slug === slug);
+  return known?.label ?? fallbackName?.trim() ?? slug;
+}
 
 const FOCUS_ALIASES: Record<string, CoffeeFocus> = {
   specialty: 'specialty',
@@ -94,8 +127,10 @@ export function parseImportListSearch(searchParams: URLSearchParams) {
   const bucket = (searchParams.get('bucket') ?? 'priority') as CollectorBucket | 'all';
   const focus = (searchParams.get('focus') ?? '') as CoffeeFocus | '';
   const search = searchParams.get('search') ?? '';
+  const hasAddress = searchParams.get('hasAddress') === '1';
+  const rejectReason = (searchParams.get('rejectReason') ?? '') as RejectReason | '';
   const page = parseInt(searchParams.get('page') ?? '1', 10) || 1;
-  return { status, bucket, focus, search, page };
+  return { status, bucket, focus, search, hasAddress, rejectReason, page };
 }
 
 const BUCKET_ALIASES: Record<string, CollectorBucket> = {
@@ -131,6 +166,20 @@ const GOOGLE_ALIASES: Record<string, GoogleBusinessStatus> = {
   '4': 'Far',
 };
 
+const REJECT_ALIASES: Record<string, RejectReason> = {
+  closed: 'closed',
+  Closed: 'closed',
+  '1': 'closed',
+  invalid: 'invalid',
+  Invalid: 'invalid',
+  InvalidData: 'invalid',
+  '2': 'invalid',
+  not_coffee: 'not_coffee',
+  NotCoffee: 'not_coffee',
+  notCoffee: 'not_coffee',
+  '3': 'not_coffee',
+};
+
 export function parseCoffeeFocus(value: unknown): CoffeeFocus | undefined {
   if (value === undefined || value === null || value === '') return undefined;
   return FOCUS_ALIASES[String(value)];
@@ -144,6 +193,11 @@ export function parseBucket(value: unknown): CollectorBucket | undefined {
 export function parseGoogleStatus(value: unknown): GoogleBusinessStatus | undefined {
   if (value === undefined || value === null || value === '') return undefined;
   return GOOGLE_ALIASES[String(value)];
+}
+
+export function parseRejectReason(value: unknown): RejectReason | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  return REJECT_ALIASES[String(value)];
 }
 
 export function isClosedPermanently(status?: GoogleBusinessStatus): boolean {

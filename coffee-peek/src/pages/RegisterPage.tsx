@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { register, checkEmailExists } from '../api/auth';
 import { getErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { LEGAL_ROUTES } from '../constants/legalRoutes';
 import { logger } from '../utils/logger';
+import { useUser } from '../contexts/UserContext';
+import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 import {
   Envelope, Lock, User, WarningCircle, Eye, EyeSlash, Sun, Moon,
-  EnvelopeOpen, SignIn, Globe, Sparkle, ArrowLeft, Check,
+  EnvelopeOpen, SignIn, Sparkle, ArrowLeft, Check,
 } from '@/components/Icon';
 
 type RegisterStep = 'email' | 'registration' | 'success';
@@ -95,6 +98,9 @@ const StrengthBar: React.FC<{ password: string; dark: boolean }> = ({ password, 
 const RegisterPage: React.FC = () => {
   usePageTitle('Регистрация');
   const navigate = useNavigate();
+  const location = useLocation();
+  const { updateUserFromToken } = useUser();
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/shops';
   const [step, setStep] = useState<RegisterStep>('email');
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
@@ -226,11 +232,21 @@ const RegisterPage: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"RF Dewi Expanded"', margin: '2px 0' }}>
                       <div style={{ flex: 1, height: 1, background: cardBorder }} />ИЛИ<div style={{ flex: 1, height: 1, background: cardBorder }} />
                     </div>
-                    <button type="button" onClick={() => navigate('/login')}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: dark ? 'rgba(255,255,255,0.04)' : '#F9F8F6', color: textPrimary, border: `1px solid ${cardBorder}`, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                      <Globe size={18} />
-                      Войти через Google
-                    </button>
+                    <GoogleSignInButton
+                      dark={dark}
+                      disabled={isLoading}
+                      onAuthenticated={(accessToken) => {
+                        if (isTokenExpired(accessToken)) {
+                          setError('Токен истёк');
+                          return;
+                        }
+                        parseJWT(accessToken);
+                        getUserRoles(accessToken);
+                        updateUserFromToken(accessToken);
+                        navigate(from, { replace: true });
+                      }}
+                      onError={setError}
+                    />
                     <button type="submit" disabled={!emailValid || isLoading}
                       style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: !emailValid || isLoading ? 'not-allowed' : 'pointer', opacity: !emailValid ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Проверяем…</> : 'Продолжить'}

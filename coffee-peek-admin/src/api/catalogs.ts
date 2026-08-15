@@ -46,11 +46,14 @@ export interface CatalogsBundle {
   brewMethods: CatalogBrewMethod[];
 }
 
-function unwrapList<T>(data: unknown, key: string): T[] {
+function unwrapList<T>(data: unknown, ...keys: string[]): T[] {
   if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === 'object' && key in (data as object)) {
-    const nested = (data as Record<string, unknown>)[key];
-    if (Array.isArray(nested)) return nested as T[];
+  if (data && typeof data === 'object') {
+    const record = data as Record<string, unknown>;
+    for (const key of keys) {
+      const nested = record[key];
+      if (Array.isArray(nested)) return nested as T[];
+    }
   }
   return [];
 }
@@ -94,7 +97,8 @@ export async function getShopTags(): Promise<ApiResponse<CatalogShopTag[]>> {
   const response = await httpClient.get<unknown>(API_ENDPOINTS.CATALOGS.SHOP_TAGS, {
     requiresAuth: false,
   });
-  return { ...response, data: unwrapList<CatalogShopTag>(response.data, 'shopTags') };
+  // Backend GetShopTagsResponse uses `tags` (same as admin list).
+  return { ...response, data: unwrapList<CatalogShopTag>(response.data, 'tags', 'shopTags', 'items') };
 }
 
 export async function getAllCatalogs(): Promise<CatalogsBundle> {
