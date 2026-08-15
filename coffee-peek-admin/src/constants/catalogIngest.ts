@@ -48,6 +48,10 @@ export const CATALOG_TAG_OPTIONS: { slug: string; label: string }[] = [
   { slug: 'pet_friendly', label: 'С животными' },
   { slug: 'pour_over', label: 'Пуровер' },
   { slug: 'quiet_work', label: 'Тихая работа' },
+  { slug: 'to_go', label: 'С собой' },
+  { slug: 'roastery', label: 'Обжарка' },
+  { slug: 'confectionery', label: 'Кондитерская' },
+  { slug: 'bakery', label: 'Пекарня' },
 ];
 
 /** Prefer Russian labels when slug is known; otherwise use API name. */

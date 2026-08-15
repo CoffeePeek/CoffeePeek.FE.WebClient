@@ -215,7 +215,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       const beansData = extractList<CoffeeBean>(beansRes.data, 'beans');
       const roastersData = extractList<Roaster>(roastersRes.data, 'roasters');
       const methodsData = extractList<BrewMethod>(methodsRes.data, 'methods');
-      const tagsData = extractList<ShopTagDto>(tagsRes.data, 'shopTags', 'items');
+      const tagsData = extractList<ShopTagDto>(tagsRes.data, 'tags', 'shopTags', 'items');
 
       setCities(Array.isArray(citiesData) ? citiesData : []);
       setEquipments(Array.isArray(equipmentsData) ? equipmentsData : []);

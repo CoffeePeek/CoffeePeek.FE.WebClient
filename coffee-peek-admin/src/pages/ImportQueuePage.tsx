@@ -8,7 +8,7 @@ import {
   refreshCandidateGoogle,
   ImportCandidate,
 } from '../api/import';
-import { getShopTags } from '../api/catalogs';
+import { getAdminShopTags } from '../api/admin';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -122,12 +122,13 @@ export const ImportQueuePage: React.FC = () => {
   });
 
   const tagsQuery = useQuery({
-    queryKey: ['catalogs', 'shop-tags'],
-    queryFn: () => getShopTags().then((r) => r.data ?? []),
+    queryKey: ['admin', 'shop-tags'],
+    queryFn: () => getAdminShopTags().then((r) => r.data ?? []),
   });
 
   const tagOptions = useMemo(() => {
     const fromApi = (tagsQuery.data ?? [])
+      .filter((tag) => tag.isActive)
       .slice()
       .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ru'))
       .map((tag) => ({ slug: tag.slug, label: catalogTagLabel(tag.slug, tag.name) }));
