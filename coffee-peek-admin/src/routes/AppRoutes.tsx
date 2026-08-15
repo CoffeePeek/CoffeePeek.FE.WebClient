@@ -24,23 +24,29 @@ const ImportInboxPage = lazy(() => import('../pages/ImportInboxPage').then((m) =
 const ImportStatsPage = lazy(() => import('../pages/ImportStatsPage').then((m) => ({ default: m.ImportStatsPage })));
 
 const Loader = () => (
-  <div className="flex-1 flex items-center justify-center">
+  <div className="min-h-screen flex items-center justify-center">
     <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
   </div>
 );
 
 export const AppRoutes: React.FC = () => (
-  <Suspense fallback={<Loader />}>
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
+  <Routes>
+    <Route
+      path="/login"
+      element={
+        <Suspense fallback={<Loader />}>
+          <LoginPage />
+        </Suspense>
+      }
+    />
 
-      <Route
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
+    <Route
+      element={
+        <ProtectedRoute>
+          <AppLayout />
+        </ProtectedRoute>
+      }
+    >
         <Route path="/dashboard" element={<DashboardPage />} />
 
         <Route path="/coffee-shops" element={<BrowseShopsPage />} />
@@ -176,5 +182,4 @@ export const AppRoutes: React.FC = () => (
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
-  </Suspense>
 );
