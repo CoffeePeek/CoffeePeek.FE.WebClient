@@ -247,6 +247,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
         {appliedFocus && (
           <AppliedChip label={FOCUS_OPTIONS.find(p => p.value === appliedFocus)?.label ?? appliedFocus} gold={gold}
             onRemove={() => onApplyFilters({ priceRange: appliedPrice, coffeeFocus: undefined, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods })} />
+        )}
         {appliedEquipments.map(id => {
           const eq = equipments.find(e => e.id === id);
           return eq ? <AppliedChip key={id} label={eq.name} gold={gold}
