@@ -152,7 +152,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           style={{
             position: 'absolute',
             inset: 0,
-            opacity: gisReady && !blocked ? 0.05 : 0,
+            opacity: 0,
             overflow: 'hidden',
             pointerEvents: gisReady && !blocked ? 'auto' : 'none',
             cursor: 'pointer',
