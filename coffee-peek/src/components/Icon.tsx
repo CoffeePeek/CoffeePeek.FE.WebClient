@@ -1,4 +1,5 @@
-import type { IconProps } from '@phosphor-icons/react';
+﻿import type { IconProps } from '@phosphor-icons/react';
+import { BeanPriceMarks } from './icons/CoffeeBeanSign';
 import {
   ArrowClockwise,
   ArrowLeft,
@@ -59,7 +60,6 @@ import {
   X,
   XCircle,
   Clock,
-  CurrencyDollar,
   Lightbulb,
   Lock,
   GridFour,
@@ -141,7 +141,6 @@ export {
   X,
   XCircle,
   Clock,
-  CurrencyDollar,
   Lightbulb,
   Lock,
   GridFour,
@@ -180,11 +179,5 @@ export const Icons = {
 };
 
 export function PriceRangeLabel({ level }: { level: 1 | 2 | 3 }) {
-  return (
-    <span className="inline-flex items-center gap-0.5">
-      {Array.from({ length: level }, (_, i) => (
-        <CurrencyDollar key={i} size={14} weight="bold" />
-      ))}
-    </span>
-  );
+  return <BeanPriceMarks count={level} size={14} />;
 }

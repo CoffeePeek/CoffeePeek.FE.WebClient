@@ -1,9 +1,11 @@
 import React from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
-import { getCurrentStatus } from '../../utils/shopUtils';
+import { COLORS } from '../../constants/colors';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useToast } from '../../contexts/ToastContext';
 import { getThemeClasses } from '../../utils/theme';
-import { AppIcon, StarIcon } from '../icons';
+import { AppIcon, StarIcon, BeanPriceMarks } from '../icons';
+import { getPriceRangeTier } from '../../utils/priceRange';
 
 interface ShopHeaderProps {
   shop: DetailedCoffeeShop;
@@ -16,6 +18,32 @@ interface ShopHeaderProps {
   textMain: string;
   textMuted: string;
   borderColor: string;
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to legacy path
+  }
+
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 export const ShopHeader: React.FC<ShopHeaderProps> = ({
@@ -31,8 +59,22 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   borderColor,
 }) => {
   const { theme } = useTheme();
+  const { showToast } = useToast();
   const themeClasses = getThemeClasses(theme);
-  const status = getCurrentStatus(shop);
+  const priceTiers = getPriceRangeTier(shop.priceRange);
+  const iconMuted = theme === 'dark' ? '#E7E5E4' : '#44403C';
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/shops/${shop.id}`;
+    const text = `Нашёл отличную кофейню «${shop.name}» на CoffeePeek — загляни:\n${url}`;
+
+    const copied = await copyText(text);
+    if (copied) {
+      showToast('Ссылка скопирована — можно отправить друзьям', 'success');
+      return;
+    }
+    showToast('Не удалось скопировать ссылку', 'error');
+  };
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-6 mb-6">
@@ -65,37 +107,51 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
               <span className={textMuted}>•</span>
             </>
           )}
-          <span className={`${textMuted} font-medium`}>$$</span>
+          {priceTiers && (
+            <BeanPriceMarks count={priceTiers} size={14} color={COLORS.primary} />
+          )}
         </div>
       </div>
-      
-      {/* Кнопки действий */}
+
       <div className="flex gap-3">
         {onCheckIn && (
           <button
             onClick={onCheckIn}
-            className={`px-4 py-2 rounded-2xl border ${borderColor} flex items-center justify-center gap-2 ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} transition-all ${themeClasses.primary.text} font-semibold text-sm`}
+            className={`px-4 py-2 rounded-2xl border ${borderColor} flex items-center justify-center gap-2 ${themeClasses.primary.bgLight} hover:opacity-90 transition-all ${themeClasses.primary.text} font-semibold text-sm`}
           >
-            <AppIcon name="check_circle" size={18} />
+            <AppIcon name="check_circle" size={18} color="currentColor" />
             Чекиниться
           </button>
         )}
         <button
+          type="button"
           onClick={onToggleFavorite}
           disabled={isCheckingFavorite}
-          className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} transition-all ${
-            isFavorite 
-              ? `${themeClasses.primary.bgLight} ${themeClasses.primary.text} ${themeClasses.primary.borderLight}` 
-              : `${textMuted} ${themeClasses.primary.hover} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')}`
+          aria-label={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
+          className={`w-14 h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
+            isFavorite
+              ? `${themeClasses.primary.bgLight} ${themeClasses.primary.borderLight}`
+              : `${theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`
           }`}
         >
-          <AppIcon name="favorite" filled={isFavorite} size={20} />
+          <AppIcon
+            name="favorite"
+            filled={isFavorite}
+            size={26}
+            color={isFavorite ? '#EAB308' : iconMuted}
+          />
         </button>
-        <button className={`w-12 h-12 rounded-2xl border ${borderColor} flex items-center justify-center ${themeClasses.primary.bgLight.replace('bg-', 'hover:bg-')} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} transition-all ${textMuted} ${themeClasses.primary.hover}`}>
-          <AppIcon name="share" size={20} />
+        <button
+          type="button"
+          onClick={handleShare}
+          aria-label="Поделиться"
+          className={`w-14 h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
+            theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+          }`}
+        >
+          <AppIcon name="share" size={26} color={iconMuted} />
         </button>
       </div>
     </div>
   );
 };
-

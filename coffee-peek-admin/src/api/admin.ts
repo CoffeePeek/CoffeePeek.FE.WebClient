@@ -293,6 +293,49 @@ export interface PublishedShop {
   coffeeFocus?: CoffeeFocus;
   tagSlugs: string[];
   photos: PublishedShopPhoto[];
+  tags?: ShopTagDto[];
+}
+
+export interface ShopTagDto {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  sortOrder: number;
+}
+
+export interface AdminShopTag {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+}
+
+export interface CreateShopTagRequest {
+  slug: string;
+  name: string;
+  description?: string;
+  sortOrder: number;
+}
+
+export interface UpdateShopTagRequest {
+  name: string;
+  description?: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface UserSession {
+  id: string;
+  deviceName?: string;
+  ipAddress?: string;
+  expiryDate: string;
+  isRevoked: boolean;
+  createdAtUtc: string;
 }
 
 export interface PublishedShopPhoto {
@@ -658,16 +701,19 @@ export async function getModerationReviewById(id: string): Promise<ApiResponse<A
 export async function approveReview(id: string, data?: ModerationActionRequest): Promise<ApiResponse<void>> {
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
-    moderationStatus: 'Approved',
-    ...(data?.comment?.trim() ? { comment: data.comment.trim() } : {}),
+    moderationStatus: 1, // Approved
+    comment: data?.comment?.trim() || null,
+    rejectReason: null,
   });
 }
 
 export async function rejectReview(id: string, data?: ModerationActionRequest): Promise<ApiResponse<void>> {
+  const reason = data?.comment?.trim() || null;
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
-    moderationStatus: 'Rejected',
-    comment: data?.comment?.trim() || undefined,
+    moderationStatus: 2, // Rejected
+    comment: reason,
+    rejectReason: reason,
   });
 }
 
@@ -784,6 +830,7 @@ function mapEnumStatus<T extends string>(value: T | number | undefined, labels: 
 
 export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
   const photos = Array.isArray(shop.photos) ? shop.photos as Record<string, unknown>[] : [];
+  const tags = Array.isArray(shop.tags) ? shop.tags as Record<string, unknown>[] : undefined;
   return {
     id: String(shop.id),
     name: String(shop.name),
@@ -817,6 +864,13 @@ export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
         sortIndex: Number(photo.sortIndex ?? 0),
       }))
       .sort((left, right) => left.sortIndex - right.sortIndex),
+    tags: tags?.map((tag) => ({
+      id: String(tag.id),
+      slug: String(tag.slug ?? ''),
+      name: String(tag.name ?? ''),
+      description: tag.description ? String(tag.description) : undefined,
+      sortOrder: Number(tag.sortOrder ?? 0),
+    })),
   };
 }
 
@@ -955,7 +1009,7 @@ export async function updatePublishedShopTags(
   tagSlugs: string[]
 ): Promise<ApiResponse<PublishedShop>> {
   const response = await httpClient.put<Record<string, unknown>>(
-    API_ENDPOINTS.ADMIN.SHOP_TAGS(id),
+    API_ENDPOINTS.ADMIN.SHOP_TAGS_ASSIGN(id),
     { tagSlugs }
   );
   return { ...response, data: mapPublishedShop(response.data) };
@@ -983,6 +1037,76 @@ export async function assignPublishedShopOwner(
   );
 
   return { ...response, data: mapPublishedShop(response.data) };
+}
+
+// ==================== Shop tags ====================
+
+function unwrapAdminList<T>(data: unknown, key: string): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === 'object' && key in (data as object)) {
+    const nested = (data as Record<string, unknown>)[key];
+    if (Array.isArray(nested)) return nested as T[];
+  }
+  if (data && typeof data === 'object' && 'items' in (data as object)) {
+    const nested = (data as Record<string, unknown>).items;
+    if (Array.isArray(nested)) return nested as T[];
+  }
+  return [];
+}
+
+export async function getAdminShopTags(): Promise<ApiResponse<AdminShopTag[]>> {
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.SHOP_TAGS);
+  return {
+    ...response,
+    data: unwrapAdminList<AdminShopTag>(response.data, 'tags'),
+  };
+}
+
+export async function createAdminShopTag(
+  body: CreateShopTagRequest
+): Promise<ApiResponse<AdminShopTag>> {
+  return httpClient.post<AdminShopTag>(API_ENDPOINTS.ADMIN.SHOP_TAGS, body);
+}
+
+export async function updateAdminShopTag(
+  id: string,
+  body: UpdateShopTagRequest
+): Promise<ApiResponse<AdminShopTag>> {
+  return httpClient.patch<AdminShopTag>(API_ENDPOINTS.ADMIN.SHOP_TAG_BY_ID(id), body);
+}
+
+export async function deactivateAdminShopTag(id: string): Promise<ApiResponse<void>> {
+  return httpClient.delete<void>(API_ENDPOINTS.ADMIN.SHOP_TAG_BY_ID(id));
+}
+
+export async function assignShopTags(
+  shopId: string,
+  tagIds: string[]
+): Promise<ApiResponse<void>> {
+  return httpClient.put<void>(API_ENDPOINTS.ADMIN.SHOP_TAGS_ASSIGN(shopId), {
+    tagIds: tagIds.slice(0, 20),
+  });
+}
+
+// ==================== User sessions ====================
+
+export async function getUserSessions(userId: string): Promise<ApiResponse<UserSession[]>> {
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.USER_SESSIONS(userId));
+  return {
+    ...response,
+    data: unwrapAdminList<UserSession>(response.data, 'sessions'),
+  };
+}
+
+export async function revokeUserSession(
+  userId: string,
+  sessionId: string
+): Promise<ApiResponse<void>> {
+  return httpClient.delete<void>(API_ENDPOINTS.ADMIN.USER_SESSION_BY_ID(userId, sessionId));
+}
+
+export async function revokeAllUserSessions(userId: string): Promise<ApiResponse<void>> {
+  return httpClient.delete<void>(API_ENDPOINTS.ADMIN.USER_SESSIONS(userId));
 }
 
 // ==================== Cache ====================

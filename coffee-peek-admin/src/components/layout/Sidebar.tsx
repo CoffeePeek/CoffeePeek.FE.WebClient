@@ -48,6 +48,11 @@ const IconAudit = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
   </svg>
 );
+const IconTags = () => (
+  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+  </svg>
+);
 const IconMap = () => (
   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -68,6 +73,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/reviews', label: 'Отзывы', icon: <IconReview />, moderatorOnly: true },
   { path: '/community-posts', label: 'Посты', icon: <IconCommunity />, moderatorOnly: true },
   { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
+  { path: '/shop-tags', label: 'Теги', icon: <IconTags />, adminOnly: true },
   { path: '/audit', label: 'Audit log', icon: <IconAudit />, adminOnly: true },
   { path: '/my-shops', label: 'Мои кофейни', icon: <IconShop />, ownerOnly: true },
   { path: '/users', label: 'Пользователи', icon: <IconUsers />, adminOnly: true },

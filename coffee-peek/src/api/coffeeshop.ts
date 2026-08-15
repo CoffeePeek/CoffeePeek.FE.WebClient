@@ -75,7 +75,6 @@ export interface CoffeeShop {
   rating?: number;
   reviewCount?: number;
   isOpen?: boolean;
-  isFavorite?: boolean;
   isVisited?: boolean;
   isNew?: boolean;
   location?: {
@@ -99,6 +98,14 @@ export interface GetShopsInBoundsResponse {
   shops: MapShop[];
 }
 
+export interface ShopTagDto {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  sortOrder: number;
+}
+
 export interface DetailedCoffeeShop {
   id: string;
   cityId: string;
@@ -110,12 +117,12 @@ export interface DetailedCoffeeShop {
   reviewCount: number;
   reviews?: Review[];
   isOpen: boolean;
-  isFavorite?: boolean;
   isVisited?: boolean;
   canCreateReview?: boolean | null;
   existingReviewId?: string | null;
   isNew?: boolean;
   priceRange: number | string;
+  tags?: ShopTagDto[];
   location?: {
     address?: string;
     latitude?: number;
@@ -145,8 +152,13 @@ export interface CoffeeShopFilters {
   roasterIds?: string[];
   brewMethodIds?: string[];
   priceRange?: string;
+  /** Catalog tag ids — AND semantics on the backend */
+  tagIds?: string[];
   isOpen?: boolean;
   coffeeFocus?: string;
+  isNew?: boolean;
+  /** Only honored when JWT is present */
+  isVisited?: boolean;
 }
 
 export interface ShortShopDto {
@@ -156,11 +168,11 @@ export interface ShortShopDto {
   photos: ShortPhotoMetadataDto[];
   rating: number;
   reviewCount: number;
-  isFavorite: boolean;
   isVisited: boolean;
   isNew: boolean;
   isOpen: boolean;
   priceRange: number | string;
+  tags?: ShopTagDto[];
   location?: {
     address?: string;
     latitude?: number;
@@ -324,8 +336,22 @@ export interface CreateCheckInRequest {
   rating?: RatingDto; // Optional, but required if isPublic = true
 }
 
-export interface FavoriteResponse {
-  isFavorite: boolean;
+export interface CheckInDto {
+  id: string;
+  userId: string;
+  shopId: string;
+  shopName: string;
+  note?: string;
+  createdAt: string;
+  reviewId?: string | null;
+}
+
+export interface GetCheckInsResponse {
+  items: CheckInDto[];
+  totalItems: number;
+  totalPages: number;
+  currentPage?: number;
+  pageSize?: number;
 }
 
 // ==================== Кэш для справочных данных ====================
@@ -336,6 +362,7 @@ const referenceDataCache: {
   coffeeBeans?: { data: CoffeeBean[]; promise?: Promise<ApiResponse<CoffeeBean[]>> };
   roasters?: { data: Roaster[]; promise?: Promise<ApiResponse<Roaster[]>> };
   brewMethods?: { data: BrewMethod[]; promise?: Promise<ApiResponse<BrewMethod[]>> };
+  shopTags?: { data: ShopTagDto[]; promise?: Promise<ApiResponse<ShopTagDto[]>> };
 } = {};
 
 // ==================== API Functions ====================
@@ -356,11 +383,15 @@ export async function getCoffeeShops(
   if (filters) {
     if (filters.cityId) params.cityId = filters.cityId;
     if (filters.priceRange) params.priceRange = filters.priceRange;
-    if (filters.equipmentIds) params.equipmentIds = filters.equipmentIds;
-    if (filters.coffeeBeanIds) params.coffeeBeanIds = filters.coffeeBeanIds;
-    if (filters.roasterIds) params.roasterIds = filters.roasterIds;
-    if (filters.brewMethodIds) params.brewMethodIds = filters.brewMethodIds;
+    if (filters.equipmentIds) params.equipments = filters.equipmentIds;
+    if (filters.coffeeBeanIds) params.beans = filters.coffeeBeanIds;
+    if (filters.roasterIds) params.roasters = filters.roasterIds;
+    if (filters.brewMethodIds) params.brewMethods = filters.brewMethodIds;
+    if (filters.tagIds?.length) params.tags = filters.tagIds;
     if (filters.coffeeFocus) params.coffeeFocus = filters.coffeeFocus;
+    if (filters.isOpen !== undefined) params.isOpen = filters.isOpen;
+    if (filters.isNew !== undefined) params.isNew = filters.isNew;
+    if (filters.isVisited !== undefined) params.isVisited = filters.isVisited;
   }
 
   return httpClient.get<GetCoffeeShopsResponse>(API_ENDPOINTS.COFFEE_SHOP.BASE, {
@@ -394,11 +425,15 @@ export async function searchCoffeeShops(
   if (filters) {
     if (filters.cityId) params.cityId = filters.cityId;
     if (filters.priceRange) params.priceRange = filters.priceRange;
-    if (filters.equipmentIds) params.equipmentIds = filters.equipmentIds;
-    if (filters.coffeeBeanIds) params.coffeeBeanIds = filters.coffeeBeanIds;
-    if (filters.roasterIds) params.roasterIds = filters.roasterIds;
-    if (filters.brewMethodIds) params.brewMethodIds = filters.brewMethodIds;
+    if (filters.equipmentIds) params.equipments = filters.equipmentIds;
+    if (filters.coffeeBeanIds) params.beans = filters.coffeeBeanIds;
+    if (filters.roasterIds) params.roasters = filters.roasterIds;
+    if (filters.brewMethodIds) params.brewMethods = filters.brewMethodIds;
+    if (filters.tagIds?.length) params.tags = filters.tagIds;
     if (filters.coffeeFocus) params.coffeeFocus = filters.coffeeFocus;
+    if (filters.isOpen !== undefined) params.isOpen = filters.isOpen;
+    if (filters.isNew !== undefined) params.isNew = filters.isNew;
+    if (filters.isVisited !== undefined) params.isVisited = filters.isVisited;
   }
 
   // Добавляем минимальный рейтинг
@@ -589,6 +624,44 @@ export async function getBrewMethods(): Promise<ApiResponse<BrewMethod[]>> {
 }
 
 /**
+ * Активные теги атмосферы для фильтров (GET /api/Catalogs/shop-tags)
+ */
+export async function getShopTags(): Promise<ApiResponse<ShopTagDto[]>> {
+  if (referenceDataCache.shopTags?.data) {
+    return { success: true, message: '', data: referenceDataCache.shopTags.data };
+  }
+
+  if (referenceDataCache.shopTags?.promise) {
+    return referenceDataCache.shopTags.promise;
+  }
+
+  const promise = (async () => {
+    const result = await httpClient.get<ShopTagDto[] | { shopTags?: ShopTagDto[]; items?: ShopTagDto[] }>(
+      API_ENDPOINTS.CATALOGS.SHOP_TAGS,
+      { requiresAuth: false }
+    );
+
+    let tags: ShopTagDto[] = [];
+    if (Array.isArray(result.data)) {
+      tags = result.data;
+    } else if (result.data && typeof result.data === 'object') {
+      const obj = result.data as { shopTags?: ShopTagDto[]; items?: ShopTagDto[] };
+      tags = obj.shopTags ?? obj.items ?? [];
+    }
+
+    if (result.success) {
+      referenceDataCache.shopTags = { data: tags };
+    }
+
+    delete referenceDataCache.shopTags?.promise;
+    return { ...result, data: tags };
+  })();
+
+  referenceDataCache.shopTags = { data: [], promise };
+  return promise;
+}
+
+/**
  * Получает кофейню по ID
  */
 export async function getCoffeeShopById(id: string): Promise<ApiResponse<DetailedCoffeeShop>> {
@@ -677,33 +750,60 @@ export async function createCheckIn(
 }
 
 /**
- * Добавляет кофейню в избранное
- * POST /api/FavoriteCoffeeShops?id={coffeeShopId}
+ * Список чек-инов текущего пользователя.
+ * Пагинация: X-Page-Number / X-Page-Size.
+ * Totals: X-Total-Count / X-Total-Pages или TotalItems/TotalPages в body — не длина страницы.
  */
-export async function addToFavorite(
-  coffeeShopId: string,
-  token: string
-): Promise<ApiResponse<{ entityId: string }>> {
-  return httpClient.post<{ entityId: string }>(
-    API_ENDPOINTS.FAVORITE.BASE,
-    undefined, // Тело запроса не требуется, используется query параметр
-    {
-      params: { id: coffeeShopId },
-      requiresAuth: true,
-    }
-  );
-}
+export async function getCheckIns(
+  page: number = 1,
+  pageSize: number = 10
+): Promise<ApiResponse<GetCheckInsResponse>> {
+  const headers: Record<string, string> = {
+    'X-Page-Number': page.toString(),
+    'X-Page-Size': pageSize.toString(),
+  };
 
-/**
- * Удаляет кофейню из избранного
- * DELETE /api/FavoriteCoffeeShops?id={coffeeShopId}
- */
-export async function removeFromFavorite(
-  coffeeShopId: string,
-  token: string
-): Promise<ApiResponse<void>> {
-  return httpClient.delete<void>(API_ENDPOINTS.FAVORITE.BASE, {
-    params: { id: coffeeShopId },
-    requiresAuth: true,
-  });
+  const response = await httpClient.get<CheckInDto[] | GetCheckInsResponse | { items?: CheckInDto[]; checkIns?: CheckInDto[] }>(
+    API_ENDPOINTS.CHECK_IN.BASE,
+    { headers, requiresAuth: true }
+  );
+
+  const raw = response.data;
+  let items: CheckInDto[] = [];
+  let bodyTotalItems: number | undefined;
+  let bodyTotalPages: number | undefined;
+  let bodyPage: number | undefined;
+  let bodyPageSize: number | undefined;
+
+  if (Array.isArray(raw)) {
+    items = raw;
+  } else if (raw && typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    if (Array.isArray(obj.items)) items = obj.items as CheckInDto[];
+    else if (Array.isArray(obj.checkIns)) items = obj.checkIns as CheckInDto[];
+    bodyTotalItems = (obj.totalItems ?? obj.TotalItems ?? obj.totalCount) as number | undefined;
+    bodyTotalPages = (obj.totalPages ?? obj.TotalPages) as number | undefined;
+    bodyPage = (obj.currentPage ?? obj.page) as number | undefined;
+    bodyPageSize = obj.pageSize as number | undefined;
+  }
+
+  const totalItems =
+    response.pagination?.totalItems ??
+    bodyTotalItems ??
+    0;
+  const totalPages =
+    response.pagination?.totalPages ??
+    bodyTotalPages ??
+    (pageSize > 0 ? Math.max(1, Math.ceil(totalItems / pageSize)) : 1);
+
+  return {
+    ...response,
+    data: {
+      items,
+      totalItems,
+      totalPages,
+      currentPage: bodyPage ?? page,
+      pageSize: bodyPageSize ?? pageSize,
+    },
+  };
 }

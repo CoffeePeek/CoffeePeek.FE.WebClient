@@ -36,6 +36,3 @@ export * from './user';
 
 // Public
 export * from './public';
-
-// Community
-export * from './community';

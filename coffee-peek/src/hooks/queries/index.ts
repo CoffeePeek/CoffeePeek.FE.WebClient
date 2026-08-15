@@ -6,11 +6,11 @@ export { coffeeShopKeys } from './useCoffeeShops';
 export * from './useReviews';
 export { reviewKeys } from './useReviews';
 
-// Favorites
-export * from './useFavorites';
-export { favoriteKeys } from './useFavorites';
-
 // Catalogs
 export * from './useCatalogs';
 export { catalogKeys } from './useCatalogs';
+
+// Check-ins
+export * from './useCheckIns';
+export { checkInKeys } from './useCheckIns';
 

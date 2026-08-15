@@ -26,6 +26,9 @@ export const API_ENDPOINTS = {
     UPDATE_PHONE_NUMBER: "/api/users/me/phone-number",
     UPDATE_AVATAR: "/api/users/me/avatar",
     UPDATE_USERNAME: "/api/users/me/username",
+    UPDATE_PASSWORD: "/api/users/me/password",
+    PASSWORD_FORGOT: "/api/users/password/forgot",
+    PASSWORD_RESET: "/api/users/password/reset",
     DELETE: "/api/users/me",
     EMAIL_CONFIRMATION: "/api/users/me/email-confirmation",
     REVIEWS: (userId: string) => `/api/users/${userId}/reviews`,
@@ -47,6 +50,7 @@ export const API_ENDPOINTS = {
     BEANS: "/api/Catalogs/beans",
     ROASTERS: "/api/Catalogs/roasters",
     BREW_METHODS: "/api/Catalogs/brew-methods",
+    SHOP_TAGS: "/api/Catalogs/shop-tags",
   },
 
   REVIEW: {
@@ -56,10 +60,6 @@ export const API_ENDPOINTS = {
 
   CHECK_IN: {
     BASE: "/api/CheckIns",
-  },
-
-  FAVORITE: {
-    BASE: "/api/FavoriteCoffeeShops",
   },
 
   PHOTO: {

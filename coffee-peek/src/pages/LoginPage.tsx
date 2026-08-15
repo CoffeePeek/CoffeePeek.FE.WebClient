@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { login, resendEmailConfirmationByEmail } from '../api/auth';
 import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
 import { useUser } from '../contexts/UserContext';
@@ -180,7 +180,7 @@ const LoginPage: React.FC = () => {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', transition: 'background .3s' }}>
+    <div style={{ minHeight: '100dvh', background: bg, display: 'grid', placeItems: 'center', position: 'relative', overflow: 'hidden', transition: 'background .3s' }}>
       {/* Dotted pattern (dark only) */}
       {dark && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, pointerEvents: 'none' }} />}
       {/* Gold glows */}
@@ -194,7 +194,7 @@ const LoginPage: React.FC = () => {
       </button>
 
       {/* Card */}
-      <div style={{ width: '100%', maxWidth: 460, margin: '0 auto', padding: '16px', position: 'relative', zIndex: 2 }}>
+      <div style={{ width: 'min(100%, 460px)', padding: '16px', position: 'relative', zIndex: 2, boxSizing: 'border-box' }}>
         <div style={{ padding: 40, borderRadius: 24, background: cardBg, backdropFilter: dark ? 'blur(24px)' : 'none', border: `1px solid ${cardBorder}`, boxShadow: dark ? '0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 32px rgba(0,0,0,0.08)', transition: 'all .3s' }}>
 
           {/* Logo */}
@@ -246,7 +246,7 @@ const LoginPage: React.FC = () => {
               value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
 
             <div style={{ textAlign: 'right', marginTop: -6 }}>
-              <a style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer' }}>Забыли пароль?</a>
+              <Link to="/forgot-password" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>Забыли пароль?</Link>
             </div>
 
             {emailNotConfirmed && (

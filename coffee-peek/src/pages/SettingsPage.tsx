@@ -4,11 +4,12 @@ import { useUser } from '../contexts/UserContext';
 import {
   getProfile, UserProfile,
   updateUsername, updateEmail, updateAbout, updateAvatar, resendEmailConfirmation,
+  changePassword,
 } from '../api/auth';
 import { getAvatarUploadUrl } from '../api/photos';
 import { useTheme } from '../contexts/ThemeContext';
 import { COLORS } from '../constants/colors';
-import { getErrorMessage } from '../utils/errorHandler';
+import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -215,6 +216,7 @@ const SettingsPage: React.FC = () => {
             onSave={handleSave}
             onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
             onAvatarSelect={handleAvatarSelect}
+            onOpenCheckIns={() => navigate('/check-ins')}
           />
         ) : null;
       case 'security':
@@ -392,12 +394,13 @@ interface ProfileSectionProps {
   onSave: () => void;
   onInputChange: (field: string, value: string) => void;
   onAvatarSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onOpenCheckIns: () => void;
 }
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({
   profile, isEditing, editValues, isSaving, selectedAvatarFile, avatarPreview,
   isDark, surface, border, textPrimary, textMuted, gold, goldWarm,
-  onEditStart, onEditCancel, onSave, onInputChange, onAvatarSelect,
+  onEditStart, onEditCancel, onSave, onInputChange, onAvatarSelect, onOpenCheckIns,
 }) => {
   const displayAvatar = avatarPreview || profile.avatarUrl;
   const memberSince = profile.createdAtUtc ? new Date(profile.createdAtUtc).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
@@ -477,17 +480,31 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
         {/* Stats row */}
         <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${border}`, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           {[
-            { Icon: ShoppingCart, value: profile.checkInCount ?? 0, label: 'Посещений' },
+            { Icon: ShoppingCart, value: profile.checkInCount ?? 0, label: 'Посещений', onClick: onOpenCheckIns as (() => void) | undefined },
             { Icon: ChatCircleText, value: profile.reviewCount ?? 0, label: 'Отзывов' },
             { Icon: Storefront, value: profile.addedShopsCount ?? 0, label: 'Добавлено' },
           ].map(stat => (
-            <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              key={stat.label}
+              role={stat.onClick ? 'button' : undefined}
+              tabIndex={stat.onClick ? 0 : undefined}
+              onClick={stat.onClick}
+              onKeyDown={stat.onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); stat.onClick?.(); } } : undefined}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                cursor: stat.onClick ? 'pointer' : 'default',
+                borderRadius: 12, padding: stat.onClick ? '4px 6px' : 0, margin: stat.onClick ? '-4px -6px' : 0,
+              }}
+              title={stat.onClick ? 'Смотреть посещения' : undefined}
+            >
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `${gold}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <stat.Icon size={18} color={goldWarm} />
               </div>
               <div>
                 <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 18, color: textPrimary, lineHeight: 1 }}>{stat.value}</p>
-                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted, marginTop: 2 }}>{stat.label}</p>
+                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted, marginTop: 2 }}>
+                  {stat.label}{stat.onClick ? ' →' : ''}
+                </p>
               </div>
             </div>
           ))}
@@ -539,22 +556,96 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
 
 const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: string; textPrimary: string; textMuted: string }> = ({
   isDark, surface, border, textPrimary, textMuted,
-}) => (
-  <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-    <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Безопасность</h3>
-    <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Управляйте паролем и настройками входа</p>
+}) => {
+  const [open, setOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const gold = '#EAB308';
 
-    <div style={{ padding: '16px', borderRadius: 14, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-      <div>
-        <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: textPrimary }}>Пароль</p>
-        <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>Последнее изменение — неизвестно</p>
+  const inputStyle: React.CSSProperties = {
+    width: '100%', height: 44, borderRadius: 10, padding: '0 14px', boxSizing: 'border-box',
+    border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`,
+    background: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+    color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontSize: 14, outline: 'none',
+  };
+
+  const handleSave = async () => {
+    setError('');
+    setSuccess('');
+    if (newPassword.length < 8) {
+      setError('Новый пароль должен содержать минимум 8 символов');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Пароли не совпадают');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await changePassword({ currentPassword, newPassword });
+      setSuccess('Пароль изменён. Текущая сессия остаётся активной.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setOpen(false);
+    } catch (err) {
+      setError(getPasswordErrorMessage(err) ?? getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
+      <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Безопасность</h3>
+      <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Управляйте паролем и настройками входа</p>
+
+      <div style={{ padding: '16px', borderRadius: 14, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: textPrimary }}>Пароль</p>
+            <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>
+              {success || 'Смена пароля не разлогинивает текущую сессию'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setOpen((v) => !v); setError(''); setSuccess(''); }}
+            style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            {open ? 'Отмена' : 'Изменить'}
+          </button>
+        </div>
+
+        {open && (
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <input type="password" placeholder="Текущий пароль" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle} />
+            <input type="password" placeholder="Не менее 8 символов" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+            <input type="password" placeholder="Повторите новый пароль" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={inputStyle} />
+            {error && <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: '#EF4444' }}>{error}</p>}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving || !currentPassword || newPassword.length < 8}
+              style={{
+                alignSelf: 'flex-start', padding: '10px 18px', borderRadius: 10, border: 'none',
+                background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14,
+                cursor: isSaving || !currentPassword || newPassword.length < 8 ? 'not-allowed' : 'pointer',
+                opacity: !currentPassword || newPassword.length < 8 ? 0.5 : 1,
+              }}
+            >
+              {isSaving ? 'Сохраняем…' : 'Сохранить пароль'}
+            </button>
+          </div>
+        )}
       </div>
-      <button style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-        Изменить
-      </button>
     </div>
-  </div>
-);
+  );
+};
 
 // ── Appearance section ───────────────────────────────────────────────
 

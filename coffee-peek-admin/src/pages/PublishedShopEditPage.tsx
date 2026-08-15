@@ -10,12 +10,14 @@ import {
   assignPublishedShopOwner,
   reorderPublishedShopPhotos,
   patchPublishedShopFocus,
-  updatePublishedShopTags,
+  assignShopTags,
 } from '../api/admin';
+import { getShopTags } from '../api/catalogs';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { CatalogMultiSelect } from '../components/moderation/CatalogMultiSelect';
 import { PhotoOrderEditor } from '../components/PhotoOrderEditor';
 import { PriceRangePicker } from '../components/PriceRangePicker';
 import {
@@ -26,7 +28,9 @@ import {
 } from '../constants/coffeeShopStatus';
 import { parsePriceRange } from '../constants/priceRange';
 import { CoffeeFocus } from '../constants/catalogIngest';
-import { CatalogTagChips, CoffeeFocusPicker } from '../components/import/catalogControls';
+import { CoffeeFocusPicker } from '../components/import/catalogControls';
+
+const MAX_SHOP_TAGS = 20;
 
 const schema = z.object({
   name: z.string().min(1, 'Обязательное поле'),
@@ -45,12 +49,18 @@ export const PublishedShopEditPage: React.FC = () => {
   const qc = useQueryClient();
   const [ownerInput, setOwnerInput] = useState('');
   const [focus, setFocus] = useState<CoffeeFocus | undefined>();
-  const [tagSlugs, setTagSlugs] = useState<string[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['admin', 'published-shop', id],
     queryFn: () => getPublishedShopById(id!).then((r) => r.data),
     enabled: !!id,
+  });
+
+  const { data: catalogTags = [] } = useQuery({
+    queryKey: ['catalogs', 'shop-tags'],
+    queryFn: () => getShopTags().then((r) => r.data ?? []),
+    staleTime: 5 * 60 * 1000,
   });
 
   const {
@@ -76,7 +86,7 @@ export const PublishedShopEditPage: React.FC = () => {
       });
       setOwnerInput(shop.ownerUserId ?? '');
       setFocus(shop.coffeeFocus);
-      setTagSlugs(shop.tagSlugs ?? []);
+      setSelectedTagIds((shop.tags ?? []).map((t) => t.id));
     }
   }, [shop, reset]);
 
@@ -114,15 +124,6 @@ export const PublishedShopEditPage: React.FC = () => {
     onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить focus', 'error'),
   });
 
-  const tagsMutation = useMutation({
-    mutationFn: (slugs: string[]) => updatePublishedShopTags(id!, slugs),
-    onSuccess: (response) => {
-      qc.setQueryData(['admin', 'published-shop', id], response.data);
-      showToast('Теги сохранены', 'success');
-    },
-    onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить теги', 'error'),
-  });
-
   const photoOrderMutation = useMutation({
     mutationFn: (photoIds: string[]) => reorderPublishedShopPhotos(id!, photoIds),
     onSuccess: (response) => {
@@ -133,6 +134,35 @@ export const PublishedShopEditPage: React.FC = () => {
     onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить порядок фотографий', 'error'),
   });
 
+  const tagsMutation = useMutation({
+    mutationFn: (tagIds: string[]) => assignShopTags(id!, tagIds),
+    onSuccess: () => {
+      showToast('Теги сохранены', 'success');
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] });
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить теги', 'error'),
+  });
+
+  const specialtyTagId = catalogTags.find((tag) => tag.slug === 'specialty')?.id;
+
+  const handleFocusChange = (next: CoffeeFocus) => {
+    setFocus(next);
+    if (!specialtyTagId) return;
+    setSelectedTagIds((current) => {
+      const without = current.filter((id) => id !== specialtyTagId);
+      return next === 'specialty' ? [...without, specialtyTagId] : without;
+    });
+  };
+
+  const handleTagChange = (ids: string[]) => {
+    if (ids.length > MAX_SHOP_TAGS) {
+      showToast(`Максимум ${MAX_SHOP_TAGS} тегов`, 'error');
+      setSelectedTagIds(ids.slice(0, MAX_SHOP_TAGS));
+      return;
+    }
+    setSelectedTagIds(ids);
+  };
+
   if (isLoading || !shop) {
     return (
       <div className="max-w-2xl space-y-4">
@@ -141,6 +171,15 @@ export const PublishedShopEditPage: React.FC = () => {
       </div>
     );
   }
+
+  const tagItems = catalogTags
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .map((tag) => ({
+      id: tag.id,
+      name: tag.name,
+      subtitle: tag.slug,
+    }));
 
   return (
     <div className="space-y-5 w-full min-w-0 max-w-2xl">
@@ -208,16 +247,7 @@ export const PublishedShopEditPage: React.FC = () => {
         <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
           Одна категория для ленты. Specialty синхронизирует тег specialty.
         </p>
-        <CoffeeFocusPicker
-          value={focus}
-          onChange={(next) => {
-            setFocus(next);
-            setTagSlugs((current) => {
-              const without = current.filter((slug) => slug !== 'specialty');
-              return next === 'specialty' ? [...without, 'specialty'] : without;
-            });
-          }}
-        />
+        <CoffeeFocusPicker value={focus} onChange={handleFocusChange} />
         <Button
           variant="secondary"
           size="sm"
@@ -232,22 +262,27 @@ export const PublishedShopEditPage: React.FC = () => {
 
       <Card>
         <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Теги</h3>
-        <CatalogTagChips value={tagSlugs} onChange={setTagSlugs} />
-        <Button
-          variant="secondary"
-          size="sm"
-          className="mt-3"
-          loading={tagsMutation.isPending}
-          onClick={() => {
-            const slugs =
-              focus === 'specialty'
-                ? Array.from(new Set([...tagSlugs, 'specialty']))
-                : tagSlugs.filter((slug) => slug !== 'specialty');
-            tagsMutation.mutate(slugs);
-          }}
-        >
-          Сохранить теги
-        </Button>
+        <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
+          Полная замена набора тегов. Не более {MAX_SHOP_TAGS} штук.
+        </p>
+        <CatalogMultiSelect
+          label="Активные теги"
+          items={tagItems}
+          selectedIds={selectedTagIds}
+          onChange={handleTagChange}
+          emptyLabel="Теги не выбраны"
+        />
+        <div className="mt-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={tagsMutation.isPending}
+            onClick={() => tagsMutation.mutate(selectedTagIds)}
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+          >
+            Сохранить теги
+          </Button>
+        </div>
       </Card>
 
       <PhotoOrderEditor

@@ -9,8 +9,9 @@ import { getThemeClasses } from '../utils/theme';
 import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
+import { CoffeeBeanSign } from './icons';
 import {
-  MapPin, CurrencyDollar, Images, Factory, Leaf, Flame, Drop, Lightbulb, X,
+  MapPin, Images, Factory, Leaf, Flame, Drop, Lightbulb, X,
 } from '@/components/Icon';
 import {
   buildShopSubmissionPayload,
@@ -53,7 +54,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
 
   const [formData, setFormData] = useState<ShopFormData>(INITIAL_SHOP_FORM_DATA);
 
-  const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos, clearFiles } = usePhotoUpload();
+  const { selectedFiles, uploadingPhotos, error: uploadError, handleFileSelect, removeFile, uploadPhotos, clearFiles } = usePhotoUpload();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ShopFormField, string>>>({});
@@ -173,9 +174,9 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
             </button>
           </div>
 
-          {error && (
+          {(error || uploadError) && (
             <div className={`mb-6 p-4 ${theme === 'dark' ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'} border rounded-2xl`}>
-              <p className={`text-sm ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{error}</p>
+              <p className={`text-sm ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{error || uploadError}</p>
             </div>
           )}
 
@@ -255,7 +256,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                     { value: 'Moderate', label: 'Средний' },
                     { value: 'Premium', label: 'Премиум' }
                   ]}
-                  icon={<CurrencyDollar size={20} />}
+                  icon={<CoffeeBeanSign size={20} />}
                 />
               </div>
             </div>

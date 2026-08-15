@@ -166,11 +166,6 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
           </div>
           <div>
             <h3 className={`font-bold ${textMain} mb-1`}>{shop.location?.address || shop.address || 'Адрес не указан'}</h3>
-            {latitude && longitude && (
-              <p className={`${textMuted} text-sm`}>
-                {latitude.toFixed(6)}, {longitude.toFixed(6)}
-              </p>
-            )}
           </div>
         </div>
 

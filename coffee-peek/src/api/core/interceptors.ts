@@ -58,7 +58,7 @@ export function requestInterceptor(
   }
 
   // Добавляем Authorization заголовок если токен доступен
-  // Даже для публичных эндпоинтов токен нужен для персонализации (isFavorite, isVisited и т.д.)
+  // Даже для публичных эндпоинтов токен нужен для персонализации (isVisited и т.д.)
   const token = TokenManager.getAccessToken();
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
@@ -233,6 +233,12 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
 
   const shopData = shop as BackendShopData;
   const normalized: Record<string, unknown> = { ...shopData };
+
+  // Flatten location.address → address for list cards / legacy fields
+  const loc = (shopData as { location?: { address?: string } }).location;
+  if (loc?.address && !normalized.address) {
+    normalized.address = loc.address;
+  }
 
   // Нормализуем адрес: на бэкенде может быть "address" или "Address", на фронтенде для модерации используется "notValidatedAddress"
   if ('address' in shop && !('notValidatedAddress' in shop)) {

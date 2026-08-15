@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, getPhotoUrl } from '../api/coffeeshop';
+import { searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, getShopTags, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto, getPhotoUrl } from '../api/coffeeshop';
 import { ShopCardSkeleton } from './skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRequireAuth } from '../hooks/useRequireAuth';
@@ -11,8 +11,7 @@ import ShopSearchBar from './ShopSearchBar';
 import ShopFilterPanel from './ShopFilterPanel';
 import ShopPagination from './ShopPagination';
 import { AppIcon, StarIcon } from './icons';
-
-type PhotoInput = { fullUrl?: string; storageKey?: string } | string;
+import { useLocalFavorites } from '../hooks/useLocalFavorites';
 
 type ShopsPage = Record<string, unknown> & {
   coffeeShops?: Record<string, unknown>[];
@@ -50,6 +49,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const { theme } = useTheme();
   const { user, requireAuth } = useRequireAuth();
   const colors = getThemeColors(theme);
+  const { favoriteIds } = useLocalFavorites();
   const [allShops, setAllShops] = useState<CoffeeShop[]>([]); // Все кофейни с сервера (нефильтрованные)
   const [shops, setShops] = useState<CoffeeShop[]>([]); // Отфильтрованные кофейни для отображения
   const [totalItems, setTotalItems] = useState<number>(0);
@@ -61,6 +61,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([]);
   const [roasters, setRoasters] = useState<Roaster[]>([]);
   const [brewMethods, setBrewMethods] = useState<BrewMethod[]>([]);
+  const [shopTags, setShopTags] = useState<ShopTagDto[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const [filters, setFilters] = useState<CoffeeShopFilters>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +71,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [activeQuick, setActiveQuick] = useState<string[]>(['all']);
 
   const handleQuickChange = (id: string) => {
+    if (id === 'visited' && !requireAuth()) return;
     setActiveQuick(prev => {
       if (id === 'all') return ['all'];
       const without = prev.filter(x => x !== 'all');
@@ -76,6 +79,13 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       return next.length === 0 ? ['all'] : next;
     });
   };
+
+  const handleTagToggle = (tagId: string) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId) ? prev.filter(x => x !== tagId) : [...prev, tagId]
+    );
+  };
+
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
   const [selectedBeans, setSelectedBeans] = useState<string[]>([]);
@@ -83,9 +93,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [selectedBrewMethods, setSelectedBrewMethods] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [activeFilterTabs, setActiveFilterTabs] = useState<Set<'open' | 'new' | 'favorite' | 'visited'>>(new Set());
-  const [favoriteShopIds, setFavoriteShopIds] = useState<Set<string>>(new Set());
-  const [visitedShopIds, setVisitedShopIds] = useState<Set<string>>(new Set());
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
@@ -133,13 +140,17 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       brewMethodIds: selectedBrewMethods.length ? selectedBrewMethods : undefined,
       priceRange: filters.priceRange,
       coffeeFocus: filters.coffeeFocus,
+      isOpen: activeQuick.includes('open') ? true : undefined,
+      isNew: activeQuick.includes('new') ? true : undefined,
+      isVisited: activeQuick.includes('visited') ? true : undefined,
+      tagIds: selectedTagIds.length ? selectedTagIds : undefined,
     };
 
     if (JSON.stringify(filters) !== JSON.stringify(updatedFilters)) {
       setFilters(updatedFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCity, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods]);
+  }, [selectedCity, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods, activeQuick, selectedTagIds]);
 
   // Only trigger shop loading from filter changes after initial load is complete
   useEffect(() => {
@@ -158,9 +169,12 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     filters.coffeeBeanIds?.length ?? 0,
     filters.roasterIds?.length ?? 0,
     filters.brewMethodIds?.length ?? 0,
-    debouncedSearchQuery, // Загружаем данные при изменении debounced поискового запроса
-    initialDataLoaded, // This ensures the effect only runs after initial data is loaded
-    // activeFilterTab НЕ добавлен - фильтрация происходит на клиенте без перезагрузки
+    filters.tagIds?.join(',') ?? '',
+    filters.isOpen,
+    filters.isNew,
+    filters.isVisited,
+    debouncedSearchQuery,
+    initialDataLoaded,
   ]);
 
   useEffect(() => {
@@ -171,69 +185,29 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, initialDataLoaded]);
 
-  // Применяем клиентскую фильтрацию при изменении вкладки
+  const applyFavoriteFilter = useCallback((shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
+    if (!activeQuick.includes('favorite')) return shopsToFilter;
+    return shopsToFilter.filter(shop => favoriteIds.has(shop.id));
+  }, [activeQuick, favoriteIds]);
+
+  // Favorite is local-only — re-apply after load or when favorite chip / ids change
   useEffect(() => {
     if (allShops.length > 0) {
-      const filtered = filterShopsByActiveTabs(allShops);
+      const filtered = applyFavoriteFilter(allShops);
       setShops(filtered);
       setTotalItems(filtered.length);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilterTabs, allShops.length]);
-
-  const filterShopsByActiveTabs = (shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
-    let filtered = shopsToFilter;
-    
-    // Если нет активных фильтров, показываем все кофейни
-    if (activeFilterTabs.size === 0) {
-      return filtered;
-    }
-    
-    // Применяем все активные фильтры (AND логика - кофейня должна соответствовать всем выбранным фильтрам)
-    if (activeFilterTabs.has('open')) {
-      filtered = filtered.filter(shop => shop.isOpen === true);
-    }
-    
-    if (activeFilterTabs.has('new')) {
-      filtered = filtered.filter(shop => shop.isNew === true);
-    }
-    
-    if (activeFilterTabs.has('favorite')) {
-      filtered = filtered.filter(shop => shop.isFavorite === true);
-    }
-    
-    if (activeFilterTabs.has('visited')) {
-      filtered = filtered.filter(shop => shop.isVisited === true);
-    }
-    
-    return filtered;
-  };
-  
-  const toggleFilterTab = (filterId: 'open' | 'new' | 'favorite' | 'visited') => {
-    if ((filterId === 'favorite' || filterId === 'visited') && !requireAuth()) {
-      return;
-    }
-    setActiveFilterTabs(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(filterId)) {
-        // Если фильтр уже активен, снимаем его
-        newSet.delete(filterId);
-      } else {
-        // Если фильтр не активен, добавляем его
-        newSet.add(filterId);
-      }
-      return newSet;
-    });
-  };
+  }, [applyFavoriteFilter, allShops]);
 
   const loadInitialData = async () => {
     try {
-      const [citiesRes, equipmentsRes, beansRes, roastersRes, methodsRes] = await Promise.all([
+      const [citiesRes, equipmentsRes, beansRes, roastersRes, methodsRes, tagsRes] = await Promise.all([
         getCities(),
         getEquipments(),
         getCoffeeBeans(),
         getRoasters(),
         getBrewMethods(),
+        getShopTags(),
       ]);
 
       const citiesData = extractList<City>(citiesRes.data, 'cities');
@@ -241,12 +215,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       const beansData = extractList<CoffeeBean>(beansRes.data, 'beans');
       const roastersData = extractList<Roaster>(roastersRes.data, 'roasters');
       const methodsData = extractList<BrewMethod>(methodsRes.data, 'methods');
+      const tagsData = extractList<ShopTagDto>(tagsRes.data, 'shopTags', 'items');
 
       setCities(Array.isArray(citiesData) ? citiesData : []);
       setEquipments(Array.isArray(equipmentsData) ? equipmentsData : []);
       setCoffeeBeans(Array.isArray(beansData) ? beansData : []);
       setRoasters(Array.isArray(roastersData) ? roastersData : []);
       setBrewMethods(Array.isArray(methodsData) ? methodsData : []);
+      setShopTags(Array.isArray(tagsData) ? tagsData : (Array.isArray(tagsRes.data) ? tagsRes.data : []));
     } catch (err) {
       logger.error('Error loading initial data:', err);
       // Set empty arrays to prevent errors
@@ -255,6 +231,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       setCoffeeBeans([]);
       setRoasters([]);
       setBrewMethods([]);
+      setShopTags([]);
     }
   };
 
@@ -291,7 +268,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             return { ...shop, shopPhotos, photos: orderedPhotos, rating: (shop.rating as number) ?? 0 } as unknown as CoffeeShop;
           });
           setAllShops(shops);
-          const filtered = filterShopsByActiveTabs(shops);
+          const filtered = applyFavoriteFilter(shops);
           setShops(filtered);
           setTotalItems(filtered.length);
           const p = pagination(responseData);
@@ -304,7 +281,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             rating: (shop.rating as number) ?? (shop.averageRating as number) ?? 0,
           })) as unknown as CoffeeShop[];
           setAllShops(items);
-          const filtered = filterShopsByActiveTabs(items);
+          const filtered = applyFavoriteFilter(items);
           setShops(filtered);
           setTotalItems(filtered.length);
           const p = pagination(responseData);
@@ -315,7 +292,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             rating: (shop.rating as number) ?? (shop.averageRating as number) ?? 0,
           })) as unknown as CoffeeShop[];
           setAllShops(content);
-          const filtered = filterShopsByActiveTabs(content);
+          const filtered = applyFavoriteFilter(content);
           setShops(filtered);
           setTotalItems(filtered.length);
           const p = pagination(responseData);
@@ -324,7 +301,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           // Fallback for direct array
           if (Array.isArray(responseData)) {
             setAllShops(responseData);
-            const filteredShops = filterShopsByActiveTabs(responseData);
+            const filteredShops = applyFavoriteFilter(responseData);
             setShops(filteredShops);
             setTotalItems(filteredShops.length);
             setTotalPages(1);
@@ -339,7 +316,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         // Fallback for old response format
         if (Array.isArray(response.data)) {
           setAllShops(response.data);
-          const filteredShops = filterShopsByActiveTabs(response.data);
+          const filteredShops = applyFavoriteFilter(response.data);
           setShops(filteredShops);
           setTotalItems(filteredShops.length);
           setTotalPages(1);
@@ -407,6 +384,10 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         <ShopFilterPanel
           activeQuick={activeQuick}
           onQuickChange={handleQuickChange}
+          shopTags={shopTags}
+          selectedTagIds={selectedTagIds}
+          onTagToggle={handleTagToggle}
+          isAuthenticated={!!user}
           showFilters={showFilters}
           filters={filters}
           equipments={equipments}
@@ -457,7 +438,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                     </div>
                     <div style={{ padding: '9px 11px 11px' }}>
                       <h4 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h4>
-                      <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>{shop.address || shop.cityName || ''}</p>
+                      <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>{shop.location?.address || shop.address || shop.cityName || ''}</p>
                     </div>
                   </div>
                 );
@@ -469,7 +450,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
 
         {/* ── Mobile: list section header ─────────────────────── */}
         {!isLoading && (
-          <div className="lg:hidden max-w-7xl mx-auto px-4 sm:px-6 flex items-baseline justify-between mb-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-baseline justify-between mb-3">
             <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>
               Кофейни рядом <span style={{ color: colors.textSecondary, fontWeight: 500, fontSize: 13 }}>· {shops.length}</span>
             </h2>
@@ -480,79 +461,23 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           </div>
         )}
 
-        {/* ── Shop grid (desktop 4-col, tablet 2-col) / list (mobile) ── */}
+        {/* ── Shop grid: 1 / 2 / 3 / 4 cols ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {isLoading ? (
-            <>
-              {/* Desktop skeleton */}
-              <div className="hidden lg:grid gap-4" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                <ShopCardSkeleton count={8} />
-              </div>
-              {/* Mobile skeleton */}
-              <div className="lg:hidden flex flex-col gap-3">
-                <ShopCardSkeleton count={4} variant="row" />
-              </div>
-            </>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-12">
+              <ShopCardSkeleton count={8} />
+            </div>
           ) : shops.length === 0 ? (
             <div className="rounded-2xl p-10 text-center border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
               <AppIcon name="coffee_maker" size={40} color={colors.textSecondary} />
               <p style={{ margin: '12px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: colors.textSecondary }}>Ничего не найдено. Попробуйте другой фильтр.</p>
             </div>
           ) : (
-            <>
-              {/* Desktop: 4-column grid */}
-              <div className="hidden lg:grid gap-4 pb-12" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                {shops.map((shop) => (
-                  <ShopCard
-                    key={shop.id}
-                    shop={shop}
-                    colors={colors}
-                    favoriteShopIds={favoriteShopIds}
-                    onSelect={openShopDetails}
-                    isAuthenticated={!!user}
-                    onRequireAuth={requireAuth}
-                  />
-                ))}
-              </div>
-              {/* Mobile: list rows */}
-              <div className="lg:hidden flex flex-col gap-3 pb-24">
-                {shops.map((shop) => {
-                  const photos = shop.shopPhotos?.filter((p): p is string => typeof p === 'string') ?? [];
-                  return (
-                    <article key={shop.id} onClick={() => openShopDetails(shop.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, cursor: 'pointer' }}>
-                      <div style={{ width: 84, height: 84, flexShrink: 0, borderRadius: 12, background: photos[0] ? `url(${photos[0]}) center/cover` : `${COLORS.primary}20`, overflow: 'hidden' }}>
-                        {photos[0] && <img src={photos[0]} alt={shop.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                          <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h3>
-                          {shop.rating && shop.rating > 0 && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: 'rgba(180,140,75,.12)', color: '#D4A84B', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' as const }}>
-                              <StarIcon filled size={13} color="#D4A84B" />
-                              {shop.rating.toFixed(1)}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>
-                          {typeof shop.isOpen !== 'undefined' && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, background: shop.isOpen ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)', color: shop.isOpen ? '#15803D' : '#B91C1C', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const }}>
-                              {shop.isOpen ? 'Открыто' : 'Закрыто'}
-                            </span>
-                          )}
-                          <span>{shop.address || shop.cityName || ''}</span>
-                        </div>
-                        <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
-                          {(shop as unknown as Record<string, unknown[]>).tags?.slice(0, 3).map((t, i) => (
-                            <span key={i} style={{ padding: '3px 8px', borderRadius: 6, background: isDark ? 'rgba(255,255,255,0.06)' : '#F5F5F4', color: isDark ? '#A39E93' : '#57534E', fontFamily: '"RF Dewi Expanded"', fontSize: 10, fontWeight: 600 }}>{String(t)}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-12 sm:pb-12">
+              {shops.map((shop) => (
+                <ShopCard key={shop.id} shop={shop} colors={colors} onSelect={openShopDetails} />
+              ))}
+            </div>
           )}
         </div>
 

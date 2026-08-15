@@ -23,6 +23,48 @@ class HttpClient {
   }
 
   /**
+   * Читает пагинацию из заголовков и/или тела ответа.
+   * Не использовать длину массива страницы как total.
+   */
+  private extractPaginationMeta(
+    response: Response,
+    body: any
+  ): ApiResponse<unknown>['pagination'] | undefined {
+    const headerTotal = response.headers.get('X-Total-Count') ?? response.headers.get('x-total-count');
+    const headerPages = response.headers.get('X-Total-Pages') ?? response.headers.get('x-total-pages');
+    const headerPage = response.headers.get('X-Page-Number') ?? response.headers.get('x-page-number');
+    const headerPageSize = response.headers.get('X-Page-Size') ?? response.headers.get('x-page-size');
+
+    const payload = body?.data && typeof body.data === 'object' ? body.data : body;
+    const bodyTotal =
+      payload?.totalItems ?? payload?.TotalItems ?? payload?.totalCount ?? payload?.TotalCount;
+    const bodyPages = payload?.totalPages ?? payload?.TotalPages;
+    const bodyPage = payload?.currentPage ?? payload?.page ?? payload?.Page;
+    const bodyPageSize = payload?.pageSize ?? payload?.PageSize;
+
+    const totalItems = headerTotal != null ? Number(headerTotal) : bodyTotal != null ? Number(bodyTotal) : undefined;
+    const totalPages = headerPages != null ? Number(headerPages) : bodyPages != null ? Number(bodyPages) : undefined;
+    const page = headerPage != null ? Number(headerPage) : bodyPage != null ? Number(bodyPage) : undefined;
+    const pageSize = headerPageSize != null ? Number(headerPageSize) : bodyPageSize != null ? Number(bodyPageSize) : undefined;
+
+    if (
+      totalItems === undefined &&
+      totalPages === undefined &&
+      page === undefined &&
+      pageSize === undefined
+    ) {
+      return undefined;
+    }
+
+    return {
+      ...(Number.isFinite(totalItems) ? { totalItems } : {}),
+      ...(Number.isFinite(totalPages) ? { totalPages } : {}),
+      ...(Number.isFinite(page) ? { page } : {}),
+      ...(Number.isFinite(pageSize) ? { pageSize } : {}),
+    };
+  }
+
+  /**
    * Выполняет HTTP запрос
    */
   private async request<T>(
@@ -48,12 +90,15 @@ class HttpClient {
       // Нормализуем данные
       const normalizedData = normalizeResponseData<T>(data.data || data);
 
+      const pagination = this.extractPaginationMeta(response, data);
+
       // Возвращаем унифицированный ответ
       return {
         success: true,
         isSuccess: true,
         message: data.message || '',
         data: normalizedData,
+        ...(pagination ? { pagination } : {}),
       };
     } catch (error) {
       // Пробрасываем ошибку дальше для обработки в компонентах

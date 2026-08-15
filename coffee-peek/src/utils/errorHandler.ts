@@ -28,6 +28,10 @@ export const ErrorCodes = {
     title: 'Страница не найдена',
     message: 'К сожалению, запрашиваемая страница не существует. Возможно, она была перемещена или удалена.'
   },
+  429: {
+    title: 'Слишком много запросов',
+    message: 'Слишком много запросов. Подождите минуту и попробуйте снова.'
+  },
   500: {
     title: 'Ошибка сервера',
     message: 'Произошла внутренняя ошибка сервера. Мы уже работаем над её устранением.'
@@ -78,6 +82,7 @@ export function getErrorMessageByStatus(status: number | undefined): string {
     if (status === 401) return ErrorCodes[401].message;
     if (status === 403) return ErrorCodes[403].message;
     if (status === 404) return ErrorCodes[404].message;
+    if (status === 429) return ErrorCodes[429].message;
     return 'Ошибка запроса. Пожалуйста, проверьте введённые данные.';
   }
 
@@ -163,6 +168,49 @@ export function getErrorMessage(error: any, context?: 'login' | 'register'): str
   }
   
   return ErrorCodes.UNKNOWN.message;
+}
+
+const OAUTH_PASSWORD_HINT =
+  'У этого аккаунта нет пароля — вход через Google. Смена и сброс пароля недоступны.';
+
+/**
+ * Friendly message for OAuth-only accounts that have no local password.
+ * Returns null when the error is unrelated so callers can fall back to getErrorMessage.
+ */
+export function getPasswordErrorMessage(error: unknown): string | null {
+  const err = error as {
+    status?: number;
+    message?: string;
+    errors?: Record<string, string[] | string>;
+    body?: { message?: string; errors?: Record<string, string[] | string> };
+    response?: { status?: number; data?: { message?: string; errors?: Record<string, string[] | string> } };
+  };
+
+  const status = err?.status ?? err?.response?.status;
+  if (status !== 400 && status !== 403) return null;
+
+  const parts: string[] = [];
+  if (err?.message) parts.push(err.message);
+  if (err?.body?.message) parts.push(err.body.message);
+  if (err?.response?.data?.message) parts.push(err.response.data.message);
+
+  const collectErrors = (errors?: Record<string, string[] | string>) => {
+    if (!errors || typeof errors !== 'object') return;
+    for (const value of Object.values(errors)) {
+      if (Array.isArray(value)) parts.push(...value.map(String));
+      else if (typeof value === 'string') parts.push(value);
+    }
+    parts.push(...Object.keys(errors));
+  };
+  collectErrors(err?.errors);
+  collectErrors(err?.body?.errors);
+  collectErrors(err?.response?.data?.errors);
+
+  const haystack = parts.join(' ').toLowerCase();
+  if (/oauth|google|password/.test(haystack)) {
+    return OAUTH_PASSWORD_HINT;
+  }
+  return null;
 }
 
 

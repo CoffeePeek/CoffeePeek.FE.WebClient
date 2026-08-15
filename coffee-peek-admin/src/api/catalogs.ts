@@ -30,6 +30,14 @@ export interface CatalogBrewMethod {
   name: string;
 }
 
+export interface CatalogShopTag {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  sortOrder: number;
+}
+
 export interface CatalogsBundle {
   cities: CatalogCity[];
   equipments: CatalogEquipment[];
@@ -80,6 +88,13 @@ export async function getCatalogBrewMethods(): Promise<ApiResponse<CatalogBrewMe
     requiresAuth: false,
   });
   return { ...response, data: unwrapList<CatalogBrewMethod>(response.data, 'brewMethods') };
+}
+
+export async function getShopTags(): Promise<ApiResponse<CatalogShopTag[]>> {
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.CATALOGS.SHOP_TAGS, {
+    requiresAuth: false,
+  });
+  return { ...response, data: unwrapList<CatalogShopTag>(response.data, 'shopTags') };
 }
 
 export async function getAllCatalogs(): Promise<CatalogsBundle> {

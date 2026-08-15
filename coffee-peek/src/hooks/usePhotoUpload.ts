@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { getShopUploadUrls } from '../api/photos';
 import { TokenManager } from '../api/core/httpClient';
+import { isApiRequestError } from '../api/core/apiError';
+import { ErrorCodes } from '../utils/errorHandler';
+
+const RATE_LIMIT_MESSAGE = ErrorCodes[429].message;
 
 export interface UploadedPhoto {
   fileName: string;
@@ -12,11 +16,13 @@ export interface UploadedPhoto {
 export interface UsePhotoUploadReturn {
   selectedFiles: File[];
   uploadingPhotos: boolean;
+  error: string | null;
   setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>;
   handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   removeFile: (index: number) => void;
   uploadPhotos: () => Promise<UploadedPhoto[]>;
   clearFiles: () => void;
+  clearError: () => void;
 }
 
 /**
@@ -26,11 +32,13 @@ export interface UsePhotoUploadReturn {
 export function usePhotoUpload(): UsePhotoUploadReturn {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       setSelectedFiles(prev => [...prev, ...files]);
+      setError(null);
     }
   };
 
@@ -40,7 +48,10 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
 
   const clearFiles = () => {
     setSelectedFiles([]);
+    setError(null);
   };
+
+  const clearError = () => setError(null);
 
   const uploadPhotos = async (): Promise<UploadedPhoto[]> => {
     if (selectedFiles.length === 0) return [];
@@ -51,6 +62,7 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
     }
 
     setUploadingPhotos(true);
+    setError(null);
 
     try {
       const uploadRequests = selectedFiles.map(file => ({
@@ -59,7 +71,16 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
         sizeBytes: file.size,
       }));
 
-      const uploadUrlsResponse = await getShopUploadUrls(uploadRequests);
+      let uploadUrlsResponse;
+      try {
+        uploadUrlsResponse = await getShopUploadUrls(uploadRequests);
+      } catch (err) {
+        if (isApiRequestError(err) && err.status === 429) {
+          setError(RATE_LIMIT_MESSAGE);
+        }
+        throw err;
+      }
+
       if (!uploadUrlsResponse.success || !uploadUrlsResponse.data) {
         throw new Error('Ошибка при получении URL для загрузки');
       }
@@ -74,6 +95,11 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
             'Content-Type': file.type,
           },
         });
+
+        if (uploadResponse.status === 429) {
+          setError(RATE_LIMIT_MESSAGE);
+          throw new Error(RATE_LIMIT_MESSAGE);
+        }
 
         if (!uploadResponse.ok) {
           throw new Error(`Ошибка загрузки файла ${file.name}`);
@@ -97,11 +123,12 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
   return {
     selectedFiles,
     uploadingPhotos,
+    error,
     setSelectedFiles,
     handleFileSelect,
     removeFile,
     uploadPhotos,
     clearFiles,
+    clearError,
   };
 }
-

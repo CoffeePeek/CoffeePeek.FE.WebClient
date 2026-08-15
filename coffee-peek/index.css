@@ -85,6 +85,15 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: clip;
+}
+
+html {
+  overflow-x: clip;
+}
+
+#root {
+  overflow-x: clip;
 }
 
 h1 {

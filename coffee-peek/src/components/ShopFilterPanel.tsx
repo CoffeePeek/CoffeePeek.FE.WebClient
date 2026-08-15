@@ -1,28 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters } from '../api/coffeeshop';
+import { City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
 import type { IconProps } from '@phosphor-icons/react';
 import {
-  GridFour, Clock, Coffee, Flame, WifiHigh, SunHorizon, Leaf, PawPrint,
-  MapPin, CaretDown, CheckCircle, Check, X,
+  GridFour, Clock, Sparkle, CheckCircle, Heart,
+  MapPin, CaretDown, Check, X,
 } from '@/components/Icon';
+import { BeanPriceMarks } from './icons';
+import { PRICE_FILTER_OPTIONS } from '../utils/priceRange';
 
-const QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
-  { id: 'all',       label: 'Все',          Icon: GridFour          },
-  { id: 'open',      label: 'Открыто',      Icon: Clock             },
-  { id: 'specialty', label: 'Спешелти',     Icon: Coffee            },
-  { id: 'roastery',  label: 'Обжарка',      Icon: Flame             },
-  { id: 'wifi',      label: 'Wi-Fi',        Icon: WifiHigh          },
-  { id: 'outdoor',   label: 'Терраса',      Icon: SunHorizon        },
-  { id: 'vegan',     label: 'Веган',        Icon: Leaf              },
-  { id: 'pets',      label: 'Pet-friendly', Icon: PawPrint          },
+const FIXED_QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
+  { id: 'all',      label: 'Все',        Icon: GridFour     },
+  { id: 'open',     label: 'Открыто',    Icon: Clock        },
+  { id: 'new',      label: 'Новые',      Icon: Sparkle      },
+  { id: 'visited',  label: 'Уже был',    Icon: CheckCircle },
+  { id: 'favorite', label: 'Избранное',  Icon: Heart        },
 ];
 
-const PRICE_OPTIONS = [
-  { value: 'Budget',   label: '$ Бюджетный' },
-  { value: 'Moderate', label: '$$ Средний'  },
-  { value: 'Premium',  label: '$$$ Премиум' },
-];
+const PRICE_OPTIONS = PRICE_FILTER_OPTIONS.map((o) => ({
+  value: o.value,
+  label: o.label,
+  tiers: o.tiers,
+}));
 
 const FOCUS_OPTIONS = [
   { value: 'specialty', label: 'Specialty' },
@@ -43,6 +42,11 @@ interface ShopFilterPanelProps {
   // Quick filter chips
   activeQuick: string[];
   onQuickChange: (id: string) => void;
+  // Shop tags (multi-select)
+  shopTags: ShopTagDto[];
+  selectedTagIds: string[];
+  onTagToggle: (tagId: string) => void;
+  isAuthenticated: boolean;
   // Panel toggle
   showFilters: boolean;
   // Currently applied values (for active chips + draft init)
@@ -75,6 +79,7 @@ function toggle(arr: string[], id: string): string[] {
 
 const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   activeQuick, onQuickChange,
+  shopTags, selectedTagIds, onTagToggle, isAuthenticated,
   showFilters,
   filters, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods,
   equipments, coffeeBeans, roasters, brewMethods,
@@ -88,7 +93,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   const borderColor = dark ? '#3D2F28' : colors.border;
   const muted = dark ? '#A39E93' : '#78716C';
   const surface = dark ? '#2D241F' : '#fff';
-  const textPrimary = dark ? '#fff' : '#1C1917';
 
   // ── Draft state (local — only committed on "Применить") ──────────
   const [draft, setDraft] = useState<AppliedFilters>({
@@ -154,6 +158,13 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     borderColor: active ? `${gold}55` : borderColor,
   });
 
+  const quickChipStyle = (active: boolean): React.CSSProperties => ({
+    ...chipBase,
+    background: active ? (dark ? '#fff' : '#1C1917') : (dark ? 'rgba(255,255,255,0.04)' : '#fff'),
+    color: active ? (dark ? '#1C1917' : '#fff') : (dark ? '#fff' : '#1C1917'),
+    borderColor: active ? 'transparent' : borderColor,
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-2">
 
@@ -191,30 +202,51 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
         {/* Divider */}
         <div style={{ width: 1, height: 20, background: borderColor, flexShrink: 0 }} />
 
-        {QUICK_FILTERS.map(({ id, label, Icon }) => {
+        {FIXED_QUICK_FILTERS.map(({ id, label, Icon }) => {
           const active = activeQuick.includes(id);
+          const needsAuth = id === 'visited' && !isAuthenticated;
           return (
-            <button key={id} onClick={() => onQuickChange(id)} style={{
-              ...chipBase,
-              background: active ? (dark ? '#fff' : '#1C1917') : (dark ? 'rgba(255,255,255,0.04)' : '#fff'),
-              color: active ? (dark ? '#1C1917' : '#fff') : (dark ? '#fff' : '#1C1917'),
-              borderColor: active ? 'transparent' : borderColor,
-            }}>
+            <button
+              key={id}
+              onClick={() => onQuickChange(id)}
+              style={{ ...quickChipStyle(active), opacity: needsAuth ? 0.75 : 1 }}
+              title={needsAuth ? 'Требуется вход' : undefined}
+            >
               <Icon size={14} color={active ? (dark ? goldWarm : '#fff') : goldWarm} />
               {label}
             </button>
           );
         })}
 
+        {/* Dynamic shop tags */}
+        {shopTags.map(tag => {
+          const active = selectedTagIds.includes(tag.id);
+          return (
+            <button key={tag.id} onClick={() => onTagToggle(tag.id)} style={quickChipStyle(active)}>
+              {tag.name}
+            </button>
+          );
+        })}
+
         {/* Applied filter chips with individual X */}
         {appliedPrice && (
-          <AppliedChip label={PRICE_OPTIONS.find(p => p.value === appliedPrice)?.label ?? appliedPrice} gold={gold}
+          <AppliedChip
+            label={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <BeanPriceMarks
+                  count={PRICE_OPTIONS.find(p => p.value === appliedPrice)?.tiers ?? 1}
+                  size={11}
+                  color={gold}
+                />
+                {PRICE_OPTIONS.find(p => p.value === appliedPrice)?.label ?? appliedPrice}
+              </span>
+            }
+            gold={gold}
             onRemove={() => onApplyFilters({ priceRange: undefined, coffeeFocus: appliedFocus, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods })} />
         )}
         {appliedFocus && (
           <AppliedChip label={FOCUS_OPTIONS.find(p => p.value === appliedFocus)?.label ?? appliedFocus} gold={gold}
             onRemove={() => onApplyFilters({ priceRange: appliedPrice, coffeeFocus: undefined, equipments: appliedEquipments, beans: appliedBeans, roasters: appliedRoasters, brewMethods: appliedBrewMethods })} />
-        )}
         {appliedEquipments.map(id => {
           const eq = equipments.find(e => e.id === id);
           return eq ? <AppliedChip key={id} label={eq.name} gold={gold}
@@ -281,13 +313,14 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             <div style={{ marginBottom: 20 }}>
               <div style={sectionLabel}>Цена</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {PRICE_OPTIONS.map(({ value, label }) => {
+                {PRICE_OPTIONS.map(({ value, label, tiers }) => {
                   const active = draft.priceRange === value;
                   return (
                     <button key={value}
                       onClick={() => setDraft(d => ({ ...d, priceRange: active ? undefined : value }))}
                       style={draftChip(active)}>
                       {active && <Check size={13} />}
+                      <BeanPriceMarks count={tiers} size={12} color={active ? gold : COLORS.primary} />
                       {label}
                     </button>
                   );
@@ -409,7 +442,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
 };
 
 // ── Active chip (applied, with X) ────────────────────────────────────
-const AppliedChip: React.FC<{ label: string; gold: string; onRemove: () => void }> = ({ label, gold, onRemove }) => (
+const AppliedChip: React.FC<{ label: React.ReactNode; gold: string; onRemove: () => void }> = ({ label, gold, onRemove }) => (
   <span style={{
     display: 'inline-flex', alignItems: 'center', gap: 4,
     padding: '5px 8px 5px 12px', borderRadius: 99, whiteSpace: 'nowrap',

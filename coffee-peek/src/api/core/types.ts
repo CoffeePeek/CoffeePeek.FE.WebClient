@@ -3,6 +3,13 @@ export interface ApiResponse<T> {
   isSuccess?: boolean;
   message: string;
   data: T;
+  /** From X-Total-Count / X-Total-Pages or body TotalItems/TotalPages */
+  pagination?: {
+    totalItems?: number;
+    totalPages?: number;
+    page?: number;
+    pageSize?: number;
+  };
 }
 
 export interface ApiConfig {
