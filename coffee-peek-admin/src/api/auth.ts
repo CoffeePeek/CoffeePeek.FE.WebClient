@@ -39,7 +39,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<ApiRespo
   const response = await httpClient.put<AuthData>(
     API_ENDPOINTS.AUTH.REFRESH,
     { refreshToken },
-    { requiresAuth: true }
+    { requiresAuth: false, skipAuthHeader: true }
   );
 
   if (response.success && response.data.accessToken) {

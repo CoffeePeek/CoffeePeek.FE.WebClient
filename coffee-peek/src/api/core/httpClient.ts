@@ -10,6 +10,8 @@ import {
   responseInterceptor,
   normalizeResponseData,
   TokenManager,
+  isAuthTokenEndpoint,
+  tryRefreshAccessToken,
 } from './interceptors';
 
 /**
@@ -69,9 +71,9 @@ class HttpClient {
    */
   private async request<T>(
     endpoint: string,
-    options: RequestOptions = {}
+    options: RequestOptions & { _retry?: boolean } = {}
   ): Promise<ApiResponse<T>> {
-    const { params, requiresAuth = true, skipAuthHeader, ...fetchOptions } = options;
+    const { params, requiresAuth = true, skipAuthHeader, _retry, ...fetchOptions } = options;
 
     // Строим URL с параметрами
     const urlWithParams = buildUrlWithParams(endpoint, params);
@@ -87,6 +89,19 @@ class HttpClient {
     try {
       // Выполняем запрос
       const response = await fetch(fullUrl, requestOptions);
+
+      const canRefresh =
+        response.status === 401 &&
+        !_retry &&
+        !skipAuthHeader &&
+        !isAuthTokenEndpoint(endpoint);
+
+      if (canRefresh) {
+        const refreshed = await tryRefreshAccessToken(this.baseURL);
+        if (refreshed) {
+          return this.request<T>(endpoint, { ...options, _retry: true });
+        }
+      }
 
       // Применяем response interceptor
       const data = await responseInterceptor<any>(response, fullUrl);
@@ -164,6 +179,7 @@ class HttpClient {
       params: config?.params,
       headers: config?.headers,
       requiresAuth: config?.requiresAuth,
+      skipAuthHeader: config?.skipAuthHeader,
       signal: config?.signal,
     });
   }

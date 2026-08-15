@@ -40,6 +40,50 @@ export class TokenManager {
   }
 }
 
+const TOKEN_PATH = '/api/tokens';
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+export function isAuthTokenEndpoint(endpoint: string): boolean {
+  return endpoint === TOKEN_PATH || endpoint.startsWith(`${TOKEN_PATH}/`);
+}
+
+export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = performRefresh(baseURL).finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
+}
+
+async function performRefresh(baseURL: string): Promise<boolean> {
+  const refreshToken = TokenManager.getRefreshToken();
+  if (!refreshToken) return false;
+
+  try {
+    const response = await fetch(`${baseURL}${TOKEN_PATH}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!response.ok) return false;
+
+    const json = await response.json();
+    const payload = json?.data ?? json;
+    const accessToken = payload?.accessToken;
+    if (!accessToken) return false;
+
+    TokenManager.setTokens(accessToken, payload.refreshToken);
+    return true;
+  } catch (err) {
+    logger.error('[Auth] Refresh failed', err);
+    return false;
+  }
+}
+
 export function requestInterceptor(
   url: string,
   options: RequestInit & { skipAuthHeader?: boolean },

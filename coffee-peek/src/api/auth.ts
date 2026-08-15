@@ -208,7 +208,8 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthResp
     API_ENDPOINTS.AUTH.REFRESH,
     { refreshToken },
     {
-      requiresAuth: true,
+      requiresAuth: false,
+      skipAuthHeader: true,
     }
   );
 

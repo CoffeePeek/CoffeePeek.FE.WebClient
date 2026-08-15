@@ -5,6 +5,8 @@ import {
   responseInterceptor,
   normalizeResponseData,
   TokenManager,
+  isAuthTokenEndpoint,
+  tryRefreshAccessToken,
 } from './interceptors';
 
 class HttpClient {
@@ -16,17 +18,35 @@ class HttpClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestOptions = {}
+    options: RequestOptions & { _retry?: boolean } = {}
   ): Promise<ApiResponse<T>> {
-    const { params, requiresAuth = true, ...fetchOptions } = options;
+    const { params, requiresAuth = true, skipAuthHeader, _retry, ...fetchOptions } = options;
 
     const urlWithParams = buildUrlWithParams(endpoint, params);
     const fullUrl = `${this.baseURL}${urlWithParams}`;
 
-    const requestOptions = requestInterceptor(fullUrl, fetchOptions, requiresAuth);
+    const requestOptions = requestInterceptor(
+      fullUrl,
+      { ...fetchOptions, skipAuthHeader },
+      requiresAuth
+    );
 
     try {
       const response = await fetch(fullUrl, requestOptions);
+
+      const canRefresh =
+        response.status === 401 &&
+        !_retry &&
+        !skipAuthHeader &&
+        !isAuthTokenEndpoint(endpoint);
+
+      if (canRefresh) {
+        const refreshed = await tryRefreshAccessToken(this.baseURL);
+        if (refreshed) {
+          return this.request<T>(endpoint, { ...options, _retry: true });
+        }
+      }
+
       const { envelope, pagination } = await responseInterceptor<any>(response, fullUrl);
       const payload = envelope.data ?? envelope;
       const normalizedData = normalizeResponseData<T>(payload);
@@ -60,6 +80,7 @@ class HttpClient {
       params: config?.params,
       headers: config?.headers,
       requiresAuth: config?.requiresAuth,
+      skipAuthHeader: config?.skipAuthHeader,
       signal: config?.signal,
     });
   }
@@ -71,6 +92,7 @@ class HttpClient {
       params: config?.params,
       headers: config?.headers,
       requiresAuth: config?.requiresAuth,
+      skipAuthHeader: config?.skipAuthHeader,
       signal: config?.signal,
     });
   }
