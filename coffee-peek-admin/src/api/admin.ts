@@ -4,7 +4,7 @@ import { ApiResponse, PaginatedMeta } from './core/types';
 import type { PriceRangeLevel } from '../constants/priceRange';
 import { parsePriceRange, toPriceRangeLevel } from '../constants/priceRange';
 import type { CoffeeFocus } from '../constants/catalogIngest';
-import { parseCoffeeFocus } from '../constants/catalogIngest';
+import { COFFEE_FOCUS_TO_API, parseCoffeeFocus } from '../constants/catalogIngest';
 
 // ==================== Types ====================
 
@@ -900,7 +900,7 @@ export async function patchPublishedShopFocus(
 ): Promise<ApiResponse<PublishedShop>> {
   const response = await httpClient.patch<Record<string, unknown>>(
     API_ENDPOINTS.ADMIN.SHOP_FOCUS(id),
-    { coffeeFocus }
+    { coffeeFocus: COFFEE_FOCUS_TO_API[coffeeFocus] }
   );
   return { ...response, data: mapPublishedShop(response.data) };
 }

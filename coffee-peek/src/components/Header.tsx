@@ -52,10 +52,10 @@ const Header: React.FC = () => {
   return (
     <header style={{ background: bg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', height: 64 }}>
+        <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 12 }}>
 
           {/* Left: logo */}
-          <div>
+          <div style={{ flexShrink: 0 }}>
             <button onClick={() => navigate('/shops')} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
               <div style={{ width: 40, height: 40, background: isDark ? '#1A1412' : '#fff', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${borderColor}` }}>
                 <div style={{ color: gold, width: 20, height: 20 }}><Icons.Coffee /></div>
@@ -67,7 +67,7 @@ const Header: React.FC = () => {
           </div>
 
           {/* Center: desktop nav */}
-          <nav className="hidden lg:flex" style={{ gap: 4 }}>
+          <nav className="hidden lg:flex" style={{ flex: 1, justifyContent: 'center', gap: 4 }}>
             {allNav.map(({ id, label, route }) => (
               <button key={id} onClick={() => navigate(route)} style={navBtn(currentId === id)}>
                 {label}
@@ -75,8 +75,8 @@ const Header: React.FC = () => {
             ))}
           </nav>
 
-          {/* Right: actions */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          {/* Right: actions — marginLeft auto keeps burger on the right when nav is hidden */}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
 
             {user ? (
               /* ── Profile dropdown ── */
