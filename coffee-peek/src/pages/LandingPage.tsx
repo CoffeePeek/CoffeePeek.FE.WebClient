@@ -20,89 +20,7 @@ import {
 import { AppIcon, StarIcon } from '../components/icons';
 import type { IconProps } from '@phosphor-icons/react';
 import { Compass, Flask, ChatCircleText, TrendUp, UsersThree, Heart } from '@/components/Icon';
-
-const ISO_MAP_PINS = [
-  { x: 100, y: 150 }, { x: 165, y: 110 }, { x: 220, y: 80 },
-  { x: 295, y: 125 }, { x: 360, y: 100 }, { x: 95, y: 235 },
-  { x: 155, y: 200 }, { x: 285, y: 195 }, { x: 360, y: 215 },
-  { x: 120, y: 320 }, { x: 175, y: 290 }, { x: 230, y: 340 },
-  { x: 285, y: 295 }, { x: 345, y: 330 }, { x: 60, y: 290 },
-];
-
-const IsoMapWidget: React.FC = () => {
-  const navigate = useNavigate();
-  return (
-    <div className="relative rounded-[28px] p-[22px] border border-[#3D2F28] overflow-hidden"
-      style={{ background: '#2D241F', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 30px 60px -20px rgba(0,0,0,0.6)' }}>
-      {/* ambient gold glow */}
-      <div className="absolute pointer-events-none"
-        style={{ top: '30%', left: '50%', transform: 'translate(-50%,-50%)', width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle, rgba(234,179,8,0.10), transparent 60%)', filter: 'blur(40px)' }} />
-      {/* Кураторская карта badge */}
-      <div className="absolute top-[22px] left-[22px] z-[4] px-4 py-2 rounded-full font-display font-semibold text-[13px] text-white border border-[#3D2F28]"
-        style={{ background: 'rgba(26,20,18,0.75)', backdropFilter: 'blur(12px)' }}>
-        Кураторская карта
-      </div>
-      {/* location pin */}
-      <div className="absolute top-[22px] right-[22px] z-[4] w-11 h-11 rounded-full flex items-center justify-center"
-        style={{ background: 'rgba(26,20,18,0.85)', border: '1px solid rgba(234,179,8,0.45)', boxShadow: '0 4px 12px rgba(234,179,8,0.18)' }}>
-        <AppIcon name="location_on" filled size={22} color="#EAB308" />
-      </div>
-      {/* iso map stage */}
-      <div className="relative flex items-center justify-center mt-2 mb-[18px]"
-        style={{ height: 360, perspective: '1400px' }}>
-        <div style={{ position: 'relative', width: 460, height: 460, transform: 'rotateX(58deg) rotateZ(-22deg)', transformStyle: 'preserve-3d' }}>
-          <svg viewBox="0 0 460 460" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-            <defs>
-              <radialGradient id="isoMapFade" cx="50%" cy="50%" r="55%">
-                <stop offset="0%" stopColor="#3D2F28" stopOpacity="0.55" />
-                <stop offset="100%" stopColor="#1A1412" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <rect width="460" height="460" fill="url(#isoMapFade)" />
-            <g stroke="#4a3d34" strokeWidth="0.7" opacity="0.55">
-              {[60, 110, 160, 210, 260, 310, 360, 400].map(y => <line key={'h' + y} x1="20" y1={y} x2="440" y2={y} />)}
-              {[60, 110, 160, 210, 260, 310, 360, 400].map(x => <line key={'v' + x} x1={x} y1="20" x2={x} y2="440" />)}
-            </g>
-            <g stroke="#5a4a3f" strokeWidth="2.4" opacity="0.7">
-              <line x1="20" y1="230" x2="440" y2="230" />
-              <line x1="230" y1="20" x2="230" y2="440" />
-            </g>
-            <g stroke="#5a4a3f" strokeWidth="1.4" opacity="0.45">
-              <line x1="20" y1="60" x2="440" y2="320" />
-              <line x1="120" y1="20" x2="380" y2="440" />
-            </g>
-          </svg>
-          {ISO_MAP_PINS.map((p, i) => (
-            <div key={i} style={{ position: 'absolute', left: p.x, top: p.y, transformStyle: 'preserve-3d', transform: 'translate(-50%,-50%)' }}>
-              <div style={{ position: 'absolute', left: -10, top: -4, width: 22, height: 10, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%)', filter: 'blur(2px)' }} />
-              <div style={{ position: 'absolute', left: -9, top: -9, width: 18, height: 18, transform: 'translateZ(22px) rotateZ(22deg) rotateX(-58deg)', transformStyle: 'preserve-3d' }}>
-                <div style={{ position: 'absolute', inset: -5, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.14)' }} />
-                <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'radial-gradient(circle at 32% 28%, #FFFFFF 0%, #F3EDE0 32%, #C8BFAE 70%, #6A5E50 100%)', boxShadow: '0 0 0 1px rgba(0,0,0,0.35), 0 6px 14px rgba(0,0,0,0.5), inset 0 -3px 5px rgba(0,0,0,0.25)', position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 2.5, left: 4, width: 5, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', filter: 'blur(0.4px)' }} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        {/* coffee cup center */}
-        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 72, height: 72, borderRadius: '50%', background: 'radial-gradient(circle at 50% 30%, #4a3225, #1a0f08)', border: '2px solid #3D2F28', boxShadow: '0 16px 32px rgba(0,0,0,0.75), 0 0 0 6px rgba(26,20,18,0.6), inset 0 -2px 3px rgba(180,140,75,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5 }}>
-          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'radial-gradient(circle at 50% 35%, #8b5a35, #1a0f08)', boxShadow: 'inset 0 -3px 6px rgba(0,0,0,0.6), inset 0 2px 3px rgba(180,140,75,0.3)' }} />
-        </div>
-      </div>
-      {/* footer */}
-      <div className="relative z-[2]">
-        <h3 className="font-display font-bold text-[24px] tracking-[-0.025em] text-white leading-[1.15]">
-          Здесь ваша следующая чашка
-        </h3>
-        <button
-          onClick={() => navigate('/dashboard?page=map')}
-          className="mt-4 w-full h-[52px] rounded-[14px] bg-[#1A1412] text-white border border-[#3D2F28] font-display font-semibold text-[15px] inline-flex items-center justify-center gap-[10px] hover:border-[#EAB308]/40 transition-colors">
-          Открыть карту <AppIcon name="arrow_forward" size={16} />
-        </button>
-      </div>
-    </div>
-  );
-};
+import LandingMapWidget from '../components/LandingMapWidget';
 
 const LandingPage: React.FC = () => {
   usePageTitle('Главная');
@@ -272,13 +190,13 @@ const LandingPage: React.FC = () => {
       <div className="min-h-screen bg-[#1A1412] relative overflow-x-clip text-white">
         {/* Dotted background */}
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.55 }} />
-        {/* Gold glows */}
-        <div className="absolute pointer-events-none" style={{ top: -120, left: '50%', transform: 'translateX(-50%)', width: 900, height: 600, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(234,179,8,0.12), transparent 60%)', filter: 'blur(60px)' }} />
-        <div className="absolute pointer-events-none" style={{ bottom: -180, right: -120, width: 520, height: 520, borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,140,75,0.10), transparent 60%)', filter: 'blur(60px)' }} />
+        {/* Gold glows — kept inside the box so overflow clip doesn't leave a 1px edge in Firefox */}
+        <div className="absolute pointer-events-none" style={{ top: -80, left: '50%', transform: 'translateX(-50%)', width: 720, height: 480, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(234,179,8,0.12), transparent 60%)', filter: 'blur(60px)' }} />
+        <div className="absolute pointer-events-none" style={{ bottom: -40, right: -40, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,140,75,0.10), transparent 60%)', filter: 'blur(60px)' }} />
 
         <div className="relative">
           {/* ── Nav desktop ─────────────────────────────────────── */}
-          <header className="sticky top-0 z-50 hidden lg:block h-[72px] border-b border-[#3D2F28]" style={{ background: 'rgba(45,36,31,0.7)', backdropFilter: 'blur(24px)' }}>
+          <header className="sticky top-0 z-50 hidden lg:block h-[72px] border-b border-[#3D2F28]" style={{ background: 'rgba(45,36,31,0.92)', transform: 'translateZ(0)' }}>
             <div className="max-w-[1280px] mx-auto px-8 h-full flex items-center justify-between gap-6">
               <button onClick={() => {}} className="flex items-center gap-3">
                 <div className="w-[38px] h-[38px] rounded-xl bg-[#1A1412] border border-[#3D2F28] flex items-center justify-center">
@@ -368,9 +286,9 @@ const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right: IsoMap (desktop only) */}
+              {/* Right: live map preview (desktop only) */}
               <div className="hidden lg:block">
-                <IsoMapWidget />
+                <LandingMapWidget />
               </div>
             </div>
 
