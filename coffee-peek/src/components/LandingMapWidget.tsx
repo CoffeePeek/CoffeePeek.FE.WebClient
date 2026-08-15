@@ -144,7 +144,6 @@ const LandingMapWidget: React.FC = () => {
             },
           );
 
-          map.options.set('theme', 'dark');
           map.container.fitToViewport();
 
           mapInstanceRef.current = map;
@@ -197,7 +196,7 @@ const LandingMapWidget: React.FC = () => {
       }}
     >
       <div className="relative h-[360px] bg-[#1A1412]">
-        <div ref={mapRef} className="absolute inset-0" />
+        <div ref={mapRef} className="ymap-dark absolute inset-0" />
 
         {isLoading && (
           <div className="absolute inset-0 z-[3] flex items-center justify-center bg-[#2D241F]">

@@ -217,3 +217,8 @@ button:focus-visible {
   animation: shimmer 2s infinite linear;
   background-size: 1000px 100%;
 }
+
+/* Yandex Maps 2.1 has no native dark theme — invert tiles only, keep markers. */
+.ymap-dark [class*="-ground-pane"] {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) saturate(0.65);
+}
