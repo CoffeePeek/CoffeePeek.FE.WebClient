@@ -59,7 +59,7 @@ export const ImportStatsPage: React.FC = () => {
       {isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-xl bg-white/5 animate-pulse" />
+            <div key={i} className="h-28 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
           ))}
         </div>
       ) : data ? (
@@ -79,12 +79,12 @@ export const ImportStatsPage: React.FC = () => {
             <StatCard label="Не в ленту" value={data.rejected} icon={<span />} color="text-red-400" />
           </div>
           <Card>
-            <h3 className="text-sm font-semibold text-white mb-3">Корзины коллектора</h3>
+            <h3 className="text-sm font-semibold text-text-main dark:text-white mb-3">Корзины коллектора</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
               {(Object.keys(BUCKET_LABELS) as Array<keyof typeof BUCKET_LABELS>).map((key) => (
-                <div key={key} className="rounded-lg border border-border-dark p-3">
-                  <p className="text-xs text-stone-500">{BUCKET_LABELS[key]}</p>
-                  <p className="text-lg font-display text-white mt-1">{data.byBucket[key]}</p>
+                <div key={key} className="rounded-lg border border-border-light dark:border-border-dark p-3">
+                  <p className="text-xs text-text-muted dark:text-stone-500">{BUCKET_LABELS[key]}</p>
+                  <p className="text-lg font-display text-text-main dark:text-white mt-1">{data.byBucket[key]}</p>
                 </div>
               ))}
             </div>
@@ -93,8 +93,8 @@ export const ImportStatsPage: React.FC = () => {
       ) : null}
 
       <Card>
-        <h3 className="text-sm font-semibold text-white mb-2">Первый деплой</h3>
-        <p className="text-xs text-stone-500 mb-4">
+        <h3 className="text-sm font-semibold text-text-main dark:text-white mb-2">Первый деплой</h3>
+        <p className="text-xs text-text-muted dark:text-stone-500 mb-4">
           Снимок OSM и JSON решений из spike. Не вызывает Overpass/Google с браузера.
         </p>
         <div className="flex flex-col sm:flex-row gap-2">
