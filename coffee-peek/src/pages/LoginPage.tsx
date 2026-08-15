@@ -5,6 +5,7 @@ import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
 import { useUser } from '../contexts/UserContext';
 import { getErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 import {
   Envelope, Lock, WarningCircle, Eye, EyeSlash, Sun, Moon,
   CheckCircle, Clock, ArrowClockwise, ArrowLeft, Check,
@@ -226,7 +227,28 @@ const LoginPage: React.FC = () => {
             </p>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: passedEmail ? 20 : 0 }}>
+          <div style={{ marginTop: passedEmail ? 20 : 0, marginBottom: 14 }}>
+            <GoogleSignInButton
+              dark={dark}
+              disabled={isLoading}
+              onAuthenticated={(accessToken) => {
+                if (isTokenExpired(accessToken)) {
+                  setError('Токен истёк');
+                  return;
+                }
+                parseJWT(accessToken);
+                getUserRoles(accessToken);
+                updateUserFromToken(accessToken);
+                navigate(from, { replace: true });
+              }}
+              onError={setError}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"RF Dewi Expanded"', marginBottom: 14 }}>
+            <div style={{ flex: 1, height: 1, background: cardBorder }} />ИЛИ<div style={{ flex: 1, height: 1, background: cardBorder }} />
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <AuthField
               icon={<Envelope size={20} color={gold} />}
               type="email"

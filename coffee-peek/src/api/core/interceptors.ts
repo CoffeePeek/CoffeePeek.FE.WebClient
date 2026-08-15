@@ -42,7 +42,7 @@ export class TokenManager {
 
 export function requestInterceptor(
   url: string,
-  options: RequestInit,
+  options: RequestInit & { skipAuthHeader?: boolean },
   requiresAuth: boolean = true
 ): RequestInit {
   const headers = new Headers(options.headers);
@@ -60,7 +60,7 @@ export function requestInterceptor(
   // Добавляем Authorization заголовок если токен доступен
   // Даже для публичных эндпоинтов токен нужен для персонализации (isVisited и т.д.)
   const token = TokenManager.getAccessToken();
-  if (token) {
+  if (token && !options.skipAuthHeader) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
@@ -69,8 +69,9 @@ export function requestInterceptor(
     body: options.body,
   });
 
+  const { skipAuthHeader: _skipAuthHeader, ...fetchOptions } = options;
   return {
-    ...options,
+    ...fetchOptions,
     headers,
   };
 }
