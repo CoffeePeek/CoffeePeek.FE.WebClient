@@ -6,6 +6,8 @@ import {
   CollectorBucket,
   GoogleBusinessStatus,
   QueueStatus,
+  COFFEE_FOCUS_TO_API,
+  QUEUE_STATUS_TO_API,
   fallbackResearchLinks,
   parseBucket,
   parseCoffeeFocus,
@@ -81,6 +83,7 @@ export interface DecideCandidateRequest {
   status: 'Published' | 'Rejected' | 'Skipped';
   coffeeFocus?: CoffeeFocus;
   tagSlugs?: string[];
+  overrideClosed?: boolean;
 }
 
 function pick(raw: Record<string, unknown>, ...keys: string[]): unknown {
@@ -239,9 +242,16 @@ export async function decideImportCandidate(
   id: string,
   body: DecideCandidateRequest
 ): Promise<ApiResponse<ImportCandidate>> {
+  const payload: Record<string, unknown> = {
+    status: QUEUE_STATUS_TO_API[body.status],
+    overrideClosed: body.overrideClosed ?? false,
+  };
+  if (body.coffeeFocus) payload.coffeeFocus = COFFEE_FOCUS_TO_API[body.coffeeFocus];
+  if (body.tagSlugs) payload.tagSlugs = body.tagSlugs;
+
   const response = await httpClient.post<Record<string, unknown>>(
     API_ENDPOINTS.ADMIN.IMPORT_CANDIDATE_DECIDE(id),
-    body
+    payload
   );
   return { ...response, data: mapImportCandidate(asRecord(response.data)) };
 }

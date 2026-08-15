@@ -56,15 +56,27 @@ export const CATALOG_TAG_OPTIONS: { slug: string; label: string }[] = [
 const FOCUS_ALIASES: Record<string, CoffeeFocus> = {
   specialty: 'specialty',
   Specialty: 'specialty',
-  '0': 'specialty',
+  '1': 'specialty',
   coffee_bar: 'coffee_bar',
   CoffeeBar: 'coffee_bar',
   coffeeBar: 'coffee_bar',
   good_coffee: 'coffee_bar',
-  '1': 'coffee_bar',
+  '2': 'coffee_bar',
   cafe: 'cafe',
   Cafe: 'cafe',
-  '2': 'cafe',
+  '3': 'cafe',
+};
+
+export const COFFEE_FOCUS_TO_API: Record<CoffeeFocus, number> = {
+  specialty: 1,
+  coffee_bar: 2,
+  cafe: 3,
+};
+
+export const QUEUE_STATUS_TO_API: Record<Exclude<QueueStatus, 'Pending'>, number> = {
+  Skipped: 1,
+  Published: 2,
+  Rejected: 3,
 };
 
 const BUCKET_ALIASES: Record<string, CollectorBucket> = {

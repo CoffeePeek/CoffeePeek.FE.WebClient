@@ -95,7 +95,13 @@ export const ImportQueuePage: React.FC = () => {
   const canPublish = Boolean(focus) && isUsableShopName(candidate?.name);
 
   const decideMutation = useMutation({
-    mutationFn: (status: 'Published' | 'Rejected' | 'Skipped') => {
+    mutationFn: ({
+      status,
+      overrideClosed,
+    }: {
+      status: 'Published' | 'Rejected' | 'Skipped';
+      overrideClosed?: boolean;
+    }) => {
       const slugs =
         focus === 'specialty'
           ? Array.from(new Set([...tagSlugs, 'specialty']))
@@ -104,9 +110,10 @@ export const ImportQueuePage: React.FC = () => {
         status,
         coffeeFocus: status === 'Published' ? focus : undefined,
         tagSlugs: status === 'Published' ? slugs : undefined,
+        overrideClosed: status === 'Published' ? overrideClosed : undefined,
       });
     },
-    onSuccess: (_, status) => {
+    onSuccess: (_, { status }) => {
       const messages = {
         Published: 'В ленте',
         Rejected: 'Не в ленту',
@@ -139,17 +146,17 @@ export const ImportQueuePage: React.FC = () => {
       if (event.key === '3') setFocus('cafe');
       if (event.key === 's' || event.key === 'S') {
         event.preventDefault();
-        decideMutation.mutate('Skipped');
+        decideMutation.mutate({ status: 'Skipped' });
       }
       if (event.key === 'r' || event.key === 'R') {
         event.preventDefault();
-        decideMutation.mutate('Rejected');
+        decideMutation.mutate({ status: 'Rejected' });
       }
       if (event.key === 'Enter') {
         event.preventDefault();
         if (!canPublish) return;
         if (closed) setConfirmPublishClosed(true);
-        else decideMutation.mutate('Published');
+        else decideMutation.mutate({ status: 'Published' });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -328,7 +335,7 @@ export const ImportQueuePage: React.FC = () => {
           variant="primary"
           disabled={!canPublish || Boolean(decided)}
           loading={decideMutation.isPending}
-          onClick={() => (closed ? setConfirmPublishClosed(true) : decideMutation.mutate('Published'))}
+          onClick={() => (closed ? setConfirmPublishClosed(true) : decideMutation.mutate({ status: 'Published' }))}
           className="flex-1 min-h-[44px]"
         >
           В ленту ↵
@@ -337,7 +344,7 @@ export const ImportQueuePage: React.FC = () => {
           variant={closed ? 'danger' : 'secondary'}
           disabled={Boolean(decided)}
           loading={decideMutation.isPending}
-          onClick={() => decideMutation.mutate('Rejected')}
+          onClick={() => decideMutation.mutate({ status: 'Rejected' })}
           className="flex-1 min-h-[44px]"
         >
           Не в ленту R
@@ -346,7 +353,7 @@ export const ImportQueuePage: React.FC = () => {
           variant="ghost"
           disabled={Boolean(decided)}
           loading={decideMutation.isPending}
-          onClick={() => decideMutation.mutate('Skipped')}
+          onClick={() => decideMutation.mutate({ status: 'Skipped' })}
           className="flex-1 min-h-[44px]"
         >
           Позже S
@@ -362,7 +369,7 @@ export const ImportQueuePage: React.FC = () => {
         onCancel={() => setConfirmPublishClosed(false)}
         onConfirm={() => {
           setConfirmPublishClosed(false);
-          decideMutation.mutate('Published');
+          decideMutation.mutate({ status: 'Published', overrideClosed: true });
         }}
       />
     </div>
