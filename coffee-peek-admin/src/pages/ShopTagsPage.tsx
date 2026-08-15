@@ -184,7 +184,7 @@ export const ShopTagsPage: React.FC = () => {
   const sortedTags = [...(tags ?? [])].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
 
   return (
-    <div className="page-container max-w-4xl">
+    <div className="page-container">
       <div>
         <h2 className="page-header-title">Теги кофеен</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">

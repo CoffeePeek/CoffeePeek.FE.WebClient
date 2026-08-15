@@ -123,7 +123,7 @@ export const ReviewsModerationPage: React.FC = () => {
   };
 
   return (
-    <div className="page-container max-w-4xl">
+    <div className="page-container">
       <div>
         <h2 className="page-header-title">
           Модерация отзывов

@@ -17,7 +17,7 @@ export const OwnerShopsPage: React.FC = () => {
   });
 
   return (
-    <div className="page-container max-w-4xl">
+    <div className="page-container">
       <div>
         <h2 className="text-lg font-bold text-text-main dark:text-white font-display">
           Мои кофейни
