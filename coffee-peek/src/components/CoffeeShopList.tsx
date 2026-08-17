@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, getShopTags, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto, getPhotoUrl } from '../api/coffeeshop';
 import { ShopCardSkeleton } from './skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRequireAuth } from '../hooks/useRequireAuth';
+import { useLoadMoreOnScroll } from '../hooks/useLoadMoreOnScroll';
 import { getErrorMessage } from '../utils/errorHandler';
 import { COLORS, getThemeColors } from '../constants/colors';
 import { logger } from '../utils/logger';
 import ShopCard from './ShopCard';
 import ShopSearchBar from './ShopSearchBar';
 import ShopFilterPanel from './ShopFilterPanel';
-import ShopPagination from './ShopPagination';
 import { AppIcon, StarIcon } from './icons';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
+
+const PAGE_SIZE = 12;
 
 type ShopsPage = Record<string, unknown> & {
   coffeeShops?: Record<string, unknown>[];
@@ -20,6 +22,8 @@ type ShopsPage = Record<string, unknown> & {
   totalPages?: number;
   currentPage?: number;
   pageSize?: number;
+  totalItems?: number;
+  totalCount?: number;
 };
 
 function extractList<T>(data: unknown, ...keys: string[]): T[] {
@@ -41,6 +45,37 @@ function normalizeShopPhoto(p: unknown): string {
   return '';
 }
 
+function parseShopList(data: unknown): CoffeeShop[] {
+  if (Array.isArray(data)) {
+    return data.map((shop) => ({
+      ...shop,
+      rating: shop.rating ?? shop.averageRating ?? 0,
+    })) as CoffeeShop[];
+  }
+  if (!data || typeof data !== 'object') return [];
+  const rd = data as ShopsPage;
+  const raw = rd.coffeeShops ?? rd.items ?? rd.content;
+  if (!Array.isArray(raw)) return [];
+  return raw.map((shop) => {
+    const orderedPhotos = [...((shop.photos ?? []) as unknown[])].sort((left, right) => {
+      const leftIndex = typeof left === 'object' && left !== null && 'sortIndex' in left
+        ? Number((left as { sortIndex?: number }).sortIndex ?? Number.MAX_SAFE_INTEGER)
+        : Number.MAX_SAFE_INTEGER;
+      const rightIndex = typeof right === 'object' && right !== null && 'sortIndex' in right
+        ? Number((right as { sortIndex?: number }).sortIndex ?? Number.MAX_SAFE_INTEGER)
+        : Number.MAX_SAFE_INTEGER;
+      return leftIndex - rightIndex;
+    });
+    const shopPhotos = orderedPhotos.map(normalizeShopPhoto).filter(Boolean);
+    return {
+      ...shop,
+      shopPhotos,
+      photos: orderedPhotos,
+      rating: (shop.rating as number) ?? (shop.averageRating as number) ?? 0,
+    } as unknown as CoffeeShop;
+  });
+}
+
 interface CoffeeShopListProps {
   onShopSelect: (shopId: string) => void;
 }
@@ -53,9 +88,11 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [allShops, setAllShops] = useState<CoffeeShop[]>([]); // Все кофейни с сервера (нефильтрованные)
   const [shops, setShops] = useState<CoffeeShop[]>([]); // Отфильтрованные кофейни для отображения
   const [totalItems, setTotalItems] = useState<number>(0);
-  const [totalPages, setTotalPages] = useState<number>(1);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadingRef = useRef(false);
+  const requestIdRef = useRef(0);
   const [cities, setCities] = useState<City[]>([]);
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([]);
@@ -152,13 +189,9 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCity, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods, activeQuick, selectedTagIds]);
 
-  // Only trigger shop loading from filter changes after initial load is complete
   useEffect(() => {
-    // Only run this effect after initial data is loaded to prevent duplicate calls
     if (initialDataLoaded && filters.cityId) {
-      // Reset to first page and load shops when filters change
-      setCurrentPage(1);
-      loadShops();
+      void loadShops(1, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -177,14 +210,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     initialDataLoaded,
   ]);
 
-  useEffect(() => {
-    // Load shops when page changes
-    if (filters.cityId && initialDataLoaded) { // Only load if city is selected and initial data loaded
-      loadShops();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, initialDataLoaded]);
-
   const applyFavoriteFilter = useCallback((shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
     if (!activeQuick.includes('favorite')) return shopsToFilter;
     return shopsToFilter.filter(shop => favoriteIds.has(shop.id));
@@ -192,12 +217,10 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
 
   // Favorite is local-only — re-apply after load or when favorite chip / ids change
   useEffect(() => {
-    if (allShops.length > 0) {
-      const filtered = applyFavoriteFilter(allShops);
-      setShops(filtered);
-      setTotalItems(filtered.length);
-    }
-  }, [applyFavoriteFilter, allShops]);
+    const filtered = applyFavoriteFilter(allShops);
+    setShops(filtered);
+    if (activeQuick.includes('favorite')) setTotalItems(filtered.length);
+  }, [applyFavoriteFilter, allShops, activeQuick]);
 
   const loadInitialData = async () => {
     try {
@@ -235,111 +258,66 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     }
   };
 
-  const loadShops = async () => {
-    try {
+  const loadShops = async (pageToLoad: number, append: boolean) => {
+    if (append && loadingRef.current) return;
+    const requestId = ++requestIdRef.current;
+    loadingRef.current = true;
+    if (append) setIsLoadingMore(true);
+    else {
       setIsLoading(true);
       setError(null);
-      
-      const response = await searchCoffeeShops(debouncedSearchQuery, filters, currentPage, pageSize)
-      
-        
-      if (response.data && typeof response.data === 'object') {
-        const responseData = response.data as unknown as ShopsPage;
-        const pagination = (rd: ShopsPage) => ({
-          pages: rd.totalPages ?? 1,
-          page: rd.currentPage ?? 1,
-          size: rd.pageSize ?? 10,
-        });
+      setHasMore(true);
+    }
 
-        if (Array.isArray(responseData.coffeeShops)) {
-          const shops = responseData.coffeeShops.map((shop) => {
-            const orderedPhotos = [...((shop.photos ?? []) as unknown[])].sort((left, right) => {
-              const leftIndex = typeof left === 'object' && left !== null && 'sortIndex' in left
-                ? Number((left as { sortIndex?: number }).sortIndex ?? Number.MAX_SAFE_INTEGER)
-                : Number.MAX_SAFE_INTEGER;
-              const rightIndex = typeof right === 'object' && right !== null && 'sortIndex' in right
-                ? Number((right as { sortIndex?: number }).sortIndex ?? Number.MAX_SAFE_INTEGER)
-                : Number.MAX_SAFE_INTEGER;
-              return leftIndex - rightIndex;
-            });
-            const shopPhotos = orderedPhotos
-              .map(normalizeShopPhoto)
-              .filter(Boolean);
-            return { ...shop, shopPhotos, photos: orderedPhotos, rating: (shop.rating as number) ?? 0 } as unknown as CoffeeShop;
-          });
-          setAllShops(shops);
-          const filtered = applyFavoriteFilter(shops);
-          setShops(filtered);
-          setTotalItems(filtered.length);
-          const p = pagination(responseData);
-          setTotalPages(p.pages);
-          setCurrentPage(p.page);
-          setPageSize(p.size);
-        } else if (Array.isArray(responseData.items)) {
-          const items = responseData.items.map((shop) => ({
-            ...shop,
-            rating: (shop.rating as number) ?? (shop.averageRating as number) ?? 0,
-          })) as unknown as CoffeeShop[];
-          setAllShops(items);
-          const filtered = applyFavoriteFilter(items);
-          setShops(filtered);
-          setTotalItems(filtered.length);
-          const p = pagination(responseData);
-          setTotalPages(p.pages); setCurrentPage(p.page); setPageSize(p.size);
-        } else if (Array.isArray(responseData.content)) {
-          const content = responseData.content.map((shop) => ({
-            ...shop,
-            rating: (shop.rating as number) ?? (shop.averageRating as number) ?? 0,
-          })) as unknown as CoffeeShop[];
-          setAllShops(content);
-          const filtered = applyFavoriteFilter(content);
-          setShops(filtered);
-          setTotalItems(filtered.length);
-          const p = pagination(responseData);
-          setTotalPages(p.pages); setCurrentPage(p.page); setPageSize(p.size);
-        } else {
-          // Fallback for direct array
-          if (Array.isArray(responseData)) {
-            setAllShops(responseData);
-            const filteredShops = applyFavoriteFilter(responseData);
-            setShops(filteredShops);
-            setTotalItems(filteredShops.length);
-            setTotalPages(1);
-          } else {
-            setAllShops([]);
-            setShops([]);
-            setTotalItems(0);
-            setTotalPages(1);
-          }
-        }
-      } else {
-        // Fallback for old response format
-        if (Array.isArray(response.data)) {
-          setAllShops(response.data);
-          const filteredShops = applyFavoriteFilter(response.data);
-          setShops(filteredShops);
-          setTotalItems(filteredShops.length);
-          setTotalPages(1);
-        } else {
-          setAllShops([]);
-          setShops([]);
-          setTotalItems(0);
-          setTotalPages(1);
-        }
-      }
-      
+    try {
+      const response = await searchCoffeeShops(debouncedSearchQuery, filters, pageToLoad, PAGE_SIZE);
+      if (requestId !== requestIdRef.current) return;
+
+      const list = parseShopList(response.data);
+      const rd = (response.data && typeof response.data === 'object' ? response.data : {}) as ShopsPage;
+      const totalPages = Number(rd.totalPages ?? response.pagination?.totalPages ?? 0);
+      const apiTotal = Number(rd.totalItems ?? (rd as { totalCount?: number }).totalCount ?? response.pagination?.totalItems ?? 0);
+
+      setAllShops((prev) => {
+        if (!append) return list;
+        const seen = new Set(prev.map((s) => s.id));
+        return [...prev, ...list.filter((shop) => !seen.has(shop.id))];
+      });
+      setHasMore(
+        list.length > 0 && (
+          totalPages > 0
+            ? pageToLoad < totalPages
+            : apiTotal > 0
+              ? pageToLoad * PAGE_SIZE < apiTotal
+              : list.length >= PAGE_SIZE
+        ),
+      );
+      if (!activeQuick.includes('favorite') && apiTotal > 0) setTotalItems(apiTotal);
+      setPage(pageToLoad);
     } catch (err: unknown) {
+      if (requestId !== requestIdRef.current) return;
       const errorMsg = getErrorMessage(err);
       setError(errorMsg);
       logger.error('CoffeeShopList: Ошибка при загрузке кофеен:', err);
-      setAllShops([]);
-      setShops([]);
-      setTotalItems(0);
-      setTotalPages(1);
+      if (!append) {
+        setAllShops([]);
+        setShops([]);
+        setTotalItems(0);
+        setHasMore(false);
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        loadingRef.current = false;
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
     }
   };
+
+  const loadMoreRef = useLoadMoreOnScroll(
+    hasMore && !isLoading && !isLoadingMore && !!filters.cityId,
+    () => { void loadShops(page + 1, true); },
+  );
 
   const handleApplyFilters = (applied: { priceRange?: string; coffeeFocus?: string; equipments: string[]; beans: string[]; roasters: string[]; brewMethods: string[] }) => {
     setSelectedEquipments(applied.equipments);
@@ -452,7 +430,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         {!isLoading && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-baseline justify-between mb-3">
             <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>
-              Кофейни рядом <span style={{ color: colors.textSecondary, fontWeight: 500, fontSize: 13 }}>· {shops.length}</span>
+              Кофейни рядом <span style={{ color: colors.textSecondary, fontWeight: 500, fontSize: 13 }}>· {totalItems || shops.length}</span>
             </h2>
             <button style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: colors.textSecondary, fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
               <AppIcon name="swap_vert" size={14} />
@@ -479,19 +457,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               ))}
             </div>
           )}
+          <div ref={loadMoreRef} className="pb-8">
+            {isLoadingMore && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <ShopCardSkeleton count={4} />
+              </div>
+            )}
+          </div>
         </div>
-
-        {!isLoading && shops.length > 0 && totalPages > 1 && (
-          <ShopPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            shopsCount={shops.length}
-            colors={colors}
-            onPrev={() => setCurrentPage(p => Math.max(p - 1, 1))}
-            onNext={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-          />
-        )}
       </div>
     </div>
     </>

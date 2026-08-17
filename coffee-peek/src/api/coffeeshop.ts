@@ -376,8 +376,8 @@ export async function getCoffeeShops(
   pageSize: number = 10
 ): Promise<ApiResponse<GetCoffeeShopsResponse>> {
   const params: Record<string, any> = {
-    page,
-    pageSize,
+    page: page > 0 ? page : 1,
+    pageSize: pageSize > 0 ? pageSize : 10,
   };
 
   if (filters) {
@@ -412,8 +412,8 @@ export async function searchCoffeeShops(
   minRating?: number
 ): Promise<ApiResponse<GetCoffeeShopsResponse>> {
   const params: Record<string, any> = {
-    page,
-    pageSize,
+    page: page > 0 ? page : 1,
+    pageSize: pageSize > 0 ? pageSize : 10,
   };
 
   // Добавляем поисковый запрос
