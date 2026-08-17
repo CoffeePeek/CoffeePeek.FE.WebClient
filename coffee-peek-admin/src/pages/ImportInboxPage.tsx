@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { getImportCandidates, ImportCandidate } from '../api/import';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
-import { Pagination } from '../components/ui/Pagination';
 import { FocusBadge, GoogleStatusBadge, ImportTabs } from '../components/import/catalogControls';
+import { useLoadMoreOnScroll } from '../hooks/useLoadMoreOnScroll';
 import {
   BUCKET_LABELS,
   COFFEE_FOCUS_OPTIONS,
@@ -82,34 +82,45 @@ const SortButton: React.FC<{
 export const ImportInboxPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { status, bucket, focus, search, hasAddress, rejectReason, page } =
+  const { status, bucket, focus, search, hasAddress, rejectReason } =
     parseImportListSearch(searchParams);
   const sortKey = (searchParams.get('sort') ?? '') as SortKey | '';
   const sortDir = (searchParams.get('dir') === 'desc' ? 'desc' : 'asc') as SortDir;
   const [localSearch, setLocalSearch] = useState(search);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: [
-      'admin',
-      'import',
-      'inbox',
-      { status, bucket, focus, search, hasAddress, rejectReason, page },
-    ],
-    queryFn: () =>
-      getImportCandidates({
-        status: status === 'all' ? undefined : status,
-        bucket: bucket === 'all' ? undefined : bucket,
-        focus: focus || undefined,
-        search: search || undefined,
-        hasAddress: hasAddress || undefined,
-        rejectReason: rejectReason || undefined,
-        page,
-        pageSize: PAGE_SIZE,
-      }).then((r) => r.data),
-  });
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: [
+        'admin',
+        'import',
+        'inbox',
+        { status, bucket, focus, search, hasAddress, rejectReason },
+      ],
+      initialPageParam: 1,
+      queryFn: ({ pageParam }) =>
+        getImportCandidates({
+          status: status === 'all' ? undefined : status,
+          bucket: bucket === 'all' ? undefined : bucket,
+          focus: focus || undefined,
+          search: search || undefined,
+          hasAddress: hasAddress || undefined,
+          rejectReason: rejectReason || undefined,
+          page: pageParam,
+          pageSize: PAGE_SIZE,
+        }).then((r) => r.data),
+      getNextPageParam: (lastPage) =>
+        lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    });
+
+  const loadMoreRef = useLoadMoreOnScroll(
+    Boolean(hasNextPage) && !isFetchingNextPage,
+    () => {
+      void fetchNextPage();
+    },
+  );
 
   const items = useMemo(() => {
-    let list = data?.items ?? [];
+    let list = data?.pages.flatMap((page) => page.items) ?? [];
     if (hasAddress) {
       list = list.filter((item) => Boolean(item.address?.trim()));
     }
@@ -341,11 +352,17 @@ export const ImportInboxPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-        {data && data.totalPages > 1 && (
-          <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
-            <Pagination page={page} totalPages={data.totalPages} onPageChange={(p) => patchParams({ page: String(p) }, false)} />
-          </div>
-        )}
+        <div ref={loadMoreRef} className="px-5 py-3 border-t border-border-light dark:border-border-dark">
+          {isFetchingNextPage && (
+            <p className="text-center text-xs text-text-muted dark:text-stone-500">Загрузка…</p>
+          )}
+          {!hasNextPage && items.length > 0 && (
+            <p className="text-center text-xs text-text-muted dark:text-stone-500">
+              {items.length}
+              {data?.pages[0]?.totalCount != null ? ` из ${data.pages[0].totalCount}` : ''}
+            </p>
+          )}
+        </div>
       </Card>
     </div>
   );
