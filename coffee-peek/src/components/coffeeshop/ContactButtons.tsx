@@ -2,6 +2,7 @@ import React from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
+import { instagramHandle, instagramUrl } from '../../utils/shopUtils';
 import { AppIcon } from '../icons';
 
 interface ContactButtonsProps {
@@ -24,7 +25,7 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
   }
 
   return (
-    <div className="flex flex-wrap gap-4 mb-10">
+    <div className="flex flex-wrap gap-4 mt-6">
       {shop.shopContact?.phone && (
         <a
           href={`tel:${shop.shopContact.phone}`}
@@ -47,13 +48,13 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
       )}
       {shop.shopContact?.instagram && (
         <a
-          href={shop.shopContact.instagram.startsWith('http') ? shop.shopContact.instagram : `https://instagram.com/${shop.shopContact.instagram.replace('@', '')}`}
+          href={instagramUrl(shop.shopContact.instagram)}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center gap-3 ${cardBg} border ${borderColor} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} ${textMain} px-8 py-4 rounded-2xl font-bold transition-all`}
+          className={`flex items-center gap-3 ${cardBg} border ${borderColor} ${themeClasses.primary.borderLight.replace('border-', 'hover:border-')} ${textMain} px-5 py-3 rounded-2xl font-bold transition-all`}
         >
           <AppIcon name="photo_camera" size={20} className={themeClasses.primary.text} />
-          Instagram
+          {instagramHandle(shop.shopContact.instagram)}
         </a>
       )}
     </div>

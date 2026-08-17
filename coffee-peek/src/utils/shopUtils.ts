@@ -60,3 +60,30 @@ export function formatDayOfWeek(dayOfWeek: number): string {
   const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
   return days[dayOfWeek] || '';
 }
+
+/** `https://instagram.com/alt.minsk` → `@alt.minsk` */
+export function instagramHandle(value: string): string {
+  const trimmed = value.trim();
+  try {
+    const href = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : trimmed.includes('instagram.com')
+        ? `https://${trimmed}`
+        : '';
+    if (href) {
+      const path = new URL(href).pathname.split('/').filter(Boolean)[0] || '';
+      return path ? `@${path}` : trimmed;
+    }
+  } catch {
+    // fall through
+  }
+  const handle = trimmed.replace(/^@/, '').split('/')[0];
+  return handle ? `@${handle}` : trimmed;
+}
+
+export function instagramUrl(value: string): string {
+  const trimmed = value.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.includes('instagram.com')) return `https://${trimmed.replace(/^\/+/, '')}`;
+  return `https://instagram.com/${trimmed.replace(/^@/, '')}`;
+}

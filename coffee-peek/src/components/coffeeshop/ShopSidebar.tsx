@@ -159,8 +159,8 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
         </div>
       )}
 
-      <div className="p-8">
-        <div className="flex items-start gap-4 mb-8">
+      <div className="p-5">
+        <div className={`flex items-start gap-3 ${shop.schedules && shop.schedules.length > 0 ? 'mb-6' : ''}`}>
           <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} flex items-center justify-center shrink-0`}>
             <AppIcon name="pin_drop" size={20} className={themeClasses.primary.text} />
           </div>

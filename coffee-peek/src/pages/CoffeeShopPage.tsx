@@ -129,7 +129,7 @@ const CoffeeShopPage: React.FC = () => {
       )}
 
       {shop && (
-        <section className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-12 gap-12">
+        <section className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-12 gap-12 items-start">
           <div className="col-span-12 lg:col-span-8 space-y-12">
             <div>
               <ShopHeader
@@ -178,7 +178,7 @@ const CoffeeShopPage: React.FC = () => {
           )}
 
           {/* Контакты */}
-          {shop.shopContact && (shop.shopContact.phone || shop.shopContact.email || shop.shopContact.website || shop.shopContact.instagram) && (
+          {shop.shopContact && (shop.shopContact.phone || shop.shopContact.email || shop.shopContact.website) && (
             <div className={`${cardBg} p-6 rounded-3xl border ${borderColor}`}>
               <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
                 <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
@@ -212,17 +212,6 @@ const CoffeeShopPage: React.FC = () => {
                   >
                     <AppIcon name="language" size={24} color="#D4A84B" />
                     <span className="font-medium break-all">{shop.shopContact.website}</span>
-                  </a>
-                )}
-                {shop.shopContact.instagram && (
-                  <a 
-                    href={shop.shopContact.instagram.startsWith('http') ? shop.shopContact.instagram : `https://instagram.com/${shop.shopContact.instagram.replace('@', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
-                  >
-                    <AppIcon name="photo_camera" size={24} color="#D4A84B" />
-                    <span className="font-medium break-all">{shop.shopContact.instagram}</span>
                   </a>
                 )}
               </div>
@@ -341,7 +330,7 @@ const CoffeeShopPage: React.FC = () => {
           </div>
 
           {/* Правая колонка */}
-          <div className="col-span-12 lg:col-span-4 space-y-8">
+          <div className="col-span-12 lg:col-span-4 space-y-8 self-start">
             <ShopSidebar
               shop={shop}
               textMain={textMain}
