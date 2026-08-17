@@ -157,13 +157,6 @@ const CoffeeShopPage: React.FC = () => {
                   ))}
                 </div>
               )}
-
-              <ContactButtons
-                shop={shop}
-                cardBg={cardBg}
-                borderColor={borderColor}
-                textMain={textMain}
-              />
             </div>
 
           {/* Описание */}
@@ -178,45 +171,13 @@ const CoffeeShopPage: React.FC = () => {
           )}
 
           {/* Контакты */}
-          {shop.shopContact && (shop.shopContact.phone || shop.shopContact.email || shop.shopContact.website) && (
-            <div className={`${cardBg} p-6 rounded-3xl border ${borderColor}`}>
-              <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
-                <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
-                Контакты
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {shop.shopContact.phone && (
-                  <a 
-                    href={`tel:${shop.shopContact.phone}`}
-                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
-                  >
-                    <AppIcon name="call" size={24} color="#D4A84B" />
-                    <span className="font-medium break-all">{shop.shopContact.phone}</span>
-                  </a>
-                )}
-                {shop.shopContact.email && (
-                  <a 
-                    href={`mailto:${shop.shopContact.email}`}
-                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
-                  >
-                    <AppIcon name="mail" size={24} color="#D4A84B" />
-                    <span className="font-medium break-all">{shop.shopContact.email}</span>
-                  </a>
-                )}
-                {shop.shopContact.website && (
-                  <a 
-                    href={shop.shopContact.website.startsWith('http') ? shop.shopContact.website : `https://${shop.shopContact.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`flex items-center gap-3 p-4 rounded-2xl border ${borderColor} hover:border-[#D4A84B]/50 ${textMuted} hover:text-[#D4A84B] transition-all`}
-                  >
-                    <AppIcon name="language" size={24} color="#D4A84B" />
-                    <span className="font-medium break-all">{shop.shopContact.website}</span>
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
+          <ContactButtons
+            shop={shop}
+            cardBg={cardBg}
+            borderColor={borderColor}
+            textMain={textMain}
+            textMuted={textMuted}
+          />
 
           {/* Детали кофе */}
           {(shop.equipments?.length > 0 || shop.beans?.length > 0 || shop.roasters?.length > 0 || shop.brewMethods?.length > 0) && (
