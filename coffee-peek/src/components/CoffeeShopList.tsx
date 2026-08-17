@@ -7,6 +7,7 @@ import { useLoadMoreOnScroll } from '../hooks/useLoadMoreOnScroll';
 import { getErrorMessage } from '../utils/errorHandler';
 import { COLORS, getThemeColors } from '../constants/colors';
 import { logger } from '../utils/logger';
+import { getPriceRangeTier } from '../utils/priceRange';
 import ShopCard from './ShopCard';
 import ShopSearchBar from './ShopSearchBar';
 import ShopFilterPanel from './ShopFilterPanel';
@@ -14,6 +15,28 @@ import { AppIcon, StarIcon } from './icons';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 
 const PAGE_SIZE = 12;
+const SORT_PAGE_SIZE = 100;
+
+type ShopSort = 'default' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc';
+
+const SORT_OPTIONS: { id: ShopSort; label: string }[] = [
+  { id: 'default', label: 'По умолчанию' },
+  { id: 'name-asc', label: 'Название А–Я' },
+  { id: 'name-desc', label: 'Название Я–А' },
+  { id: 'price-asc', label: 'Сначала дешевле' },
+  { id: 'price-desc', label: 'Сначала дороже' },
+];
+
+function compareShops(a: CoffeeShop, b: CoffeeShop, sort: ShopSort): number {
+  if (sort === 'name-asc') return a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' });
+  if (sort === 'name-desc') return b.name.localeCompare(a.name, 'ru', { sensitivity: 'base' });
+  if (sort === 'price-asc' || sort === 'price-desc') {
+    const pa = getPriceRangeTier(a.priceRange) ?? 99;
+    const pb = getPriceRangeTier(b.priceRange) ?? 99;
+    return sort === 'price-asc' ? pa - pb : pb - pa;
+  }
+  return 0;
+}
 
 type ShopsPage = Record<string, unknown> & {
   coffeeShops?: Record<string, unknown>[];
@@ -105,6 +128,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [shopSort, setShopSort] = useState<ShopSort>('default');
+  const [showSortMenu, setShowSortMenu] = useState(false);
   const [activeQuick, setActiveQuick] = useState<string[]>(['all']);
 
   const handleQuickChange = (id: string) => {
@@ -208,6 +233,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     filters.isVisited,
     debouncedSearchQuery,
     initialDataLoaded,
+    shopSort,
   ]);
 
   const applyFavoriteFilter = useCallback((shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
@@ -218,9 +244,10 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   // Favorite is local-only — re-apply after load or when favorite chip / ids change
   useEffect(() => {
     const filtered = applyFavoriteFilter(allShops);
-    setShops(filtered);
-    if (activeQuick.includes('favorite')) setTotalItems(filtered.length);
-  }, [applyFavoriteFilter, allShops, activeQuick]);
+    const next = shopSort === 'default' ? filtered : [...filtered].sort((a, b) => compareShops(a, b, shopSort));
+    setShops(next);
+    if (activeQuick.includes('favorite')) setTotalItems(next.length);
+  }, [applyFavoriteFilter, allShops, activeQuick, shopSort]);
 
   const loadInitialData = async () => {
     try {
@@ -270,7 +297,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     }
 
     try {
-      const response = await searchCoffeeShops(debouncedSearchQuery, filters, pageToLoad, PAGE_SIZE);
+      const pageSize = shopSort === 'default' ? PAGE_SIZE : SORT_PAGE_SIZE;
+      const response = await searchCoffeeShops(debouncedSearchQuery, filters, pageToLoad, pageSize);
       if (requestId !== requestIdRef.current) return;
 
       const list = parseShopList(response.data);
@@ -284,7 +312,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         return [...prev, ...list.filter((shop) => !seen.has(shop.id))];
       });
       setHasMore(
-        list.length > 0 && (
+        shopSort === 'default' && list.length > 0 && (
           totalPages > 0
             ? pageToLoad < totalPages
             : apiTotal > 0
@@ -432,10 +460,51 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>
               Кофейни рядом <span style={{ color: colors.textSecondary, fontWeight: 500, fontSize: 13 }}>· {totalItems || shops.length}</span>
             </h2>
-            <button style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: colors.textSecondary, fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-              <AppIcon name="swap_vert" size={14} />
-              Сортировка
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setShowSortMenu((v) => !v)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none',
+                  color: shopSort === 'default' ? colors.textSecondary : COLORS.primary,
+                  fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                <AppIcon name="swap_vert" size={14} />
+                {SORT_OPTIONS.find((o) => o.id === shopSort)?.label ?? 'Сортировка'}
+              </button>
+              {showSortMenu && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowSortMenu(false)} />
+                  <div style={{
+                    position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 20, minWidth: 200,
+                    borderRadius: 12, border: `1px solid ${colors.border}`, background: colors.surface,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.16)', overflow: 'hidden',
+                  }}>
+                    {SORT_OPTIONS.map((option) => {
+                      const active = shopSort === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => { setShopSort(option.id); setShowSortMenu(false); }}
+                          style={{
+                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                            padding: '10px 14px', border: 'none', background: active ? `${COLORS.primary}14` : 'transparent',
+                            color: active ? COLORS.primary : colors.textPrimary,
+                            fontFamily: '"RF Dewi Expanded"', fontSize: 13, fontWeight: active ? 700 : 600,
+                            cursor: 'pointer', textAlign: 'left',
+                          }}
+                        >
+                          {option.label}
+                          {active && <AppIcon name="check" size={14} color={COLORS.primary} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
 
