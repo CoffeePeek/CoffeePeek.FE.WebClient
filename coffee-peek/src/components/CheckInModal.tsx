@@ -10,7 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { Icons } from '../constants';
 import { logger } from '../utils/logger';
 import { AppIcon, StarIcon } from './icons';
-import { X, Images, Calendar } from '@/components/Icon';
+import { Images, Calendar } from '@/components/Icon';
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -223,10 +223,12 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
               </p>
             </div>
             <button
+              type="button"
               onClick={handleClose}
-              className={`${themeClasses.text.secondary} ${themeClasses.primary.hover} text-2xl w-8 h-8 flex items-center justify-center rounded-lg ${themeClasses.bg.tertiary} hover:${themeClasses.bg.tertiary.replace('bg-', 'bg-')}`}
+              aria-label="Закрыть"
+              className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-xl border ${themeClasses.border.default} ${themeClasses.text.primary} hover:border-[#D4A84B]/50 hover:text-[#D4A84B] transition-all`}
             >
-              <X size={20} />
+              <AppIcon name="close" size={20} />
             </button>
           </div>
 
