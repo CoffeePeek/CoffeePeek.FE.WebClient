@@ -7,6 +7,7 @@ import {
   TokenManager,
   isAuthTokenEndpoint,
   tryRefreshAccessToken,
+  ensureFreshAccessToken,
 } from './interceptors';
 
 class HttpClient {
@@ -24,6 +25,10 @@ class HttpClient {
 
     const urlWithParams = buildUrlWithParams(endpoint, params);
     const fullUrl = `${this.baseURL}${urlWithParams}`;
+
+    if (!_retry && !skipAuthHeader && !isAuthTokenEndpoint(endpoint)) {
+      await ensureFreshAccessToken(this.baseURL);
+    }
 
     const requestOptions = requestInterceptor(
       fullUrl,

@@ -7,6 +7,7 @@ import { ApiError } from './types';
 import { ApiErrorResponse, ApiRequestError } from './apiError';
 import { getErrorMessageByStatus } from '../../utils/errorHandler';
 import { logger } from '../../utils/logger';
+import { isTokenExpired } from '../../utils/jwt';
 
 /**
  * Token Manager для работы с токенами аутентификации
@@ -48,6 +49,61 @@ export function isAuthTokenEndpoint(endpoint: string): boolean {
   return endpoint === TOKEN_PATH || endpoint.startsWith(`${TOKEN_PATH}/`);
 }
 
+export function pickAuthTokens(payload: unknown): { accessToken?: string; refreshToken?: string } {
+  if (!payload || typeof payload !== 'object') return {};
+  const data = payload as Record<string, unknown>;
+  const accessToken =
+    (typeof data.accessToken === 'string' && data.accessToken) ||
+    (typeof data.AccessToken === 'string' && data.AccessToken) ||
+    undefined;
+  const refreshToken =
+    (typeof data.refreshToken === 'string' && data.refreshToken) ||
+    (typeof data.RefreshToken === 'string' && data.RefreshToken) ||
+    undefined;
+  return { accessToken, refreshToken };
+}
+
+async function putRefresh(baseURL: string, refreshToken: string, withAccess: boolean): Promise<Response> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  const access = TokenManager.getAccessToken();
+  if (withAccess && access) {
+    headers.Authorization = `Bearer ${access}`;
+  }
+  return fetch(`${baseURL}${TOKEN_PATH}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ refreshToken }),
+  });
+}
+
+async function performRefresh(baseURL: string): Promise<boolean> {
+  const refreshToken = TokenManager.getRefreshToken();
+  if (!refreshToken) return false;
+
+  try {
+    // Expired JWT is rejected at the gateway, so try without Bearer first.
+    let response = await putRefresh(baseURL, refreshToken, false);
+    if (!response.ok && response.status === 401) {
+      response = await putRefresh(baseURL, refreshToken, true);
+    }
+    if (!response.ok) return false;
+
+    const json = await response.json();
+    const payload = json?.data ?? json;
+    const tokens = pickAuthTokens(payload);
+    if (!tokens.accessToken) return false;
+
+    TokenManager.setTokens(tokens.accessToken, tokens.refreshToken ?? refreshToken);
+    return true;
+  } catch (err) {
+    logger.error('[Auth] Refresh failed', err);
+    return false;
+  }
+}
+
 export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = performRefresh(baseURL).finally(() => {
@@ -56,32 +112,11 @@ export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
   return refreshInFlight;
 }
 
-async function performRefresh(baseURL: string): Promise<boolean> {
-  const refreshToken = TokenManager.getRefreshToken();
-  if (!refreshToken) return false;
-
-  try {
-    const response = await fetch(`${baseURL}${TOKEN_PATH}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
-    if (!response.ok) return false;
-
-    const json = await response.json();
-    const payload = json?.data ?? json;
-    const accessToken = payload?.accessToken;
-    if (!accessToken) return false;
-
-    TokenManager.setTokens(accessToken, payload.refreshToken);
-    return true;
-  } catch (err) {
-    logger.error('[Auth] Refresh failed', err);
-    return false;
-  }
+export async function ensureFreshAccessToken(baseURL: string): Promise<boolean> {
+  const access = TokenManager.getAccessToken();
+  if (access && !isTokenExpired(access)) return true;
+  if (!TokenManager.getRefreshToken()) return false;
+  return tryRefreshAccessToken(baseURL);
 }
 
 export function requestInterceptor(

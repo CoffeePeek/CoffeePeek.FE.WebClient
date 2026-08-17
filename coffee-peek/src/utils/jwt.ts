@@ -60,7 +60,7 @@ export function parseJWT(token: string | null | undefined): JWTClaims | null {
 /**
  * Проверяет, истёк ли токен
  */
-export function isTokenExpired(token: string | null | undefined): boolean {
+export function isTokenExpired(token: string | null | undefined, skewMs = 30_000): boolean {
   if (!token) {
     return true;
   }
@@ -70,7 +70,7 @@ export function isTokenExpired(token: string | null | undefined): boolean {
     return true;
   }
   
-  return claims.exp * 1000 < Date.now();
+  return claims.exp * 1000 < Date.now() + skewMs;
 }
 
 /**

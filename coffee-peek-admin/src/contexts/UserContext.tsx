@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getUserRoles, getUserEmail, getUserId, isTokenExpired } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
+import { ensureFreshAccessToken } from '../api/core/interceptors';
+import { API_BASE_URL } from '../api/core/apiConfig';
 
 export interface AppUser {
   id: string;
@@ -49,9 +51,23 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
-    const token = TokenManager.getAccessToken();
-    if (token) updateUserFromToken(token);
-    setIsLoading(false);
+    let cancelled = false;
+
+    const restoreSession = async () => {
+      try {
+        await ensureFreshAccessToken(API_BASE_URL);
+        if (cancelled) return;
+        const token = TokenManager.getAccessToken();
+        if (token) updateUserFromToken(token);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    void restoreSession();
+    return () => {
+      cancelled = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

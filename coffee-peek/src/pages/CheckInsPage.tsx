@@ -5,6 +5,7 @@ import { COLORS, getThemeColors } from '../constants/colors';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useCheckIns } from '../hooks/queries/useCheckIns';
 import WobbleRing from '../components/WobbleRing';
+import { AppIcon } from '../components/icons';
 import { getErrorMessage } from '../utils/errorHandler';
 
 function formatDate(iso: string): string {
@@ -48,7 +49,7 @@ const CheckInsPage: React.FC = () => {
             color: colors.textSecondary, fontFamily: '"Noto Sans"', fontSize: 14, cursor: 'pointer',
           }}
         >
-          <span className="material-symbols-rounded" style={{ fontSize: 18, lineHeight: 1 }}>arrow_back</span>
+          <AppIcon name="arrow_back" size={18} color="currentColor" />
           Назад
         </button>
 
@@ -98,9 +99,7 @@ const CheckInsPage: React.FC = () => {
               width: 64, height: 64, borderRadius: 99, margin: '0 auto 16px',
               background: `${gold}15`, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <span className="material-symbols-rounded" style={{ fontSize: 32, color: gold, lineHeight: 1 }}>
-                shopping_cart_checkout
-              </span>
+              <AppIcon name="checkin" size={32} color={gold} />
             </div>
             <h2 style={{
               margin: '0 0 8px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700,
@@ -168,7 +167,7 @@ const CheckInsPage: React.FC = () => {
                             fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 12, cursor: 'pointer',
                           }}
                         >
-                          <span className="material-symbols-rounded" style={{ fontSize: 14, lineHeight: 1 }}>rate_review</span>
+                          <AppIcon name="rate_review" size={14} color="currentColor" />
                           Отзыв
                         </button>
                       ) : null}

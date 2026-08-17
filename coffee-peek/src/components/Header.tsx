@@ -4,7 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { Icons } from '../constants';
 import { COLORS } from '../constants/colors';
-import { User, Gear, SignOut, CaretDown, ShoppingCart } from '@/components/Icon';
+import { Gear, SignOut, CaretDown, ShoppingCart } from '@/components/Icon';
 
 const PUBLIC_NAV = [
   { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
@@ -121,10 +121,6 @@ const Header: React.FC = () => {
 
                       {/* Menu */}
                       <div style={{ padding: '6px 0' }}>
-                        {user.id && (
-                          <DropdownItem icon={<User size={18} color={mutedColor} />} label="Мой профиль" hoverBg={hoverBg} textColor={textColor} mutedColor={mutedColor}
-                            onClick={() => { navigate(`/users/${user.id}`); setProfileOpen(false); }} />
-                        )}
                         <DropdownItem icon={<ShoppingCart size={18} color={mutedColor} />} label="Посещения" hoverBg={hoverBg} textColor={textColor} mutedColor={mutedColor}
                           onClick={() => { navigate('/check-ins'); setProfileOpen(false); }} />
                         <DropdownItem icon={<Gear size={18} color={isSettings ? gold : mutedColor} />} label="Настройки" hoverBg={hoverBg}
@@ -189,13 +185,6 @@ const Header: React.FC = () => {
             <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', gap: 2 }}>
               {user ? (
                 <>
-                  {user.id && (
-                    <button onClick={() => { navigate(`/users/${user.id}`); setIsMobileMenuOpen(false); }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                      <User size={18} color={mutedColor} />
-                      Профиль
-                    </button>
-                  )}
                   <button onClick={() => { navigate('/check-ins'); setIsMobileMenuOpen(false); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <ShoppingCart size={18} color={mutedColor} />

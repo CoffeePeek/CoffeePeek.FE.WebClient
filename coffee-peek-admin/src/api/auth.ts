@@ -1,6 +1,7 @@
 import { httpClient, TokenManager } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
+import { pickAuthTokens } from './core/interceptors';
 
 export interface LoginRequest {
   email: string;
@@ -17,11 +18,16 @@ export async function login(credentials: LoginRequest): Promise<ApiResponse<Auth
   const response = await httpClient.post<AuthData>(
     API_ENDPOINTS.AUTH.LOGIN,
     credentials,
-    { requiresAuth: false }
+    { requiresAuth: false, skipAuthHeader: true }
   );
 
-  if (response.success && response.data.accessToken) {
-    TokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
+  if (response.success && response.data) {
+    const tokens = pickAuthTokens(response.data);
+    if (tokens.accessToken) {
+      TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+      response.data.accessToken = tokens.accessToken;
+      response.data.refreshToken = tokens.refreshToken;
+    }
   }
 
   return response;
@@ -42,8 +48,13 @@ export async function refreshAccessToken(refreshToken: string): Promise<ApiRespo
     { requiresAuth: false, skipAuthHeader: true }
   );
 
-  if (response.success && response.data.accessToken) {
-    TokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
+  if (response.success && response.data) {
+    const tokens = pickAuthTokens(response.data);
+    if (tokens.accessToken) {
+      TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+      response.data.accessToken = tokens.accessToken;
+      response.data.refreshToken = tokens.refreshToken;
+    }
   }
 
   return response;

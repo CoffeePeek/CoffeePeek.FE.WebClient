@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { forgotPassword } from '../api/auth';
 import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { AppIcon } from '../components/icons';
 
 const ForgotPasswordPage: React.FC = () => {
   usePageTitle('Восстановление пароля');
@@ -54,7 +55,7 @@ const ForgotPasswordPage: React.FC = () => {
           {sent ? (
             <div style={{ textAlign: 'center' }}>
               <div style={{ width: 72, height: 72, borderRadius: 99, background: 'rgba(34,197,94,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <span className="material-symbols-rounded" style={{ fontSize: 40, color: '#22C55E', lineHeight: 1 }}>mark_email_read</span>
+                <AppIcon name="mark_email_read" size={40} color="#22C55E" />
               </div>
               <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>
                 Проверьте почту

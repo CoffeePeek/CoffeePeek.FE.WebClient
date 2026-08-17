@@ -1,9 +1,10 @@
 import WobbleRing from '../components/WobbleRing';
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { getUserPublicProfile, PublicUserProfile } from '../api/user';
 import { getReviewsByUserId, Review } from '../api/coffeeshop';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUser } from '../contexts/UserContext';
 import { getThemeClasses } from '../utils/theme';
 import Button from '../components/Button';
 import { useUsersCache } from '../hooks/useUsersCache';
@@ -18,6 +19,7 @@ import {
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const { user } = useUser();
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   
@@ -40,7 +42,7 @@ const UserProfilePage: React.FC = () => {
     let cancelled = false;
 
     const loadProfile = async () => {
-      if (!userId) return;
+      if (!userId || user?.id === userId) return;
       
       try {
         setIsLoadingProfile(true);
@@ -71,7 +73,7 @@ const UserProfilePage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, user?.id]);
 
   // Load user reviews
   React.useEffect(() => {
@@ -129,6 +131,10 @@ const UserProfilePage: React.FC = () => {
   const borderClass = themeClasses.border.default;
   const textMain = themeClasses.text.primary;
   const textMuted = themeClasses.text.secondary;
+
+  if (userId && user?.id === userId) {
+    return <Navigate to="/settings" replace />;
+  }
 
   if (isLoadingProfile) {
     return (

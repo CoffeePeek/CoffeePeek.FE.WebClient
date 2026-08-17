@@ -4,6 +4,7 @@ import { resetPassword } from '../api/auth';
 import { TokenManager } from '../api/core/httpClient';
 import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { AppIcon } from '../components/icons';
 
 const ResetPasswordPage: React.FC = () => {
   usePageTitle('Новый пароль');
@@ -79,7 +80,7 @@ const ResetPasswordPage: React.FC = () => {
           {done ? (
             <div style={{ textAlign: 'center' }}>
               <div style={{ width: 72, height: 72, borderRadius: 99, background: 'rgba(34,197,94,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <span className="material-symbols-rounded" style={{ fontSize: 40, color: '#22C55E', lineHeight: 1 }}>lock_reset</span>
+                <AppIcon name="lock" size={40} color="#22C55E" />
               </div>
               <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>Пароль обновлён</h1>
               <p style={{ margin: '0 0 24px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
@@ -123,7 +124,7 @@ const ResetPasswordPage: React.FC = () => {
                     style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: textMuted }}
                     aria-label={showPwd ? 'Скрыть' : 'Показать'}
                   >
-                    <span className="material-symbols-rounded" style={{ fontSize: 20 }}>{showPwd ? 'visibility_off' : 'visibility'}</span>
+                    <AppIcon name={showPwd ? 'visibility_off' : 'visibility'} size={20} color="currentColor" />
                   </button>
                 </div>
               </label>
