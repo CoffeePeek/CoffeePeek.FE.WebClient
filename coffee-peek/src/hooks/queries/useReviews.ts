@@ -1,12 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getCoffeeShopReviews,
   getReviewsByUserId,
   getReviewById,
   createReview,
   updateReview,
-  Review,
-  GetReviewsResponse,
   CreateReviewRequest,
 } from '../../api/coffeeshop';
 
@@ -23,29 +20,6 @@ export const reviewKeys = {
   details: () => [...reviewKeys.all, 'detail'] as const,
   detail: (reviewId: string) => [...reviewKeys.details(), reviewId] as const,
 };
-
-/**
- * Hook to fetch reviews for a coffee shop
- */
-export function useCoffeeShopReviews(
-  shopId: string | null,
-  page: number = 1,
-  pageSize: number = 10,
-  enabled: boolean = true
-) {
-  return useQuery({
-    queryKey: reviewKeys.list(shopId!, page, pageSize),
-    queryFn: async () => {
-      if (!shopId) throw new Error('Shop ID is required');
-      const response = await getCoffeeShopReviews(shopId, page, pageSize);
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch reviews');
-      }
-      return response.data;
-    },
-    enabled: enabled && !!shopId,
-  });
-}
 
 /**
  * Hook to fetch reviews by user ID

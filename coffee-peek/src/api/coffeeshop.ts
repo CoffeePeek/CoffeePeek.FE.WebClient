@@ -3,7 +3,7 @@
  */
 
 import { httpClient } from './core/httpClient';
-import { API_ENDPOINTS, getFullUrl } from './core/apiConfig';
+import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 import { logger } from '../utils/logger';
 
@@ -34,16 +34,14 @@ export interface PhotoMetadataDto {
  * Формирует полный URL фотографии из storageKey
  */
 export function getPhotoUrl(photo: PhotoMetadataDto | ShortPhotoMetadataDto): string {
+  // The media service only returns photos via a ready-to-use fullUrl (presigned/CDN);
+  // there is no GET-photo-by-storageKey endpoint to fall back to.
   if (photo.fullUrl) {
     return photo.fullUrl;
   }
-  
-  if (!photo.storageKey) {
-    logger.warn('[getPhotoUrl] Missing both fullUrl and storageKey for photo:', photo);
-    return '';
-  }
-  
-  return getFullUrl(API_ENDPOINTS.PHOTO.BY_KEY(photo.storageKey));
+
+  logger.warn('[getPhotoUrl] Missing fullUrl for photo:', photo);
+  return '';
 }
 
 export interface CoffeeShop {
@@ -671,26 +669,6 @@ export async function getCoffeeShopById(id: string): Promise<ApiResponse<Detaile
 }
 
 /**
- * Получает все отзывы текущего пользователя с пагинацией
- */
-export async function getCoffeeShopReviews(
-  coffeeShopId: string,
-  page: number = 1,
-  pageSize: number = 10
-): Promise<ApiResponse<GetReviewsResponse>> {
-  const headers: Record<string, string> = {
-    'X-Page-Number': page.toString(),
-    'X-Page-Size': pageSize.toString(),
-  };
-
-  return httpClient.get<GetReviewsResponse>(API_ENDPOINTS.REVIEW.BASE, {
-    params: { shopId: coffeeShopId },
-    headers,
-    requiresAuth: false,
-  });
-}
-
-/**
  * Получает отзывы пользователя по ID
  */
 export async function getReviewsByUserId(
@@ -698,8 +676,6 @@ export async function getReviewsByUserId(
   page: number = 1,
   pageSize: number = 10
 ): Promise<ApiResponse<GetReviewsResponse>> {
-  // Используем REVIEW эндпоинт с фильтрацией по userId, если такой эндпоинт существует
-  // Или можно использовать REVIEW.BASE с параметрами
   return httpClient.get<GetReviewsResponse>(API_ENDPOINTS.USER.REVIEWS(userId), {
     params: { pageNumber: page, pageSize },
     requiresAuth: false,
