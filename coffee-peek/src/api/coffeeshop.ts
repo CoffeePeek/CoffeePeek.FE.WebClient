@@ -6,6 +6,7 @@ import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 import { logger } from '../utils/logger';
+import { normalizeReviewDto } from './core/reviewNormalize';
 
 // ==================== Types ====================
 
@@ -676,19 +677,39 @@ export async function getReviewsByUserId(
   page: number = 1,
   pageSize: number = 10
 ): Promise<ApiResponse<GetReviewsResponse>> {
-  return httpClient.get<GetReviewsResponse>(API_ENDPOINTS.USER.REVIEWS(userId), {
+  const response = await httpClient.get<any>(API_ENDPOINTS.USER.REVIEWS(userId), {
     params: { pageNumber: page, pageSize },
     requiresAuth: false,
   });
+
+  const raw = response.data ?? {};
+  const dtos = Array.isArray(raw.reviewDtos)
+    ? raw.reviewDtos
+    : Array.isArray(raw.reviews)
+      ? raw.reviews
+      : [];
+
+  const data: GetReviewsResponse = {
+    reviews: dtos.map((dto: any) => normalizeReviewDto(dto)),
+    totalCount: Number(raw.totalItems ?? raw.totalCount ?? dtos.length),
+    totalPages: Number(raw.totalPages ?? 1),
+    page: Number(raw.currentPage ?? page),
+    pageSize: Number(raw.pageSize ?? pageSize),
+  };
+
+  return { ...response, data };
 }
 
 /**
  * Получает отзыв по ID
  */
 export async function getReviewById(reviewId: string): Promise<ApiResponse<Review>> {
-  return httpClient.get<Review>(API_ENDPOINTS.REVIEW.BY_ID(reviewId), {
+  const response = await httpClient.get<any>(API_ENDPOINTS.REVIEW.BY_ID(reviewId), {
     requiresAuth: false,
   });
+
+  const dto = response.data?.review ?? response.data;
+  return { ...response, data: normalizeReviewDto(dto) };
 }
 
 export async function createReview(

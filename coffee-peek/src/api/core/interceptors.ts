@@ -8,6 +8,7 @@ import { ApiErrorResponse, ApiRequestError } from './apiError';
 import { getErrorMessageByStatus } from '../../utils/errorHandler';
 import { logger } from '../../utils/logger';
 import { isTokenExpired } from '../../utils/jwt';
+import { normalizeReviewDto } from './reviewNormalize';
 
 /**
  * Token Manager для работы с токенами аутентификации
@@ -382,12 +383,9 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
       });
   }
 
-  // Нормализуем reviews если они есть
+  // Нормализуем reviews если они есть (ReviewDto: rating — объект, дата — createdAtUtc)
   if ('reviews' in shop && Array.isArray(shop.reviews)) {
-    normalized.reviews = shop.reviews.map((review: any) => ({
-      ...review,
-      username: review.username || null,
-    }));
+    normalized.reviews = shop.reviews.map((review: any) => normalizeReviewDto(review));
   }
 
   // Нормализуем photos
