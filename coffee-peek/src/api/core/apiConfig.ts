@@ -54,16 +54,11 @@ export const API_ENDPOINTS = {
   },
 
   REVIEW: {
-    BASE: "/api/CoffeeShopReviews",
     BY_ID: (reviewId: string) => `/api/CoffeeShopReviews/${reviewId}`,
   },
 
   CHECK_IN: {
     BASE: "/api/CheckIns",
-  },
-
-  PHOTO: {
-    BY_KEY: (storageKey: string) => `/api/Photo/${storageKey}`,
   },
 
   PHOTOS: {

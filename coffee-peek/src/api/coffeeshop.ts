@@ -3,9 +3,10 @@
  */
 
 import { httpClient } from './core/httpClient';
-import { API_ENDPOINTS, getFullUrl } from './core/apiConfig';
+import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 import { logger } from '../utils/logger';
+import { normalizeReviewDto } from './core/reviewNormalize';
 
 // ==================== Types ====================
 
@@ -34,16 +35,14 @@ export interface PhotoMetadataDto {
  * Формирует полный URL фотографии из storageKey
  */
 export function getPhotoUrl(photo: PhotoMetadataDto | ShortPhotoMetadataDto): string {
+  // The media service only returns photos via a ready-to-use fullUrl (presigned/CDN);
+  // there is no GET-photo-by-storageKey endpoint to fall back to.
   if (photo.fullUrl) {
     return photo.fullUrl;
   }
-  
-  if (!photo.storageKey) {
-    logger.warn('[getPhotoUrl] Missing both fullUrl and storageKey for photo:', photo);
-    return '';
-  }
-  
-  return getFullUrl(API_ENDPOINTS.PHOTO.BY_KEY(photo.storageKey));
+
+  logger.warn('[getPhotoUrl] Missing fullUrl for photo:', photo);
+  return '';
 }
 
 export interface CoffeeShop {
@@ -671,26 +670,6 @@ export async function getCoffeeShopById(id: string): Promise<ApiResponse<Detaile
 }
 
 /**
- * Получает все отзывы текущего пользователя с пагинацией
- */
-export async function getCoffeeShopReviews(
-  coffeeShopId: string,
-  page: number = 1,
-  pageSize: number = 10
-): Promise<ApiResponse<GetReviewsResponse>> {
-  const headers: Record<string, string> = {
-    'X-Page-Number': page.toString(),
-    'X-Page-Size': pageSize.toString(),
-  };
-
-  return httpClient.get<GetReviewsResponse>(API_ENDPOINTS.REVIEW.BASE, {
-    params: { shopId: coffeeShopId },
-    headers,
-    requiresAuth: false,
-  });
-}
-
-/**
  * Получает отзывы пользователя по ID
  */
 export async function getReviewsByUserId(
@@ -698,21 +677,39 @@ export async function getReviewsByUserId(
   page: number = 1,
   pageSize: number = 10
 ): Promise<ApiResponse<GetReviewsResponse>> {
-  // Используем REVIEW эндпоинт с фильтрацией по userId, если такой эндпоинт существует
-  // Или можно использовать REVIEW.BASE с параметрами
-  return httpClient.get<GetReviewsResponse>(API_ENDPOINTS.USER.REVIEWS(userId), {
+  const response = await httpClient.get<any>(API_ENDPOINTS.USER.REVIEWS(userId), {
     params: { pageNumber: page, pageSize },
     requiresAuth: false,
   });
+
+  const raw = response.data ?? {};
+  const dtos = Array.isArray(raw.reviewDtos)
+    ? raw.reviewDtos
+    : Array.isArray(raw.reviews)
+      ? raw.reviews
+      : [];
+
+  const data: GetReviewsResponse = {
+    reviews: dtos.map((dto: any) => normalizeReviewDto(dto)),
+    totalCount: Number(raw.totalItems ?? raw.totalCount ?? dtos.length),
+    totalPages: Number(raw.totalPages ?? 1),
+    page: Number(raw.currentPage ?? page),
+    pageSize: Number(raw.pageSize ?? pageSize),
+  };
+
+  return { ...response, data };
 }
 
 /**
  * Получает отзыв по ID
  */
 export async function getReviewById(reviewId: string): Promise<ApiResponse<Review>> {
-  return httpClient.get<Review>(API_ENDPOINTS.REVIEW.BY_ID(reviewId), {
+  const response = await httpClient.get<any>(API_ENDPOINTS.REVIEW.BY_ID(reviewId), {
     requiresAuth: false,
   });
+
+  const dto = response.data?.review ?? response.data;
+  return { ...response, data: normalizeReviewDto(dto) };
 }
 
 export async function createReview(

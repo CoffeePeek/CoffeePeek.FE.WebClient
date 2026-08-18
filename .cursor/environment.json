@@ -1,0 +1,15 @@
+{
+  "name": "CoffeePeek Web + Admin",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "coffee-peek",
+      "command": "cd coffee-peek && npm run dev"
+    },
+    {
+      "name": "coffee-peek-admin",
+      "command": "cd coffee-peek-admin && npm run dev"
+    }
+  ],
+  "ports": [5173, 5174]
+}
