@@ -344,12 +344,12 @@ const SettingsPage: React.FC = () => {
 
             {/* Nav */}
             <nav style={{ borderRadius: 16, border: `1px solid ${border}`, background: surface, overflow: 'hidden', marginBottom: 12 }}>
-              {NAV_ITEMS.map((item) => {
+              {NAV_ITEMS.map((item, i) => {
                 const active = activeSection === item.id;
                 return (
                   <button key={item.id} onClick={() => setActiveSection(item.id)} style={{
                     width: '100%', padding: '11px 14px', textAlign: 'left', border: 'none',
-                    borderBottom: `1px solid ${border}`,
+                    borderBottom: i < NAV_ITEMS.length - 1 ? `1px solid ${border}` : 'none',
                     background: active ? `${gold}10` : 'transparent',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s',
                   }}>
@@ -359,16 +359,16 @@ const SettingsPage: React.FC = () => {
                   </button>
                 );
               })}
-              <button
-                onClick={() => navigate('/coffee-shops/new')}
-                style={{
-                  width: '100%', padding: '11px 14px', textAlign: 'left', border: 'none',
-                  background: gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
-                }}>
-                <Storefront size={18} color="#1A1412" />
-                <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, color: '#1A1412', flex: 1 }}>Добавить кофейню</span>
-              </button>
             </nav>
+
+            <button
+              onClick={() => navigate('/coffee-shops/new')}
+              style={{ width: '100%', padding: '11px 14px', textAlign: 'left', background: surface, border: `1px solid ${border}`, borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, transition: 'background .15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = `${gold}14`)}
+              onMouseLeave={e => (e.currentTarget.style.background = surface)}>
+              <Storefront size={18} color={gold} />
+              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: gold }}>Добавить кофейню</span>
+            </button>
 
             {/* Logout */}
             <button onClick={() => { logout(); navigate('/'); }}

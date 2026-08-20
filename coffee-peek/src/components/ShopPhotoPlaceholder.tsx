@@ -34,10 +34,10 @@ const ShopPhotoPlaceholder: React.FC<ShopPhotoPlaceholderProps> = ({
     >
       <span
         style={{
-          fontFamily: 'system-ui, sans-serif',
-          fontWeight: 900,
+          fontFamily: '"RF Dewi Expanded", sans-serif',
+          fontWeight: 800,
           fontSize,
-          letterSpacing: 1.4,
+          letterSpacing: '-0.045em',
           lineHeight: 1,
           textAlign: 'center',
           textTransform: 'uppercase',
