@@ -8,6 +8,7 @@ import Input from '../components/Input';
 import OTPInput from '../components/OTPInput';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { getThemeColors } from '../constants/colors';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { logger } from '../utils/logger';
 import { LEGAL_ROUTES } from '../constants/legalRoutes';
@@ -187,38 +188,45 @@ const LandingPage: React.FC = () => {
       },
     ];
 
+    const isDark = theme === 'dark';
+    const c = getThemeColors(theme);
+    const logoBox = { background: c.background, border: `1px solid ${c.border}` };
+
     return (
-      <div className="min-h-screen bg-[#1A1412] relative overflow-x-clip text-white">
+      <div className="min-h-screen relative overflow-x-clip" style={{ background: c.background, color: c.textPrimary }}>
         {/* Dotted background */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.55 }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `radial-gradient(${c.surface} 1px, transparent 1px)`, backgroundSize: '40px 40px', opacity: isDark ? 0.55 : 0.9 }} />
         {/* Gold glows — kept inside the box so overflow clip doesn't leave a 1px edge in Firefox */}
         <div className="absolute pointer-events-none" style={{ top: -80, left: '50%', transform: 'translateX(-50%)', width: 720, height: 480, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(234,179,8,0.12), transparent 60%)', filter: 'blur(60px)' }} />
         <div className="absolute pointer-events-none" style={{ bottom: -40, right: -40, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,140,75,0.10), transparent 60%)', filter: 'blur(60px)' }} />
 
         <div className="relative">
           {/* ── Nav desktop ─────────────────────────────────────── */}
-          <header className="sticky top-0 z-50 hidden lg:block h-[72px] border-b border-[#3D2F28]" style={{ background: 'rgba(45,36,31,0.92)', transform: 'translateZ(0)' }}>
+          <header className="sticky top-0 z-50 hidden lg:block h-[72px] border-b" style={{ background: isDark ? 'rgba(45,36,31,0.92)' : 'rgba(255,255,255,0.92)', borderColor: c.border, transform: 'translateZ(0)' }}>
             <div className="max-w-[1280px] mx-auto px-8 h-full flex items-center justify-between gap-6">
               <button type="button" onClick={() => navigate('/')} className="logo-btn flex items-center gap-3 cursor-pointer">
-                <div className="w-[38px] h-[38px] rounded-xl bg-[#1A1412] border border-[#3D2F28] flex items-center justify-center">
+                <div className="w-[38px] h-[38px] rounded-xl flex items-center justify-center" style={logoBox}>
                   <img src="/logo-mark.svg" alt="" className="w-5 h-5" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
                 </div>
-                <span className="font-display font-extrabold tracking-[-0.02em] text-[20px] text-white">
+                <span className="font-display font-extrabold tracking-[-0.02em] text-[20px]" style={{ color: c.textPrimary }}>
                   Coffee<span className="text-[#EAB308]">Peek</span>
                 </span>
               </button>
               <nav className="flex gap-1">
                 {navTabs.map(({ label, href }) => (
                   <button key={label} onClick={() => navigate(href)}
-                    className="font-display font-medium text-sm px-[14px] py-2 rounded-[10px] text-[#A39E93] hover:text-white transition-colors bg-transparent border border-transparent">
+                    className="font-display font-medium text-sm px-[14px] py-2 rounded-[10px] transition-colors bg-transparent border border-transparent"
+                    style={{ color: c.textSecondary }}
+                    onMouseEnter={e => { e.currentTarget.style.color = c.textPrimary; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = c.textSecondary; }}>
                     {label}
                   </button>
                 ))}
               </nav>
               <div className="flex items-center gap-[10px]">
-                <ThemeToggle size={40} />
                 <button onClick={() => navigate('/login')}
-                  className="px-4 py-[9px] rounded-[10px] bg-transparent border border-[#3D2F28] text-white font-display font-semibold text-[13px] hover:border-[#EAB308]/40 transition-colors">
+                  className="px-4 py-[9px] rounded-[10px] bg-transparent font-display font-semibold text-[13px] transition-colors"
+                  style={{ border: `1px solid ${c.border}`, color: c.textPrimary }}>
                   Войти
                 </button>
                 <button onClick={() => navigate('/register')}
@@ -226,6 +234,7 @@ const LandingPage: React.FC = () => {
                   style={{ boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                   Создать аккаунт
                 </button>
+                <ThemeToggle size={40} />
               </div>
             </div>
           </header>
@@ -233,19 +242,20 @@ const LandingPage: React.FC = () => {
           {/* ── Top bar mobile ───────────────────────────────────── */}
           <div className="lg:hidden flex items-center justify-between px-5 pt-[60px] pb-0">
             <button type="button" onClick={() => navigate('/')} className="logo-btn flex items-center gap-[10px] cursor-pointer">
-              <div className="w-9 h-9 rounded-xl bg-[#1A1412] border border-[#3D2F28] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={logoBox}>
                 <img src="/logo-mark.svg" alt="" className="w-[18px] h-[18px]" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
               </div>
-              <span className="font-display font-extrabold tracking-[-0.02em] text-[17px] text-white">
+              <span className="font-display font-extrabold tracking-[-0.02em] text-[17px]" style={{ color: c.textPrimary }}>
                 Coffee<span className="text-[#EAB308]">Peek</span>
               </span>
             </button>
             <div className="flex items-center gap-2">
-              <ThemeToggle size={36} />
               <button onClick={() => navigate('/login')}
-              className="px-[14px] py-[7px] rounded-full bg-white/[0.04] border border-[#3D2F28] text-white font-display font-semibold text-[12px]">
+              className="px-[14px] py-[7px] rounded-full font-display font-semibold text-[12px]"
+              style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#fff', border: `1px solid ${c.border}`, color: c.textPrimary }}>
                 Войти
               </button>
+              <ThemeToggle size={36} />
             </div>
           </div>
 
@@ -262,15 +272,15 @@ const LandingPage: React.FC = () => {
                 </span>
 
                 {/* H1 */}
-                <h1 className="mt-5 lg:mt-6 font-display font-black leading-[0.95] tracking-[-0.035em] text-white">
-                  <span className="block font-body font-medium text-[13px] lg:text-[28px] tracking-[0.01em] text-[#A39E93] normal-case mb-2 lg:mb-3">
+                <h1 className="mt-5 lg:mt-6 font-display font-black leading-[0.95] tracking-[-0.035em]" style={{ color: c.textPrimary }}>
+                  <span className="block font-body font-medium text-[13px] lg:text-[28px] tracking-[0.01em] normal-case mb-2 lg:mb-3" style={{ color: c.textSecondary }}>
                     Добро пожаловать в
                   </span>
                   <span className="block text-[54px] lg:text-[88px] text-[#EAB308] tracking-[-0.045em]">CoffeePeek</span>
                 </h1>
 
                 {/* Description */}
-                <p className="mt-5 lg:mt-6 mx-auto lg:mx-0 max-w-[320px] lg:max-w-[520px] font-body text-[14px] lg:text-[17px] leading-[1.55] text-[#A39E93]">
+                <p className="mt-5 lg:mt-6 mx-auto lg:mx-0 max-w-[320px] lg:max-w-[520px] font-body text-[14px] lg:text-[17px] leading-[1.55]" style={{ color: c.textSecondary }}>
                   Удобный инструмент для любителей кофе. Открой для себя лучшие кофейни, оставляй отзывы и делись впечатлениями с единомышленниками.
                 </p>
 
@@ -283,8 +293,8 @@ const LandingPage: React.FC = () => {
                     Создать аккаунт
                   </button>
                   <button onClick={() => navigate('/login')}
-                    className="h-[52px] px-[26px] rounded-[14px] text-white font-display font-semibold text-[15px] inline-flex items-center justify-center gap-2 border border-[#3D2F28] hover:border-[#EAB308]/40 active:scale-[0.98] transition-all"
-                    style={{ background: 'rgba(255,255,255,0.04)' }}>
+                    className="h-[52px] px-[26px] rounded-[14px] font-display font-semibold text-[15px] inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                    style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#fff', border: `1px solid ${c.border}`, color: c.textPrimary }}>
                     <AppIcon name="login" size={18} />
                     Войти
                   </button>
@@ -298,17 +308,17 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* Stats strip */}
-            <div className="mt-8 lg:mt-16 rounded-[16px] lg:rounded-[20px] px-4 py-4 lg:px-8 lg:py-6 border border-[#3D2F28]"
-              style={{ background: 'rgba(45,36,31,0.55)', backdropFilter: 'blur(12px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+            <div className="mt-8 lg:mt-16 rounded-[16px] lg:rounded-[20px] px-4 py-4 lg:px-8 lg:py-6 border"
+              style={{ background: isDark ? 'rgba(45,36,31,0.55)' : 'rgba(255,255,255,0.72)', borderColor: c.border, backdropFilter: 'blur(12px)', boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.04)' : 'inset 0 1px 0 rgba(255,255,255,0.9)' }}>
               {/* Mobile: 2x2 grid */}
               <div className="grid grid-cols-2 gap-4 lg:hidden">
                 {statsMobile.map(({ value, label, isRating }) => (
                   <div key={label}>
-                    <div className={`font-display font-bold text-[22px] tracking-[-0.02em] text-white leading-none inline-flex items-center gap-1.5 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`}>
+                    <div className={`font-display font-bold text-[22px] tracking-[-0.02em] leading-none inline-flex items-center gap-1.5 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`} style={{ color: c.textPrimary }}>
                       {isRating && value !== '—' && <StarIcon filled size={18} className="text-[#EAB308]" />}
                       {value}
                     </div>
-                    <div className="mt-1 font-body text-[10px] text-[#A39E93] uppercase tracking-[.04em]">{label}</div>
+                    <div className="mt-1 font-body text-[10px] uppercase tracking-[.04em]" style={{ color: c.textSecondary }}>{label}</div>
                   </div>
                 ))}
               </div>
@@ -317,13 +327,13 @@ const LandingPage: React.FC = () => {
                 {statsDesktop.map(({ value, label, isRating }, i) => (
                   <React.Fragment key={label}>
                     <div className="text-left">
-                      <div className={`font-display font-bold text-[32px] tracking-[-0.02em] text-white leading-none inline-flex items-center gap-2 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`}>
+                      <div className={`font-display font-bold text-[32px] tracking-[-0.02em] leading-none inline-flex items-center gap-2 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`} style={{ color: c.textPrimary }}>
                         {isRating && value !== '—' && <StarIcon filled size={22} className="text-[#EAB308]" />}
                         {value}
                       </div>
-                      <div className="mt-[6px] font-body text-[12px] text-[#A39E93] uppercase tracking-[.04em]">{label}</div>
+                      <div className="mt-[6px] font-body text-[12px] uppercase tracking-[.04em]" style={{ color: c.textSecondary }}>{label}</div>
                     </div>
-                    {i < statsDesktop.length - 1 && <div className="w-px h-9 bg-[#3D2F28]" />}
+                    {i < statsDesktop.length - 1 && <div className="w-px h-9" style={{ background: c.border }} />}
                   </React.Fragment>
                 ))}
               </div>
@@ -335,17 +345,18 @@ const LandingPage: React.FC = () => {
             <div className="flex items-end justify-between mb-4 lg:mb-6">
               <div>
                 <span className="font-body font-bold text-[10px] lg:text-[12px] uppercase tracking-[.08em] text-[#EAB308]">Что внутри</span>
-                <h2 className="mt-2 font-display font-bold text-[22px] lg:text-[36px] tracking-[-0.025em] text-white">Всё для жизни вокруг кофе</h2>
+                <h2 className="mt-2 font-display font-bold text-[22px] lg:text-[36px] tracking-[-0.025em]" style={{ color: c.textPrimary }}>Всё для жизни вокруг кофе</h2>
               </div>
-              <button className="hidden lg:inline-flex items-center gap-[6px] px-4 py-[10px] rounded-xl border border-[#3D2F28] text-white font-display font-semibold text-[13px] bg-transparent hover:border-[#EAB308]/40 transition-colors">
+              <button className="hidden lg:inline-flex items-center gap-[6px] px-4 py-[10px] rounded-xl font-display font-semibold text-[13px] bg-transparent hover:border-[#EAB308]/40 transition-colors"
+                style={{ border: `1px solid ${c.border}`, color: c.textPrimary }}>
                 Все возможности <AppIcon name="arrow_forward" size={14} />
               </button>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-[10px] lg:gap-4">
               {features.map(({ Icon, title, desc }, i) => (
                 <article key={title}
-                  className="relative rounded-[18px] lg:rounded-[20px] p-4 lg:p-[22px] border border-[#3D2F28] transition-all duration-200 hover:-translate-y-[2px] cursor-pointer group"
-                  style={{ background: '#2D241F', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+                  className="relative rounded-[18px] lg:rounded-[20px] p-4 lg:p-[22px] border transition-all duration-200 hover:-translate-y-[2px] cursor-pointer group"
+                  style={{ background: c.surface, borderColor: c.border, boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.04)' : 'inset 0 1px 0 rgba(255,255,255,0.9)' }}>
                   {(i === 0 || i === 4) && (
                     <div className="absolute top-[-30px] right-[-30px] w-[120px] h-[120px] rounded-full pointer-events-none"
                       style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.12), transparent 60%)' }} />
@@ -354,8 +365,8 @@ const LandingPage: React.FC = () => {
                     style={{ background: 'rgba(180,140,75,.14)' }}>
                     <Icon size={22} color="#EAB308" className="lg:w-6 lg:h-6" />
                   </div>
-                  <h3 className="mt-[14px] lg:mt-[18px] mb-1 font-display font-bold text-[15px] lg:text-[18px] tracking-[-0.01em] text-white">{title}</h3>
-                  <p className="font-body text-[12px] lg:text-[13px] leading-[1.5] text-[#A39E93]">{desc}</p>
+                  <h3 className="mt-[14px] lg:mt-[18px] mb-1 font-display font-bold text-[15px] lg:text-[18px] tracking-[-0.01em]" style={{ color: c.textPrimary }}>{title}</h3>
+                  <p className="font-body text-[12px] lg:text-[13px] leading-[1.5]" style={{ color: c.textSecondary }}>{desc}</p>
                   <div className="mt-[14px] hidden lg:inline-flex items-center gap-1 font-display font-semibold text-[12px] text-[#EAB308] opacity-60 group-hover:opacity-100 transition-opacity">
                     Подробнее <AppIcon name="arrow_forward" size={14} />
                   </div>
@@ -367,14 +378,14 @@ const LandingPage: React.FC = () => {
           {/* ── CTA Banner ───────────────────────────────────────── */}
           <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-[30px] lg:pt-14 pb-6">
             <div className="relative overflow-hidden rounded-[18px] lg:rounded-[24px] p-5 lg:px-12 lg:py-9 border border-[rgba(180,140,75,.35)] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6"
-              style={{ background: 'linear-gradient(135deg, #2D241F 0%, rgba(180,140,75,0.18) 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+              style={{ background: isDark ? 'linear-gradient(135deg, #2D241F 0%, rgba(180,140,75,0.18) 100%)' : 'linear-gradient(135deg, #FFFFFF 0%, rgba(212,168,75,0.16) 100%)', boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.05)' : 'inset 0 1px 0 rgba(255,255,255,0.9)' }}>
               <div className="absolute top-[-80px] right-[-80px] w-[320px] h-[320px] rounded-full pointer-events-none lg:block hidden"
                 style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.18), transparent 60%)', filter: 'blur(40px)' }} />
               <div className="absolute top-[-50px] right-[-50px] w-[200px] h-[200px] rounded-full pointer-events-none lg:hidden"
                 style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.20), transparent 60%)' }} />
               <div className="relative">
                 <span className="font-body font-bold text-[10px] lg:text-[11px] uppercase tracking-[.08em] text-[#EAB308]">Присоединяйся к сообществу</span>
-                <h2 className="mt-[6px] font-display font-bold text-[20px] lg:text-[32px] tracking-[-0.02em] text-white leading-[1.15]">
+                <h2 className="mt-[6px] font-display font-bold text-[20px] lg:text-[32px] tracking-[-0.02em] leading-[1.15]" style={{ color: c.textPrimary }}>
                   Делись опытом и открывай<br className="hidden lg:block" />новые кофейни рядом с тобой.
                 </h2>
               </div>
@@ -389,28 +400,28 @@ const LandingPage: React.FC = () => {
 
           {/* ── Footer desktop ───────────────────────────────────── */}
           <footer className="max-w-[1280px] mx-auto px-8 pt-10 pb-12 hidden lg:block">
-            <div className="flex items-start justify-between gap-6 pb-7 border-b border-[#3D2F28]">
+            <div className="flex items-start justify-between gap-6 pb-7 border-b" style={{ borderColor: c.border }}>
               <div className="max-w-[320px]">
                 <div className="flex items-center gap-[10px]">
-                  <div className="w-8 h-8 rounded-[10px] bg-[#1A1412] border border-[#3D2F28] flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-[10px] flex items-center justify-center" style={logoBox}>
                     <img src="/logo-mark.svg" alt="" className="w-[17px] h-[17px]" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
                   </div>
-                  <span className="font-display font-bold text-[17px] text-white">Coffee<span className="text-[#EAB308]">Peek</span></span>
+                  <span className="font-display font-bold text-[17px]" style={{ color: c.textPrimary }}>Coffee<span className="text-[#EAB308]">Peek</span></span>
                 </div>
-                <p className="mt-3 font-body text-[13px] text-[#A39E93] leading-[1.55]">
+                <p className="mt-3 font-body text-[13px] leading-[1.55]" style={{ color: c.textSecondary }}>
                   Проводник в мире кофе. Карта, отзывы, инструменты и сообщество — в одном приложении.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-14">
                 {footerCols.map((col) => (
                   <div key={col.t}>
-                    <div className="font-body font-bold text-[11px] uppercase tracking-[.08em] text-[#A39E93] mb-3">{col.t}</div>
+                    <div className="font-body font-bold text-[11px] uppercase tracking-[.08em] mb-3" style={{ color: c.textSecondary }}>{col.t}</div>
                     <div className="flex flex-col gap-2">
                       {col.items.map((item) => {
                         const href = footerLinks[item];
                         if (!href) {
                           return (
-                            <span key={item} className="font-body text-[13px] text-[#A39E93]">{item}</span>
+                            <span key={item} className="font-body text-[13px]" style={{ color: c.textSecondary }}>{item}</span>
                           );
                         }
                         return (
@@ -418,7 +429,8 @@ const LandingPage: React.FC = () => {
                             key={item}
                             type="button"
                             onClick={() => navigate(href)}
-                            className="font-body text-[13px] text-white text-left cursor-pointer hover:text-[#EAB308] transition-colors"
+                            className="font-body text-[13px] text-left cursor-pointer hover:text-[#EAB308] transition-colors"
+                            style={{ color: c.textPrimary }}
                           >
                             {item}
                           </button>
@@ -429,7 +441,7 @@ const LandingPage: React.FC = () => {
                 ))}
               </div>
             </div>
-            <div className="mt-[18px] flex items-center justify-between font-body text-[12px] text-[#5C544F]">
+            <div className="mt-[18px] flex items-center justify-between font-body text-[12px]" style={{ color: c.textTertiary }}>
               <span>© 2026 CoffeePeek</span>
               <div className="flex items-center gap-[14px]">
                 <span className="inline-flex items-center gap-[5px]"><AppIcon name="language" size={14} />Русский</span>
@@ -444,7 +456,7 @@ const LandingPage: React.FC = () => {
           </footer>
 
           {/* ── Footer mobile ────────────────────────────────────── */}
-          <div className="lg:hidden px-5 pt-7 pb-10 mt-2 border-t border-[#3D2F28] text-center font-body text-[11px] text-[#5C544F] leading-[1.7]">
+          <div className="lg:hidden px-5 pt-7 pb-10 mt-2 border-t text-center font-body text-[11px] leading-[1.7]" style={{ borderColor: c.border, color: c.textTertiary }}>
             © 2026 CoffeePeek
             <br />
             <span className="text-[#22C55E] inline-flex items-center justify-center gap-1">

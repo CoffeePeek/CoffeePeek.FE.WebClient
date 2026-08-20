@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCoffeeShopsByMapBounds, MapShop } from '../api/coffeeshop';
 import { brand, dark } from '../design-system/tokens';
+import { getThemeColors } from '../constants/colors';
+import { useTheme } from '../contexts/ThemeContext';
 import { AppIcon } from './icons';
 import WobbleRing from './WobbleRing';
 
@@ -66,6 +68,9 @@ function parseShops(response: Awaited<ReturnType<typeof getCoffeeShopsByMapBound
 
 const LandingMapWidget: React.FC = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const c = getThemeColors(theme);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -148,6 +153,8 @@ const LandingMapWidget: React.FC = () => {
 
           map.container.fitToViewport();
 
+          map.options.set('theme', theme === 'dark' ? 'dark' : 'light');
+
           mapInstanceRef.current = map;
           setIsLoading(false);
 
@@ -189,39 +196,46 @@ const LandingMapWidget: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    mapInstanceRef.current?.options.set('theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
   return (
     <div
-      className="relative rounded-[28px] border border-[#3D2F28] overflow-hidden"
+      className="relative rounded-[28px] overflow-hidden border"
       style={{
-        background: '#2D241F',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 30px 60px -20px rgba(0,0,0,0.6)',
+        background: c.surface,
+        borderColor: c.border,
+        boxShadow: isDark
+          ? 'inset 0 1px 0 rgba(255,255,255,0.04), 0 30px 60px -20px rgba(0,0,0,0.6)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.9), 0 30px 60px -20px rgba(0,0,0,0.12)',
       }}
     >
-      <div className="relative h-[360px] bg-[#1A1412]">
-        <div ref={mapRef} className="ymap-dark absolute inset-0" />
+      <div className="relative h-[360px]" style={{ background: c.background }}>
+        <div ref={mapRef} className={`${isDark ? 'ymap-dark' : ''} absolute inset-0`} />
 
         {isLoading && (
-          <div className="absolute inset-0 z-[3] flex items-center justify-center bg-[#2D241F]">
+          <div className="absolute inset-0 z-[3] flex items-center justify-center" style={{ background: c.surface }}>
             <WobbleRing size={40} />
           </div>
         )}
 
         {error && !isLoading && (
-          <div className="absolute inset-0 z-[3] flex items-center justify-center bg-[#2D241F] px-6 text-center">
-            <p className="font-body text-sm text-[#A39E93]">{error}</p>
+          <div className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center" style={{ background: c.surface }}>
+            <p className="font-body text-sm" style={{ color: c.textSecondary }}>{error}</p>
           </div>
         )}
 
         <div
-          className="absolute top-[18px] left-[18px] z-[4] px-4 py-2 rounded-full font-display font-semibold text-[13px] text-white border border-[#3D2F28] pointer-events-none"
-          style={{ background: 'rgba(26,20,18,0.75)', backdropFilter: 'blur(12px)' }}
+          className="absolute top-[18px] left-[18px] z-[4] px-4 py-2 rounded-full font-display font-semibold text-[13px] border pointer-events-none"
+          style={{ background: isDark ? 'rgba(26,20,18,0.75)' : 'rgba(255,255,255,0.85)', borderColor: c.border, color: c.textPrimary, backdropFilter: 'blur(12px)' }}
         >
           Карта
         </div>
         <div
           className="absolute top-[18px] right-[18px] z-[4] w-11 h-11 rounded-full flex items-center justify-center pointer-events-none"
           style={{
-            background: 'rgba(26,20,18,0.85)',
+            background: isDark ? 'rgba(26,20,18,0.85)' : 'rgba(255,255,255,0.9)',
             border: '1px solid rgba(234,179,8,0.45)',
             boxShadow: '0 4px 12px rgba(234,179,8,0.18)',
           }}
@@ -231,12 +245,13 @@ const LandingMapWidget: React.FC = () => {
       </div>
 
       <div className="relative z-[2] p-[22px] pt-5">
-        <h3 className="font-display font-bold text-[24px] tracking-[-0.025em] text-white leading-[1.15]">
+        <h3 className="font-display font-bold text-[24px] tracking-[-0.025em] leading-[1.15]" style={{ color: c.textPrimary }}>
           Здесь ваша следующая чашка
         </h3>
         <button
           onClick={() => navigate('/dashboard?page=map')}
-          className="mt-4 w-full h-[52px] rounded-[14px] bg-[#1A1412] text-white border border-[#3D2F28] font-display font-semibold text-[15px] inline-flex items-center justify-center gap-[10px] hover:border-[#EAB308]/40 transition-colors"
+          className="mt-4 w-full h-[52px] rounded-[14px] font-display font-semibold text-[15px] inline-flex items-center justify-center gap-[10px] hover:border-[#EAB308]/40 transition-colors"
+          style={{ background: c.background, color: c.textPrimary, border: `1px solid ${c.border}` }}
         >
           Открыть карту <AppIcon name="arrow_forward" size={16} />
         </button>

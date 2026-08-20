@@ -83,8 +83,6 @@ const Header: React.FC = () => {
 
           {/* Right: actions — marginLeft auto keeps burger on the right when nav is hidden */}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
-            {!user && <ThemeToggle size={36} />}
-
             {user ? (
               /* ── Profile dropdown: desktop only; on smaller screens this is in the hamburger ── */
               <div className="hidden lg:block" style={{ position: 'relative' }}>
@@ -159,6 +157,8 @@ const Header: React.FC = () => {
                 </button>
               </div>
             )}
+
+            {!user && <ThemeToggle size={36} />}
 
             {/* Mobile hamburger */}
             <div className="lg:hidden">
