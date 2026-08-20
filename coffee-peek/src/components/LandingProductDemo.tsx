@@ -478,7 +478,6 @@ const LandingProductDemo: React.FC = () => {
   const isDark = theme === 'dark';
   const reduceMotion = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
-  const [readMore, setReadMore] = useState(false);
   const [stageHover, setStageHover] = useState(false);
   const remainingMs = useRef(CYCLE_MS);
   const tickStartedAt = useRef(Date.now());
@@ -492,7 +491,6 @@ const LandingProductDemo: React.FC = () => {
   };
 
   useEffect(() => {
-    setReadMore(false);
     remainingMs.current = CYCLE_MS;
     tickStartedAt.current = Date.now();
   }, [index]);
@@ -619,17 +617,8 @@ const LandingProductDemo: React.FC = () => {
         {category.title}
       </h3>
       <p className="mt-2 font-body text-[14px] lg:text-[15px] leading-[1.55] max-w-[640px]" style={{ color: c.textSecondary }}>
-        {category.desc}
-        {readMore && <> {category.more}</>}
+        {category.desc} {category.more}
       </p>
-      <button
-        type="button"
-        onClick={() => setReadMore((v) => !v)}
-        className="mt-3 font-display font-semibold text-[13px] bg-transparent p-0 cursor-pointer"
-        style={{ color: GOLD, border: 'none' }}
-      >
-        {readMore ? 'Свернуть' : 'Читать дальше'}
-      </button>
     </div>
   );
 };
