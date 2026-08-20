@@ -6,6 +6,7 @@ import { Icons } from '../constants';
 import { COLORS } from '../constants/colors';
 import { Gear, SignOut, CaretDown, ShoppingCart } from '@/components/Icon';
 import ThemeToggle from './ThemeToggle';
+import LogoMark from './LogoMark';
 
 const PUBLIC_NAV = [
   { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
@@ -55,25 +56,23 @@ const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 12 }}>
 
-          {/* Left: logo */}
-          <div style={{ flexShrink: 0 }}>
+          {/* Left: logo — flex:1 so nav sits on the true horizontal center */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minWidth: 0 }}>
             <button
               type="button"
               className="logo-btn"
               onClick={() => navigate(user ? '/shops' : '/')}
               style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
             >
-              <div style={{ width: 40, height: 40, background: isDark ? '#1A1412' : '#fff', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${borderColor}` }}>
-                <div style={{ color: gold, width: 20, height: 20 }}><Icons.Coffee /></div>
-              </div>
+              <LogoMark size={40} />
               <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 20, letterSpacing: '-0.045em', color: textColor }}>
                 Coffee<span style={{ color: gold }}>Peek</span>
               </span>
             </button>
           </div>
 
-          {/* Center: desktop nav */}
-          <nav className="hidden lg:flex" style={{ flex: 1, justifyContent: 'center', gap: 4 }}>
+          {/* Center: desktop nav — same axis as page titles in max-w-7xl */}
+          <nav className="hidden lg:flex" style={{ flexShrink: 0, justifyContent: 'center', gap: 4 }}>
             {allNav.map(({ id, label, route }) => (
               <button key={id} onClick={() => navigate(route)} style={navBtn(currentId === id)}>
                 {label}
@@ -81,8 +80,8 @@ const Header: React.FC = () => {
             ))}
           </nav>
 
-          {/* Right: actions — marginLeft auto keeps burger on the right when nav is hidden */}
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+          {/* Right: actions — matching flex:1 keeps Кофейни/Карта centered vs. the heading */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, minWidth: 0 }}>
             {user ? (
               /* ── Profile dropdown: desktop only; on smaller screens this is in the hamburger ── */
               <div className="hidden lg:block" style={{ position: 'relative' }}>

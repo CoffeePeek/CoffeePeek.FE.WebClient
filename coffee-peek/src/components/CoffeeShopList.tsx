@@ -354,7 +354,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     setSelectedRoasters(applied.roasters);
     setSelectedBrewMethods(applied.brewMethods);
     setFilters(prev => ({ ...prev, priceRange: applied.priceRange, coffeeFocus: applied.coffeeFocus }));
-    setShowFilters(false);
   };
 
   const openShopDetails = (shopId: string) => {
@@ -368,6 +367,32 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     selectedEquipments.length + selectedBeans.length +
     selectedRoasters.length + selectedBrewMethods.length +
     (filters.priceRange ? 1 : 0) + (filters.coffeeFocus ? 1 : 0);
+
+  const filterPanelProps = {
+    activeQuick,
+    onQuickChange: handleQuickChange,
+    shopTags,
+    selectedTagIds,
+    onTagToggle: handleTagToggle,
+    filters,
+    equipments,
+    coffeeBeans,
+    roasters,
+    brewMethods,
+    selectedEquipments,
+    selectedBeans,
+    selectedRoasters,
+    selectedBrewMethods,
+    cities,
+    selectedCity,
+    onCityChange: setSelectedCity,
+    showCityDropdown,
+    onCityDropdownToggle: () => setShowCityDropdown((v) => !v),
+    colors,
+    dark: isDark,
+    onApplyFilters: handleApplyFilters,
+    resultCount: totalItems || shops.length,
+  };
 
   return (
     <>
@@ -388,35 +413,25 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           dark={isDark}
         />
 
-        <ShopFilterPanel
-          activeQuick={activeQuick}
-          onQuickChange={handleQuickChange}
-          shopTags={shopTags}
-          selectedTagIds={selectedTagIds}
-          onTagToggle={handleTagToggle}
-          isAuthenticated={!!user}
-          showFilters={showFilters}
-          filters={filters}
-          equipments={equipments}
-          coffeeBeans={coffeeBeans}
-          roasters={roasters}
-          brewMethods={brewMethods}
-          selectedEquipments={selectedEquipments}
-          selectedBeans={selectedBeans}
-          selectedRoasters={selectedRoasters}
-          selectedBrewMethods={selectedBrewMethods}
-          cities={cities}
-          selectedCity={selectedCity}
-          onCityChange={setSelectedCity}
-          showCityDropdown={showCityDropdown}
-          onCityDropdownToggle={() => setShowCityDropdown(v => !v)}
-          colors={colors}
-          dark={isDark}
-          onApplyFilters={handleApplyFilters}
-        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="hidden lg:block">
+            <ShopFilterPanel mode="quick" {...filterPanelProps} />
+          </div>
+          <div className="lg:flex lg:gap-10 lg:items-start">
+            <aside
+              className="hidden lg:block w-[260px] xl:w-[280px] shrink-0 sticky top-20 self-start max-h-[calc(100vh-5.5rem)] overflow-y-auto no-scrollbar pb-8 pr-6"
+              style={{ borderRight: `1px solid ${colors.border}` }}
+            >
+              <ShopFilterPanel mode="sidebar" {...filterPanelProps} />
+            </aside>
+
+            <div className="flex-1 min-w-0">
+              <div className="lg:hidden">
+                <ShopFilterPanel mode="chips" {...filterPanelProps} />
+              </div>
 
         {error && (
-          <div role="alert" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 p-4 border rounded-2xl"
+          <div role="alert" className="mb-6 p-4 border rounded-2xl"
                style={{ backgroundColor: `${COLORS.error}10`, borderColor: `${COLORS.error}30` }}>
             <p className="text-sm" style={{ color: COLORS.error }}>{error}</p>
           </div>
@@ -425,11 +440,11 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         {/* ── Mobile: «Подборка недели» carousel ──────────────── */}
         {!isLoading && featured.length > 0 && (
           <div className="lg:hidden mb-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-baseline justify-between mb-3">
+            <div className="flex items-baseline justify-between mb-3">
               <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>Подборка недели</h2>
               <button style={{ background: 'none', border: 'none', color: '#D4A84B', fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Все →</button>
             </div>
-            <div className="pl-4 sm:pl-6 overflow-x-auto no-scrollbar" style={{ display: 'flex', gap: 12, paddingBottom: 4 }}>
+            <div className="overflow-x-auto no-scrollbar -mx-4 sm:-mx-6 px-4 sm:px-6" style={{ display: 'flex', gap: 12, paddingBottom: 4 }}>
               {featured.map(shop => {
                 const photos = shop.shopPhotos?.filter((p): p is string => typeof p === 'string') ?? [];
                 return (
@@ -467,7 +482,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
 
         {/* ── Mobile: list section header ─────────────────────── */}
         {!isLoading && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-baseline justify-between mb-3">
+          <div className="flex items-baseline justify-between mb-3">
             <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>
               Кофейни рядом <span style={{ color: colors.textSecondary, fontWeight: 500, fontSize: 13 }}>· {totalItems || shops.length}</span>
             </h2>
@@ -519,19 +534,24 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           </div>
         )}
 
-        {/* ── Shop grid: 1 / 2 / 3 / 4 cols ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* ── Shop grid: 1 / 2 / 3 cols beside sidebar ── */}
+        <div>
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-12">
               <ShopCardSkeleton count={8} />
             </div>
           ) : shops.length === 0 ? (
-            <div className="rounded-2xl p-10 text-center border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-              <AppIcon name="coffee_maker" size={40} color={colors.textSecondary} />
-              <p style={{ margin: '12px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: colors.textSecondary }}>Ничего не найдено. Попробуйте другой фильтр.</p>
+            <div
+              className="rounded-2xl px-6 py-16 border flex flex-col items-center justify-center text-center min-h-[240px]"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+            >
+              <AppIcon name="coffee_maker" size={40} color={colors.textSecondary} className="mx-auto" />
+              <p style={{ margin: '12px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
+                Ничего не найдено. Попробуйте другой фильтр.
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-12 sm:pb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-12 sm:pb-12">
               {shops.map((shop) => (
                 <ShopCard key={shop.id} shop={shop} colors={colors} onSelect={openShopDetails} />
               ))}
@@ -539,14 +559,38 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           )}
           <div ref={loadMoreRef} className="pb-8">
             {isLoadingMore && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 <ShopCardSkeleton count={4} />
               </div>
             )}
           </div>
         </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    {showFilters && (
+      <div className="lg:hidden fixed inset-0 z-50">
+        <button
+          type="button"
+          aria-label="Закрыть фильтры"
+          className="absolute inset-0 bg-black/50 border-0 cursor-pointer"
+          onClick={() => setShowFilters(false)}
+        />
+        <aside
+          className="absolute left-0 top-0 bottom-0 w-[min(86vw,340px)] overflow-y-auto p-4"
+          style={{ background: colors.surface, borderRight: `1px solid ${colors.border}` }}
+        >
+          <ShopFilterPanel
+            mode="sidebar"
+            {...filterPanelProps}
+            onClose={() => setShowFilters(false)}
+          />
+        </aside>
+      </div>
+    )}
     </>
   );
 };

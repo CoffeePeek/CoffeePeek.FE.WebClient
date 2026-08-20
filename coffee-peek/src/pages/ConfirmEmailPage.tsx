@@ -4,6 +4,7 @@ import { confirmEmail } from '../api/auth';
 import { isApiRequestError } from '../api/core/apiError';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { CheckCircle, SignIn, XCircle, ArrowLeft } from '@/components/Icon';
+import LogoMark from '../components/LogoMark';
 
 function getEmailConfirmationToken(searchParams: URLSearchParams): string | null {
   const tokenFromQuery = searchParams.get('token');
@@ -78,9 +79,7 @@ const ConfirmEmailPage: React.FC = () => {
 
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 32 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 11, background: '#1A1412', border: `1px solid ${cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="/logo-mark.svg" alt="" style={{ width: 18, height: 18, filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
-            </div>
+            <LogoMark size={36} />
             <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
               Coffee<span style={{ color: gold }}>Peek</span>
             </span>

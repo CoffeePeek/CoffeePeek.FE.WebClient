@@ -54,11 +54,7 @@ export const LoginPage: React.FC = () => {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-3">
-            <svg className="w-7 h-7 text-black" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M2 21l3-8H3V7h6v6H7l1 2h2l1-2H9V7h6v6h-2l3 8h-4l-1-3h-4l-1 3H2z" />
-            </svg>
-          </div>
+          <img src="/logo.png" alt="CoffeePeek" className="w-12 h-12 rounded-xl mb-3 object-cover" />
           <h1 className="text-white font-display font-bold text-xl tracking-tight">CoffeePeek</h1>
           <p className="text-stone-400 text-sm font-body mt-1">Панель администратора</p>
         </div>

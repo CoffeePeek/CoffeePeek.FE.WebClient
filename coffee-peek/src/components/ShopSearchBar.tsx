@@ -51,32 +51,17 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
           Кофейни рядом
         </h1>
 
-        {/* Search + Фильтры row */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* Search — fills all space */}
-          <div style={{ flex: 1, position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
-              <AppIcon name="search" size={18} color={goldWarm} />
-            </span>
-            <input
-              value={searchQuery}
-              onChange={e => onSearchChange(e.target.value)}
-              maxLength={100}
-              placeholder="Кофейня или район…"
-              style={{ width: '100%', height: 40, borderRadius: 10, border: `1px solid ${inputBorder}`, background: inputBg, padding: '0 14px 0 40px', fontSize: 14, fontFamily: '"RF Dewi Expanded"', color: dark ? '#fff' : '#1C1917', outline: 'none', boxSizing: 'border-box' as const }}
-            />
-          </div>
-
-          {/* Фильтры — right of search */}
-          <button onClick={onFilterToggle} style={filterBtn(40)}>
-            <AppIcon name="tune" size={16} color={showFilters ? '#1A1412' : gold} />
-            Фильтры
-            {activeFilterCount > 0 && (
-              <span style={{ minWidth: 18, height: 18, borderRadius: 99, background: showFilters ? '#1A1412' : gold, color: showFilters ? gold : '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+        <div style={{ position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
+            <AppIcon name="search" size={18} color={goldWarm} />
+          </span>
+          <input
+            value={searchQuery}
+            onChange={e => onSearchChange(e.target.value)}
+            maxLength={100}
+            placeholder="Кофейня или район…"
+            style={{ width: '100%', height: 40, borderRadius: 10, border: `1px solid ${inputBorder}`, background: inputBg, padding: '0 14px 0 40px', fontSize: 14, fontFamily: '"RF Dewi Expanded"', color: dark ? '#fff' : '#1C1917', outline: 'none', boxSizing: 'border-box' as const }}
+          />
         </div>
       </div>
 

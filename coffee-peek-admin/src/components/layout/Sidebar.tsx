@@ -116,11 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
       ].join(' ')}
     >
       <div className="flex items-center gap-3 px-4 py-4 lg:py-5 border-b border-border-dark min-h-[3.5rem]">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
-          <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M2 21l3-8H3V7h6v6H7l1 2h2l1-2H9V7h6v6h-2l3 8h-4l-1-3h-4l-1 3H2z" />
-          </svg>
-        </div>
+        <img src="/logo.png" alt="CoffeePeek" className="w-8 h-8 rounded-lg shrink-0 object-cover" />
         {showLabels && (
           <span className="text-white font-display font-semibold text-sm tracking-wide truncate">
             Admin Panel

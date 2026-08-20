@@ -4,6 +4,7 @@ import { forgotPassword } from '../api/auth';
 import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon } from '../components/icons';
+import LogoMark from '../components/LogoMark';
 
 const ForgotPasswordPage: React.FC = () => {
   usePageTitle('Восстановление пароля');
@@ -44,9 +45,7 @@ const ForgotPasswordPage: React.FC = () => {
       <div style={{ width: '100%', maxWidth: 460, margin: '0 auto', padding: 16, position: 'relative', zIndex: 2 }}>
         <div style={{ padding: 40, borderRadius: 24, background: 'rgba(45,36,31,0.6)', backdropFilter: 'blur(24px)', border: `1px solid ${cardBorder}`, boxShadow: '0 24px 48px -12px rgba(0,0,0,0.5)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 11, background: '#1A1412', border: `1px solid ${cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="/logo-mark.svg" alt="" style={{ width: 18, height: 18, filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
-            </div>
+            <LogoMark size={36} />
             <span style={{ fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
               Coffee<span style={{ color: gold }}>Peek</span>
             </span>

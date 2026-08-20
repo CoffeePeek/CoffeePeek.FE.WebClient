@@ -23,6 +23,7 @@ import type { IconProps } from '@phosphor-icons/react';
 import { Compass, Flask, ChatCircleText, TrendUp, UsersThree, Heart } from '@/components/Icon';
 import LandingMapWidget from '../components/LandingMapWidget';
 import ThemeToggle from '../components/ThemeToggle';
+import LogoMark from '../components/LogoMark';
 
 const LandingPage: React.FC = () => {
   usePageTitle('Главная');
@@ -113,8 +114,8 @@ const LandingPage: React.FC = () => {
 
   const renderHeader = () => (
     <div className="flex flex-col items-center mb-8 lg:mb-12">
-      <div className={`w-16 h-16 lg:w-20 lg:h-20 ${themeClasses.bg.secondary} rounded-2xl flex items-center justify-center mb-6 border ${themeClasses.border.default} shadow-inner transform transition-transform hover:scale-105 duration-300`}>
-        <Icons.Coffee />
+      <div className="mb-6 transform transition-transform hover:scale-105 duration-300">
+        <LogoMark size={80} />
       </div>
       <div className="flex items-center gap-2 mb-1">
         <span className={`text-xl lg:text-2xl font-extrabold tracking-[-0.045em] font-display ${themeClasses.text.primary}`}>Coffee</span>
@@ -190,7 +191,6 @@ const LandingPage: React.FC = () => {
 
     const isDark = theme === 'dark';
     const c = getThemeColors(theme);
-    const logoBox = { background: c.background, border: `1px solid ${c.border}` };
 
     return (
       <div className="min-h-screen relative overflow-x-clip" style={{ background: c.background, color: c.textPrimary }}>
@@ -205,9 +205,7 @@ const LandingPage: React.FC = () => {
           <header className="sticky top-0 z-50 hidden lg:block h-[72px] border-b" style={{ background: isDark ? 'rgba(45,36,31,0.92)' : 'rgba(255,255,255,0.92)', borderColor: c.border, transform: 'translateZ(0)' }}>
             <div className="max-w-[1280px] mx-auto px-8 h-full flex items-center justify-between gap-6">
               <button type="button" onClick={() => navigate('/')} className="logo-btn flex items-center gap-3 cursor-pointer">
-                <div className="w-[38px] h-[38px] rounded-xl flex items-center justify-center" style={logoBox}>
-                  <img src="/logo-mark.svg" alt="" className="w-5 h-5" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
-                </div>
+                <LogoMark size={38} />
                 <span className="font-display font-extrabold tracking-[-0.02em] text-[20px]" style={{ color: c.textPrimary }}>
                   Coffee<span className="text-[#EAB308]">Peek</span>
                 </span>
@@ -242,9 +240,7 @@ const LandingPage: React.FC = () => {
           {/* ── Top bar mobile ───────────────────────────────────── */}
           <div className="lg:hidden flex items-center justify-between px-5 pt-[60px] pb-0">
             <button type="button" onClick={() => navigate('/')} className="logo-btn flex items-center gap-[10px] cursor-pointer">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={logoBox}>
-                <img src="/logo-mark.svg" alt="" className="w-[18px] h-[18px]" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
-              </div>
+              <LogoMark size={36} />
               <span className="font-display font-extrabold tracking-[-0.02em] text-[17px]" style={{ color: c.textPrimary }}>
                 Coffee<span className="text-[#EAB308]">Peek</span>
               </span>
@@ -403,9 +399,7 @@ const LandingPage: React.FC = () => {
             <div className="flex items-start justify-between gap-6 pb-7 border-b" style={{ borderColor: c.border }}>
               <div className="max-w-[320px]">
                 <div className="flex items-center gap-[10px]">
-                  <div className="w-8 h-8 rounded-[10px] flex items-center justify-center" style={logoBox}>
-                    <img src="/logo-mark.svg" alt="" className="w-[17px] h-[17px]" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
-                  </div>
+                  <LogoMark size={32} />
                   <span className="font-display font-bold text-[17px]" style={{ color: c.textPrimary }}>Coffee<span className="text-[#EAB308]">Peek</span></span>
                 </div>
                 <p className="mt-3 font-body text-[13px] leading-[1.55]" style={{ color: c.textSecondary }}>
@@ -414,9 +408,9 @@ const LandingPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-14">
                 {footerCols.map((col) => (
-                  <div key={col.t}>
+                  <div key={col.t} className="text-center">
                     <div className="font-body font-bold text-[11px] uppercase tracking-[.08em] mb-3" style={{ color: c.textSecondary }}>{col.t}</div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col items-center gap-2">
                       {col.items.map((item) => {
                         const href = footerLinks[item];
                         if (!href) {
@@ -429,7 +423,7 @@ const LandingPage: React.FC = () => {
                             key={item}
                             type="button"
                             onClick={() => navigate(href)}
-                            className="font-body text-[13px] text-left cursor-pointer hover:text-[#EAB308] transition-colors"
+                            className="font-body text-[13px] text-center cursor-pointer hover:text-[#EAB308] transition-colors p-0"
                             style={{ color: c.textPrimary }}
                           >
                             {item}
@@ -456,14 +450,45 @@ const LandingPage: React.FC = () => {
           </footer>
 
           {/* ── Footer mobile ────────────────────────────────────── */}
-          <div className="lg:hidden px-5 pt-7 pb-10 mt-2 border-t text-center font-body text-[11px] leading-[1.7]" style={{ borderColor: c.border, color: c.textTertiary }}>
-            © 2026 CoffeePeek
-            <br />
-            <span className="text-[#22C55E] inline-flex items-center justify-center gap-1">
-              <AppIcon name="circle" filled size={8} color="#22C55E" />
-              Все системы работают
-            </span>
-          </div>
+          <footer className="lg:hidden px-5 pt-7 pb-10 mt-2 border-t" style={{ borderColor: c.border }}>
+            <div className="grid grid-cols-2 gap-6 pb-5">
+              {footerCols.map((col) => (
+                <div key={col.t} className="text-center">
+                  <div className="font-body font-bold text-[11px] uppercase tracking-[.08em] mb-3" style={{ color: c.textSecondary }}>{col.t}</div>
+                  <div className="flex flex-col items-center gap-2">
+                    {col.items.map((item) => {
+                      const href = footerLinks[item];
+                      if (!href) {
+                        return (
+                          <span key={item} className="font-body text-[13px]" style={{ color: c.textSecondary }}>{item}</span>
+                        );
+                      }
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => navigate(href)}
+                          className="font-body text-[13px] text-center cursor-pointer hover:text-[#EAB308] transition-colors p-0"
+                          style={{ color: c.textPrimary }}
+                        >
+                          {item}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="pt-4 border-t flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-body text-[11px] leading-[1.7]" style={{ borderColor: c.border, color: c.textTertiary }}>
+              <span>© 2026 CoffeePeek</span>
+              <span className="inline-flex items-center gap-[5px]"><AppIcon name="language" size={14} />Русский</span>
+              <span>Минск</span>
+              <span className="text-[#22C55E] inline-flex items-center justify-center gap-1">
+                <AppIcon name="circle" filled size={8} color="#22C55E" />
+                Все системы работают
+              </span>
+            </div>
+          </footer>
         </div>
       </div>
     );

@@ -5,6 +5,7 @@ import { TokenManager } from '../api/core/httpClient';
 import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon } from '../components/icons';
+import LogoMark from '../components/LogoMark';
 
 const ResetPasswordPage: React.FC = () => {
   usePageTitle('Новый пароль');
@@ -72,6 +73,7 @@ const ResetPasswordPage: React.FC = () => {
       <div style={{ width: '100%', maxWidth: 460, margin: '0 auto', padding: 16, position: 'relative', zIndex: 2 }}>
         <div style={{ padding: 40, borderRadius: 24, background: 'rgba(45,36,31,0.6)', backdropFilter: 'blur(24px)', border: `1px solid ${cardBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
+            <LogoMark size={36} />
             <span style={{ fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 18, color: textPrimary }}>
               Coffee<span style={{ color: gold }}>Peek</span>
             </span>
