@@ -1,6 +1,7 @@
 import React from 'react';
 
 export const LOGO_SRC = '/logo.png';
+export const HEADER_LOGO_SIZE = 52;
 
 interface LogoMarkProps {
   size?: number;

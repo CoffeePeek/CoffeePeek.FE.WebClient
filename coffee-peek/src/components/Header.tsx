@@ -6,7 +6,7 @@ import { Icons } from '../constants';
 import { COLORS } from '../constants/colors';
 import { Gear, SignOut, CaretDown, ShoppingCart } from '@/components/Icon';
 import ThemeToggle from './ThemeToggle';
-import LogoMark from './LogoMark';
+import LogoMark, { HEADER_LOGO_SIZE } from './LogoMark';
 
 const PUBLIC_NAV = [
   { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
@@ -64,7 +64,7 @@ const Header: React.FC = () => {
               onClick={() => navigate(user ? '/shops' : '/')}
               style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
             >
-              <LogoMark size={40} />
+              <LogoMark size={HEADER_LOGO_SIZE} />
               <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 20, letterSpacing: '-0.045em', color: textColor }}>
                 Coffee<span style={{ color: gold }}>Peek</span>
               </span>

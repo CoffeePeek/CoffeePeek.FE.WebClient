@@ -19,10 +19,9 @@ import {
   formatStatRating,
 } from '../hooks/queries/usePublicStats';
 import { AppIcon, StarIcon } from '../components/icons';
-import type { IconProps } from '@phosphor-icons/react';
-import { Compass, Flask, ChatCircleText, TrendUp, UsersThree, Heart } from '@/components/Icon';
 import LandingMapWidget from '../components/LandingMapWidget';
-import ThemeToggle from '../components/ThemeToggle';
+import Header from '../components/Header';
+import LandingProductDemo from '../components/LandingProductDemo';
 import LogoMark from '../components/LogoMark';
 
 const LandingPage: React.FC = () => {
@@ -125,19 +124,6 @@ const LandingPage: React.FC = () => {
   );
 
   if (step === VerificationStep.LANDING) {
-    const features: { Icon: React.ComponentType<IconProps>; title: string; desc: string }[] = [
-      { Icon: Compass,        title: 'Карта кофеен',    desc: 'Найди лучшие кофейни поблизости с подробной информацией, фото и живыми отзывами.' },
-      { Icon: Flask,          title: 'Инструменты',     desc: 'Подробные описания всех инструментов и методов приготовления кофе.' },
-      { Icon: ChatCircleText, title: 'Чек-ины и отзывы', desc: 'Оценивай кофейни, оставляй отзывы и делись впечатлениями с друзьями.' },
-      { Icon: TrendUp,        title: 'Рейтинги',        desc: 'Персональная система оценок и рекомендаций на основе твоих предпочтений.' },
-      { Icon: UsersThree,     title: 'Сообщество',      desc: 'Общайся с другими любителями кофе, делись опытом и находи единомышленников.' },
-      { Icon: Heart,          title: 'Избранное',       desc: 'Сохраняй любимые кофейни на устройстве и быстро возвращайся к ним.' },
-    ];
-
-    const navTabs = [
-      { label: 'Кофейни', href: '/shops' },
-      { label: 'Карта',   href: '/dashboard?page=map' },
-    ];
     const footerCols = [
       { t: 'Продукт', items: ['Кофейни', 'Карта'] },
       { t: 'Помощь',  items: ['Условия', 'Политика'] },
@@ -201,62 +187,10 @@ const LandingPage: React.FC = () => {
         <div className="absolute pointer-events-none" style={{ bottom: -40, right: -40, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,140,75,0.10), transparent 60%)', filter: 'blur(60px)' }} />
 
         <div className="relative">
-          {/* ── Nav desktop ─────────────────────────────────────── */}
-          <header className="sticky top-0 z-50 hidden lg:block h-[72px] border-b" style={{ background: isDark ? 'rgba(45,36,31,0.92)' : 'rgba(255,255,255,0.92)', borderColor: c.border, transform: 'translateZ(0)' }}>
-            <div className="max-w-[1280px] mx-auto px-8 h-full flex items-center justify-between gap-6">
-              <button type="button" onClick={() => navigate('/')} className="logo-btn flex items-center gap-3 cursor-pointer">
-                <LogoMark size={38} />
-                <span className="font-display font-extrabold tracking-[-0.02em] text-[20px]" style={{ color: c.textPrimary }}>
-                  Coffee<span className="text-[#EAB308]">Peek</span>
-                </span>
-              </button>
-              <nav className="flex gap-1">
-                {navTabs.map(({ label, href }) => (
-                  <button key={label} onClick={() => navigate(href)}
-                    className="font-display font-medium text-sm px-[14px] py-2 rounded-[10px] transition-colors bg-transparent border border-transparent"
-                    style={{ color: c.textSecondary }}
-                    onMouseEnter={e => { e.currentTarget.style.color = c.textPrimary; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = c.textSecondary; }}>
-                    {label}
-                  </button>
-                ))}
-              </nav>
-              <div className="flex items-center gap-[10px]">
-                <button onClick={() => navigate('/login')}
-                  className="px-4 py-[9px] rounded-[10px] bg-transparent font-display font-semibold text-[13px] transition-colors"
-                  style={{ border: `1px solid ${c.border}`, color: c.textPrimary }}>
-                  Войти
-                </button>
-                <button onClick={() => navigate('/register')}
-                  className="px-4 py-[9px] rounded-[10px] bg-[#EAB308] text-[#1A1412] border-none font-display font-semibold text-[13px] hover:bg-[#FACC15] transition-colors"
-                  style={{ boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
-                  Создать аккаунт
-                </button>
-                <ThemeToggle size={40} />
-              </div>
-            </div>
-          </header>
-
-          {/* ── Top bar mobile ───────────────────────────────────── */}
-          <div className="lg:hidden flex items-center justify-between px-5 pt-[60px] pb-0">
-            <button type="button" onClick={() => navigate('/')} className="logo-btn flex items-center gap-[10px] cursor-pointer">
-              <LogoMark size={36} />
-              <span className="font-display font-extrabold tracking-[-0.02em] text-[17px]" style={{ color: c.textPrimary }}>
-                Coffee<span className="text-[#EAB308]">Peek</span>
-              </span>
-            </button>
-            <div className="flex items-center gap-2">
-              <button onClick={() => navigate('/login')}
-              className="px-[14px] py-[7px] rounded-full font-display font-semibold text-[12px]"
-              style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#fff', border: `1px solid ${c.border}`, color: c.textPrimary }}>
-                Войти
-              </button>
-              <ThemeToggle size={36} />
-            </div>
-          </div>
+          <Header />
 
           {/* ── Hero ─────────────────────────────────────────────── */}
-          <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-10 lg:pt-16 pb-9 relative">
+          <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-8 lg:pt-16 pb-9 relative">
             <div className="lg:grid lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:items-center">
               {/* Left: text */}
               <div className="text-center lg:text-left">
@@ -337,38 +271,12 @@ const LandingPage: React.FC = () => {
           </section>
 
           {/* ── Features ─────────────────────────────────────────── */}
-          <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-9 lg:pt-10 pb-4">
-            <div className="flex items-end justify-between mb-4 lg:mb-6">
-              <div>
-                <span className="font-body font-bold text-[10px] lg:text-[12px] uppercase tracking-[.08em] text-[#EAB308]">Что внутри</span>
-                <h2 className="mt-2 font-display font-bold text-[22px] lg:text-[36px] tracking-[-0.025em]" style={{ color: c.textPrimary }}>Всё для жизни вокруг кофе</h2>
-              </div>
-              <button className="hidden lg:inline-flex items-center gap-[6px] px-4 py-[10px] rounded-xl font-display font-semibold text-[13px] bg-transparent hover:border-[#EAB308]/40 transition-colors"
-                style={{ border: `1px solid ${c.border}`, color: c.textPrimary }}>
-                Все возможности <AppIcon name="arrow_forward" size={14} />
-              </button>
+          <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-4 lg:pt-6 pb-4">
+            <div className="mb-3 lg:mb-4">
+              <span className="font-body font-bold text-[10px] lg:text-[12px] uppercase tracking-[.08em] text-[#EAB308]">Что внутри</span>
+              <h2 className="mt-2 font-display font-bold text-[22px] lg:text-[36px] tracking-[-0.025em]" style={{ color: c.textPrimary }}>Всё для жизни вокруг кофе</h2>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-[10px] lg:gap-4">
-              {features.map(({ Icon, title, desc }, i) => (
-                <article key={title}
-                  className="relative rounded-[18px] lg:rounded-[20px] p-4 lg:p-[22px] border transition-all duration-200 hover:-translate-y-[2px] cursor-pointer group"
-                  style={{ background: c.surface, borderColor: c.border, boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.04)' : 'inset 0 1px 0 rgba(255,255,255,0.9)' }}>
-                  {(i === 0 || i === 4) && (
-                    <div className="absolute top-[-30px] right-[-30px] w-[120px] h-[120px] rounded-full pointer-events-none"
-                      style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.12), transparent 60%)' }} />
-                  )}
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-[14px] flex items-center justify-center border border-[rgba(180,140,75,.25)]"
-                    style={{ background: 'rgba(180,140,75,.14)' }}>
-                    <Icon size={22} color="#EAB308" className="lg:w-6 lg:h-6" />
-                  </div>
-                  <h3 className="mt-[14px] lg:mt-[18px] mb-1 font-display font-bold text-[15px] lg:text-[18px] tracking-[-0.01em]" style={{ color: c.textPrimary }}>{title}</h3>
-                  <p className="font-body text-[12px] lg:text-[13px] leading-[1.5]" style={{ color: c.textSecondary }}>{desc}</p>
-                  <div className="mt-[14px] hidden lg:inline-flex items-center gap-1 font-display font-semibold text-[12px] text-[#EAB308] opacity-60 group-hover:opacity-100 transition-opacity">
-                    Подробнее <AppIcon name="arrow_forward" size={14} />
-                  </div>
-                </article>
-              ))}
-            </div>
+            <LandingProductDemo />
           </section>
 
           {/* ── CTA Banner ───────────────────────────────────────── */}
