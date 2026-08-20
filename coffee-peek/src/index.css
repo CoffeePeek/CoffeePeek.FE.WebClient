@@ -90,14 +90,31 @@
 @keyframes lp-caret {
   50% { opacity: 0; }
 }
-@keyframes lp-progress {
-  from { width: 0%; }
-  to { width: 100%; }
+@keyframes lp-pin-tap {
+  0% { transform: scale(1) translateY(0); }
+  28% { transform: scale(0.78) translateY(5px); }
+  58% { transform: scale(1.16) translateY(-4px); }
+  100% { transform: scale(1) translateY(0); }
+}
+@keyframes lp-pin-ripple {
+  0% { transform: translate(-50%, -50%) scale(0.35); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+}
+@keyframes lp-popup {
+  from { opacity: 0; transform: translate(-50%, 8px) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@keyframes lp-plate {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   @keyframes lp-pin-in { from, to { opacity: 1; transform: none; } }
   @keyframes lp-chip-on { from, to { background: rgba(234, 179, 8, 0.22); transform: none; } }
   @keyframes lp-heart-on { from, to { transform: none; } }
-  @keyframes lp-progress { from, to { width: 100%; } }
+  @keyframes lp-pin-tap { from, to { transform: none; } }
+  @keyframes lp-pin-ripple { from, to { opacity: 0; transform: none; } }
+  @keyframes lp-popup { from, to { opacity: 1; transform: translate(-50%, 0); } }
+  @keyframes lp-plate { from, to { opacity: 1; transform: none; } }
 }

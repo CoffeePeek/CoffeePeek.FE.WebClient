@@ -3,8 +3,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getThemeColors } from '../constants/colors';
 import { StarIcon } from './icons';
 import {
-  CaretLeft,
-  CaretRight,
   Compass,
   ChatCircleText,
   Heart,
@@ -139,97 +137,171 @@ function Typewriter({
   );
 }
 
-const SceneFind: React.FC<{
-  gold: string;
-  muted: string;
-  text: string;
-  border: string;
-  surface: string;
-  reduceMotion: boolean;
-}> = ({ gold, muted, text, border, surface, reduceMotion }) => {
-  const pins = [
-    { left: '22%', top: '30%', label: 'Atlas', delay: '0.15s' },
-    { left: '52%', top: '46%', label: 'Kofe', delay: '0.45s' },
-    { left: '74%', top: '24%', label: 'Dobra', delay: '0.75s' },
-  ];
-  const chips = ['V60', 'Espresso', 'Kalita', 'AeroPress'];
+const MAP_SCALE = 1.72;
+
+const MAP_PINS = [
+  { id: 'atlas', x: 48, y: 51, name: 'Atlas Espresso', note: 'Центр · открыто', rating: '4.8', delay: '0.15s' },
+  { id: 'dobra', x: 61, y: 38, name: 'Dobra Pour Over', note: 'Рядом с парком', rating: '4.6', delay: '0.4s' },
+  { id: 'kava', x: 36, y: 58, name: 'Kava Lab', note: 'Эспрессо-бар', rating: '4.7', delay: '0.65s' },
+];
+
+const SceneFind: React.FC<{ reduceMotion: boolean }> = ({ reduceMotion }) => {
+  const [active, setActive] = useState(0);
+  const [tapKey, setTapKey] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  const selectPin = (i: number) => {
+    setActive(i);
+    setTapKey((k) => k + 1);
+  };
+
+  useEffect(() => {
+    if (reduceMotion || paused) return;
+
+    let cancelled = false;
+    const run = async () => {
+      while (!cancelled) {
+        for (let i = 0; i < MAP_PINS.length; i += 1) {
+          if (cancelled) return;
+          selectPin(i);
+          await new Promise((r) => setTimeout(r, 2800));
+        }
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [reduceMotion, paused]);
+
+  const pin = MAP_PINS[active];
 
   return (
-    <div className="relative h-full min-h-[280px] lg:min-h-[400px] overflow-hidden" style={{ background: surface }}>
-      <svg viewBox="0 0 480 280" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden>
-        <rect width="480" height="280" fill={surface} />
-        <path d="M0 180 C80 140 140 220 220 170 C300 120 360 200 480 150 L480 280 L0 280 Z" fill={gold} opacity="0.08" />
-        <path d="M40 40 L200 40 L200 90 M40 90 L320 90 M80 90 L80 200 M200 40 L200 240 M320 90 L320 220 M400 20 L400 180" stroke={muted} strokeWidth="1.2" opacity="0.35" />
-      </svg>
-
-      {pins.map((p) => (
-        <Hint
-          key={p.label}
-          text="Точка на карте — кофейня рядом с тобой"
-          placement="bottom"
-          className="absolute"
-          style={{
-            left: p.left,
-            top: p.top,
-            animation: reduceMotion ? undefined : `lp-pin-in 0.5s ease ${p.delay} both`,
-            opacity: reduceMotion ? 1 : undefined,
-          }}
-        >
-          <span className="flex flex-col items-center cursor-default">
-            <span
-              className="block w-3.5 h-3.5 rounded-full"
-              style={{ background: gold, boxShadow: `0 0 0 7px ${gold}33` }}
-            />
-            <span className="mt-1 font-display font-bold text-[11px] whitespace-nowrap" style={{ color: text }}>
-              {p.label}
-            </span>
-          </span>
-        </Hint>
-      ))}
-
-      <Hint
-        text="Карточка кофейни — рейтинг, статус и быстрый выбор"
-        className="absolute left-4 right-4 lg:left-auto lg:right-5 lg:w-[240px]"
+    <div
+      className="relative h-full min-h-[280px] lg:min-h-[400px] overflow-hidden"
+      style={{ background: '#f2efe9' }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div
+        className="absolute will-change-[left,top]"
         style={{
-          bottom: 56,
-          animation: reduceMotion ? undefined : 'lp-fade-up 0.45s ease 1.15s both',
-          opacity: reduceMotion ? 1 : undefined,
+          width: `${MAP_SCALE * 100}%`,
+          height: `${MAP_SCALE * 100}%`,
+          left: `calc(50% - ${pin.x * MAP_SCALE}%)`,
+          top: `calc(50% - ${pin.y * MAP_SCALE}%)`,
+          transition: reduceMotion
+            ? undefined
+            : 'left 0.72s cubic-bezier(0.22, 1, 0.36, 1), top 0.72s cubic-bezier(0.22, 1, 0.36, 1)',
+        }}
+      >
+        <img
+          src="/map-minsk.svg"
+          alt=""
+          draggable={false}
+          className="absolute inset-0 h-full w-full object-cover object-center select-none pointer-events-none"
+        />
+
+        {MAP_PINS.map((p, i) => {
+          const isActive = active === i;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              aria-label={`${p.name}, ${p.rating}`}
+              aria-pressed={isActive}
+              onClick={() => {
+                setPaused(true);
+                selectPin(i);
+              }}
+              className={`group/pin absolute -translate-x-1/2 -translate-y-full ${isActive ? 'z-[3]' : 'z-[2]'}`}
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                animation: reduceMotion ? undefined : `lp-pin-in 0.45s ease ${p.delay} both`,
+              }}
+            >
+              <span
+                role="tooltip"
+                className={`pointer-events-none absolute left-1/2 bottom-[calc(100%+6px)] z-10 w-max max-w-[180px] -translate-x-1/2 rounded-lg px-2.5 py-1.5 text-left transition-opacity duration-150 ${
+                  isActive ? 'opacity-100' : 'opacity-0 group-hover/pin:opacity-100'
+                }`}
+                style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #E7E5E4',
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.16)',
+                  animation: isActive && !reduceMotion ? 'lp-popup 0.28s ease both' : undefined,
+                }}
+              >
+                <span className="block font-display font-bold text-[12px] leading-tight text-[#1C1917]">{p.name}</span>
+                <span className="mt-0.5 flex items-center gap-1 font-body text-[11px] text-[#78716C]">
+                  <StarIcon filled size={11} className="text-[#EAB308]" />
+                  {p.rating}
+                  <span>· {p.note}</span>
+                </span>
+                <span
+                  className="absolute left-1/2 top-full -mt-px h-2 w-2 -translate-x-1/2 rotate-45"
+                  style={{ background: '#FFFFFF', borderRight: '1px solid #E7E5E4', borderBottom: '1px solid #E7E5E4' }}
+                  aria-hidden
+                />
+              </span>
+
+              {isActive && !reduceMotion && (
+                <span
+                  key={`ripple-${tapKey}`}
+                  className="pointer-events-none absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full"
+                  style={{
+                    background: 'rgba(234,179,8,0.35)',
+                    animation: 'lp-pin-ripple 0.55s ease-out both',
+                  }}
+                />
+              )}
+              <span
+                key={isActive ? `tap-${tapKey}` : p.id}
+                className="relative block"
+                style={{
+                  animation: isActive && !reduceMotion ? 'lp-pin-tap 0.48s cubic-bezier(0.22, 1.4, 0.36, 1) both' : undefined,
+                  filter: isActive ? 'drop-shadow(0 6px 10px rgba(0,0,0,0.28))' : undefined,
+                }}
+              >
+                <svg width={isActive ? 34 : 28} height={isActive ? 44 : 36} viewBox="0 0 22 28" aria-hidden>
+                  <path fill="rgba(0,0,0,0.35)" d="M11 2.4c-4.5 0-8.1 3.6-8.1 8.1 0 6 8.1 16 8.1 16s8.1-10 8.1-16c0-4.5-3.6-8.1-8.1-8.1z" transform="translate(0 1)" />
+                  <path fill={isActive ? GOLD : GOLD_WARM} stroke="#1A1412" strokeWidth="1.15" strokeLinejoin="round" d="M11 1.35c-4.85 0-8.8 3.95-8.8 8.8 0 6.55 8.8 17.1 8.8 17.1s8.8-10.55 8.8-17.1c0-4.85-3.95-8.8-8.8-8.8z" />
+                  <circle cx="11" cy="10" r="3.1" fill="#1A1412" />
+                </svg>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        key={pin.id}
+        className="absolute left-4 right-4 bottom-4 z-[4] rounded-[14px] px-3.5 py-3 flex items-center gap-3 pointer-events-none"
+        style={{
+          background: 'rgba(255,255,255,0.96)',
+          border: '1px solid #E7E5E4',
+          boxShadow: '0 10px 28px rgba(0,0,0,0.18)',
+          backdropFilter: 'blur(12px)',
+          animation: reduceMotion ? undefined : 'lp-plate 0.32s ease both',
         }}
       >
         <div
-          className="w-full rounded-2xl border px-3.5 py-3 cursor-default"
-          style={{
-            background: surface === '#241C18' || surface === '#1A1412' ? '#2D241F' : '#FFFFFF',
-            borderColor: border,
-            boxShadow: '0 16px 40px -18px rgba(0,0,0,0.45)',
-          }}
+          className="w-9 h-9 rounded-[10px] shrink-0 flex items-center justify-center"
+          style={{ background: 'rgba(234,179,8,0.16)' }}
         >
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="font-display font-bold text-[14px]" style={{ color: text }}>Atlas Espresso</div>
-              <div className="mt-0.5 font-body text-[11px]" style={{ color: muted }}>открыто · 4 мин пешком</div>
-            </div>
-            <span className="font-display font-bold text-[13px]" style={{ color: gold }}>4.8</span>
-          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path fill={GOLD} d="M6 6.5h9.2c.7 0 1.3.6 1.3 1.3v6.4a6.6 6.6 0 0 1-13.2 0V7.8c0-.7.6-1.3 1.3-1.3H6zm11.6 2.2h1.4a2.7 2.7 0 1 1 0 5.4h-1.4" />
+          </svg>
         </div>
-      </Hint>
-
-      <div className="absolute left-3 right-3 bottom-3 flex flex-wrap gap-1.5">
-        {chips.map((name, i) => (
-          <Hint key={name} text={`Фильтр — покажи места с ${name}`}>
-            <span
-              className="px-2.5 py-1 rounded-full font-display font-semibold text-[11px] lg:text-[12px] cursor-default"
-              style={{
-                border: `1px solid ${border}`,
-                color: text,
-                animation: reduceMotion ? undefined : `lp-chip-on 0.4s ease ${1.85 + i * 0.32}s both`,
-                background: reduceMotion ? `${gold}28` : 'transparent',
-              }}
-            >
-              {name}
-            </span>
-          </Hint>
-        ))}
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-display font-semibold text-[14px] leading-tight text-[#1C1917]">{pin.name}</p>
+          <p className="mt-0.5 font-body text-[12px] inline-flex items-center gap-1 text-[#78716C]">
+            <StarIcon filled size={12} className="text-[#EAB308]" />
+            {pin.rating}
+            <span>· {pin.note}</span>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -485,9 +557,9 @@ const LandingProductDemo: React.FC = () => {
           </span>
         </div>
 
-        <div key={category.id}>
+        <div key={category.id} className="relative z-0">
           {category.id === 'find' && (
-            <SceneFind gold={GOLD} muted={c.textSecondary} text={c.textPrimary} border={c.border} surface={sceneSurface} reduceMotion={reduceMotion} />
+            <SceneFind reduceMotion={reduceMotion} />
           )}
           {category.id === 'rate' && (
             <SceneRate gold={GOLD} muted={c.textSecondary} text={c.textPrimary} border={c.border} surface={sceneSurface} reduceMotion={reduceMotion} />
@@ -501,19 +573,41 @@ const LandingProductDemo: React.FC = () => {
           type="button"
           aria-label="Предыдущая категория"
           onClick={() => go(index - 1)}
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center border z-10 opacity-80 hover:opacity-100"
-          style={{ background: c.surface, borderColor: c.border, color: c.textPrimary }}
+          className="absolute left-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border"
+          style={{ background: c.surface, borderColor: c.border }}
         >
-          <CaretLeft size={16} />
+          <span
+            aria-hidden
+            className="block"
+            style={{
+              width: 9,
+              height: 9,
+              marginLeft: 3,
+              borderBottom: `2.5px solid ${GOLD}`,
+              borderLeft: `2.5px solid ${GOLD}`,
+              transform: 'rotate(45deg)',
+            }}
+          />
         </button>
         <button
           type="button"
           aria-label="Следующая категория"
           onClick={() => go(index + 1)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center border z-10 opacity-80 hover:opacity-100"
-          style={{ background: c.surface, borderColor: c.border, color: c.textPrimary }}
+          className="absolute right-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border"
+          style={{ background: c.surface, borderColor: c.border }}
         >
-          <CaretRight size={16} />
+          <span
+            aria-hidden
+            className="block"
+            style={{
+              width: 9,
+              height: 9,
+              marginRight: 3,
+              borderBottom: `2.5px solid ${GOLD}`,
+              borderLeft: `2.5px solid ${GOLD}`,
+              transform: 'rotate(-135deg)',
+            }}
+          />
         </button>
 
         {!reduceMotion && (
