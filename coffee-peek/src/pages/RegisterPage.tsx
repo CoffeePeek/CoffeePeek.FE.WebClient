@@ -9,9 +9,11 @@ import { useUser } from '../contexts/UserContext';
 import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 import {
-  Envelope, Lock, User, WarningCircle, Eye, EyeSlash, Sun, Moon,
+  Envelope, Lock, User, WarningCircle, Eye, EyeSlash,
   EnvelopeOpen, SignIn, Sparkle, ArrowLeft, Check,
 } from '@/components/Icon';
+import { useTheme } from '../contexts/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 
 type RegisterStep = 'email' | 'registration' | 'success';
 
@@ -109,7 +111,8 @@ const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [agreeToPrivacy, setAgreeToPrivacy] = useState(false);
-  const [dark, setDark] = useState(true);
+  const { theme } = useTheme();
+  const dark = theme === 'dark';
 
   const emailValid = /\S+@\S+\.\S+/.test(email.trim());
   const canRegister = userName.trim().length >= 2 && password.length >= 8 && agreeToPrivacy;
@@ -177,11 +180,7 @@ const RegisterPage: React.FC = () => {
       <div style={{ position: 'absolute', top: -120, left: -120, width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle, rgba(234,179,8,${dark ? '0.16' : '0.08'}), transparent 60%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: -160, right: -160, width: 520, height: 520, borderRadius: '50%', background: `radial-gradient(circle, rgba(180,140,75,${dark ? '0.10' : '0.06'}), transparent 60%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
 
-      {/* Theme toggle */}
-      <button onClick={() => setDark(d => !d)} aria-label="Переключить тему"
-        style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 99, background: cardBg, border: `1px solid ${cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: dark ? 'blur(12px)' : 'none', transition: 'all .3s' }}>
-        {dark ? <Sun size={20} color={textPrimary} /> : <Moon size={20} color={textPrimary} />}
-      </button>
+      <ThemeToggle style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }} />
 
       {/* Card */}
       <div style={{ width: 'min(100%, 460px)', padding: '16px', position: 'relative', zIndex: 2, boxSizing: 'border-box' }}>

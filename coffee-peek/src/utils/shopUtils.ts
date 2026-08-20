@@ -87,3 +87,7 @@ export function instagramUrl(value: string): string {
   if (trimmed.includes('instagram.com')) return `https://${trimmed.replace(/^\/+/, '')}`;
   return `https://instagram.com/${trimmed.replace(/^@/, '')}`;
 }
+
+export function toWebsiteHref(url: string): string {
+  return url.startsWith('http') ? url : `https://${url}`;
+}

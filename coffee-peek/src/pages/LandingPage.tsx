@@ -21,6 +21,7 @@ import { AppIcon, StarIcon } from '../components/icons';
 import type { IconProps } from '@phosphor-icons/react';
 import { Compass, Flask, ChatCircleText, TrendUp, UsersThree, Heart } from '@/components/Icon';
 import LandingMapWidget from '../components/LandingMapWidget';
+import ThemeToggle from '../components/ThemeToggle';
 
 const LandingPage: React.FC = () => {
   usePageTitle('Главная');
@@ -215,6 +216,7 @@ const LandingPage: React.FC = () => {
                 ))}
               </nav>
               <div className="flex items-center gap-[10px]">
+                <ThemeToggle size={40} />
                 <button onClick={() => navigate('/login')}
                   className="px-4 py-[9px] rounded-[10px] bg-transparent border border-[#3D2F28] text-white font-display font-semibold text-[13px] hover:border-[#EAB308]/40 transition-colors">
                   Войти
@@ -238,10 +240,13 @@ const LandingPage: React.FC = () => {
                 Coffee<span className="text-[#EAB308]">Peek</span>
               </span>
             </div>
-            <button onClick={() => navigate('/login')}
+            <div className="flex items-center gap-2">
+              <ThemeToggle size={36} />
+              <button onClick={() => navigate('/login')}
               className="px-[14px] py-[7px] rounded-full bg-white/[0.04] border border-[#3D2F28] text-white font-display font-semibold text-[12px]">
-              Войти
-            </button>
+                Войти
+              </button>
+            </div>
           </div>
 
           {/* ── Hero ─────────────────────────────────────────────── */}

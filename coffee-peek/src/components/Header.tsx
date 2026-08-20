@@ -5,6 +5,7 @@ import { useUser } from '../contexts/UserContext';
 import { Icons } from '../constants';
 import { COLORS } from '../constants/colors';
 import { Gear, SignOut, CaretDown, ShoppingCart } from '@/components/Icon';
+import ThemeToggle from './ThemeToggle';
 
 const PUBLIC_NAV = [
   { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
@@ -77,10 +78,11 @@ const Header: React.FC = () => {
 
           {/* Right: actions — marginLeft auto keeps burger on the right when nav is hidden */}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+            <ThemeToggle size={36} />
 
             {user ? (
-              /* ── Profile dropdown ── */
-              <div style={{ position: 'relative' }}>
+              /* ── Profile dropdown: desktop only; on smaller screens this is in the hamburger ── */
+              <div className="hidden lg:block" style={{ position: 'relative' }}>
                 <button
                   onClick={() => setProfileOpen(o => !o)}
                   style={{

@@ -299,6 +299,12 @@ const MapPage: React.FC = () => {
     }
   }, [shops, mapInstance]);
 
+  useEffect(() => {
+    if (mapInstance) {
+      mapInstance.options.set('theme', theme === 'dark' ? 'dark' : 'light');
+    }
+  }, [theme, mapInstance]);
+
 
   // Форматируем часы работы
   const formatWorkingHours = (schedules?: Array<{ dayOfWeek: number; openTime?: string; closeTime?: string }>) => {

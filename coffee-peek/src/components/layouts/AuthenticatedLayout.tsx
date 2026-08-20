@@ -16,7 +16,7 @@ interface AuthenticatedLayoutProps {
 export const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ children }) => {
   const { theme } = useTheme();
   const { user } = useUser();
-  const bgClass = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-white';
+  const bgClass = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-[#FAFAF9]';
 
   return (
     <div className={`min-h-screen ${bgClass}`}>

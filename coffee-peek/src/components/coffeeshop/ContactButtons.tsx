@@ -3,8 +3,9 @@ import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getThemeClasses } from '../../utils/theme';
-import { instagramHandle, instagramUrl } from '../../utils/shopUtils';
+import { instagramHandle, instagramUrl, toWebsiteHref } from '../../utils/shopUtils';
 import { AppIcon } from '../icons';
+import { Globe, InstagramLogo } from '@/components/Icon';
 
 interface ContactButtonsProps {
   shop: DetailedCoffeeShop;
@@ -54,13 +55,7 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
     return null;
   }
 
-  const websiteHref = contact.website
-    ? contact.website.startsWith('http')
-      ? contact.website
-      : `https://${contact.website}`
-    : undefined;
-
-  const linkBtn = `inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold border ${borderColor} ${textMain} hover:border-[#D4A84B]/50 transition-all`;
+  const websiteHref = contact.website ? toWebsiteHref(contact.website) : undefined;
 
   const copyPhone = async () => {
     if (!contact.phone) return;
@@ -68,55 +63,59 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
     showToast(ok ? 'Номер скопирован' : 'Не удалось скопировать', ok ? 'success' : 'error');
   };
 
+  const iconBtn = `inline-flex items-center justify-center w-10 h-10 rounded-full border ${borderColor} ${textMain} hover:border-[#D4A84B]/50 transition-all`;
+  const chipBtn = `inline-flex items-center gap-2 h-10 px-3.5 rounded-full font-semibold border ${borderColor} ${textMain} hover:border-[#D4A84B]/50 transition-all`;
+
   return (
     <div className={`${cardBg} p-6 rounded-3xl border ${borderColor}`}>
       <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
         <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
         Контакты
       </h2>
-      <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
         {contact.phone && (
-          <div className="flex items-center gap-3 flex-wrap">
+          <>
             <AppIcon name="call" size={22} color="#D4A84B" />
             <span className={`font-medium ${textMain}`}>{contact.phone}</span>
             <button
               type="button"
               onClick={copyPhone}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold border ${borderColor} ${textMuted} hover:border-[#D4A84B]/50 hover:text-[#D4A84B] transition-all`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${borderColor} ${textMuted} hover:border-[#D4A84B]/50 hover:text-[#D4A84B] transition-all`}
             >
               <AppIcon name="content_copy" size={16} />
               Скопировать
             </button>
-          </div>
+          </>
         )}
         {contact.email && (
-          <div className={`flex items-center gap-3 ${textMuted}`}>
-            <AppIcon name="mail" size={22} color="#D4A84B" />
-            <a href={`mailto:${contact.email}`} className={`font-medium break-all hover:text-[#D4A84B]`}>
-              {contact.email}
-            </a>
-          </div>
+          <a href={`mailto:${contact.email}`} className={`inline-flex items-center gap-2 ${textMuted} hover:text-[#D4A84B]`}>
+            <AppIcon name="mail" size={20} color="#D4A84B" />
+            <span className="font-medium break-all">{contact.email}</span>
+          </a>
         )}
-        {(websiteHref || contact.instagram) && (
-          <div className="flex flex-wrap gap-3">
-            {websiteHref && (
-              <a href={websiteHref} target="_blank" rel="noopener noreferrer" className={linkBtn}>
-                <AppIcon name="language" size={20} className={themeClasses.primary.text} />
-                Веб-сайт
-              </a>
-            )}
-            {contact.instagram && (
-              <a
-                href={instagramUrl(contact.instagram)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={linkBtn}
-              >
-                <AppIcon name="photo_camera" size={20} className={themeClasses.primary.text} />
-                {instagramHandle(contact.instagram)}
-              </a>
-            )}
-          </div>
+        {websiteHref && (
+          <a
+            href={websiteHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Веб-сайт"
+            title="Веб-сайт"
+            className={iconBtn}
+          >
+            <Globe size={20} className={themeClasses.primary.text} />
+          </a>
+        )}
+        {contact.instagram && (
+          <a
+            href={instagramUrl(contact.instagram)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Instagram ${instagramHandle(contact.instagram)}`}
+            className={chipBtn}
+          >
+            <InstagramLogo size={18} className={themeClasses.primary.text} />
+            {instagramHandle(contact.instagram)}
+          </a>
         )}
       </div>
     </div>

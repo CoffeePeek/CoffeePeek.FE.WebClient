@@ -1,10 +1,21 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoffeePeek</title>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t !== 'light' && t !== 'dark') t = 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+          document.documentElement.classList.toggle('dark', t === 'dark');
+          document.documentElement.classList.toggle('light', t === 'light');
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preload" as="font" href="/fonts/RFDewiExpanded-Black.otf" crossorigin>
     <link rel="preload" as="font" href="/fonts/RFDewiExpanded-Ultrabold.otf" crossorigin>
     <style>
@@ -63,6 +74,14 @@
             color: #FFFFFF;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+        }
+        html[data-theme="light"] body {
+            background-color: #FAFAF9;
+            color: #1C1917;
+        }
+        html[data-theme="dark"] body {
+            background-color: #1A1412;
+            color: #FFFFFF;
         }
         /* Desktop background texture */
         .bg-pattern {

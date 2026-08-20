@@ -36,7 +36,7 @@ const SettingsPage: React.FC = () => {
   usePageTitle('Настройки');
   const { user, isLoading: userLoading, logout } = useUser();
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const isDark = theme === 'dark';
 
   const [activeSection, setActiveSection] = useState<Section>('profile');
@@ -222,7 +222,7 @@ const SettingsPage: React.FC = () => {
       case 'security':
         return <SecuritySection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />;
       case 'appearance':
-        return <AppearanceSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} theme={theme} onToggleTheme={toggleTheme} />;
+        return <AppearanceSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} theme={theme} onSetTheme={setTheme} />;
       case 'cafes':
         return <CafesSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} onAdd={() => navigate('/coffee-shops/new')} onBrowse={() => navigate('/shops')} />;
     }
@@ -651,8 +651,8 @@ const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: stri
 
 const AppearanceSection: React.FC<{
   isDark: boolean; surface: string; border: string; textPrimary: string; textMuted: string;
-  gold: string; theme: string; onToggleTheme: () => void;
-}> = ({ isDark, surface, border, textPrimary, textMuted, gold, theme, onToggleTheme }) => (
+  gold: string; theme: string; onSetTheme: (theme: 'dark' | 'light') => void;
+}> = ({ isDark, surface, border, textPrimary, textMuted, gold, theme, onSetTheme }) => (
   <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
     <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Внешний вид</h3>
     <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Выберите тему оформления</p>
@@ -660,12 +660,12 @@ const AppearanceSection: React.FC<{
     {/* Theme toggle cards */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
       {[
-        { value: 'light', label: 'Светлая', Icon: Sun,  preview: 'rgba(250,250,249,1)', accent: '#1C1917' },
-        { value: 'dark',  label: 'Тёмная',  Icon: Moon, preview: '#2D241F',             accent: '#fff'    },
+        { value: 'light' as const, label: 'Светлая', Icon: Sun,  preview: 'rgba(250,250,249,1)', accent: '#1C1917' },
+        { value: 'dark' as const,  label: 'Тёмная',  Icon: Moon, preview: '#2D241F',             accent: '#fff'    },
       ].map(opt => {
         const active = theme === opt.value;
         return (
-          <button key={opt.value} onClick={onToggleTheme}
+          <button key={opt.value} onClick={() => onSetTheme(opt.value)}
             style={{ padding: '20px 16px', borderRadius: 16, border: `2px solid ${active ? gold : border}`, background: active ? `${gold}10` : (isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7'), cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, transition: 'all .2s' }}>
             <div style={{ width: 52, height: 36, borderRadius: 10, background: opt.preview, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.08)' }}>
               <opt.Icon size={22} color={opt.accent} />

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light';
 
 interface ThemeContextType {
   theme: Theme;
@@ -8,61 +8,56 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
 }
 
+const THEME_KEY = 'theme';
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+function isTheme(value: string | null): value is Theme {
+  return value === 'dark' || value === 'light';
+}
+
+export function getStoredTheme(): Theme {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    return isTheme(saved) ? saved : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+export function applyThemeToDocument(theme: Theme) {
+  const root = document.documentElement;
+  const isDark = theme === 'dark';
+
+  root.setAttribute('data-theme', theme);
+  root.classList.toggle('dark', isDark);
+  root.classList.toggle('light', !isDark);
+
+  document.body.setAttribute('data-theme', theme);
+  document.body.classList.toggle('dark-theme', isDark);
+  document.body.classList.toggle('light-theme', !isDark);
+  document.body.classList.toggle('dark', isDark);
+
+  if (isDark) {
+    document.body.style.backgroundColor = '#1A1412';
+    document.body.style.color = 'rgba(255, 255, 255, 0.87)';
+  } else {
+    document.body.style.backgroundColor = '#FAFAF9';
+    document.body.style.color = '#1C1917';
+  }
+
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    const saved = localStorage.getItem('theme');
-    return (saved as Theme) || 'dark';
-  });
+  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme());
 
-  // Применяем тему сразу при инициализации
   useEffect(() => {
-    const applyTheme = (themeToApply: Theme) => {
-      // Применяем тему к document и body
-      document.documentElement.setAttribute('data-theme', themeToApply);
-      document.body.setAttribute('data-theme', themeToApply);
-      localStorage.setItem('theme', themeToApply);
-      
-      // Также применяем класс к body для совместимости
-      if (themeToApply === 'light') {
-        document.body.classList.add('light-theme');
-        document.body.classList.remove('dark-theme');
-        document.body.style.backgroundColor = '#FAFAF9';
-        document.body.style.color = '#1C1917';
-      } else {
-        document.body.classList.add('dark-theme');
-        document.body.classList.remove('light-theme');
-        document.body.style.backgroundColor = '#1A1412';
-        document.body.style.color = 'rgba(255, 255, 255, 0.87)';
-      }
-    };
-
-    // Применяем тему при первой загрузке
-    applyTheme(theme);
-  }, []);
-
-  // Применяем тему при изменении
-  useEffect(() => {
-    const applyTheme = (themeToApply: Theme) => {
-      document.documentElement.setAttribute('data-theme', themeToApply);
-      document.body.setAttribute('data-theme', themeToApply);
-      localStorage.setItem('theme', themeToApply);
-      
-      if (themeToApply === 'light') {
-        document.body.classList.add('light-theme');
-        document.body.classList.remove('dark-theme');
-        document.body.style.backgroundColor = '#FAFAF9';
-        document.body.style.color = '#1C1917';
-      } else {
-        document.body.classList.add('dark-theme');
-        document.body.classList.remove('light-theme');
-        document.body.style.backgroundColor = '#1A1412';
-        document.body.style.color = 'rgba(255, 255, 255, 0.87)';
-      }
-    };
-
-    applyTheme(theme);
+    applyThemeToDocument(theme);
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
@@ -70,7 +65,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const toggleTheme = () => {
-    setThemeState(prev => prev === 'dark' ? 'light' : 'dark');
+    setThemeState(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   return (
@@ -87,4 +82,3 @@ export const useTheme = () => {
   }
   return context;
 };
-

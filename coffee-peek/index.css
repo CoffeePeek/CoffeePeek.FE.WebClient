@@ -121,18 +121,8 @@ button:focus-visible {
   box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.25);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #1C1917;
-    background-color: #FAFAF9;
-  }
-  a:hover {
-    color: #EAB308;
-  }
-  button {
-    background-color: transparent;
-  }
-}
+/* OS color-scheme must not override the app theme.
+   Dark is the default; light only applies via [data-theme="light"]. */
 
 /* ── Wobble Ring loader — Organic Loaders #11 ────────────────────── */
 @keyframes wobble-spin {
