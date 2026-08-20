@@ -8,7 +8,9 @@ import {
   isAuthTokenEndpoint,
   tryRefreshAccessToken,
   ensureFreshAccessToken,
+  pickAuthTokens,
 } from './interceptors';
+import { isTokenExpired } from '../../utils/jwt';
 
 class HttpClient {
   private baseURL: string;
@@ -27,7 +29,11 @@ class HttpClient {
     const fullUrl = `${this.baseURL}${urlWithParams}`;
 
     if (!_retry && !skipAuthHeader && !isAuthTokenEndpoint(endpoint)) {
-      await ensureFreshAccessToken(this.baseURL);
+      const fresh = await ensureFreshAccessToken(this.baseURL);
+      const access = TokenManager.getAccessToken();
+      if (!fresh && (!access || isTokenExpired(access))) {
+        throw { status: 401, message: 'Не авторизован' };
+      }
     }
 
     const requestOptions = requestInterceptor(
@@ -53,7 +59,16 @@ class HttpClient {
       }
 
       const { envelope, pagination } = await responseInterceptor<any>(response, fullUrl);
-      const payload = envelope.data ?? envelope;
+      let payload = envelope.data ?? envelope;
+      if (isAuthTokenEndpoint(endpoint)) {
+        const fromEnvelope = pickAuthTokens(envelope);
+        const fromPayload = pickAuthTokens(payload);
+        const accessToken = fromPayload.accessToken ?? fromEnvelope.accessToken;
+        const refreshToken = fromPayload.refreshToken ?? fromEnvelope.refreshToken;
+        if (accessToken && payload && typeof payload === 'object') {
+          payload = { ...payload, accessToken, ...(refreshToken ? { refreshToken } : {}) };
+        }
+      }
       const normalizedData = normalizeResponseData<T>(payload);
 
       return {

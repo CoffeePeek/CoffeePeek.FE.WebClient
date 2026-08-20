@@ -58,7 +58,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await ensureFreshAccessToken(API_BASE_URL);
         if (cancelled) return;
         const token = TokenManager.getAccessToken();
-        if (token) updateUserFromToken(token);
+        if (token && !isTokenExpired(token)) {
+          updateUserFromToken(token);
+        } else {
+          TokenManager.clearTokens();
+          setUser(null);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }

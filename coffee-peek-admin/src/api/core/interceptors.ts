@@ -38,18 +38,45 @@ export function isAuthTokenEndpoint(endpoint: string): boolean {
   return endpoint === TOKEN_PATH || endpoint.startsWith(`${TOKEN_PATH}/`);
 }
 
-export function pickAuthTokens(payload: unknown): { accessToken?: string; refreshToken?: string } {
-  if (!payload || typeof payload !== 'object') return {};
+export function pickAuthTokens(payload: unknown, depth = 0): { accessToken?: string; refreshToken?: string } {
+  if (!payload || typeof payload !== 'object' || depth > 3) return {};
   const data = payload as Record<string, unknown>;
+
+  const asTokenString = (value: unknown): string | undefined => {
+    if (typeof value === 'string' && value.length > 0) return value;
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const nested = value as Record<string, unknown>;
+      for (const key of ['token', 'Token', 'value', 'Value']) {
+        if (typeof nested[key] === 'string' && nested[key]) return nested[key] as string;
+      }
+    }
+    return undefined;
+  };
+
   const accessToken =
-    (typeof data.accessToken === 'string' && data.accessToken) ||
-    (typeof data.AccessToken === 'string' && data.AccessToken) ||
-    undefined;
+    asTokenString(data.accessToken) ||
+    asTokenString(data.AccessToken) ||
+    asTokenString(data.token) ||
+    asTokenString(data.Token) ||
+    asTokenString(data.jwt);
+
   const refreshToken =
-    (typeof data.refreshToken === 'string' && data.refreshToken) ||
-    (typeof data.RefreshToken === 'string' && data.RefreshToken) ||
-    undefined;
-  return { accessToken, refreshToken };
+    asTokenString(data.refreshToken) ||
+    asTokenString(data.RefreshToken) ||
+    asTokenString(data.refresh_token);
+
+  if (accessToken || refreshToken) {
+    return { accessToken, refreshToken };
+  }
+
+  for (const key of ['data', 'Data', 'tokens', 'Tokens']) {
+    if (data[key] && typeof data[key] === 'object') {
+      const nested = pickAuthTokens(data[key], depth + 1);
+      if (nested.accessToken || nested.refreshToken) return nested;
+    }
+  }
+
+  return {};
 }
 
 async function putRefresh(baseURL: string, refreshToken: string, withAccess: boolean): Promise<Response> {
@@ -58,12 +85,13 @@ async function putRefresh(baseURL: string, refreshToken: string, withAccess: boo
     Accept: 'application/json',
   };
   const access = TokenManager.getAccessToken();
-  if (withAccess && access) {
+  if (withAccess && access && !isTokenExpired(access)) {
     headers.Authorization = `Bearer ${access}`;
   }
   return fetch(`${baseURL}${TOKEN_PATH}`, {
     method: 'PUT',
     headers,
+    credentials: 'include',
     body: JSON.stringify({ refreshToken }),
   });
 }
@@ -75,13 +103,15 @@ async function performRefresh(baseURL: string): Promise<boolean> {
   try {
     let response = await putRefresh(baseURL, refreshToken, false);
     if (!response.ok && response.status === 401) {
-      response = await putRefresh(baseURL, refreshToken, true);
+      const access = TokenManager.getAccessToken();
+      if (access && !isTokenExpired(access)) {
+        response = await putRefresh(baseURL, refreshToken, true);
+      }
     }
     if (!response.ok) return false;
 
     const json = await response.json();
-    const payload = json?.data ?? json;
-    const tokens = pickAuthTokens(payload);
+    const tokens = pickAuthTokens(json);
     if (!tokens.accessToken) return false;
 
     TokenManager.setTokens(tokens.accessToken, tokens.refreshToken ?? refreshToken);
