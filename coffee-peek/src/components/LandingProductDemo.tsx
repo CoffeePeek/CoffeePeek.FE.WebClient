@@ -53,6 +53,18 @@ const GOLD = '#EAB308';
 const GOLD_WARM = '#D4A84B';
 const REVIEW_TEXT = 'Эспрессо чистый, молочко сладкое. Вернусь за воронкой.';
 
+const ChevronIcon: React.FC<{ dir: 'left' | 'right' }> = ({ dir }) => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden className="block shrink-0 overflow-visible">
+    <path
+      d={dir === 'left' ? 'M11.25 3.75 5.75 9l5.5 5.25' : 'M6.75 3.75 12.25 9l-5.5 5.25'}
+      stroke={GOLD}
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 function usePrefersReducedMotion() {
   const [reduce, setReduce] = useState(false);
   useEffect(() => {
@@ -573,41 +585,19 @@ const LandingProductDemo: React.FC = () => {
           type="button"
           aria-label="Предыдущая категория"
           onClick={() => go(index - 1)}
-          className="absolute left-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border"
+          className="absolute left-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center overflow-visible rounded-full border"
           style={{ background: c.surface, borderColor: c.border }}
         >
-          <span
-            aria-hidden
-            className="block"
-            style={{
-              width: 9,
-              height: 9,
-              marginLeft: 3,
-              borderBottom: `2.5px solid ${GOLD}`,
-              borderLeft: `2.5px solid ${GOLD}`,
-              transform: 'rotate(45deg)',
-            }}
-          />
+          <ChevronIcon dir="left" />
         </button>
         <button
           type="button"
           aria-label="Следующая категория"
           onClick={() => go(index + 1)}
-          className="absolute right-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border"
+          className="absolute right-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center overflow-visible rounded-full border"
           style={{ background: c.surface, borderColor: c.border }}
         >
-          <span
-            aria-hidden
-            className="block"
-            style={{
-              width: 9,
-              height: 9,
-              marginRight: 3,
-              borderBottom: `2.5px solid ${GOLD}`,
-              borderLeft: `2.5px solid ${GOLD}`,
-              transform: 'rotate(-135deg)',
-            }}
-          />
+          <ChevronIcon dir="right" />
         </button>
 
         {!reduceMotion && (
