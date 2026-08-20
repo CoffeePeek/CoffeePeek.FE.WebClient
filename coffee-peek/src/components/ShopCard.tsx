@@ -147,9 +147,12 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
         </div>
 
         {address ? (
-          <p style={{ margin: '4px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <p
+            title={address}
+            style={{ margin: '4px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}
+          >
             <AppIcon name="location_on" size={13} color={COLORS.primary} style={{ flexShrink: 0 }} />
-            {address}
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{address}</span>
           </p>
         ) : null}
 

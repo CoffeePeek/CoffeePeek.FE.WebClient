@@ -450,7 +450,12 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                     </div>
                     <div style={{ padding: '9px 11px 11px' }}>
                       <h4 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h4>
-                      <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>{shop.location?.address || shop.address || shop.cityName || ''}</p>
+                      <p
+                        title={shop.location?.address || shop.address || shop.cityName || ''}
+                        style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                      >
+                        {shop.location?.address || shop.address || shop.cityName || ''}
+                      </p>
                     </div>
                   </div>
                 );
