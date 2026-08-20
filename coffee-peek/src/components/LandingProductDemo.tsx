@@ -510,32 +510,8 @@ const LandingProductDemo: React.FC = () => {
 
   return (
     <div>
-      <div className="flex gap-2">
-        {CATEGORIES.map((s, i) => {
-          const active = i === index;
-          const Icon = s.Icon;
-          return (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => go(i)}
-              aria-pressed={active}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-display font-semibold text-[12px] lg:text-[13px] border transition-colors"
-              style={{
-                background: active ? (isDark ? '#fff' : '#1C1917') : 'transparent',
-                color: active ? (isDark ? '#1C1917' : '#fff') : c.textPrimary,
-                borderColor: active ? 'transparent' : c.border,
-              }}
-            >
-              <Icon size={14} color={active ? (isDark ? '#1C1917' : GOLD) : GOLD} />
-              {s.title}
-            </button>
-          );
-        })}
-      </div>
-
       <div
-        className="relative overflow-hidden rounded-[18px] lg:rounded-[22px] border mt-3"
+        className="relative overflow-hidden rounded-[18px] lg:rounded-[22px] border"
         style={{
           background: chromeBg,
           borderColor: c.border,
@@ -616,9 +592,33 @@ const LandingProductDemo: React.FC = () => {
       <h3 className="mt-5 font-display font-bold text-[20px] lg:text-[26px] tracking-[-0.02em]" style={{ color: c.textPrimary }}>
         {category.title}
       </h3>
-      <p className="mt-2 font-body text-[14px] lg:text-[15px] leading-[1.55] max-w-[640px]" style={{ color: c.textSecondary }}>
+      <p className="mt-2 font-body text-[14px] lg:text-[15px] leading-[1.55] w-full" style={{ color: c.textSecondary }}>
         {category.desc} {category.more}
       </p>
+
+      <div className="mt-4 flex justify-center gap-2">
+        {CATEGORIES.map((s, i) => {
+          const active = i === index;
+          const Icon = s.Icon;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => go(i)}
+              aria-pressed={active}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-display font-semibold text-[12px] lg:text-[13px] border transition-colors"
+              style={{
+                background: active ? (isDark ? '#fff' : '#1C1917') : 'transparent',
+                color: active ? (isDark ? '#1C1917' : '#fff') : c.textPrimary,
+                borderColor: active ? 'transparent' : c.border,
+              }}
+            >
+              <Icon size={14} color={active ? (isDark ? '#1C1917' : GOLD) : GOLD} />
+              {s.title}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };
