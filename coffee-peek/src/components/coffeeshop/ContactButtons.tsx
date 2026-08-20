@@ -67,19 +67,19 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
   const chipBtn = `inline-flex items-center gap-2 h-10 px-3.5 rounded-full font-semibold border ${borderColor} ${textMain} hover:border-[#D4A84B]/50 transition-all`;
 
   return (
-    <div className={`${cardBg} p-6 rounded-3xl border ${borderColor}`}>
-      <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
-        <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
+    <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0`}>
+      <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
+        <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full shrink-0" />
         Контакты
       </h2>
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 min-w-0">
         {contact.phone && (
           <div
-            className={`inline-flex items-center h-10 rounded-full border ${borderColor} overflow-hidden`}
+            className={`inline-flex items-center h-10 max-w-full min-w-0 rounded-full border ${borderColor} overflow-hidden`}
           >
             <AppIcon name="call" size={18} color="#D4A84B" className="ml-3 shrink-0" />
             <span
-              className={`px-2 font-medium ${textMain} select-text`}
+              className={`px-2 font-medium ${textMain} select-text truncate min-w-0`}
               style={{ userSelect: 'text' }}
             >
               {contact.phone}
@@ -120,10 +120,10 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Instagram ${instagramHandle(contact.instagram)}`}
-            className={chipBtn}
+            className={`${chipBtn} max-w-full min-w-0`}
           >
-            <InstagramLogo size={18} className={themeClasses.primary.text} />
-            {instagramHandle(contact.instagram)}
+            <InstagramLogo size={18} className={`${themeClasses.primary.text} shrink-0`} />
+            <span className="truncate">{instagramHandle(contact.instagram)}</span>
           </a>
         )}
       </div>

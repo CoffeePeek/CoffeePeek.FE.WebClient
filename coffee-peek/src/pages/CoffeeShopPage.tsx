@@ -119,16 +119,16 @@ const CoffeeShopPage: React.FC = () => {
   const avgRating = shop?.rating || 0;
 
   return (
-    <div className={`min-h-screen ${bgClass} font-body`}>
+    <div className={`min-h-screen ${bgClass} font-body overflow-x-hidden`}>
       {/* Галерея фотографий */}
       {shop && (
-        <section className="max-w-7xl mx-auto px-6 py-8">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
           {shop.photos && shop.photos.length > 0 ? (
-            <div className="grid grid-cols-12 grid-rows-2 gap-4 h-[500px]">
+            <div className="grid grid-cols-1 md:grid-cols-12 md:grid-rows-2 gap-3 md:gap-4 h-[240px] sm:h-[320px] md:h-[500px]">
               <PhotoGallery shop={shop} cardBg={cardBg} borderColor={borderColor} textMuted={textMuted} />
             </div>
           ) : (
-            <div className="h-[280px] md:h-[420px] rounded-3xl overflow-hidden">
+            <div className="h-[220px] sm:h-[280px] md:h-[420px] rounded-3xl overflow-hidden">
               <ShopPhotoPlaceholder fontSize={24} />
             </div>
           )}
@@ -136,8 +136,8 @@ const CoffeeShopPage: React.FC = () => {
       )}
 
       {shop && (
-        <section className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-12 gap-12 items-start">
-          <div className="col-span-12 lg:col-span-8 space-y-12">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-8 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start min-w-0">
+          <div className="lg:col-span-8 space-y-8 lg:space-y-12 min-w-0">
             <div>
               <ShopHeader
                 shop={shop}
@@ -168,8 +168,8 @@ const CoffeeShopPage: React.FC = () => {
 
           {/* Описание */}
           {shop.description && (
-            <div className={`${cardBg} p-6 rounded-3xl border ${borderColor}`}>
-              <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
+            <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0`}>
+              <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
                 <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
                 О кофейне
               </h2>
@@ -189,12 +189,12 @@ const CoffeeShopPage: React.FC = () => {
           {/* Детали кофе */}
           {(shop.equipments?.length > 0 || shop.beans?.length > 0 || shop.roasters?.length > 0 || shop.brewMethods?.length > 0) && (
             <div>
-              <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-8`}>
+              <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-6 sm:mb-8`}>
                 <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
                 Детали кофе
               </h2>
               
-              <div className={`${cardBg} p-6 rounded-3xl border ${borderColor}`}>
+              <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0`}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* Оборудование */}
                 {shop.equipments && shop.equipments.length > 0 && (
@@ -298,7 +298,7 @@ const CoffeeShopPage: React.FC = () => {
           </div>
 
           {/* Правая колонка */}
-          <div className="col-span-12 lg:col-span-4 space-y-8 self-start">
+          <div className="lg:col-span-4 space-y-8 self-start min-w-0">
             <ShopSidebar
               shop={shop}
               textMain={textMain}
@@ -309,17 +309,6 @@ const CoffeeShopPage: React.FC = () => {
           </div>
         </section>
       )}
-
-      {/* Кнопка назад */}
-      <div className="fixed bottom-8 left-8 z-40">
-        <button
-          onClick={() => navigate('/shops')}
-          className="bg-[#EAB308] hover:bg-[#FACC15] text-[#1A1412] px-6 py-3 rounded-2xl font-bold shadow-lg transition-all flex items-center gap-2"
-        >
-          <AppIcon name="arrow_back" size={24} />
-          Назад
-        </button>
-      </div>
 
       {/* Check-in Modal */}
       <CheckInModal

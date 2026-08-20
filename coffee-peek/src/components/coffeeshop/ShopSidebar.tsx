@@ -146,11 +146,11 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
   };
 
   return (
-    <div className={`${cardBg} rounded-3xl border ${borderColor} overflow-hidden shadow-sm`}>
+    <div className={`${cardBg} rounded-3xl border ${borderColor} overflow-hidden shadow-sm min-w-0`}>
       {/* Карта */}
       {latitude && longitude && (
-        <div className="h-64 w-full relative">
-          <div ref={mapRef} className="w-full h-full" />
+        <div className="h-52 sm:h-64 w-full max-w-full relative overflow-hidden">
+          <div ref={mapRef} className="absolute inset-0 w-full h-full" />
           {!isMapLoaded && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#2D241F]">
               <WobbleRing size={32} />
@@ -160,12 +160,12 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
       )}
 
       <div className="p-5">
-        <div className={`flex items-start gap-3 ${shop.schedules && shop.schedules.length > 0 ? 'mb-6' : ''}`}>
+        <div className={`flex items-start gap-3 min-w-0 ${shop.schedules && shop.schedules.length > 0 ? 'mb-6' : ''}`}>
           <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} flex items-center justify-center shrink-0`}>
             <AppIcon name="pin_drop" size={20} className={themeClasses.primary.text} />
           </div>
-          <div>
-            <h3 className={`font-bold ${textMain} mb-1`}>{shop.location?.address || shop.address || 'Адрес не указан'}</h3>
+          <div className="min-w-0 flex-1">
+            <h3 className={`font-bold ${textMain} mb-1 break-words`}>{shop.location?.address || shop.address || 'Адрес не указан'}</h3>
           </div>
         </div>
 
@@ -184,10 +184,10 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
                 return (
                   <div 
                     key={schedule.dayOfWeek} 
-                    className={`flex justify-between ${isToday ? `font-bold ${themeClasses.primary.text}` : textMuted}`}
+                    className={`flex justify-between gap-3 min-w-0 ${isToday ? `font-bold ${themeClasses.primary.text}` : textMuted}`}
                   >
-                    <span>{isToday ? 'Сегодня' : formatDayOfWeek(schedule.dayOfWeek)}</span>
-                    <span>{schedule.openTime} - {schedule.closeTime}</span>
+                    <span className="min-w-0 truncate">{isToday ? 'Сегодня' : formatDayOfWeek(schedule.dayOfWeek)}</span>
+                    <span className="shrink-0">{schedule.openTime} - {schedule.closeTime}</span>
                   </div>
                 );
               })}

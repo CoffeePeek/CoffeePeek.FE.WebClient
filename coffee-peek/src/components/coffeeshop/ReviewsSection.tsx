@@ -46,18 +46,19 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
   return (
     <div className="pt-8 border-t border-[#E8E4E1]">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className={`text-2xl font-display font-bold ${textMain} flex items-center gap-3`}>
-          <span className={`w-1.5 h-8 ${themeClasses.primary.bg} rounded-full`} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+        <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 min-w-0`}>
+          <span className={`w-1.5 h-8 ${themeClasses.primary.bg} rounded-full shrink-0`} />
           Отзывы клиентов
         </h2>
         {user && (
           <button
             onClick={onWriteOrEditReview}
             disabled={isCheckingMyReview}
-            className={`${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-6 py-2.5 rounded-xl ${themeClasses.primary.bg.replace('bg-', 'hover:bg-')} ${themeClasses.text.inverse.replace('text-', 'hover:text-')} transition-all disabled:opacity-60 disabled:cursor-not-allowed`}
+            className={`shrink-0 ${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-4 sm:px-6 py-2.5 rounded-xl ${themeClasses.primary.bg.replace('bg-', 'hover:bg-')} ${themeClasses.text.inverse.replace('text-', 'hover:text-')} transition-all disabled:opacity-60 disabled:cursor-not-allowed`}
+            style={{ padding: '10px 16px' }}
           >
-            {myReviewId ? 'Изменить отзыв' : 'Написать отзыв'}
+            {myReviewId ? 'Изменить' : 'Написать'}
           </button>
         )}
       </div>

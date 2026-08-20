@@ -48,18 +48,18 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ shop }) => {
 
   return (
     <>
-      {photoCount === 1 && tile(0, 'col-span-12 row-span-2 rounded-3xl')}
+      {photoCount === 1 && tile(0, 'col-span-1 md:col-span-12 row-span-1 md:row-span-2 rounded-3xl')}
 
       {photoCount === 2 && (
         <>
-          {tile(0, 'col-span-12 md:col-span-8 row-span-2 rounded-3xl')}
-          {tile(1, 'col-span-12 md:col-span-4 row-span-2 rounded-3xl')}
+          {tile(0, 'col-span-1 md:col-span-8 row-span-1 md:row-span-2 rounded-3xl')}
+          {tile(1, 'hidden md:block col-span-4 row-span-2 rounded-3xl')}
         </>
       )}
 
       {photoCount === 3 && (
         <>
-          {tile(0, 'col-span-12 md:col-span-8 row-span-2 rounded-3xl')}
+          {tile(0, 'col-span-1 md:col-span-8 row-span-1 md:row-span-2 rounded-3xl')}
           {tile(1, 'hidden md:block col-span-4 row-span-1 rounded-3xl')}
           {tile(2, 'hidden md:block col-span-4 row-span-1 rounded-3xl')}
         </>
@@ -67,7 +67,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ shop }) => {
 
       {photoCount > 3 && (
         <>
-          {tile(0, 'col-span-12 md:col-span-8 row-span-2 rounded-3xl')}
+          {tile(0, 'col-span-1 md:col-span-8 row-span-1 md:row-span-2 rounded-3xl')}
           {tile(1, 'hidden md:block col-span-4 row-span-1 rounded-3xl')}
           {tile(2, 'hidden md:block col-span-4 row-span-1 rounded-3xl', true)}
         </>

@@ -77,35 +77,28 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   };
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-6 mb-6">
-      <div>
-        <h1 className={`text-5xl font-display font-bold ${textMain} mb-2 tracking-tight`}>
+    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4 mb-6 min-w-0">
+      <div className="min-w-0 w-full sm:flex-1">
+        <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-display font-bold ${textMain} mb-2 tracking-tight break-words`}>
           {shop.name}
         </h1>
-        <div className="flex items-center gap-3 text-sm flex-wrap">
-          <span className={`${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-3 py-1 rounded-lg flex items-center gap-1`}>
+        <div className="flex items-center gap-2 sm:gap-3 text-sm flex-wrap min-w-0">
+          <span className={`${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-3 py-1 rounded-lg flex items-center gap-1 shrink-0`}>
             <StarIcon filled size={14} />
             {avgRating.toFixed(1)}
           </span>
-          <span className={`${textMuted} font-medium border-b border-current/30`}>
+          <span className={`${textMuted} font-medium border-b border-current/30 shrink-0`}>
             {shop.reviewCount || reviewsTotalCount} отзывов
           </span>
-          <span className={textMuted}>•</span>
           {shop.isNew && (
-            <>
-              <span className="bg-green-500/20 text-green-400 font-bold px-2 py-1 rounded-lg text-xs uppercase tracking-wider">
-                Новая
-              </span>
-              <span className={textMuted}>•</span>
-            </>
+            <span className="bg-green-500/20 text-green-400 font-bold px-2 py-1 rounded-lg text-xs uppercase tracking-wider shrink-0">
+              Новая
+            </span>
           )}
           {shop.isOpen && (
-            <>
-              <span className="bg-green-500/20 text-green-400 font-bold px-2 py-1 rounded-lg text-xs uppercase tracking-wider">
-                Открыта
-              </span>
-              <span className={textMuted}>•</span>
-            </>
+            <span className="bg-green-500/20 text-green-400 font-bold px-2 py-1 rounded-lg text-xs uppercase tracking-wider shrink-0">
+              Открыта
+            </span>
           )}
           {priceTiers && (
             <BeanPriceMarks count={priceTiers} size={14} color={COLORS.primary} />
@@ -113,11 +106,12 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
         </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
         {onCheckIn && (
           <button
             onClick={onCheckIn}
-            className={`px-4 py-2 rounded-2xl border ${borderColor} flex items-center justify-center gap-2 ${themeClasses.primary.bgLight} hover:opacity-90 transition-all ${themeClasses.primary.text} font-semibold text-sm`}
+            className={`flex-1 sm:flex-none px-4 py-2 rounded-2xl border ${borderColor} flex items-center justify-center gap-2 ${themeClasses.primary.bgLight} hover:opacity-90 transition-all ${themeClasses.primary.text} font-semibold text-sm`}
+            style={{ padding: '8px 16px' }}
           >
             <AppIcon name="check_circle" size={18} color="currentColor" />
             Чекиниться
@@ -128,11 +122,12 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
           onClick={onToggleFavorite}
           disabled={isCheckingFavorite}
           aria-label={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
-          className={`w-14 h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
+          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all shrink-0 ${
             isFavorite
               ? `${themeClasses.primary.bgLight} ${themeClasses.primary.borderLight}`
               : `${theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`
           }`}
+          style={{ padding: 0 }}
         >
           <AppIcon
             name="favorite"
@@ -145,9 +140,10 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
           type="button"
           onClick={handleShare}
           aria-label="Поделиться"
-          className={`w-14 h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all ${
+          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all shrink-0 ${
             theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
           }`}
+          style={{ padding: 0 }}
         >
           <AppIcon name="share" size={26} color={iconMuted} />
         </button>
