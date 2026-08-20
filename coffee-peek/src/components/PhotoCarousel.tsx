@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getPhotoUrl, PhotoMetadataDto, ShortPhotoMetadataDto } from '../api/coffeeshop';
+import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 
 interface PhotoCarouselProps {
   images: (string | PhotoMetadataDto | ShortPhotoMetadataDto)[];
@@ -27,7 +28,11 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
   };
 
   if (!images || images.length === 0) {
-    return null;
+    return (
+      <div className={`overflow-hidden rounded-xl ${isCardView ? 'h-full' : 'aspect-video'}`}>
+        <ShopPhotoPlaceholder fontSize={isCardView ? 18 : 24} />
+      </div>
+    );
   }
 
   // Фильтруем валидные URL
@@ -48,7 +53,11 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
     .filter(url => url && url.length > 0);
   
   if (validImages.length === 0) {
-    return null;
+    return (
+      <div className={`overflow-hidden rounded-xl ${isCardView ? 'h-full' : 'aspect-video'}`}>
+        <ShopPhotoPlaceholder fontSize={isCardView ? 18 : 24} />
+      </div>
+    );
   }
 
   return (
@@ -59,20 +68,8 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {validImages.map((image, index) => (
-            <div key={image} className="w-full flex-shrink-0">
-              <img
-                src={image}
-                alt={`${shopName} - ${index + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  // Показываем placeholder только если это не уже placeholder
-                  if (!target.src.includes('placeholder')) {
-                    target.src = 'https://via.placeholder.com/800x600/1A1412/FFFFFF?text=Image+Not+Found';
-                  }
-                }}
-                loading="lazy"
-              />
+            <div key={image} className="w-full flex-shrink-0 h-full">
+              <CarouselSlide src={image} alt={`${shopName} - ${index + 1}`} fontSize={isCardView ? 18 : 24} />
             </div>
           ))}
         </div>
@@ -130,6 +127,20 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
         </div>
       )}
     </div>
+  );
+};
+
+const CarouselSlide: React.FC<{ src: string; alt: string; fontSize: number }> = ({ src, alt, fontSize }) => {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <ShopPhotoPlaceholder fontSize={fontSize} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full h-full object-cover"
+      onError={() => setFailed(true)}
+      loading="lazy"
+    />
   );
 };
 

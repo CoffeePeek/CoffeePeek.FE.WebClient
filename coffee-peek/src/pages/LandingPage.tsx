@@ -199,7 +199,7 @@ const LandingPage: React.FC = () => {
           {/* ── Nav desktop ─────────────────────────────────────── */}
           <header className="sticky top-0 z-50 hidden lg:block h-[72px] border-b border-[#3D2F28]" style={{ background: 'rgba(45,36,31,0.92)', transform: 'translateZ(0)' }}>
             <div className="max-w-[1280px] mx-auto px-8 h-full flex items-center justify-between gap-6">
-              <button onClick={() => {}} className="flex items-center gap-3">
+              <button type="button" onClick={() => navigate('/')} className="logo-btn flex items-center gap-3 cursor-pointer">
                 <div className="w-[38px] h-[38px] rounded-xl bg-[#1A1412] border border-[#3D2F28] flex items-center justify-center">
                   <img src="/logo-mark.svg" alt="" className="w-5 h-5" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
                 </div>
@@ -232,14 +232,14 @@ const LandingPage: React.FC = () => {
 
           {/* ── Top bar mobile ───────────────────────────────────── */}
           <div className="lg:hidden flex items-center justify-between px-5 pt-[60px] pb-0">
-            <div className="flex items-center gap-[10px]">
+            <button type="button" onClick={() => navigate('/')} className="logo-btn flex items-center gap-[10px] cursor-pointer">
               <div className="w-9 h-9 rounded-xl bg-[#1A1412] border border-[#3D2F28] flex items-center justify-center">
                 <img src="/logo-mark.svg" alt="" className="w-[18px] h-[18px]" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
               </div>
               <span className="font-display font-extrabold tracking-[-0.02em] text-[17px] text-white">
                 Coffee<span className="text-[#EAB308]">Peek</span>
               </span>
-            </div>
+            </button>
             <div className="flex items-center gap-2">
               <ThemeToggle size={36} />
               <button onClick={() => navigate('/login')}

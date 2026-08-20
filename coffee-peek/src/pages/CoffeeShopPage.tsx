@@ -17,6 +17,7 @@ import { useUsersCache } from '../hooks/useUsersCache';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon } from '../components/icons';
+import ShopPhotoPlaceholder from '../components/ShopPhotoPlaceholder';
 
 const CoffeeShopPage: React.FC = () => {
   const { shopId } = useParams<{ shopId: string }>();
@@ -120,11 +121,17 @@ const CoffeeShopPage: React.FC = () => {
   return (
     <div className={`min-h-screen ${bgClass} font-body`}>
       {/* Галерея фотографий */}
-      {shop && shop.photos && shop.photos.length > 0 && (
+      {shop && (
         <section className="max-w-7xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-12 grid-rows-2 gap-4 h-[500px]">
-            <PhotoGallery shop={shop} cardBg={cardBg} borderColor={borderColor} textMuted={textMuted} />
-          </div>
+          {shop.photos && shop.photos.length > 0 ? (
+            <div className="grid grid-cols-12 grid-rows-2 gap-4 h-[500px]">
+              <PhotoGallery shop={shop} cardBg={cardBg} borderColor={borderColor} textMuted={textMuted} />
+            </div>
+          ) : (
+            <div className="h-[280px] md:h-[420px] rounded-3xl overflow-hidden">
+              <ShopPhotoPlaceholder fontSize={24} />
+            </div>
+          )}
         </section>
       )}
 

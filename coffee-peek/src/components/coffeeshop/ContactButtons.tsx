@@ -74,18 +74,27 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
       </h2>
       <div className="flex flex-wrap items-center gap-3">
         {contact.phone && (
-          <>
-            <AppIcon name="call" size={22} color="#D4A84B" />
-            <span className={`font-medium ${textMain}`}>{contact.phone}</span>
+          <div
+            className={`inline-flex items-center h-10 rounded-full border ${borderColor} overflow-hidden`}
+          >
+            <AppIcon name="call" size={18} color="#D4A84B" className="ml-3 shrink-0" />
+            <span
+              className={`px-2 font-medium ${textMain} select-text`}
+              style={{ userSelect: 'text' }}
+            >
+              {contact.phone}
+            </span>
             <button
               type="button"
               onClick={copyPhone}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${borderColor} ${textMuted} hover:border-[#D4A84B]/50 hover:text-[#D4A84B] transition-all`}
+              aria-label="Скопировать номер"
+              title="Скопировать"
+              className={`inline-flex items-center justify-center w-10 h-10 shrink-0 ${textMuted} hover:text-[#D4A84B] transition-colors`}
+              style={{ padding: 0, border: 'none', borderRadius: 0, background: 'transparent', boxShadow: 'none' }}
             >
               <AppIcon name="content_copy" size={16} />
-              Скопировать
             </button>
-          </>
+          </div>
         )}
         {contact.email && (
           <a href={`mailto:${contact.email}`} className={`inline-flex items-center gap-2 ${textMuted} hover:text-[#D4A84B]`}>

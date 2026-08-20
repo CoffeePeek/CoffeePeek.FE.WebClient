@@ -4,9 +4,8 @@ import { getThemeClasses } from '../utils/theme';
 import { getCoffeeShopsByMapBounds, getCoffeeShopById, MapShop, DetailedCoffeeShop } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
 import { AppIcon } from './icons';
-import { Coffee, Star, BookmarkSimple } from '@/components/Icon';
-
-const MAP_COFFEE_FALLBACK = '<div class="w-full h-full flex items-center justify-center text-[#EAB308]"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V192a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,192H48V96H208v96Z"/></svg></div>';
+import { Star, BookmarkSimple } from '@/components/Icon';
+import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 
 declare global {
   interface Window {
@@ -388,37 +387,18 @@ const MapPage: React.FC = () => {
               <div className="p-4">
                 <div className="flex gap-4">
                   {/* Изображение слева */}
-                  <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-200">
-                    {(() => {
-                      // Получаем URL изображений из photos (новый формат) или imageUrls (старый формат)
-                      const imageUrls = selectedShopDetails?.photos && Array.isArray(selectedShopDetails.photos) && selectedShopDetails.photos.length > 0
-                        ? selectedShopDetails.photos.map((p: any) => p.fullUrl || p)
-                        : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
-                          ? selectedShopDetails.imageUrls
-                          : [];
-                      
-                      const firstImageUrl = imageUrls.length > 0 ? imageUrls[0] : null;
-                      
-                      return firstImageUrl ? (
-                        <img
-                          src={firstImageUrl}
-                          alt={selectedShop.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent) {
-                              parent.innerHTML = MAP_COFFEE_FALLBACK;
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200 text-[#EAB308]">
-                          <Coffee size={32} />
-                        </div>
-                      );
-                    })()}
+                  <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                    <MapShopThumb
+                      alt={selectedShop.title}
+                      src={(() => {
+                        const imageUrls = selectedShopDetails?.photos && Array.isArray(selectedShopDetails.photos) && selectedShopDetails.photos.length > 0
+                          ? selectedShopDetails.photos.map((p: any) => p.fullUrl || p)
+                          : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
+                            ? selectedShopDetails.imageUrls
+                            : [];
+                        return imageUrls.length > 0 ? imageUrls[0] : undefined;
+                      })()}
+                    />
                   </div>
 
                   {/* Информация справа */}
@@ -459,6 +439,19 @@ const MapPage: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const MapShopThumb: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return <ShopPhotoPlaceholder fontSize={7} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full h-full object-cover"
+      onError={() => setFailed(true)}
+    />
   );
 };
 

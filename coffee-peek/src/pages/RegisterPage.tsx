@@ -209,14 +209,14 @@ const RegisterPage: React.FC = () => {
           ) : (
             <>
               {/* Logo */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+              <button type="button" className="logo-btn" onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, cursor: 'pointer' }}>
                 <div style={{ width: 36, height: 36, borderRadius: 11, background: dark ? '#1A1412' : '#F5F5F4', border: `1px solid ${cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <img src="/logo-mark.svg" alt="" style={{ width: 18, height: 18, filter: 'brightness(0) saturate(100%) invert(73%) sepia(76%) saturate(657%) hue-rotate(11deg) brightness(94%) contrast(94%)' }} />
                 </div>
                 <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
                   Coffee<span style={{ color: '#EAB308' }}>Peek</span>
                 </span>
-              </div>
+              </button>
 
               <Stepper step={step === 'email' ? 'email' : 'register'} dark={dark} />
 

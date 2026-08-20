@@ -22,13 +22,12 @@ import {
 } from '@/components/Icon';
 
 // ── Section types ────────────────────────────────────────────────────
-type Section = 'profile' | 'security' | 'appearance' | 'cafes';
+type Section = 'profile' | 'security' | 'appearance';
 
 const NAV_ITEMS: { id: Section; label: string; Icon: React.ComponentType<IconProps> }[] = [
   { id: 'profile',    label: 'Профиль',      Icon: User    },
   { id: 'security',   label: 'Безопасность', Icon: Lock    },
   { id: 'appearance', label: 'Внешний вид',  Icon: Palette },
-  { id: 'cafes',      label: 'Кофейни',      Icon: Coffee  },
 ];
 
 // ── Main component ───────────────────────────────────────────────────
@@ -223,8 +222,6 @@ const SettingsPage: React.FC = () => {
         return <SecuritySection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />;
       case 'appearance':
         return <AppearanceSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} theme={theme} onSetTheme={setTheme} />;
-      case 'cafes':
-        return <CafesSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} onAdd={() => navigate('/coffee-shops/new')} onBrowse={() => navigate('/shops')} />;
     }
   };
 
@@ -309,6 +306,17 @@ const SettingsPage: React.FC = () => {
                 </button>
               );
             })}
+            <button
+              onClick={() => navigate('/coffee-shops/new')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '8px 14px', borderRadius: 99, border: 'none',
+                background: gold, color: '#1A1412',
+                fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              }}>
+              <Storefront size={15} color="#1A1412" />
+              Добавить кофейню
+            </button>
           </div>
         </div>
 
@@ -336,12 +344,12 @@ const SettingsPage: React.FC = () => {
 
             {/* Nav */}
             <nav style={{ borderRadius: 16, border: `1px solid ${border}`, background: surface, overflow: 'hidden', marginBottom: 12 }}>
-              {NAV_ITEMS.map((item, i) => {
+              {NAV_ITEMS.map((item) => {
                 const active = activeSection === item.id;
                 return (
                   <button key={item.id} onClick={() => setActiveSection(item.id)} style={{
                     width: '100%', padding: '11px 14px', textAlign: 'left', border: 'none',
-                    borderBottom: i < NAV_ITEMS.length - 1 ? `1px solid ${border}` : 'none',
+                    borderBottom: `1px solid ${border}`,
                     background: active ? `${gold}10` : 'transparent',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s',
                   }}>
@@ -351,6 +359,15 @@ const SettingsPage: React.FC = () => {
                   </button>
                 );
               })}
+              <button
+                onClick={() => navigate('/coffee-shops/new')}
+                style={{
+                  width: '100%', padding: '11px 14px', textAlign: 'left', border: 'none',
+                  background: gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                <Storefront size={18} color="#1A1412" />
+                <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, color: '#1A1412', flex: 1 }}>Добавить кофейню</span>
+              </button>
             </nav>
 
             {/* Logout */}
@@ -675,35 +692,6 @@ const AppearanceSection: React.FC<{
           </button>
         );
       })}
-    </div>
-  </div>
-);
-
-// ── Cafes section ────────────────────────────────────────────────────
-
-const CafesSection: React.FC<{
-  isDark: boolean; surface: string; border: string; textPrimary: string; textMuted: string;
-  gold: string; onAdd: () => void; onBrowse: () => void;
-}> = ({ isDark, surface, border, textPrimary, textMuted, gold, onAdd, onBrowse }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-    <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-      <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Добавить кофейню</h3>
-      <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Отправьте новую кофейню на проверку модераторами</p>
-      <button onClick={onAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'opacity .15s' }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-        <Storefront size={18} />
-        Добавить кофейню
-      </button>
-    </div>
-
-    <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-      <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Каталог кофеен</h3>
-      <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Исследуйте все кофейни в каталоге</p>
-      <button onClick={onBrowse} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-        <Coffee size={18} />
-        Открыть каталог
-      </button>
     </div>
   </div>
 );

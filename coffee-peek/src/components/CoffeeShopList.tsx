@@ -12,6 +12,7 @@ import ShopCard from './ShopCard';
 import ShopSearchBar from './ShopSearchBar';
 import ShopFilterPanel from './ShopFilterPanel';
 import { AppIcon, StarIcon } from './icons';
+import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 
 const PAGE_SIZE = 12;
@@ -434,7 +435,12 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                 return (
                   <div key={`f-${shop.id}`} onClick={() => openShopDetails(shop.id)}
                     style={{ flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden', border: `1px solid ${colors.border}`, background: colors.surface, cursor: 'pointer' }}>
-                    <div style={{ height: 112, background: photos[0] ? `url(${photos[0]}) center/cover` : `${COLORS.primary}20`, position: 'relative' }}>
+                    <div style={{ height: 112, position: 'relative', overflow: 'hidden' }}>
+                      {photos[0] ? (
+                        <div style={{ width: '100%', height: '100%', background: `url(${photos[0]}) center/cover` }} />
+                      ) : (
+                        <ShopPhotoPlaceholder fontSize={14} />
+                      )}
                       {shop.rating && (
                         <span style={{ position: 'absolute', top: 8, left: 8, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 7px', borderRadius: 6, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 11, color: '#D4A84B' }}>
                           <StarIcon filled size={12} color="#D4A84B" />

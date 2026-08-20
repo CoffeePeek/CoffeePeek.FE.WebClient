@@ -38,35 +38,46 @@ const CheckInsPage: React.FC = () => {
   const totalPages = Math.max(1, data?.totalPages ?? 1);
 
   return (
-    <div style={{ minHeight: '100%', background: colors.background, padding: '24px 16px 48px' }}>
-      <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 20,
-            padding: '6px 0', border: 'none', background: 'transparent',
-            color: colors.textSecondary, fontFamily: '"Noto Sans"', fontSize: 14, cursor: 'pointer',
-          }}
+    <div style={{ minHeight: '100%', background: colors.background }}>
+      <div style={{
+        borderBottom: `1px solid ${colors.border}`,
+        background: isDark ? 'rgba(45,36,31,0.7)' : colors.surface,
+        backdropFilter: 'blur(12px)',
+      }}>
+        <div
+          className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"
+          style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12 }}
         >
-          <AppIcon name="arrow_back" size={18} color="currentColor" />
-          Назад
-        </button>
-
-        <header style={{ marginBottom: 28 }}>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Назад"
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 32, height: 32, padding: 0, flexShrink: 0,
+              border: 'none', borderRadius: 8, background: 'transparent',
+              color: colors.textPrimary, cursor: 'pointer',
+            }}
+          >
+            <AppIcon name="arrow_back" size={20} color="currentColor" />
+          </button>
           <h1 style={{
-            margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700,
-            fontSize: 28, color: colors.textPrimary, letterSpacing: '-0.02em',
+            margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700,
+            fontSize: 18, color: colors.textPrimary, letterSpacing: '-0.01em',
           }}>
             Мои посещения
           </h1>
-          <p style={{ margin: '8px 0 0', fontFamily: '"Noto Sans"', fontSize: 14, color: colors.textSecondary }}>
-            {totalItems > 0
-              ? `Всего: ${totalItems}`
-              : 'Чек-ины из кофеен, которые вы отметили'}
-          </p>
-        </header>
+          {totalItems > 0 && (
+            <span style={{
+              fontFamily: '"Noto Sans"', fontSize: 13, color: colors.textSecondary,
+            }}>
+              {totalItems}
+            </span>
+          )}
+        </div>
+      </div>
 
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '64px 0' }}>
             <WobbleRing size={48} />

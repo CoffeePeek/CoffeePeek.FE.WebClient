@@ -2,6 +2,7 @@ import React, { memo, useState } from 'react';
 import { CoffeeShop, getPhotoUrl, formatEquipmentName } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
 import { AppIcon, StarIcon, BeanPriceMarks } from './icons';
+import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { getPriceRangeTier } from '../utils/priceRange';
 
@@ -80,9 +81,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.4) 100%)' }} />
           </>
         ) : (
-          <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, ${COLORS.primary}20, #D4A84B20)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <AppIcon name="local_cafe" size={40} color={colors.textSecondary} />
-          </div>
+          <ShopPhotoPlaceholder />
         )}
 
         {/* Top-left: rating — only if there are reviews */}

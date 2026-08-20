@@ -57,7 +57,12 @@ const Header: React.FC = () => {
 
           {/* Left: logo */}
           <div style={{ flexShrink: 0 }}>
-            <button onClick={() => navigate('/shops')} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            <button
+              type="button"
+              className="logo-btn"
+              onClick={() => navigate(user ? '/shops' : '/')}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+            >
               <div style={{ width: 40, height: 40, background: isDark ? '#1A1412' : '#fff', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${borderColor}` }}>
                 <div style={{ color: gold, width: 20, height: 20 }}><Icons.Coffee /></div>
               </div>
@@ -78,7 +83,7 @@ const Header: React.FC = () => {
 
           {/* Right: actions — marginLeft auto keeps burger on the right when nav is hidden */}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
-            <ThemeToggle size={36} />
+            {!user && <ThemeToggle size={36} />}
 
             {user ? (
               /* ── Profile dropdown: desktop only; on smaller screens this is in the hamburger ── */

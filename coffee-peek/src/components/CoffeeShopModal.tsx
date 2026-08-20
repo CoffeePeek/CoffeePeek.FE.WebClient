@@ -1,10 +1,11 @@
 import React from 'react';
 import { DetailedCoffeeShop, formatEquipmentName, getEquipmentCategoryLabel } from '../api/coffeeshop';
 import PhotoCarousel from './PhotoCarousel';
+import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import {
-  X, Camera, Warning, Star, MapPin, Phone, Envelope, Globe, DeviceMobile,
+  X, Camera, Star, MapPin, Phone, Envelope, Globe, DeviceMobile,
   Coffee, Gear, Leaf, Flame, Drop, Clock, Circle, PriceRangeLabel,
 } from '@/components/Icon';
 
@@ -91,19 +92,14 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
                   ({photoUrls.length} {photoUrls.length === 1 ? 'фото' : photoUrls.length < 5 ? 'фото' : 'фотографий'})
                 </span>
               </h3>
-              <div className={`rounded-xl overflow-hidden border ${themeClasses.border.default} bg-gray-900 min-h-[300px]`}>
+              <div className={`rounded-xl overflow-hidden border ${themeClasses.border.default} min-h-[300px]`}>
                 <PhotoCarousel images={photoUrls} shopName={shop.name} isCardView={false} />
               </div>
             </div>
           ) : (
-            process.env.NODE_ENV === 'development' && (
-              <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-start gap-2">
-                <Warning size={18} className="text-yellow-500 shrink-0 mt-0.5" />
-                <p className="text-yellow-500 text-sm">
-                  Фотографии не найдены. Проверьте консоль для отладки.
-                </p>
-              </div>
-            )
+            <div className={`mb-6 rounded-xl overflow-hidden border ${themeClasses.border.default} h-[220px]`}>
+              <ShopPhotoPlaceholder fontSize={24} />
+            </div>
           )}
 
           <div className="mb-6">

@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { Icons } from '../constants';
 import { logger } from '../utils/logger';
 import { AppIcon, StarIcon } from './icons';
+import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import { Images, Calendar } from '@/components/Icon';
 
 interface CheckInModalProps {
@@ -242,9 +243,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                     {shopImage ? (
                       <img alt={shop.name} className="w-full h-full object-cover" src={shopImage} />
                     ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${themeClasses.bg.tertiary}`}>
-                        <AppIcon name="store" size={18} color={colors.textMuted} />
-                      </div>
+                      <ShopPhotoPlaceholder fontSize={7} />
                     )}
                   </div>
                   <div className={`absolute -bottom-0.5 -right-0.5 ${themeClasses.primary.bg} text-white p-1 rounded-full shadow-lg flex items-center justify-center`}>
