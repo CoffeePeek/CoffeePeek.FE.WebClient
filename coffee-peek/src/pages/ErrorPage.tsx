@@ -2,8 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import Button from '../components/Button';
-import { Icons } from '../constants';
 import { usePageTitle } from '../hooks/usePageTitle';
+import Mascot from '../components/Mascot';
 
 interface ErrorPageProps {
   errorCode?: number | string;
@@ -25,35 +25,30 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
   const bgClass = theme === 'dark' ? 'bg-[#1A1412]' : 'bg-white';
   const textClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
   const textSecondaryClass = theme === 'dark' ? 'text-[#A39E93]' : 'text-gray-600';
-  const surfaceClass = theme === 'dark' ? 'bg-[#2D241F]' : 'bg-gray-50';
   const borderClass = theme === 'dark' ? 'border-[#3D2F28]' : 'border-gray-200';
 
   // Определяем заголовок и сообщение по коду ошибки
-  const getErrorContent = (): { title: string; message: string; icon: React.ReactNode } => {
+  const getErrorContent = (): { title: string; message: string } => {
     switch (errorCode) {
       case 403:
         return {
           title: title || 'Доступ запрещён',
           message: message || 'У вас нет прав для доступа к этой странице.',
-          icon: <Icons.Alert className="text-orange-500" />
         };
       case 404:
         return {
           title: title || 'Страница не найдена',
           message: message || 'К сожалению, запрашиваемая страница не существует. Возможно, она была перемещена или удалена.',
-          icon: <Icons.Alert className="text-[#EAB308]" />
         };
       case 500:
         return {
           title: title || 'Ошибка сервера',
           message: message || 'Произошла внутренняя ошибка сервера. Мы уже работаем над её устранением.',
-          icon: <Icons.Alert className="text-red-500" />
         };
       default:
         return {
           title: title || 'Произошла ошибка',
           message: message || 'Что-то пошло не так. Пожалуйста, попробуйте позже.',
-          icon: <Icons.Alert className="text-[#EAB308]" />
         };
     }
   };
@@ -77,13 +72,8 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
       <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] bg-[#EAB308]/5 blur-[120px] rounded-full" />
 
       <div className="z-10 text-center max-w-2xl w-full animate-in fade-in zoom-in-95 duration-1000">
-        {/* Error Icon */}
-        <div className="flex justify-center mb-8">
-          <div className={`w-32 h-32 ${surfaceClass} rounded-full flex items-center justify-center border ${borderClass} shadow-lg`}>
-            <div className="text-6xl">
-              {errorContent.icon}
-            </div>
-          </div>
+        <div className="flex justify-center mb-8" aria-hidden>
+          <Mascot pose="astonishment" size={188} eager />
         </div>
 
         {/* Error Code */}

@@ -13,6 +13,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 import LogoMark from '../components/LogoMark';
+import Mascot from '../components/Mascot';
 
 interface AuthFieldProps {
   icon?: React.ReactNode;
@@ -196,7 +197,10 @@ const LoginPage: React.FC = () => {
 
       {/* Card */}
       <div style={{ width: 'min(100%, 460px)', padding: '16px', position: 'relative', zIndex: 2, boxSizing: 'border-box' }}>
-        <div style={{ padding: 40, borderRadius: 24, background: cardBg, backdropFilter: dark ? 'blur(24px)' : 'none', border: `1px solid ${cardBorder}`, boxShadow: dark ? '0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 32px rgba(0,0,0,0.08)', transition: 'all .3s' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: -40, position: 'relative', zIndex: 3 }} aria-hidden>
+          <Mascot pose="laptop" size={128} eager />
+        </div>
+        <div style={{ padding: 40, paddingTop: 48, borderRadius: 24, background: cardBg, backdropFilter: dark ? 'blur(24px)' : 'none', border: `1px solid ${cardBorder}`, boxShadow: dark ? '0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 32px rgba(0,0,0,0.08)', transition: 'all .3s' }}>
 
           {/* Logo */}
           <button type="button" className="logo-btn" onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, cursor: 'pointer' }}>

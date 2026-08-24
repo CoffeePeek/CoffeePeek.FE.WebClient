@@ -23,6 +23,7 @@ import LandingMapWidget from '../components/LandingMapWidget';
 import Header from '../components/Header';
 import LandingProductDemo from '../components/LandingProductDemo';
 import LogoMark from '../components/LogoMark';
+import Mascot from '../components/Mascot';
 
 const LandingPage: React.FC = () => {
   usePageTitle('Главная');
@@ -214,6 +215,10 @@ const LandingPage: React.FC = () => {
                   Удобный инструмент для любителей кофе. Открой для себя лучшие кофейни, оставляй отзывы и делись впечатлениями с единомышленниками.
                 </p>
 
+                <div className="lg:hidden flex justify-center mt-6" aria-hidden>
+                  <Mascot pose="happy" size={168} eager />
+                </div>
+
                 {/* CTAs */}
                 <div className="mt-[26px] lg:mt-8 flex flex-col lg:flex-row lg:inline-flex gap-[10px]">
                   <button onClick={() => navigate('/register')}
@@ -281,17 +286,23 @@ const LandingPage: React.FC = () => {
 
           {/* ── CTA Banner ───────────────────────────────────────── */}
           <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-[30px] lg:pt-14 pb-6">
-            <div className="relative overflow-hidden rounded-[18px] lg:rounded-[24px] p-5 lg:px-12 lg:py-9 border border-[rgba(180,140,75,.35)] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6"
+            <div className="relative overflow-hidden rounded-[18px] lg:rounded-[24px] p-5 lg:pl-12 lg:pr-56 lg:py-9 border border-[rgba(180,140,75,.35)] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6"
               style={{ background: isDark ? 'linear-gradient(135deg, #2D241F 0%, rgba(180,140,75,0.18) 100%)' : 'linear-gradient(135deg, #FFFFFF 0%, rgba(212,168,75,0.16) 100%)', boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.05)' : 'inset 0 1px 0 rgba(255,255,255,0.9)' }}>
               <div className="absolute top-[-80px] right-[-80px] w-[320px] h-[320px] rounded-full pointer-events-none lg:block hidden"
                 style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.18), transparent 60%)', filter: 'blur(40px)' }} />
               <div className="absolute top-[-50px] right-[-50px] w-[200px] h-[200px] rounded-full pointer-events-none lg:hidden"
                 style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.20), transparent 60%)' }} />
+              <div className="hidden lg:block absolute right-2 bottom-[-48px] pointer-events-none" aria-hidden>
+                <Mascot pose="happy" size={236} />
+              </div>
               <div className="relative">
                 <span className="font-body font-bold text-[10px] lg:text-[11px] uppercase tracking-[.08em] text-[#EAB308]">Присоединяйся к сообществу</span>
                 <h2 className="mt-[6px] font-display font-bold text-[20px] lg:text-[32px] tracking-[-0.02em] leading-[1.15]" style={{ color: c.textPrimary }}>
                   Делись опытом и открывай<br className="hidden lg:block" />новые кофейни рядом с тобой.
                 </h2>
+              </div>
+              <div className="lg:hidden flex justify-center" aria-hidden>
+                <Mascot pose="happy" size={128} />
               </div>
               <button onClick={() => navigate('/register')}
                 className="relative h-12 lg:h-[56px] px-6 lg:px-8 rounded-xl lg:rounded-[14px] bg-[#EAB308] text-[#1A1412] border-none font-display font-bold text-[14px] lg:text-[15px] inline-flex items-center justify-center gap-[8px] lg:gap-[10px] whitespace-nowrap hover:bg-[#FACC15] active:scale-[0.98] transition-all"

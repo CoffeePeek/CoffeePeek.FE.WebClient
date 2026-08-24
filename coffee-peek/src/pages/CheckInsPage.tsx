@@ -6,6 +6,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import { useCheckIns } from '../hooks/queries/useCheckIns';
 import WobbleRing from '../components/WobbleRing';
 import { AppIcon } from '../components/icons';
+import Mascot from '../components/Mascot';
 import { getErrorMessage } from '../utils/errorHandler';
 
 function formatDate(iso: string): string {
@@ -106,11 +107,8 @@ const CheckInsPage: React.FC = () => {
             padding: '48px 24px', borderRadius: 20, border: `1px solid ${colors.border}`,
             background: colors.surface, textAlign: 'center',
           }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: 99, margin: '0 auto 16px',
-              background: `${gold}15`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <AppIcon name="checkin" size={32} color={gold} />
+            <div style={{ margin: '0 auto 8px', display: 'flex', justifyContent: 'center' }} aria-hidden>
+              <Mascot pose="happy" size={128} />
             </div>
             <h2 style={{
               margin: '0 0 8px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700,

@@ -15,6 +15,7 @@ import {
   ArrowLeft, SealCheck, ShoppingCart, ChatCircleText, Star,
   NotePencil, ArrowRight, CaretLeft, CaretRight,
 } from '@/components/Icon';
+import Mascot from '../components/Mascot';
 
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -148,6 +149,9 @@ const UserProfilePage: React.FC = () => {
     return (
       <div className={`min-h-screen ${bgClass} flex items-center justify-center p-4`}>
         <div className="text-center">
+          <div className="flex justify-center mb-2" aria-hidden>
+            <Mascot pose="astonishment" size={148} />
+          </div>
           <p className={`text-xl ${textMain} mb-4`}>
             {error || 'Профиль не найден'}
           </p>
@@ -371,8 +375,8 @@ const UserProfilePage: React.FC = () => {
             </>
           ) : (
             <div className={`${bgSurface} p-12 rounded-2xl border ${borderClass} text-center`}>
-              <div className={`w-16 h-16 rounded-full ${theme === 'dark' ? themeClasses.bg.secondary : 'bg-stone-100'} ${textMuted} flex items-center justify-center mx-auto mb-4`}>
-                <ChatCircleText size={40} />
+              <div className="flex justify-center mb-2" aria-hidden>
+                <Mascot pose="book" size={132} />
               </div>
               <p className={`${textMuted} text-lg`}>
                 Пользователь пока не оставил ни одного отзыва

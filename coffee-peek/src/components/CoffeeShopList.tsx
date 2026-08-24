@@ -13,6 +13,7 @@ import ShopSearchBar from './ShopSearchBar';
 import ShopFilterPanel from './ShopFilterPanel';
 import { AppIcon, StarIcon } from './icons';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
+import Mascot from './Mascot';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 
 const PAGE_SIZE = 12;
@@ -545,7 +546,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               className="rounded-2xl px-6 py-16 border flex flex-col items-center justify-center text-center min-h-[240px]"
               style={{ backgroundColor: colors.surface, borderColor: colors.border }}
             >
-              <AppIcon name="coffee_maker" size={40} color={colors.textSecondary} className="mx-auto" />
+              <Mascot pose="search" size={132} />
               <p style={{ margin: '12px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
                 Ничего не найдено. Попробуйте другой фильтр.
               </p>

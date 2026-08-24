@@ -10,10 +10,11 @@ import { parseJWT, isTokenExpired, getUserRoles } from '../utils/jwt';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 import {
   Envelope, Lock, User, WarningCircle, Eye, EyeSlash,
-  EnvelopeOpen, SignIn, Sparkle, ArrowLeft, Check,
+  SignIn, Sparkle, ArrowLeft, Check,
 } from '@/components/Icon';
 import { useTheme } from '../contexts/ThemeContext';
 import LogoMark from '../components/LogoMark';
+import Mascot from '../components/Mascot';
 import ThemeToggle from '../components/ThemeToggle';
 
 type RegisterStep = 'email' | 'registration' | 'success';
@@ -185,13 +186,18 @@ const RegisterPage: React.FC = () => {
 
       {/* Card */}
       <div style={{ width: 'min(100%, 460px)', padding: '16px', position: 'relative', zIndex: 2, boxSizing: 'border-box' }}>
-        <div style={{ padding: 40, borderRadius: 24, background: cardBg, backdropFilter: dark ? 'blur(24px)' : 'none', border: `1px solid ${cardBorder}`, boxShadow: dark ? '0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 32px rgba(0,0,0,0.08)', transition: 'all .3s' }}>
+        {step !== 'success' && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: -40, position: 'relative', zIndex: 3 }} aria-hidden>
+            <Mascot pose="laptop" size={128} eager />
+          </div>
+        )}
+        <div style={{ padding: 40, paddingTop: step === 'success' ? 40 : 48, borderRadius: 24, background: cardBg, backdropFilter: dark ? 'blur(24px)' : 'none', border: `1px solid ${cardBorder}`, boxShadow: dark ? '0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 32px rgba(0,0,0,0.08)', transition: 'all .3s' }}>
 
           {/* Success screen */}
           {step === 'success' ? (
             <div style={{ textAlign: 'center', padding: '8px 0' }}>
-              <div style={{ width: 88, height: 88, borderRadius: 99, background: dark ? 'rgba(234,179,8,0.12)' : 'rgba(234,179,8,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                <EnvelopeOpen size={52} color={gold} />
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 8px' }} aria-hidden>
+                <Mascot pose="happy" size={140} />
               </div>
               <h1 style={{ margin: '24px 0 10px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Проверьте почту</h1>
               <p style={{ margin: '0 0 28px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted, lineHeight: 1.6 }}>

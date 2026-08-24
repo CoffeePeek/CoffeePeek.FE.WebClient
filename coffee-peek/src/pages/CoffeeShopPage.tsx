@@ -18,6 +18,7 @@ import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon } from '../components/icons';
 import ShopPhotoPlaceholder from '../components/ShopPhotoPlaceholder';
+import Mascot from '../components/Mascot';
 
 const CoffeeShopPage: React.FC = () => {
   const { shopId } = useParams<{ shopId: string }>();
@@ -104,6 +105,9 @@ const CoffeeShopPage: React.FC = () => {
     return (
       <div className={`min-h-screen ${bgClass} flex items-center justify-center p-4`}>
         <div className="text-center">
+          <div className="flex justify-center mb-2" aria-hidden>
+            <Mascot pose="astonishment" size={148} />
+          </div>
           <p className={`text-xl ${textMain} mb-4`}>{error || 'Кофейня не найдена'}</p>
           <button
             onClick={() => navigate('/shops')}

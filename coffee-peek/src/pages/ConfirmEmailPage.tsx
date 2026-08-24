@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { confirmEmail } from '../api/auth';
 import { isApiRequestError } from '../api/core/apiError';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { CheckCircle, SignIn, XCircle, ArrowLeft } from '@/components/Icon';
+import { SignIn, ArrowLeft } from '@/components/Icon';
 import LogoMark from '../components/LogoMark';
+import Mascot from '../components/Mascot';
 
 function getEmailConfirmationToken(searchParams: URLSearchParams): string | null {
   const tokenFromQuery = searchParams.get('token');
@@ -99,8 +100,8 @@ const ConfirmEmailPage: React.FC = () => {
 
           {status === 'success' && (
             <>
-              <div style={{ width: 88, height: 88, borderRadius: 99, background: 'rgba(34,197,94,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <CheckCircle size={56} weight="fill" color="#22C55E" />
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 12px' }} aria-hidden>
+                <Mascot pose="happy" size={140} />
               </div>
               <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 28, color: textPrimary }}>
                 Email подтверждён
@@ -120,8 +121,8 @@ const ConfirmEmailPage: React.FC = () => {
 
           {status === 'error' && (
             <>
-              <div style={{ width: 88, height: 88, borderRadius: 99, background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <XCircle size={56} weight="fill" color="#EF4444" />
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 12px' }} aria-hidden>
+                <Mascot pose="astonishment" size={140} />
               </div>
               <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 24, color: textPrimary }}>
                 Ссылка недействительна

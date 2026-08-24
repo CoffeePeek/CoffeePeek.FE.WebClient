@@ -6,6 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppUser } from '../../contexts/UserContext';
 import { StarIcon } from '../icons';
+import Mascot from '../Mascot';
 
 interface ReviewsSectionProps {
   reviews: Review[];
@@ -122,8 +123,9 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
           })}
         </div>
       ) : (
-        <div className="text-center py-8">
-          <p className={textMuted}>Пока нет отзывов</p>
+        <div className="text-center py-8 flex flex-col items-center">
+          <Mascot pose="book" size={120} />
+          <p className={`${textMuted} mt-3`}>Пока нет отзывов</p>
         </div>
       )}
     </div>

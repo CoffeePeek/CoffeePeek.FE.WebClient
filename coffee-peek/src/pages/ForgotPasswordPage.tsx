@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { forgotPassword } from '../api/auth';
 import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { AppIcon } from '../components/icons';
 import LogoMark from '../components/LogoMark';
+import Mascot from '../components/Mascot';
 
 const ForgotPasswordPage: React.FC = () => {
   usePageTitle('Восстановление пароля');
@@ -43,7 +43,12 @@ const ForgotPasswordPage: React.FC = () => {
       <div style={{ position: 'absolute', top: -120, left: -120, width: 480, height: 480, borderRadius: '50%', background: 'radial-gradient(circle, rgba(234,179,8,0.16), transparent 60%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
 
       <div style={{ width: '100%', maxWidth: 460, margin: '0 auto', padding: 16, position: 'relative', zIndex: 2 }}>
-        <div style={{ padding: 40, borderRadius: 24, background: 'rgba(45,36,31,0.6)', backdropFilter: 'blur(24px)', border: `1px solid ${cardBorder}`, boxShadow: '0 24px 48px -12px rgba(0,0,0,0.5)' }}>
+        {!sent && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: -40, position: 'relative', zIndex: 3 }} aria-hidden>
+            <Mascot pose="laptop" size={128} eager />
+          </div>
+        )}
+        <div style={{ padding: 40, paddingTop: sent ? 40 : 48, borderRadius: 24, background: 'rgba(45,36,31,0.6)', backdropFilter: 'blur(24px)', border: `1px solid ${cardBorder}`, boxShadow: '0 24px 48px -12px rgba(0,0,0,0.5)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
             <LogoMark size={36} />
             <span style={{ fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
@@ -53,8 +58,8 @@ const ForgotPasswordPage: React.FC = () => {
 
           {sent ? (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ width: 72, height: 72, borderRadius: 99, background: 'rgba(34,197,94,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <AppIcon name="mark_email_read" size={40} color="#22C55E" />
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 12px' }} aria-hidden>
+                <Mascot pose="happy" size={132} />
               </div>
               <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>
                 Проверьте почту

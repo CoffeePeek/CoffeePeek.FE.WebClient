@@ -6,6 +6,7 @@ import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler'
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon } from '../components/icons';
 import LogoMark from '../components/LogoMark';
+import Mascot from '../components/Mascot';
 
 const ResetPasswordPage: React.FC = () => {
   usePageTitle('Новый пароль');
@@ -58,6 +59,9 @@ const ResetPasswordPage: React.FC = () => {
     return (
       <div style={{ minHeight: '100dvh', background: '#1A1412', display: 'grid', placeItems: 'center', padding: 16 }}>
         <div style={{ maxWidth: 460, width: '100%', padding: 40, borderRadius: 24, background: 'rgba(45,36,31,0.6)', border: `1px solid ${cardBorder}`, textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }} aria-hidden>
+            <Mascot pose="astonishment" size={140} />
+          </div>
           <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>Ссылка недействительна</h1>
           <p style={{ margin: '0 0 24px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted }}>В ссылке нет токена сброса пароля.</p>
           <Link to="/forgot-password" style={{ color: gold, fontWeight: 600, textDecoration: 'none' }}>Запросить новую ссылку</Link>
@@ -71,7 +75,12 @@ const ResetPasswordPage: React.FC = () => {
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, pointerEvents: 'none' }} />
 
       <div style={{ width: '100%', maxWidth: 460, margin: '0 auto', padding: 16, position: 'relative', zIndex: 2 }}>
-        <div style={{ padding: 40, borderRadius: 24, background: 'rgba(45,36,31,0.6)', backdropFilter: 'blur(24px)', border: `1px solid ${cardBorder}` }}>
+        {!done && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: -40, position: 'relative', zIndex: 3 }} aria-hidden>
+            <Mascot pose="laptop" size={128} eager />
+          </div>
+        )}
+        <div style={{ padding: 40, paddingTop: done ? 40 : 48, borderRadius: 24, background: 'rgba(45,36,31,0.6)', backdropFilter: 'blur(24px)', border: `1px solid ${cardBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
             <LogoMark size={36} />
             <span style={{ fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 18, color: textPrimary }}>
@@ -81,8 +90,8 @@ const ResetPasswordPage: React.FC = () => {
 
           {done ? (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ width: 72, height: 72, borderRadius: 99, background: 'rgba(34,197,94,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <AppIcon name="lock" size={40} color="#22C55E" />
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 12px' }} aria-hidden>
+                <Mascot pose="happy" size={132} />
               </div>
               <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>Пароль обновлён</h1>
               <p style={{ margin: '0 0 24px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
