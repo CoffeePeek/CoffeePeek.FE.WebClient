@@ -80,7 +80,7 @@ const ConfirmEmailPage: React.FC = () => {
 
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 32 }}>
-            <LogoMark size={36} />
+            <LogoMark size={36} variant="dark" />
             <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
               Coffee<span style={{ color: gold }}>Peek</span>
             </span>

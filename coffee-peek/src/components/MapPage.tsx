@@ -341,10 +341,21 @@ const MapPage: React.FC = () => {
           )}
 
           {shopsLoaded && shops.length === 0 && !isLoading && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-5 py-3 rounded-2xl shadow-lg border flex items-center gap-3"
-                 style={{ backgroundColor: 'rgba(45,36,31,0.92)', borderColor: '#3D2F28', backdropFilter: 'blur(12px)' }}>
-              <Mascot pose="search" size={56} />
-              <span className="text-white text-sm font-medium">Кофейни в этой области не найдены</span>
+            <div
+              className="absolute top-4 left-4 right-4 z-20 px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5"
+              style={{
+                backgroundColor: theme === 'dark' ? 'rgba(45,36,31,0.94)' : 'rgba(255,255,255,0.96)',
+                borderColor: theme === 'dark' ? '#3D2F28' : '#E7E5E4',
+                backdropFilter: 'blur(12px)',
+              }}
+            >
+              <Mascot pose="search" size={40} className="shrink-0" />
+              <span
+                className="min-w-0 flex-1 text-[13px] sm:text-sm font-medium leading-snug"
+                style={{ color: theme === 'dark' ? '#fff' : '#1C1917' }}
+              >
+                Кофейни в этой области не найдены
+              </span>
             </div>
           )}
           <div

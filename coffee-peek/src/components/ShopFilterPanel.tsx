@@ -3,16 +3,47 @@ import { City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, Sh
 import { COLORS } from '../constants/colors';
 import type { IconProps } from '@phosphor-icons/react';
 import {
-  GridFour, Clock, Sparkle, CheckCircle, Heart,
-  MapPin, CaretDown, Check, X,
+  SquaresFour, Clock, Sparkle, CheckCircle, Heart,
+  MapPin, CaretDown, Check,
 } from '@/components/Icon';
 import { BeanPriceMarks } from './icons';
 import { PRICE_FILTER_OPTIONS } from '../utils/priceRange';
 
 const LIST_PREVIEW = 6;
 
+const CloseIcon: React.FC<{ color: string; size?: number }> = ({ color, size = 16 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden
+    style={{ display: 'block', flexShrink: 0 }}
+  >
+    <path d="M3.2 3.2l9.6 9.6M12.8 3.2l-9.6 9.6" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+
+const AllGridIcon: React.FC<{ color: string; size?: number }> = ({ color, size = 14 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden
+    style={{ display: 'block', flexShrink: 0 }}
+  >
+    <rect x="1.2" y="1.2" width="5.6" height="5.6" rx="1.1" stroke={color} strokeWidth="1.35" />
+    <rect x="9.2" y="1.2" width="5.6" height="5.6" rx="1.1" stroke={color} strokeWidth="1.35" />
+    <rect x="1.2" y="9.2" width="5.6" height="5.6" rx="1.1" stroke={color} strokeWidth="1.35" />
+    <rect x="9.2" y="9.2" width="5.6" height="5.6" rx="1.1" stroke={color} strokeWidth="1.35" />
+  </svg>
+);
+
 const FIXED_QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
-  { id: 'all',      label: 'Все',        Icon: GridFour     },
+  { id: 'all',      label: 'Все',        Icon: SquaresFour },
   { id: 'open',     label: 'Открыто',    Icon: Clock        },
   { id: 'new',      label: 'Новые',      Icon: Sparkle      },
   { id: 'visited',  label: 'Уже был',    Icon: CheckCircle },
@@ -201,7 +232,7 @@ const AppliedChip: React.FC<{ label: React.ReactNode; gold: string; onRemove: ()
   }}>
     {label}
     <button type="button" onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2 }}>
-      <X size={13} color={gold} />
+      <CloseIcon color={gold} size={13} />
     </button>
   </span>
 );
@@ -237,7 +268,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   const patch = (next: Partial<AppliedFilters>) => onApplyFilters({ ...applied, ...next });
 
   const hasApplied = selectedEquipments.length > 0 || selectedBeans.length > 0 ||
-    selectedRoasters.length > 0 || selectedBrewMethods.length > 0 || !!filters.priceRange || !!filters.coffeeFocus;
+    selectedRoasters.length > 0 || selectedBrewMethods.length > 0 || !!filters.priceRange;
 
   const chipBase: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -302,7 +333,30 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             onClick={() => onQuickChange(id)}
             style={quickChipStyle(active)}
           >
-            <Icon size={14} color={active ? (dark ? goldWarm : '#fff') : goldWarm} />
+            {id === 'all' ? (
+              <AllGridIcon color={goldWarm} />
+            ) : (
+              <Icon
+                size={14}
+                weight="regular"
+                color={goldWarm}
+                style={{ display: 'block', flexShrink: 0, overflow: 'visible', background: 'transparent' }}
+              />
+            )}
+            {label}
+          </button>
+        );
+      })}
+
+      {FOCUS_OPTIONS.map(({ value, label }) => {
+        const active = filters.coffeeFocus === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            onClick={() => patch({ coffeeFocus: active ? undefined : value })}
+            style={quickChipStyle(active)}
+          >
             {label}
           </button>
         );
@@ -348,13 +402,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             onRemove={() => patch({ priceRange: undefined })}
           />
         )}
-        {current.coffeeFocus && (
-          <AppliedChip
-            label={FOCUS_OPTIONS.find(p => p.value === current.coffeeFocus)?.label ?? current.coffeeFocus}
-            gold={gold}
-            onRemove={() => patch({ coffeeFocus: undefined })}
-          />
-        )}
         {current.equipments.map(id => {
           const eq = equipments.find(e => e.id === id);
           return eq ? <AppliedChip key={id} label={eq.name} gold={gold} onRemove={() => patch({ equipments: current.equipments.filter(x => x !== id) })} /> : null;
@@ -395,9 +442,9 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Закрыть фильтры"
-            style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${borderColor}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${borderColor}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textPrimary, padding: 0, flexShrink: 0 }}
           >
-            <X size={16} color={textPrimary} />
+            <CloseIcon color={textPrimary} size={16} />
           </button>
         </div>
       )}
@@ -417,20 +464,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
           ))}
         </FilterAccordion>
       )}
-
-      <FilterAccordion title="Тип" count={filters.coffeeFocus ? 1 : 0} defaultOpen={!!filters.coffeeFocus} {...accordionProps}>
-        {FOCUS_OPTIONS.map(({ value, label }) => (
-          <OptionRow
-            key={value}
-            label={label}
-            checked={filters.coffeeFocus === value}
-            onClick={() => patch({ coffeeFocus: filters.coffeeFocus === value ? undefined : value })}
-            gold={gold}
-            borderColor={borderColor}
-            textPrimary={textPrimary}
-          />
-        ))}
-      </FilterAccordion>
 
       <FilterAccordion title="Цена" count={filters.priceRange ? 1 : 0} defaultOpen={!!filters.priceRange} {...accordionProps}>
         {PRICE_OPTIONS.map(({ value, label, tiers }) => (

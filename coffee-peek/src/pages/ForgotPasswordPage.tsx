@@ -50,7 +50,7 @@ const ForgotPasswordPage: React.FC = () => {
         )}
         <div style={{ padding: 40, paddingTop: sent ? 40 : 48, borderRadius: 24, background: 'rgba(45,36,31,0.6)', backdropFilter: 'blur(24px)', border: `1px solid ${cardBorder}`, boxShadow: '0 24px 48px -12px rgba(0,0,0,0.5)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
-            <LogoMark size={36} />
+            <LogoMark size={36} variant="dark" />
             <span style={{ fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
               Coffee<span style={{ color: gold }}>Peek</span>
             </span>

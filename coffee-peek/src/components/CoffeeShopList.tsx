@@ -126,7 +126,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [shopTags, setShopTags] = useState<ShopTagDto[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
-  const [filters, setFilters] = useState<CoffeeShopFilters>({});
+  const [filters, setFilters] = useState<CoffeeShopFilters>({ coffeeFocus: 'specialty' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -177,13 +177,14 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   
   // Load shops once when initial data is loaded and default city is set
   useEffect(() => {
-    if (initialDataLoaded && selectedCity && Object.keys(filters).length === 0) {
-      // This will trigger the filter change effect which loads shops
-      setFilters({
+    if (initialDataLoaded && selectedCity && !filters.cityId) {
+      setFilters((prev) => ({
+        ...prev,
         cityId: selectedCity,
-      });
+        coffeeFocus: prev.coffeeFocus ?? 'specialty',
+      }));
     }
-  }, [initialDataLoaded, selectedCity]);
+  }, [initialDataLoaded, selectedCity, filters.cityId]);
   
   // Debouncing для поискового запроса (задержка 600ms)
   useEffect(() => {
@@ -367,7 +368,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const activeFilterCount =
     selectedEquipments.length + selectedBeans.length +
     selectedRoasters.length + selectedBrewMethods.length +
-    (filters.priceRange ? 1 : 0) + (filters.coffeeFocus ? 1 : 0);
+    (filters.priceRange ? 1 : 0);
 
   const filterPanelProps = {
     activeQuick,

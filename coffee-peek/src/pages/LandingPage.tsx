@@ -192,9 +192,9 @@ const LandingPage: React.FC = () => {
 
           {/* ── Hero ─────────────────────────────────────────────── */}
           <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-8 lg:pt-16 pb-9 relative">
-            <div className="lg:grid lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:items-center">
+            <div className="lg:grid lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:items-center min-w-0">
               {/* Left: text */}
-              <div className="text-center lg:text-left">
+              <div className="min-w-0 text-center lg:text-left" style={{ containerType: 'inline-size' }}>
                 {/* Badge */}
                 <span className="inline-flex items-center gap-2 px-[14px] py-[6px] rounded-full text-[#EAB308] font-body font-bold text-[10px] lg:text-[12px] uppercase tracking-[.06em] border border-[#EAB308]/20"
                   style={{ background: 'rgba(234,179,8,.10)' }}>
@@ -202,12 +202,14 @@ const LandingPage: React.FC = () => {
                   Ваш проводник в мире кофе
                 </span>
 
-                {/* H1 */}
-                <h1 className="mt-5 lg:mt-6 font-display font-black leading-[0.95] tracking-[-0.035em]" style={{ color: c.textPrimary }}>
+                {/* H1 — Dewi Expanded is wider than the viewport at a fixed 54px */}
+                <h1 className="mt-5 lg:mt-6 min-w-0 font-display font-black leading-[0.95] tracking-[-0.035em]" style={{ color: c.textPrimary }}>
                   <span className="block font-body font-medium text-[13px] lg:text-[28px] tracking-[0.01em] normal-case mb-2 lg:mb-3" style={{ color: c.textSecondary }}>
                     Добро пожаловать в
                   </span>
-                  <span className="block text-[54px] lg:text-[88px] text-[#EAB308] tracking-[-0.045em]">CoffeePeek</span>
+                  <span className="block max-w-full whitespace-nowrap text-[#EAB308] tracking-[-0.05em] [font-size:clamp(1.75rem,12cqi,5.5rem)]">
+                    CoffeePeek
+                  </span>
                 </h1>
 
                 {/* Description */}

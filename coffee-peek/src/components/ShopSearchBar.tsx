@@ -24,7 +24,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
 
   const filterBtn = (height: number): React.CSSProperties => ({
     height,
-    padding: '0 14px',
+    padding: '0 10px',
     borderRadius: 10,
     background: showFilters ? gold : inputBg,
     color: showFilters ? '#1A1412' : (dark ? '#fff' : '#1C1917'),
@@ -32,12 +32,15 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
     cursor: 'pointer',
     fontFamily: '"RF Dewi Expanded"',
     fontWeight: 600,
-    fontSize: 13,
+    fontSize: 12,
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 6,
-    transition: 'all .15s',
+    gap: 5,
+    whiteSpace: 'nowrap',
     flexShrink: 0,
+    minWidth: 'max-content',
+    boxSizing: 'border-box',
+    transition: 'all .15s',
     position: 'relative',
   });
 
@@ -80,25 +83,25 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
 
       {/* ── Mobile search — Search left, Фильтры right ─────── */}
       <div className="lg:hidden pb-3">
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           {/* Search — fills remaining */}
-          <div style={{ flex: 1, position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
+          <div style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
               <AppIcon name="search" size={18} color={goldWarm} />
             </span>
             <input
               value={searchQuery}
               onChange={e => onSearchChange(e.target.value)}
               maxLength={100}
-              placeholder="Найти кофейню рядом"
-              style={{ width: '100%', height: 44, borderRadius: 10, border: `1px solid ${inputBorder}`, background: colors.surface, padding: '0 14px 0 40px', fontSize: 14, fontFamily: '"RF Dewi Expanded"', color: dark ? '#fff' : '#1C1917', outline: 'none', boxSizing: 'border-box' as const }}
+              placeholder="Найти кофейню"
+              style={{ width: '100%', height: 44, borderRadius: 10, border: `1px solid ${inputBorder}`, background: colors.surface, padding: '0 14px 0 40px', fontSize: 14, fontFamily: '"RF Dewi Expanded"', color: dark ? '#fff' : '#1C1917', outline: 'none', boxSizing: 'border-box' as const, minWidth: 0 }}
             />
           </div>
 
           {/* Фильтры — right */}
-          <button onClick={onFilterToggle} style={filterBtn(44)}>
+          <button type="button" onClick={onFilterToggle} style={filterBtn(44)}>
             <AppIcon name="tune" size={16} color={showFilters ? '#1A1412' : gold} />
-            Фильтры
+            <span>Фильтры</span>
             {activeFilterCount > 0 && (
               <span style={{ minWidth: 18, height: 18, borderRadius: 99, background: showFilters ? '#1A1412' : gold, color: showFilters ? gold : '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
                 {activeFilterCount}
