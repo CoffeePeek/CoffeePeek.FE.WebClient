@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import { logout as apiLogout } from '../../api/auth';
+import LogoMark from '../LogoMark';
 
 interface NavItem {
   path: string;
@@ -116,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
       ].join(' ')}
     >
       <div className="flex items-center gap-3 px-4 py-4 lg:py-5 border-b border-border-dark min-h-[3.5rem]">
-        <img src="/logo.png" alt="CoffeePeek" className="w-8 h-8 rounded-lg shrink-0 object-cover" />
+        <LogoMark size={32} variant="dark" className="rounded-lg" />
         {showLabels && (
           <span className="text-white font-display font-semibold text-sm tracking-wide truncate">
             Admin Panel

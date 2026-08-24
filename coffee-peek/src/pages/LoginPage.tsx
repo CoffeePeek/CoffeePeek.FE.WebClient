@@ -12,7 +12,6 @@ import {
 } from '@/components/Icon';
 import { useTheme } from '../contexts/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
-import LogoMark from '../components/LogoMark';
 import Mascot from '../components/Mascot';
 
 interface AuthFieldProps {
@@ -197,18 +196,20 @@ const LoginPage: React.FC = () => {
 
       {/* Card */}
       <div style={{ width: 'min(100%, 460px)', padding: '16px', position: 'relative', zIndex: 2, boxSizing: 'border-box' }}>
+        <button
+          type="button"
+          className="logo-btn"
+          onClick={() => navigate('/')}
+          style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: 4, cursor: 'pointer', position: 'relative', zIndex: 4 }}
+        >
+          <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, letterSpacing: '-0.035em', fontSize: 22, color: textPrimary }}>
+            Coffee<span style={{ color: '#EAB308' }}>Peek</span>
+          </span>
+        </button>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: -40, position: 'relative', zIndex: 3 }} aria-hidden>
           <Mascot pose="laptop" size={128} eager />
         </div>
         <div style={{ padding: 40, paddingTop: 48, borderRadius: 24, background: cardBg, backdropFilter: dark ? 'blur(24px)' : 'none', border: `1px solid ${cardBorder}`, boxShadow: dark ? '0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 32px rgba(0,0,0,0.08)', transition: 'all .3s' }}>
-
-          {/* Logo */}
-          <button type="button" className="logo-btn" onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, cursor: 'pointer' }}>
-            <LogoMark size={36} />
-            <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
-              Coffee<span style={{ color: '#EAB308' }}>Peek</span>
-            </span>
-          </button>
 
           {passedEmail && <Stepper dark={dark} />}
 

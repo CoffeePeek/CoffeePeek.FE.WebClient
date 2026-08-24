@@ -7,6 +7,7 @@ import { login } from '../api/auth';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
+import LogoMark from '../components/LogoMark';
 
 const schema = z.object({
   email: z.string().email('Введите корректный email'),
@@ -54,7 +55,7 @@ export const LoginPage: React.FC = () => {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <img src="/logo.png" alt="CoffeePeek" className="w-12 h-12 rounded-xl mb-3 object-cover" />
+          <LogoMark size={48} variant="dark" className="rounded-xl mb-3" />
           <h1 className="text-white font-display font-bold text-xl tracking-tight">CoffeePeek</h1>
           <p className="text-stone-400 text-sm font-body mt-1">Панель администратора</p>
         </div>
