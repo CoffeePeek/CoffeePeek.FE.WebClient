@@ -8,7 +8,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 import {
   Envelope, Lock, WarningCircle, Eye, EyeSlash,
-  CheckCircle, Clock, ArrowClockwise, ArrowLeft, Check,
+  CheckCircle, Clock, ArrowClockwise, ArrowLeft, Check, X,
 } from '@/components/Icon';
 import { useTheme } from '../contexts/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
@@ -194,6 +194,90 @@ const LoginPage: React.FC = () => {
 
       <ThemeToggle style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }} />
 
+      {emailNotConfirmed && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            top: 64,
+            right: 16,
+            left: 16,
+            zIndex: 40,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              pointerEvents: 'auto',
+              width: 'min(100%, 380px)',
+              padding: '14px 16px',
+              borderRadius: 16,
+              background: dark ? '#2D241F' : '#FFFCF2',
+              border: `1px solid ${dark ? 'rgba(234,179,8,0.35)' : 'rgba(212,168,75,0.45)'}`,
+              boxShadow: dark ? '0 16px 40px -12px rgba(0,0,0,0.55)' : '0 12px 32px -10px rgba(28,25,23,0.16)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <WarningCircle size={20} weight="fill" color="#EAB308" style={{ flexShrink: 0, marginTop: 1 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: gold, lineHeight: 1.4 }}>
+                  Email не подтверждён
+                </p>
+                <p style={{ margin: '4px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: dark ? '#E7E5E4' : '#57534E', lineHeight: 1.5 }}>
+                  {resendState === 'sending'
+                    ? 'Отправляем письмо подтверждения…'
+                    : resendState === 'sent'
+                      ? <>Новое письмо отправлено на <span style={{ fontWeight: 600 }}>{email}</span>. Проверьте почту.</>
+                      : resendState === 'error'
+                        ? <>Не удалось отправить письмо. Попробуйте ещё раз или зайдите в <span style={{ fontWeight: 600 }}>Настройки → Безопасность</span>.</>
+                        : <>Найдите письмо от <span style={{ fontWeight: 600 }}>info@coffeepeek.by</span> и перейдите по ссылке.</>
+                  }
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendState === 'sending' || resendCooldown > 0}
+                  style={{
+                    marginTop: 10,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: `1px solid ${dark ? 'rgba(234,179,8,0.4)' : 'rgba(212,168,75,0.5)'}`,
+                    background: dark ? 'rgba(234,179,8,0.12)' : 'rgba(212,168,75,0.12)',
+                    color: gold,
+                    fontFamily: '"RF Dewi Expanded"',
+                    fontWeight: 600,
+                    fontSize: 12,
+                    cursor: resendState === 'sending' || resendCooldown > 0 ? 'not-allowed' : 'pointer',
+                    opacity: resendState === 'sending' || resendCooldown > 0 ? 0.6 : 1,
+                  }}
+                >
+                  {resendState === 'sending'
+                    ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
+                    : resendCooldown > 0
+                      ? <><Clock size={14} />Повторно через {resendCooldown}с</>
+                      : <><ArrowClockwise size={14} />Отправить письмо повторно</>
+                  }
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEmailNotConfirmed(false)}
+                aria-label="Закрыть уведомление"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: textMuted, flexShrink: 0 }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Card */}
       <div style={{ width: 'min(100%, 460px)', padding: '16px', position: 'relative', zIndex: 2, boxSizing: 'border-box' }}>
         <button
@@ -273,34 +357,6 @@ const LoginPage: React.FC = () => {
             <div style={{ textAlign: 'right', marginTop: -6 }}>
               <Link to="/forgot-password" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>Забыли пароль?</Link>
             </div>
-
-            {emailNotConfirmed && (
-              <div style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(234,179,8,0.09)', border: '1px solid rgba(234,179,8,0.30)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
-                  <strong>Email не подтверждён.</strong>{' '}
-                  {resendState === 'sending'
-                    ? 'Отправляем письмо подтверждения…'
-                    : resendState === 'sent'
-                      ? <>Новое письмо отправлено на <span style={{ fontWeight: 600 }}>{email}</span>. Проверьте почту.</>
-                      : resendState === 'error'
-                        ? <>Не удалось отправить письмо. Попробуйте ещё раз или зайдите в <span style={{ fontWeight: 600 }}>Настройки → Безопасность</span>.</>
-                        : <>Найдите письмо от <span style={{ fontWeight: 600 }}>info@coffeepeek.by</span> и перейдите по ссылке.</>
-                  }
-                </p>
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={resendState === 'sending' || resendCooldown > 0}
-                  style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12, cursor: resendState === 'sending' || resendCooldown > 0 ? 'not-allowed' : 'pointer', opacity: resendState === 'sending' || resendCooldown > 0 ? 0.6 : 1 }}>
-                  {resendState === 'sending'
-                    ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
-                    : resendCooldown > 0
-                      ? <><Clock size={14} />Повторно через {resendCooldown}с</>
-                      : <><ArrowClockwise size={14} />Отправить письмо повторно</>
-                  }
-                </button>
-              </div>
-            )}
 
             <button type="submit" disabled={isLoading || !password}
               style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'pointer', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>
