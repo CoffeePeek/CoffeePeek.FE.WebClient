@@ -112,7 +112,7 @@ class HttpClient {
       const data = await responseInterceptor<any>(response, fullUrl);
 
       // Нормализуем данные
-      const normalizedData = normalizeResponseData<T>(data.data || data);
+      const normalizedData = normalizeResponseData<T>(data.data ?? data);
 
       const pagination = this.extractPaginationMeta(response, data);
 

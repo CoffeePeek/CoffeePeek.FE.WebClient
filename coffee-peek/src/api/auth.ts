@@ -108,25 +108,32 @@ export interface UpdateAvatarRequest {
 // ==================== API Functions ====================
 
 /**
- * Проверяет, существует ли пользователь с указанным email
- * @returns Promise с данными о существовании пользователя
- * - 200 OK: пользователь существует (data.exists = true)
- * - 404 NotFound: пользователь не существует (data.exists = false)
+ * Проверяет, существует ли пользователь с указанным email.
+ * Бэкенд отвечает 200 и `data: true | false`. Старый контракт 404 = нет пользователя тоже поддерживается.
  */
+function parseEmailExists(data: unknown): boolean {
+  if (typeof data === 'boolean') return data;
+  if (data && typeof data === 'object' && 'exists' in data) {
+    return Boolean((data as CheckExistsData).exists);
+  }
+  return false;
+}
+
 export async function checkEmailExists(email: string): Promise<CheckExistsResponse> {
   try {
-    const response = await httpClient.get<CheckExistsData>(API_ENDPOINTS.USER.EMAIL_EXISTS, {
+    const response = await httpClient.get<boolean | CheckExistsData>(API_ENDPOINTS.USER.EMAIL_EXISTS, {
       params: { email },
       requiresAuth: false,
     });
-    // 200 OK - пользователь существует
     return {
       ...response,
-      data: { exists: true },
+      data: { exists: parseEmailExists(response.data) },
     };
-  } catch (error: any) {
-    // 404 NotFound - пользователь не существует (это нормальная ситуация)
-    if (error.status === 404) {
+  } catch (error: unknown) {
+    const status = typeof error === 'object' && error !== null && 'status' in error
+      ? Number((error as { status?: number }).status)
+      : undefined;
+    if (status === 404) {
       return {
         success: true,
         isSuccess: true,
@@ -134,7 +141,6 @@ export async function checkEmailExists(email: string): Promise<CheckExistsRespon
         data: { exists: false },
       };
     }
-    // Другие ошибки пробрасываем дальше
     throw error;
   }
 }
