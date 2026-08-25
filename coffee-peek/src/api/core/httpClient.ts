@@ -14,6 +14,7 @@ import {
   tryRefreshAccessToken,
   ensureFreshAccessToken,
 } from './interceptors';
+import { emitSessionInvalidated } from '../../realtime/forceLogout';
 
 /**
  * Базовый HTTP клиент
@@ -102,9 +103,14 @@ class HttpClient {
         !isAuthTokenEndpoint(endpoint);
 
       if (canRefresh) {
+        const hadSession = !!TokenManager.getAccessToken() || !!TokenManager.getRefreshToken();
         const refreshed = await tryRefreshAccessToken(this.baseURL);
         if (refreshed) {
           return this.request<T>(endpoint, { ...options, _retry: true });
+        }
+        if (hadSession) {
+          TokenManager.clearTokens();
+          emitSessionInvalidated('session_revoked');
         }
       }
 

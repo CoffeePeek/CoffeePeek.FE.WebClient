@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { getUserRoles, getUserEmail, getUserId, isTokenExpired, isEmailVerified } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
 import { ensureFreshAccessToken } from '../api/core/interceptors';
@@ -36,8 +36,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserContextType['user']>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const updateUserFromToken = (token: string) => {
+  const updateUserFromToken = useCallback((token: string) => {
     if (!token || isTokenExpired(token)) {
+      TokenManager.clearTokens();
       setUser(null);
       return;
     }
@@ -53,23 +54,26 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       roles,
       emailConfirmed,
     });
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     TokenManager.clearTokens();
     setUser(null);
-  };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     const restoreSession = async () => {
       try {
-        await ensureFreshAccessToken(API_BASE_URL);
+        const fresh = await ensureFreshAccessToken(API_BASE_URL);
         if (cancelled) return;
         const token = TokenManager.getAccessToken();
-        if (token) {
+        if (fresh && token) {
           updateUserFromToken(token);
+        } else {
+          TokenManager.clearTokens();
+          setUser(null);
         }
       } finally {
         if (!cancelled) setIsLoading(false);

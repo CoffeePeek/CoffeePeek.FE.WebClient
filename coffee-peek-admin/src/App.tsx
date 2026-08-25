@@ -6,6 +6,7 @@ import { UserProvider } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AppRoutes } from './routes/AppRoutes';
+import SessionRealtime from './components/SessionRealtime';
 
 const App: React.FC = () => (
   <QueryClientProvider client={queryClient}>
@@ -13,6 +14,7 @@ const App: React.FC = () => (
       <UserProvider>
         <ToastProvider>
           <BrowserRouter>
+            <SessionRealtime />
             <AppRoutes />
           </BrowserRouter>
         </ToastProvider>

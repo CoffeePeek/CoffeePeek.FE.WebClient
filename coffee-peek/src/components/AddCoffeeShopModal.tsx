@@ -252,9 +252,10 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                   onChange={(value) => handleInputChange('priceRange', value || undefined)}
                   options={[
                     { value: '', label: 'Выберите диапазон' },
-                    { value: 'Budget', label: 'Бюджетный' },
-                    { value: 'Moderate', label: 'Средний' },
-                    { value: 'Premium', label: 'Премиум' }
+                    { value: 'Cheap', label: 'Бюджетно' },
+                    { value: 'Moderate', label: 'Средне' },
+                    { value: 'Expensive', label: 'Дорого' },
+                    { value: 'Luxury', label: 'Премиум' },
                   ]}
                   icon={<CoffeeBeanSign size={20} />}
                 />

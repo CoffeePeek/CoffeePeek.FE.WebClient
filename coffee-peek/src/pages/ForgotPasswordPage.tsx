@@ -64,7 +64,7 @@ const ForgotPasswordPage: React.FC = () => {
               <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>
                 Проверьте почту
               </h1>
-              <p style={{ margin: '0 0 24px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
+              <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
                 Если аккаунт с паролем существует, мы отправили ссылку для сброса на{' '}
                 <span style={{ fontWeight: 600, color: textPrimary }}>{email}</span>.
               </p>
@@ -80,12 +80,12 @@ const ForgotPasswordPage: React.FC = () => {
               <h1 style={{ margin: '0 0 8px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary, textAlign: 'center' }}>
                 Забыли пароль?
               </h1>
-              <p style={{ margin: '0 0 24px', fontFamily: '"Noto Sans"', fontSize: 14, color: textMuted, textAlign: 'center', lineHeight: 1.55 }}>
+              <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: textMuted, textAlign: 'center', lineHeight: 1.55 }}>
                 Укажите email — пришлём ссылку для сброса, если аккаунт найден.
               </p>
 
               <label style={{ display: 'block', textAlign: 'left', marginBottom: 16 }}>
-                <div style={{ fontFamily: '"Noto Sans"', fontSize: 12, fontWeight: 600, color: textMuted, marginBottom: 6 }}>Email</div>
+                <div style={{ fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 12, fontWeight: 600, color: textMuted, marginBottom: 6 }}>Email</div>
                 <input
                   type="email"
                   value={email}
@@ -96,13 +96,13 @@ const ForgotPasswordPage: React.FC = () => {
                     width: '100%', height: 50, borderRadius: 12, padding: '0 16px',
                     border: `1px solid ${error ? '#EF4444' : cardBorder}`,
                     background: 'rgba(255,255,255,0.03)', color: textPrimary,
-                    fontFamily: '"Noto Sans"', fontSize: 15, outline: 'none', boxSizing: 'border-box',
+                    fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 15, outline: 'none', boxSizing: 'border-box',
                   }}
                 />
               </label>
 
               {error && (
-                <p style={{ margin: '0 0 12px', fontFamily: '"Noto Sans"', fontSize: 13, color: '#EF4444' }}>{error}</p>
+                <p style={{ margin: '0 0 12px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: '#EF4444' }}>{error}</p>
               )}
 
               <button
@@ -118,7 +118,7 @@ const ForgotPasswordPage: React.FC = () => {
                 {isLoading ? 'Отправляем…' : 'Отправить ссылку'}
               </button>
 
-              <p style={{ margin: '20px 0 0', textAlign: 'center', fontFamily: '"Noto Sans"', fontSize: 13, color: textMuted }}>
+              <p style={{ margin: '20px 0 0', textAlign: 'center', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: textMuted }}>
                 <Link to="/login" style={{ color: gold, fontWeight: 600, textDecoration: 'none' }}>Назад ко входу</Link>
               </p>
             </form>

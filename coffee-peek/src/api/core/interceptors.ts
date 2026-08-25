@@ -76,6 +76,7 @@ async function putRefresh(baseURL: string, refreshToken: string, withAccess: boo
   return fetch(`${baseURL}${TOKEN_PATH}`, {
     method: 'PUT',
     headers,
+    credentials: 'include',
     body: JSON.stringify({ refreshToken }),
   });
 }

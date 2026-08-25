@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { getUserRoles, getUserEmail, getUserId, isTokenExpired } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
 import { ensureFreshAccessToken } from '../api/core/interceptors';
@@ -32,8 +32,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const updateUserFromToken = (token: string) => {
+  const updateUserFromToken = useCallback((token: string) => {
     if (!token || isTokenExpired(token)) {
+      TokenManager.clearTokens();
       setUser(null);
       return;
     }
@@ -43,22 +44,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email: getUserEmail(token) ?? '',
       roles: getUserRoles(token),
     });
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     TokenManager.clearTokens();
     setUser(null);
-  };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     const restoreSession = async () => {
       try {
-        await ensureFreshAccessToken(API_BASE_URL);
+        const fresh = await ensureFreshAccessToken(API_BASE_URL);
         if (cancelled) return;
         const token = TokenManager.getAccessToken();
-        if (token && !isTokenExpired(token)) {
+        if (fresh && token && !isTokenExpired(token)) {
           updateUserFromToken(token);
         } else {
           TokenManager.clearTokens();

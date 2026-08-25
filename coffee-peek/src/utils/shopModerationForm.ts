@@ -1,6 +1,7 @@
 import { SendCoffeeShopToModerationRequest } from '../api/moderation';
 import { getDefaultSchedules } from './shopUtils';
 import { ShopFormField } from './shopModerationFormErrors';
+import { PRICE_RANGE_TO_API } from './priceRange';
 
 export type ShopFormData = Omit<SendCoffeeShopToModerationRequest, 'priceRange'> & {
   priceRange?: string;
@@ -26,12 +27,6 @@ export const INITIAL_SHOP_FORM_DATA: ShopFormData = {
   shopPhotos: [],
 };
 
-const PRICE_RANGE_MAP: Record<string, number> = {
-  Budget: 0,
-  Moderate: 1,
-  Premium: 2,
-};
-
 export function buildShopSubmissionPayload(formData: ShopFormData): SendCoffeeShopToModerationRequest {
   const hasContact = formData.shopContact && (
     formData.shopContact.phone ||
@@ -42,7 +37,7 @@ export function buildShopSubmissionPayload(formData: ShopFormData): SendCoffeeSh
 
   return {
     ...formData,
-    priceRange: formData.priceRange ? PRICE_RANGE_MAP[formData.priceRange] : undefined,
+    priceRange: formData.priceRange ? PRICE_RANGE_TO_API[formData.priceRange] : undefined,
     schedules: formData.schedules?.length ? formData.schedules : undefined,
     equipmentIds: formData.equipmentIds?.length ? formData.equipmentIds : undefined,
     coffeeBeanIds: formData.coffeeBeanIds?.length ? formData.coffeeBeanIds : undefined,

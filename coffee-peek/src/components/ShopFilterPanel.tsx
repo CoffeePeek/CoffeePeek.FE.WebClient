@@ -7,9 +7,18 @@ import {
   MapPin, CaretDown, Check,
 } from '@/components/Icon';
 import { BeanPriceMarks } from './icons';
-import { PRICE_FILTER_OPTIONS } from '../utils/priceRange';
+import { PRICE_FILTER_OPTIONS, toPriceRangeLevel } from '../utils/priceRange';
 
 const LIST_PREVIEW = 6;
+
+function remainingLabel(count: number): string {
+  const n = Math.abs(count) % 100;
+  const n1 = n % 10;
+  if (n > 10 && n < 20) return `Ещё ${count} вариантов`;
+  if (n1 === 1) return `Ещё ${count} вариант`;
+  if (n1 >= 2 && n1 <= 4) return `Ещё ${count} варианта`;
+  return `Ещё ${count} вариантов`;
+}
 
 const CloseIcon: React.FC<{ color: string; size?: number }> = ({ color, size = 16 }) => (
   <svg
@@ -216,9 +225,78 @@ const ExpandableOptions: React.FC<{
             fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, color: COLORS.primary,
           }}
         >
-          {expanded ? 'Свернуть' : `Все ${items.length} вариантов`}
+          {expanded ? 'Свернуть' : remainingLabel(items.length - LIST_PREVIEW)}
         </button>
       )}
+    </div>
+  );
+};
+
+const PRICE_SLIDER_STOPS = [
+  { value: undefined as string | undefined, label: 'Любая' },
+  ...PRICE_OPTIONS.map(({ value, label }) => ({ value, label })),
+] as const;
+
+const PriceSlider: React.FC<{
+  value?: string;
+  onChange: (value?: string) => void;
+  gold: string;
+  muted: string;
+  textPrimary: string;
+  track: string;
+}> = ({ value, onChange, gold, muted, textPrimary, track }) => {
+  const index = Math.max(0, PRICE_SLIDER_STOPS.findIndex((s) => s.value === toPriceRangeLevel(value)));
+  const fill = `${(index / (PRICE_SLIDER_STOPS.length - 1)) * 100}%`;
+  const current = PRICE_SLIDER_STOPS[index];
+
+  return (
+    <div style={{ padding: '4px 2px 8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 2 }}>
+        <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, color: textPrimary }}>
+          {current.label}
+        </span>
+        {index > 0 && (
+          <BeanPriceMarks count={index} size={12} color={gold} />
+        )}
+      </div>
+      <input
+        type="range"
+        className="shop-price-slider"
+        min={0}
+        max={PRICE_SLIDER_STOPS.length - 1}
+        step={1}
+        value={index}
+        aria-label="Цена"
+        onChange={(e) => onChange(PRICE_SLIDER_STOPS[Number(e.target.value)]?.value)}
+        style={{
+          ['--slider-gold' as string]: gold,
+          ['--slider-track' as string]: track,
+          ['--slider-fill' as string]: fill,
+        } as React.CSSProperties}
+      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
+        {PRICE_SLIDER_STOPS.map((stop, i) => (
+          <button
+            key={stop.label}
+            type="button"
+            onClick={() => onChange(stop.value)}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              fontFamily: '"RF Dewi Expanded"',
+              fontSize: 10,
+              fontWeight: i === index ? 700 : 500,
+              color: i === index ? gold : muted,
+              textAlign: i === 0 ? 'left' : i === PRICE_SLIDER_STOPS.length - 1 ? 'right' : 'center',
+              flex: 1,
+            }}
+          >
+            {i === 0 ? 'Любая' : '•'.repeat(i)}
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
@@ -325,12 +403,17 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
       <div style={{ width: 1, height: 20, background: borderColor, flexShrink: 0 }} />
 
       {FIXED_QUICK_FILTERS.map(({ id, label, Icon }) => {
-        const active = activeQuick.includes(id);
+        const active = id === 'all'
+          ? activeQuick.includes('all') && !filters.coffeeFocus
+          : activeQuick.includes(id);
         return (
           <button
             key={id}
             type="button"
-            onClick={() => onQuickChange(id)}
+            onClick={() => {
+              onQuickChange(id);
+              if (id === 'all' && filters.coffeeFocus) patch({ coffeeFocus: undefined });
+            }}
             style={quickChipStyle(active)}
           >
             {id === 'all' ? (
@@ -465,23 +548,15 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
         </FilterAccordion>
       )}
 
-      <FilterAccordion title="Цена" count={filters.priceRange ? 1 : 0} defaultOpen={!!filters.priceRange} {...accordionProps}>
-        {PRICE_OPTIONS.map(({ value, label, tiers }) => (
-          <OptionRow
-            key={value}
-            label={
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <BeanPriceMarks count={tiers} size={12} color={filters.priceRange === value ? gold : COLORS.primary} />
-                {label}
-              </span>
-            }
-            checked={filters.priceRange === value}
-            onClick={() => patch({ priceRange: filters.priceRange === value ? undefined : value })}
-            gold={gold}
-            borderColor={borderColor}
-            textPrimary={textPrimary}
-          />
-        ))}
+      <FilterAccordion title="Цена" count={filters.priceRange ? 1 : 0} defaultOpen {...accordionProps}>
+        <PriceSlider
+          value={filters.priceRange}
+          onChange={(priceRange) => patch({ priceRange })}
+          gold={gold}
+          muted={muted}
+          textPrimary={textPrimary}
+          track={dark ? '#3D2F28' : '#E7E5E4'}
+        />
       </FilterAccordion>
 
       {equipments.length > 0 && (

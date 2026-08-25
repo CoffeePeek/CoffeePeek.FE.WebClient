@@ -11,7 +11,7 @@ import { getErrorMessage } from '../utils/errorHandler';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+  if (Number.isNaN(d.getTime()) || d.getFullYear() < 1990) return 'Дата не указана';
   return d.toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'long',
@@ -70,7 +70,7 @@ const CheckInsPage: React.FC = () => {
           </h1>
           {totalItems > 0 && (
             <span style={{
-              fontFamily: '"Noto Sans"', fontSize: 13, color: colors.textSecondary,
+              fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: colors.textSecondary,
             }}>
               {totalItems}
             </span>
@@ -88,7 +88,7 @@ const CheckInsPage: React.FC = () => {
             padding: 24, borderRadius: 16, border: `1px solid ${colors.border}`,
             background: colors.surface, textAlign: 'center',
           }}>
-            <p style={{ margin: '0 0 16px', fontFamily: '"Noto Sans"', fontSize: 14, color: '#EF4444' }}>
+            <p style={{ margin: '0 0 16px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: '#EF4444' }}>
               {getErrorMessage(error)}
             </p>
             <button
@@ -96,7 +96,7 @@ const CheckInsPage: React.FC = () => {
               onClick={() => refetch()}
               style={{
                 padding: '10px 18px', borderRadius: 12, border: 'none', background: gold,
-                color: '#1A1412', fontFamily: '"Noto Sans"', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                color: '#1A1412', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
               }}
             >
               Повторить
@@ -111,12 +111,12 @@ const CheckInsPage: React.FC = () => {
               <Mascot pose="happy" size={128} />
             </div>
             <h2 style={{
-              margin: '0 0 8px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700,
+              margin: '0 0 8px', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700,
               fontSize: 18, color: colors.textPrimary,
             }}>
               Пока нет посещений
             </h2>
-            <p style={{ margin: '0 0 20px', fontFamily: '"Noto Sans"', fontSize: 14, color: colors.textSecondary }}>
+            <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: colors.textSecondary }}>
               Отметьте визит на странице кофейни — он появится здесь.
             </p>
             <button
@@ -124,7 +124,7 @@ const CheckInsPage: React.FC = () => {
               onClick={() => navigate('/shops')}
               style={{
                 padding: '10px 20px', borderRadius: 12, border: 'none', background: gold,
-                color: '#1A1412', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                color: '#1A1412', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
               }}
             >
               Открыть каталог
@@ -151,13 +151,13 @@ const CheckInsPage: React.FC = () => {
                       }}
                     >
                       <p style={{
-                        margin: 0, fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700,
+                        margin: 0, fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700,
                         fontSize: 16, color: colors.textPrimary,
                       }}>
                         {item.shopName || 'Кофейня'}
                       </p>
                       <p style={{
-                        margin: '6px 0 0', fontFamily: '"Noto Sans"', fontSize: 13, color: colors.textSecondary,
+                        margin: '6px 0 0', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: colors.textSecondary,
                       }}>
                         {formatDate(item.createdAt)}
                       </p>
@@ -173,7 +173,7 @@ const CheckInsPage: React.FC = () => {
                             padding: '5px 10px', borderRadius: 8,
                             border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`,
                             background: 'transparent', color: gold,
-                            fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                            fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 12, cursor: 'pointer',
                           }}
                         >
                           <AppIcon name="rate_review" size={14} color="currentColor" />
@@ -186,7 +186,7 @@ const CheckInsPage: React.FC = () => {
                   {item.note ? (
                     <p style={{
                       margin: '12px 0 0', paddingTop: 12, borderTop: `1px solid ${colors.border}`,
-                      fontFamily: '"Noto Sans"', fontSize: 14, color: colors.textPrimary, lineHeight: 1.5,
+                      fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: colors.textPrimary, lineHeight: 1.5,
                     }}>
                       {item.note}
                     </p>
@@ -207,13 +207,13 @@ const CheckInsPage: React.FC = () => {
                       border: `1px solid ${colors.border}`,
                       background: page <= 1 ? colors.border : colors.surface,
                       color: page <= 1 ? `${colors.textSecondary}80` : colors.textPrimary,
-                      fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14,
+                      fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 14,
                       cursor: page <= 1 ? 'not-allowed' : 'pointer',
                     }}
                   >
                     ← Назад
                   </button>
-                  <span style={{ fontFamily: '"Noto Sans"', fontSize: 14, color: colors.textSecondary }}>
+                  <span style={{ fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: colors.textSecondary }}>
                     Страница <span style={{ fontWeight: 700, color: gold }}>{page}</span> из {totalPages}
                   </span>
                   <button
@@ -225,14 +225,14 @@ const CheckInsPage: React.FC = () => {
                       border: `1px solid ${colors.border}`,
                       background: page >= totalPages ? colors.border : colors.surface,
                       color: page >= totalPages ? `${colors.textSecondary}80` : colors.textPrimary,
-                      fontFamily: '"Noto Sans"', fontWeight: 600, fontSize: 14,
+                      fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 14,
                       cursor: page >= totalPages ? 'not-allowed' : 'pointer',
                     }}
                   >
                     Вперёд →
                   </button>
                 </div>
-                <p style={{ margin: 0, fontFamily: '"Noto Sans"', fontSize: 13, color: colors.textSecondary }}>
+                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: colors.textSecondary }}>
                   Показано {items.length} из {totalItems}
                 </p>
               </div>

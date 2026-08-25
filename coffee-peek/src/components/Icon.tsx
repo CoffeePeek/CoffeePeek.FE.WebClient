@@ -182,6 +182,6 @@ export const Icons = {
   Info,
 };
 
-export function PriceRangeLabel({ level }: { level: 1 | 2 | 3 }) {
+export function PriceRangeLabel({ level }: { level: 1 | 2 | 3 | 4 }) {
   return <BeanPriceMarks count={level} size={14} />;
 }

@@ -13,6 +13,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 import Mascot from '../components/Mascot';
+import { forceLogoutMessage } from '../realtime/forceLogout';
 
 interface AuthFieldProps {
   icon?: React.ReactNode;
@@ -94,6 +95,8 @@ const LoginPage: React.FC = () => {
   const { updateUserFromToken } = useUser();
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/shops';
   const passedEmail = (location.state as { email?: string } | null)?.email || '';
+  const sessionReason = new URLSearchParams(location.search).get('reason');
+  const sessionMessage = sessionReason ? forceLogoutMessage(sessionReason) : null;
 
   const [email, setEmail] = useState(passedEmail);
   const [password, setPassword] = useState('');
@@ -312,6 +315,25 @@ const LoginPage: React.FC = () => {
             <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
               Войдите в свой аккаунт CoffeePeek.
             </p>
+          )}
+
+          {sessionMessage && (
+            <div
+              role="status"
+              style={{
+                marginBottom: 16,
+                padding: '12px 14px',
+                borderRadius: 12,
+                background: 'rgba(234,179,8,0.09)',
+                border: '1px solid rgba(234,179,8,0.30)',
+                fontFamily: '"RF Dewi Expanded", sans-serif',
+                fontSize: 13,
+                color: gold,
+                lineHeight: 1.5,
+              }}
+            >
+              {sessionMessage}
+            </div>
           )}
 
           <div style={{ marginTop: passedEmail ? 20 : 0, marginBottom: 14 }}>

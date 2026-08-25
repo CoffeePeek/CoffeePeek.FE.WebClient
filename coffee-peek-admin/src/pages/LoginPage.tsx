@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
 import LogoMark from '../components/LogoMark';
+import { forceLogoutMessage } from '../realtime/forceLogout';
 
 const schema = z.object({
   email: z.string().email('Введите корректный email'),
@@ -28,9 +29,12 @@ const EyeIcon = ({ open }: { open: boolean }) => (
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { updateUserFromToken } = useUser();
   const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const sessionMessage = forceLogoutMessage(searchParams.get('reason') || undefined);
+  const showSessionNotice = Boolean(searchParams.get('reason'));
 
   const {
     register,
@@ -63,6 +67,12 @@ export const LoginPage: React.FC = () => {
         {/* Form */}
         <div className="bg-surface-dark border border-border-dark rounded-2xl p-6">
           <h2 className="text-white font-display font-semibold text-base mb-5">Вход в систему</h2>
+
+          {showSessionNotice && (
+            <p className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5 text-xs text-primary font-body leading-5">
+              {sessionMessage}
+            </p>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>

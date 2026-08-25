@@ -62,8 +62,9 @@ const UserSessionsModal: React.FC<{
   const qc = useQueryClient();
   const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
+  const [confirmSessionId, setConfirmSessionId] = useState<string | null>(null);
 
-  const { data: sessions, isLoading } = useQuery({
+  const { data: sessions, isLoading, isError, error } = useQuery({
     queryKey: ['admin', 'users', user?.id, 'sessions'],
     queryFn: () => getUserSessions(user!.id).then((r) => r.data ?? []),
     enabled: !!user,
@@ -76,7 +77,10 @@ const UserSessionsModal: React.FC<{
       setRevokingSessionId(null);
       qc.invalidateQueries({ queryKey: ['admin', 'users', user?.id, 'sessions'] });
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err: any) => {
+      setRevokingSessionId(null);
+      showToast(err?.message ?? 'Ошибка', 'error');
+    },
   });
 
   const revokeAllMutation = useMutation({
@@ -130,6 +134,10 @@ const UserSessionsModal: React.FC<{
                 <div key={i} className="h-16 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
               ))}
             </div>
+          ) : isError ? (
+            <p className="text-sm text-red-400 font-body text-center py-8">
+              {(error as { message?: string })?.message ?? 'Не удалось загрузить сессии'}
+            </p>
           ) : !list.length ? (
             <p className="text-sm text-text-muted dark:text-stone-400 font-body text-center py-8">
               Сессий нет
@@ -153,8 +161,13 @@ const UserSessionsModal: React.FC<{
                         Создана: {formatSessionDate(session.createdAtUtc)}
                       </p>
                       <p className="text-xs text-text-muted dark:text-stone-500 font-body">
-                        Истекает: {formatSessionDate(session.expiryDate)}
+                        Истекает: {session.expiryDate ? formatSessionDate(session.expiryDate) : '—'}
                       </p>
+                      {session.lastSeenAtUtc && (
+                        <p className="text-xs text-text-muted dark:text-stone-500 font-body">
+                          Активность: {formatSessionDate(session.lastSeenAtUtc)}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       <Badge variant={session.isRevoked ? 'rejected' : 'approved'}>
@@ -166,10 +179,7 @@ const UserSessionsModal: React.FC<{
                           size="sm"
                           className="text-red-400 hover:text-red-500"
                           loading={revokingSessionId === session.id && revokeOneMutation.isPending}
-                          onClick={() => {
-                            setRevokingSessionId(session.id);
-                            revokeOneMutation.mutate(session.id);
-                          }}
+                          onClick={() => setConfirmSessionId(session.id)}
                         >
                           Отозвать
                         </Button>
@@ -186,13 +196,28 @@ const UserSessionsModal: React.FC<{
       <ConfirmModal
         isOpen={confirmRevokeAll}
         title="Отозвать все сессии?"
-        message="Пользователь будет разлогинен на всех устройствах."
+        message="Пользователь будет разлогинен на всех устройствах сразу."
         confirmLabel="Отозвать все"
         variant="danger"
         onConfirm={async () => {
           await revokeAllMutation.mutateAsync();
         }}
         onCancel={() => setConfirmRevokeAll(false)}
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmSessionId}
+        title="Отозвать сессию?"
+        message="Пользователь будет разлогинен на этом устройстве сразу, если оно подключено к realtime."
+        confirmLabel="Отозвать"
+        variant="danger"
+        onConfirm={async () => {
+          if (!confirmSessionId) return;
+          setRevokingSessionId(confirmSessionId);
+          await revokeOneMutation.mutateAsync(confirmSessionId);
+          setConfirmSessionId(null);
+        }}
+        onCancel={() => setConfirmSessionId(null)}
       />
     </>
   );
@@ -275,6 +300,7 @@ export const UsersPage: React.FC = () => {
   const [localSearch, setLocalSearch] = useState(search);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [sessionsUser, setSessionsUser] = useState<AdminUser | null>(null);
+  const [kickingUser, setKickingUser] = useState<AdminUser | null>(null);
   const [blockingUser, setBlockingUser] = useState<AdminUser | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
@@ -310,6 +336,19 @@ export const UsersPage: React.FC = () => {
       showToast(blocked ? 'Пользователь заблокирован' : 'Пользователь разблокирован', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'users'] });
       setBlockingUser(null);
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+  });
+
+  const revokeAllMutation = useMutation({
+    mutationFn: (id: string) => revokeAllUserSessions(id),
+    onSuccess: () => {
+      showToast('Все сессии отозваны. Пользователь будет разлогинен.', 'success');
+      qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      setKickingUser(null);
+      if (sessionsUser) {
+        qc.invalidateQueries({ queryKey: ['admin', 'users', sessionsUser.id, 'sessions'] });
+      }
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
   });
@@ -455,7 +494,15 @@ export const UsersPage: React.FC = () => {
                         {new Date(user.createdAtUtc).toLocaleDateString('ru')}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="action-buttons min-w-[160px]">
+                        <div className="action-buttons min-w-[220px]">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-amber-500"
+                            onClick={() => setKickingUser(user)}
+                          >
+                            Оборвать
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -517,6 +564,18 @@ export const UsersPage: React.FC = () => {
       <UserSessionsModal
         user={sessionsUser}
         onClose={() => setSessionsUser(null)}
+      />
+
+      <ConfirmModal
+        isOpen={!!kickingUser}
+        title="Оборвать все сессии?"
+        message={`${kickingUser?.email ?? 'Пользователь'} будет разлогинен на всех устройствах сразу.`}
+        confirmLabel="Оборвать"
+        variant="danger"
+        onConfirm={async () => {
+          if (kickingUser) await revokeAllMutation.mutateAsync(kickingUser.id);
+        }}
+        onCancel={() => setKickingUser(null)}
       />
 
       <ConfirmModal

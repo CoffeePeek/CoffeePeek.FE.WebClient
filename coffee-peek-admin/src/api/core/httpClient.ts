@@ -11,6 +11,7 @@ import {
   pickAuthTokens,
 } from './interceptors';
 import { isTokenExpired } from '../../utils/jwt';
+import { emitSessionInvalidated } from '../../realtime/forceLogout';
 
 class HttpClient {
   private baseURL: string;
@@ -32,6 +33,10 @@ class HttpClient {
       const fresh = await ensureFreshAccessToken(this.baseURL);
       const access = TokenManager.getAccessToken();
       if (!fresh && (!access || isTokenExpired(access))) {
+        if (access || TokenManager.getRefreshToken()) {
+          TokenManager.clearTokens();
+          emitSessionInvalidated('session_revoked');
+        }
         throw { status: 401, message: 'Не авторизован' };
       }
     }
@@ -52,9 +57,14 @@ class HttpClient {
         !isAuthTokenEndpoint(endpoint);
 
       if (canRefresh) {
+        const hadSession = !!TokenManager.getAccessToken() || !!TokenManager.getRefreshToken();
         const refreshed = await tryRefreshAccessToken(this.baseURL);
         if (refreshed) {
           return this.request<T>(endpoint, { ...options, _retry: true });
+        }
+        if (hadSession) {
+          TokenManager.clearTokens();
+          emitSessionInvalidated('session_revoked');
         }
       }
 

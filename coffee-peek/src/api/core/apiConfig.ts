@@ -76,6 +76,10 @@ export const API_ENDPOINTS = {
   PUBLIC: {
     STATS: "/api/public/stats",
   },
+
+  REALTIME: {
+    SESSION: "/realtime/session",
+  },
 } as const;
 
 export function buildUrlWithParams(

@@ -301,6 +301,7 @@ export interface UserSession {
   expiryDate: string;
   isRevoked: boolean;
   createdAtUtc: string;
+  lastSeenAtUtc?: string;
 }
 
 export interface PublishedShopPhoto {
@@ -944,15 +945,56 @@ export async function assignPublishedShopOwner(
 
 function unwrapAdminList<T>(data: unknown, key: string): T[] {
   if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === 'object' && key in (data as object)) {
-    const nested = (data as Record<string, unknown>)[key];
+  if (!data || typeof data !== 'object') return [];
+
+  const record = data as Record<string, unknown>;
+  const byLower = new Map(Object.entries(record).map(([k, v]) => [k.toLowerCase(), v]));
+  const candidates = [key, 'items', 'sessions', 'usersessions', 'refreshsessions', 'tokens'];
+
+  for (const candidate of candidates) {
+    const nested = byLower.get(candidate.toLowerCase());
     if (Array.isArray(nested)) return nested as T[];
   }
-  if (data && typeof data === 'object' && 'items' in (data as object)) {
-    const nested = (data as Record<string, unknown>).items;
-    if (Array.isArray(nested)) return nested as T[];
-  }
+
   return [];
+}
+
+function pickSessionString(row: Record<string, unknown>, ...keys: string[]): string | undefined {
+  const byLower = new Map(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v]));
+  for (const key of keys) {
+    const value = byLower.get(key.toLowerCase());
+    if (typeof value === 'string' && value) return value;
+  }
+  return undefined;
+}
+
+function pickSessionBool(row: Record<string, unknown>, ...keys: string[]): boolean {
+  const byLower = new Map(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v]));
+  for (const key of keys) {
+    const value = byLower.get(key.toLowerCase());
+    if (typeof value === 'boolean') return value;
+    if (value === 1 || value === 'true' || value === 'True') return true;
+  }
+  return false;
+}
+
+export function mapUserSession(raw: unknown): UserSession | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const row = raw as Record<string, unknown>;
+  const id = pickSessionString(row, 'id', 'sessionId', 'refreshTokenId');
+  if (!id) return null;
+
+  return {
+    id,
+    deviceName: pickSessionString(row, 'deviceName', 'device', 'userAgent', 'clientName'),
+    ipAddress: pickSessionString(row, 'ipAddress', 'ip', 'remoteIp'),
+    expiryDate:
+      pickSessionString(row, 'expiryDate', 'expiresAtUtc', 'expiryDateUtc', 'expiresAt') ?? '',
+    isRevoked: pickSessionBool(row, 'isRevoked', 'revoked'),
+    createdAtUtc:
+      pickSessionString(row, 'createdAtUtc', 'createdAt', 'issuedAtUtc') ?? '',
+    lastSeenAtUtc: pickSessionString(row, 'lastSeenAtUtc', 'lastUsedAtUtc', 'updatedAtUtc'),
+  };
 }
 
 export async function getAdminShopTags(): Promise<ApiResponse<AdminShopTag[]>> {
@@ -995,7 +1037,9 @@ export async function getUserSessions(userId: string): Promise<ApiResponse<UserS
   const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.USER_SESSIONS(userId));
   return {
     ...response,
-    data: unwrapAdminList<UserSession>(response.data, 'sessions'),
+    data: unwrapAdminList<unknown>(response.data, 'sessions')
+      .map(mapUserSession)
+      .filter((session): session is UserSession => session !== null),
   };
 }
 

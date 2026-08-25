@@ -41,6 +41,10 @@ export const API_ENDPOINTS = {
     CACHE_CLEAR_KEY: (key: string) => `/api/admin/cache/clear/${encodeURIComponent(key)}`,
   },
 
+  REALTIME: {
+    SESSION: '/realtime/session',
+  },
+
   OWNER: {
     SHOPS: '/api/owner/coffee-shops',
     SHOP_BY_ID: (id: string) => `/api/owner/coffee-shops/${id}`,

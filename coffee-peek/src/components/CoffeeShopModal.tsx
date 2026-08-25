@@ -4,6 +4,7 @@ import PhotoCarousel from './PhotoCarousel';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
+import { getPriceRangeTier } from '../utils/priceRange';
 import {
   X, Camera, Star, MapPin, Phone, Envelope, Globe, DeviceMobile,
   Coffee, Gear, Leaf, Flame, Drop, Clock, Circle, PriceRangeLabel,
@@ -51,14 +52,7 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
 
   const photoUrls = extractPhotoUrls();
 
-  const priceLevel = ((): 1 | 2 | 3 | null => {
-    switch (shop.priceRange) {
-      case 'Budget': return 1;
-      case 'Moderate': return 2;
-      case 'Premium': return 3;
-      default: return null;
-    }
-  })();
+  const priceLevel = getPriceRangeTier(shop.priceRange);
 
   const formatDayOfWeek = (day: number) => {
     const days = [
