@@ -101,30 +101,47 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
           </span>
         )}
 
-        {/* Top-right: favorite heart only */}
-        <button
-          type="button"
-          aria-label={fav ? 'Убрать из избранного' : 'В избранное'}
-          onClick={(e) => { e.stopPropagation(); toggleFavorite(shop.id); }}
-          onMouseEnter={() => setFavHovered(true)}
-          onMouseLeave={() => setFavHovered(false)}
+        {/* Top-right: price + favorite */}
+        <div
           style={{
             position: 'absolute', top: 8, right: 8,
-            width: 32, height: 32, padding: 0,
-            background: 'none', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
-            transform: favHovered ? 'scale(1.18)' : 'scale(1)',
-            transition: 'transform .15s ease',
+            display: 'flex', alignItems: 'center', gap: 6,
           }}
         >
-          <AppIcon
-            name="favorite"
-            filled={fav || favHovered}
-            size={22}
-            color={fav ? '#EF4444' : favHovered ? '#F87171' : '#fff'}
-          />
-        </button>
+          {priceTiers ? (
+            <span
+              aria-label={`Ценовой уровень ${priceTiers}`}
+              style={{
+                display: 'inline-flex',
+                filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
+              }}
+            >
+              <BeanPriceMarks count={priceTiers} size={13} color={COLORS.primary} />
+            </span>
+          ) : null}
+          <button
+            type="button"
+            aria-label={fav ? 'Убрать из избранного' : 'В избранное'}
+            onClick={(e) => { e.stopPropagation(); toggleFavorite(shop.id); }}
+            onMouseEnter={() => setFavHovered(true)}
+            onMouseLeave={() => setFavHovered(false)}
+            style={{
+              width: 32, height: 32, padding: 0,
+              background: 'none', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
+              transform: favHovered ? 'scale(1.18)' : 'scale(1)',
+              transition: 'transform .15s ease',
+            }}
+          >
+            <AppIcon
+              name="favorite"
+              filled={fav || favHovered}
+              size={22}
+              color={fav ? '#EF4444' : favHovered ? '#F87171' : '#fff'}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Body */}
@@ -156,11 +173,9 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
           </p>
         ) : null}
 
-        {/* Price + reviews — once */}
-        {(priceTiers || shop.reviewCount) ? (
-          <p style={{ margin: '6px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-            {priceTiers ? <BeanPriceMarks count={priceTiers} size={12} color={COLORS.primary} /> : null}
-            {shop.reviewCount ? <span>{shop.reviewCount} отзывов</span> : null}
+        {shop.reviewCount ? (
+          <p style={{ margin: '6px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: colors.textSecondary }}>
+            {shop.reviewCount} отзывов
           </p>
         ) : null}
 
