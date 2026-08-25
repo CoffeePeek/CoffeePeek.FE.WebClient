@@ -195,24 +195,44 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
   };
 }
 
+function unwrapCandidateList(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  const raw = asRecord(data);
+  const nested = pick(raw, 'items', 'Items', 'candidates', 'Candidates', 'data', 'Data');
+  if (Array.isArray(nested)) return nested;
+  const inner = asRecord(nested);
+  const innerList = pick(inner, 'items', 'Items', 'candidates', 'Candidates');
+  return Array.isArray(innerList) ? innerList : [];
+}
+
 function mapPage(
   data: unknown,
   meta: PaginatedMeta | undefined,
   page: number,
   pageSize: number
 ): ImportCandidatesPage {
-  const raw = asRecord(data);
-  const list = (pick(raw, 'items', 'Items', 'candidates', 'Candidates') as unknown[]) ?? [];
-  const items = Array.isArray(list)
-    ? list.map((item) => mapImportCandidate(asRecord(item)))
-    : [];
+  const raw = asRecord(Array.isArray(data) ? {} : data);
+  const items = unwrapCandidateList(data).map((item) => mapImportCandidate(asRecord(item)));
+  const parsedPage = Number(
+    pick(raw, 'currentPage', 'page', 'CurrentPage', 'Page') ?? meta?.currentPage ?? page
+  );
+  const parsedTotalPages = Number(
+    pick(raw, 'totalPages', 'TotalPages') ?? meta?.totalPages ?? 0
+  );
+  const parsedPageSize = Number(pick(raw, 'pageSize', 'PageSize') ?? meta?.pageSize ?? pageSize);
+  const totalCount = Number(
+    pick(raw, 'totalItems', 'totalCount', 'TotalItems', 'TotalCount') ?? meta?.totalCount ?? items.length
+  );
 
   return {
     items,
-    totalCount: Number(pick(raw, 'totalItems', 'totalCount', 'TotalItems', 'TotalCount') ?? meta?.totalCount ?? items.length),
-    page: Number(pick(raw, 'currentPage', 'page', 'CurrentPage', 'Page') ?? meta?.currentPage ?? page),
-    pageSize: Number(pick(raw, 'pageSize', 'PageSize') ?? meta?.pageSize ?? pageSize),
-    totalPages: Number(pick(raw, 'totalPages', 'TotalPages') ?? meta?.totalPages ?? 1),
+    totalCount,
+    page: parsedPage > 0 ? parsedPage : page,
+    pageSize: parsedPageSize > 0 ? parsedPageSize : pageSize,
+    totalPages:
+      parsedTotalPages > 0
+        ? parsedTotalPages
+        : Math.max(1, Math.ceil(totalCount / (parsedPageSize > 0 ? parsedPageSize : pageSize))),
   };
 }
 

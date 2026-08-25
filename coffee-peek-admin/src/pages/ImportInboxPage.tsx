@@ -108,16 +108,15 @@ export const ImportInboxPage: React.FC = () => {
           page: pageParam,
           pageSize: PAGE_SIZE,
         }).then((r) => r.data),
-      getNextPageParam: (lastPage) =>
-        lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+      getNextPageParam: (lastPage, allPages) => {
+        const loaded = allPages.reduce((n, p) => n + (p.items?.length ?? 0), 0);
+        if (!lastPage.items?.length) return undefined;
+        if (lastPage.pageSize > 0 && lastPage.items.length < lastPage.pageSize) return undefined;
+        if (lastPage.totalCount > 0 && loaded >= lastPage.totalCount) return undefined;
+        if (lastPage.totalPages > 0 && allPages.length >= lastPage.totalPages) return undefined;
+        return allPages.length + 1;
+      },
     });
-
-  const loadMoreRef = useLoadMoreOnScroll(
-    Boolean(hasNextPage) && !isFetchingNextPage,
-    () => {
-      void fetchNextPage();
-    },
-  );
 
   const items = useMemo(() => {
     let list = data?.pages.flatMap((page) => page.items) ?? [];
@@ -130,7 +129,14 @@ export const ImportInboxPage: React.FC = () => {
     if (!sortKey) return list;
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...list].sort((a, b) => compareItems(a, b, sortKey) * dir);
-  }, [data?.items, hasAddress, rejectReason, sortKey, sortDir]);
+  }, [data, hasAddress, rejectReason, sortKey, sortDir]);
+
+  const loadMoreRef = useLoadMoreOnScroll(
+    Boolean(hasNextPage) && !isFetchingNextPage && items.length > 0,
+    () => {
+      void fetchNextPage();
+    },
+  );
 
   const patchParams = (patch: Record<string, string>, resetPage = true) => {
     const next = new URLSearchParams(searchParams);
