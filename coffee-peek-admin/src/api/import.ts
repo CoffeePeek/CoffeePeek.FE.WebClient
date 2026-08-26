@@ -16,6 +16,7 @@ import {
   QUEUE_STATUS_TO_API,
   REJECT_REASON_TO_API,
   fallbackResearchLinks,
+  looksLikeNameSearch,
   parseBucket,
   parseCoffeeFocus,
   parseDuplicateStatus,
@@ -23,6 +24,7 @@ import {
   parseImportSource,
   parseRejectReason,
 } from '../constants/catalogIngest';
+import { parseFacts, parseSuggestedTags } from '../utils/importDossier';
 
 export interface ResearchLinks {
   instagram: string;
@@ -30,6 +32,14 @@ export interface ResearchLinks {
   yandexMaps: string;
   yandexImages: string;
   osmHistory: string;
+  yandexEmbed?: string;
+  googleEmbed?: string;
+  streetView?: string;
+}
+
+export interface SuggestedTag {
+  slug: string;
+  why: string;
 }
 
 export interface ImportCandidate {
@@ -59,11 +69,14 @@ export interface ImportCandidate {
   googleBusinessStatus?: GoogleBusinessStatus;
   googleMapsUri?: string;
   googleFetchedAt?: string;
+  suggestReject?: boolean;
   rejectReason?: RejectReason;
   reviewedByUserId?: string;
   reviewedAtUtc?: string;
   resultingShopId?: string;
   research: ResearchLinks;
+  facts?: string[];
+  suggestedTags?: SuggestedTag[];
 }
 
 export interface ImportCandidatesQuery {
@@ -198,6 +211,10 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
   const website = asString(pick(raw, 'website', 'Website'));
   const externalId = asString(pick(raw, 'externalId', 'ExternalId')) ?? '';
   const googleMapsUri = asString(pick(raw, 'googleMapsUri', 'GoogleMapsUri'));
+  const source =
+    parseImportSource(pick(raw, 'source', 'Source')) ??
+    asString(pick(raw, 'source', 'Source')) ??
+    'Osm';
   const apiLinks = asRecord(pick(raw, 'research', 'researchLinks', 'ResearchLinks'));
   const fallback = fallbackResearchLinks({
     name,
@@ -209,11 +226,17 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
     longitude,
     externalId,
     googleMapsUri,
+    source,
   });
+  const pickLink = (...keys: string[]) => {
+    const value = asString(pick(apiLinks, ...keys));
+    if (!value || looksLikeNameSearch(value)) return undefined;
+    return value;
+  };
 
   return {
     id: String(pick(raw, 'id', 'Id') ?? ''),
-    source: parseImportSource(pick(raw, 'source', 'Source')) ?? asString(pick(raw, 'source', 'Source')) ?? 'Osm',
+    source,
     externalId,
     name,
     brand,
@@ -242,18 +265,24 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
       pick(raw, 'googleBusinessStatus', 'GoogleBusinessStatus')
     ),
     googleMapsUri,
-    googleFetchedAt: asString(pick(raw, 'googleFetchedAt', 'GoogleFetchedAt')),
+    googleFetchedAt: asString(pick(raw, 'googleFetchedAt', 'GoogleFetchedAt', 'googleFetchedAtUtc')),
+    suggestReject: Boolean(pick(raw, 'suggestReject', 'SuggestReject')),
     rejectReason: parseRejectReason(pick(raw, 'rejectReason', 'RejectReason')),
     reviewedByUserId: asString(pick(raw, 'reviewedByUserId', 'ReviewedByUserId')),
     reviewedAtUtc: asString(pick(raw, 'reviewedAtUtc', 'ReviewedAtUtc')),
     resultingShopId: asString(pick(raw, 'resultingShopId', 'ResultingShopId')),
     research: {
-      googleMaps: asString(pick(apiLinks, 'googleMaps', 'GoogleMaps')) ?? fallback.googleMaps,
-      instagram: asString(pick(apiLinks, 'instagram', 'Instagram')) ?? fallback.instagram,
-      yandexMaps: asString(pick(apiLinks, 'yandexMaps', 'YandexMaps')) ?? fallback.yandexMaps,
-      yandexImages: asString(pick(apiLinks, 'yandexImages', 'YandexImages')) ?? fallback.yandexImages,
-      osmHistory: asString(pick(apiLinks, 'osmHistory', 'OsmHistory')) ?? fallback.osmHistory,
+      googleMaps: pickLink('googleMaps', 'GoogleMaps') ?? fallback.googleMaps,
+      instagram: fallback.instagram,
+      yandexMaps: pickLink('yandexMaps', 'YandexMaps') ?? fallback.yandexMaps,
+      yandexImages: pickLink('yandexImages', 'YandexImages') ?? fallback.yandexImages,
+      osmHistory: pickLink('osmHistory', 'OsmHistory') ?? fallback.osmHistory,
+      yandexEmbed: pickLink('yandexEmbed', 'YandexEmbed') ?? fallback.yandexEmbed,
+      googleEmbed: pickLink('googleEmbed', 'GoogleEmbed') ?? fallback.googleEmbed,
+      streetView: pickLink('streetView', 'StreetView') ?? fallback.streetView,
     },
+    facts: parseFacts(pick(raw, 'facts', 'Facts')),
+    suggestedTags: parseSuggestedTags(pick(raw, 'suggestedTags', 'SuggestedTags')),
   };
 }
 
@@ -328,6 +357,31 @@ export async function getImportCandidate(id: string): Promise<ApiResponse<Import
   return { ...response, data: mapImportCandidate(asRecord(response.data)) };
 }
 
+export async function patchImportCandidate(
+  id: string,
+  body: { instagram?: string | null; phone?: string | null; website?: string | null }
+): Promise<ApiResponse<ImportCandidate> & { patchMissing?: boolean }> {
+  try {
+    const response = await httpClient.patch<Record<string, unknown>>(
+      API_ENDPOINTS.ADMIN.IMPORT_CANDIDATE_BY_ID(id),
+      body
+    );
+    return { ...response, data: mapImportCandidate(asRecord(response.data)) };
+  } catch (error) {
+    const status = (error as { status?: number })?.status;
+    if (status === 404 || status === 405 || status === 501) {
+      return {
+        success: false,
+        isSuccess: false,
+        message: 'PATCH контактов ещё нет на бэке',
+        data: undefined as unknown as ImportCandidate,
+        patchMissing: true,
+      };
+    }
+    throw error;
+  }
+}
+
 export async function refreshCandidateGoogle(id: string): Promise<ApiResponse<ImportCandidate>> {
   const response = await httpClient.post<Record<string, unknown>>(
     API_ENDPOINTS.ADMIN.IMPORT_CANDIDATE_GOOGLE(id)
@@ -344,9 +398,12 @@ export async function decideImportCandidate(
     overrideClosed: body.overrideClosed ?? false,
     tagSlugs: body.tagSlugs ?? [],
   };
-  // Backend DecideImportCandidateRequest uses CoffeeShopType? Type (not coffeeFocus).
-  if (body.coffeeFocus) payload.type = COFFEE_FOCUS_TO_API[body.coffeeFocus];
-  if (body.status === 'Rejected' && body.rejectReason) {
+  if (body.coffeeFocus) {
+    const focus = COFFEE_FOCUS_TO_API[body.coffeeFocus];
+    payload.coffeeFocus = focus;
+    payload.type = focus;
+  }
+  if (body.status === 'Rejected' && body.rejectReason && body.rejectReason !== 'duplicate') {
     payload.rejectReason = REJECT_REASON_TO_API[body.rejectReason];
   }
 

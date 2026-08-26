@@ -39,9 +39,16 @@ export const AppLayout: React.FC = () => {
     };
   }, [mobileOpen]);
 
-  const title =
-    Object.entries(ROUTE_TITLES).find(([path]) => pathname.startsWith(path))?.[1] ??
-    'CoffeePeek Admin';
+  const isImportDossier =
+    pathname.startsWith('/import/') &&
+    !pathname.startsWith('/import/stats') &&
+    !pathname.startsWith('/import/duplicates') &&
+    !pathname.startsWith('/import/inbox');
+
+  const title = isImportDossier
+    ? ''
+    : Object.entries(ROUTE_TITLES).find(([path]) => pathname.startsWith(path))?.[1] ??
+      'CoffeePeek Admin';
 
   const handleMenuClick = () => {
     if (isDesktop) {
@@ -74,7 +81,13 @@ export const AppLayout: React.FC = () => {
           onToggleSidebar={handleMenuClick}
           sidebarCollapsed={isDesktop ? collapsed : mobileOpen}
         />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <main
+          className={
+            isImportDossier
+              ? 'flex-1 min-h-0 overflow-hidden p-0 flex flex-col'
+              : 'flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom))]'
+          }
+        >
           <Suspense
             fallback={
               <div className="flex items-center justify-center py-24">

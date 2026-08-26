@@ -8,7 +8,6 @@ import {
   IMPORT_SOURCE_LABELS,
   CoffeeFocus,
   GoogleBusinessStatus,
-  ImportSource,
   parseImportSource,
 } from '../../constants/catalogIngest';
 import { Badge, BadgeVariant } from '../ui/Badge';
@@ -120,6 +119,7 @@ export function googleStatusBadgeVariant(status?: GoogleBusinessStatus): BadgeVa
       return 'pending';
     case 'NotFound':
       return 'info';
+    case 'Unknown':
     default:
       return 'default';
   }
@@ -140,9 +140,11 @@ export const SourceBadge: React.FC<{
 }> = ({ source, importedFromFile }) => {
   const parsed = parseImportSource(source);
   const fromFile = importedFromFile || parsed === 'File';
-  if (!fromFile && parsed !== 'Osm' && !source) return null;
+  if (!fromFile && !parsed && !source) return null;
   const label = fromFile
     ? IMPORT_SOURCE_LABELS.File
-    : IMPORT_SOURCE_LABELS[(parsed ?? 'Osm') as ImportSource] ?? String(source);
-  return <Badge variant={fromFile ? 'info' : 'default'}>{label}</Badge>;
+    : parsed
+      ? IMPORT_SOURCE_LABELS[parsed]
+      : String(source);
+  return <Badge variant={fromFile ? 'info' : parsed === 'CoffeeMap' ? 'info' : 'default'}>{label}</Badge>;
 };

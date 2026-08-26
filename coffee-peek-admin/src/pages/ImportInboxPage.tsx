@@ -342,15 +342,22 @@ export const ImportInboxPage: React.FC = () => {
   return (
     <div className="page-container pb-24">
       <ImportTabs />
-      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="page-header-title">Каталог OSM</h2>
           <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
-            Кандидаты из OpenStreetMap. Выберите несколько — в ленту или не в ленту пачкой. Клик по
-            строке — карточка.
+            Кандидаты импорта. Пачкой — в ленту или не в ленту. Клик по строке — досье с картой точки.
           </p>
         </div>
-        {!isLoading && !isError && (
+        <div className="flex flex-wrap items-center gap-3">
+          {(() => {
+            const firstPending = items.find((item) => item.queueStatus === 'Pending');
+            return firstPending ? (
+              <Link to={`/import/${firstPending.id}`} className="text-sm font-medium text-primary hover:underline">
+                Открыть досье
+              </Link>
+            ) : null;
+          })()}
           <p className="text-sm font-body text-text-main dark:text-white tabular-nums">
             В выборке:{' '}
             <span className="font-semibold">
@@ -371,7 +378,7 @@ export const ImportInboxPage: React.FC = () => {
                   </span>
                 )}
           </p>
-        )}
+        </div>
       </div>
 
       <Card padding="none">
@@ -430,6 +437,7 @@ export const ImportInboxPage: React.FC = () => {
                       <option value="">Все источники</option>
                       <option value="File">Из файла</option>
                       <option value="Osm">OSM</option>
+                      <option value="CoffeeMap">CoffeeMap</option>
                     </select>
                   </div>
                 </th>
