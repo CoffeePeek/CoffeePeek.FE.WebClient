@@ -213,19 +213,19 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
   }
 
   return (
-    <div className={`min-h-screen ${bgClass} pt-24 pb-12 px-6`}>
-      <div className="max-w-4xl mx-auto">
+    <div className={`min-h-screen ${bgClass} pt-4 sm:pt-6 pb-8 sm:pb-12 px-4 sm:px-6 overflow-x-hidden`}>
+      <div className="max-w-4xl mx-auto min-w-0">
         {/* Заголовок */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <button
             onClick={handleBack}
-            className={`mb-6 flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
+            className={`mb-3 sm:mb-6 flex items-center gap-2 ${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
           >
             <AppIcon name="arrow_back" size={24} />
             <span>Назад</span>
           </button>
-          <h1 className={`text-4xl font-bold ${themeClasses.text.primary} mb-2`}>Добавить кофейню</h1>
-          <p className={themeClasses.text.secondary}>Заполните форму для отправки кофейни на модерацию</p>
+          <h1 className={`text-2xl sm:text-4xl font-bold ${themeClasses.text.primary} mb-2 break-words`}>Добавить кофейню</h1>
+          <p className={`${themeClasses.text.secondary} text-sm sm:text-base`}>Заполните форму для отправки кофейни на модерацию</p>
         </div>
 
         {(error || uploadError || menuUploadError) && (
@@ -234,10 +234,10 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-8 min-w-0">
           {/* Основная информация */}
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-8 space-y-4`}>
-            <h3 className={`text-2xl font-semibold ${themeClasses.text.primary} mb-6`}>Основная информация</h3>
+          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
+            <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Основная информация</h3>
             
             <div>
               <label className={`${themeClasses.text.secondary} text-sm mb-2 block font-medium`}>Название *</label>
@@ -314,8 +314,8 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           </div>
 
           {/* Контакты */}
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-8 space-y-4`}>
-            <h3 className={`text-2xl font-semibold ${themeClasses.text.primary} mb-6`}>Контакты</h3>
+          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
+            <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Контакты</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -365,8 +365,8 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           </div>
 
           {/* Фотографии */}
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-8 space-y-4`}>
-            <h3 className={`text-2xl font-semibold ${themeClasses.text.primary} mb-6`}>Фотографии</h3>
+          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
+            <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Фотографии</h3>
             
             <div>
               <input
@@ -387,7 +387,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
             </div>
 
             {selectedFiles.length > 0 && (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {selectedFiles.map((file, index) => (
                   <div key={index} className="relative group">
                     <img
@@ -398,7 +398,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
                     <button
                       type="button"
                       onClick={() => removeFile(index)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     >
                       ×
                     </button>
@@ -408,8 +408,8 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
             )}
           </div>
 
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-8 space-y-4`}>
-            <h3 className={`text-2xl font-semibold ${themeClasses.text.primary} mb-2`}>Фото меню</h3>
+          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
+            <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-2`}>Фото меню</h3>
             <p className={`text-sm ${themeClasses.text.secondary}`}>До 4 фото меню напитков. Не галерея кофейни.</p>
             <div>
               <input
@@ -429,7 +429,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
               </label>
             </div>
             {menuFiles.length > 0 && (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {menuFiles.map((file, index) => (
                   <div key={`${file.name}-${index}`} className="relative group">
                     <img
@@ -440,7 +440,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
                     <button
                       type="button"
                       onClick={() => removeMenuFile(index)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     >
                       ×
                     </button>
@@ -451,8 +451,8 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           </div>
 
           {/* Оборудование и ингредиенты */}
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-8 space-y-4`}>
-            <h3 className={`text-2xl font-semibold ${themeClasses.text.primary} mb-6`}>Оборудование и ингредиенты</h3>
+          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
+            <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Оборудование и ингредиенты</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <MaterialSelect
@@ -590,8 +590,8 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           </div>
 
           {/* Расписание работы */}
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-3xl p-8 space-y-4`}>
-            <h3 className={`text-2xl font-semibold ${themeClasses.text.primary} mb-6`}>Расписание работы</h3>
+          <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
+            <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Расписание работы</h3>
             
             <div className="space-y-3">
               {dayNames.map((dayName, index) => {
@@ -601,13 +601,13 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
                 return (
                   <div
                     key={index}
-                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                    className={`flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 rounded-2xl border-2 transition-all min-w-0 ${
                       isEnabled
                         ? `${themeClasses.bg.input} ${themeClasses.border.default}`
                         : `${themeClasses.bg.tertiary} ${themeClasses.border.default} opacity-60`
                     }`}
                   >
-                    <div className="flex items-center gap-2 min-w-[140px]">
+                    <div className="flex items-center gap-2 shrink-0">
                       <input
                         type="checkbox"
                         checked={isEnabled}
@@ -620,24 +620,24 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
                     </div>
 
                     {isEnabled && schedule && (
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex-1">
+                      <div className="grid grid-cols-2 gap-2 w-full min-w-0 sm:flex sm:items-end sm:gap-3 sm:flex-1">
+                        <div className="min-w-0 sm:flex-1">
                           <label className={`${themeClasses.text.secondary} text-xs mb-1 block`}>Открытие</label>
                           <input
                             type="time"
                             value={schedule.openTime}
                             onChange={(e) => handleScheduleChange(index, 'openTime', e.target.value)}
-                            className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-xl py-2 px-3 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all`}
+                            className={`w-full min-w-0 max-w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-xl py-2 px-2 sm:px-3 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all`}
                           />
                         </div>
-                        <span className={`${themeClasses.text.secondary} mt-6`}>—</span>
-                        <div className="flex-1">
+                        <span className={`${themeClasses.text.secondary} hidden sm:block pb-2`}>—</span>
+                        <div className="min-w-0 sm:flex-1">
                           <label className={`${themeClasses.text.secondary} text-xs mb-1 block`}>Закрытие</label>
                           <input
                             type="time"
                             value={schedule.closeTime}
                             onChange={(e) => handleScheduleChange(index, 'closeTime', e.target.value)}
-                            className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-xl py-2 px-3 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all`}
+                            className={`w-full min-w-0 max-w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-xl py-2 px-2 sm:px-3 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all`}
                           />
                         </div>
                       </div>
@@ -653,18 +653,18 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
               })}
             </div>
 
-            <p className={`${themeClasses.text.secondary} text-xs mt-2 flex items-center gap-1.5`}>
-              <Lightbulb size={14} />
-              По умолчанию: Пн-Пт 8:00-22:00, Сб-Вс 10:00-22:00
+            <p className={`${themeClasses.text.secondary} text-xs mt-2 flex items-start gap-1.5`}>
+              <Lightbulb size={14} className="shrink-0 mt-0.5" />
+              <span>По умолчанию: Пн-Пт 8:00-22:00, Сб-Вс 10:00-22:00</span>
             </p>
           </div>
 
           {/* Кнопки */}
-          <div className={`flex gap-4 pt-4 border-t ${themeClasses.border.default}`}>
+          <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t ${themeClasses.border.default}`}>
             <Button
               type="submit"
               variant="primary"
-              className="flex-1"
+              className="w-full sm:flex-1 whitespace-nowrap"
               isLoading={isSubmitting || uploadingPhotos || uploadingMenu}
               disabled={isSubmitting || uploadingPhotos || uploadingMenu}
             >
@@ -674,7 +674,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
               type="button"
               variant="secondary"
               onClick={handleBack}
-              className="flex-1"
+              className="w-full sm:w-auto sm:min-w-32"
               disabled={isSubmitting || uploadingPhotos || uploadingMenu}
             >
               Отмена
