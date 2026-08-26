@@ -11,6 +11,7 @@ import {
   MINSK_CENTER,
   coffeeMapPinIcon,
   createOsmMap,
+  ensureMapPinMascots,
   getMapBoundsBox,
 } from '../map/osmMap';
 
@@ -94,25 +95,28 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
     };
 
     const addMarkers = (map: LeafletMap, shopsList: MapShop[]) => {
-      clearMarkers();
-      shopsList.forEach((shop) => {
-        if (!shop.latitude || !shop.longitude) return;
-        const selected = previewIdRef.current === shop.id;
-        const marker = L.marker([shop.latitude, shop.longitude], {
-          icon: coffeeMapPinIcon({ focus: shop.type, selected }),
-          title: shop.title,
-          zIndexOffset: selected ? 1000 : 0,
+      void ensureMapPinMascots().then(() => {
+        if (mapInstanceRef.current !== map) return;
+        clearMarkers();
+        shopsList.forEach((shop) => {
+          if (!shop.latitude || !shop.longitude) return;
+          const selected = previewIdRef.current === shop.id;
+          const marker = L.marker([shop.latitude, shop.longitude], {
+            icon: coffeeMapPinIcon({ focus: shop.type, selected }),
+            title: shop.title,
+            zIndexOffset: selected ? 1000 : 0,
+          });
+          marker.on('click', () => {
+            void pickPreview(shop, (list) => addMarkers(map, list));
+          });
+          marker.addTo(map);
+          markersRef.current.push(marker);
         });
-        marker.on('click', () => {
-          void pickPreview(shop, (list) => addMarkers(map, list));
-        });
-        marker.addTo(map);
-        markersRef.current.push(marker);
-      });
 
-      if (shopsList.length > 0 && !previewIdRef.current) {
-        void pickPreview(shopsList[0], (list) => addMarkers(map, list));
-      }
+        if (shopsList.length > 0 && !previewIdRef.current) {
+          void pickPreview(shopsList[0], (list) => addMarkers(map, list));
+        }
+      });
     };
 
     const loadShops = async (map: LeafletMap) => {

@@ -12,6 +12,7 @@ import {
   applyOsmMapTheme,
   coffeeMapPinIcon,
   createOsmMap,
+  ensureMapPinMascots,
   getMapBoundsBox,
 } from '../map/osmMap';
 import { getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
@@ -98,23 +99,26 @@ const MapPage: React.FC = () => {
     const paintMarkers = (shopsList: MapShop[]) => {
       const map = mapInstanceRef.current;
       if (!map) return;
-      clearMarkers();
-      shopsList.forEach((shop) => {
-        if (!shop.latitude || !shop.longitude) return;
-        const selected = selectedIdRef.current === shop.id;
-        const marker = L.marker([shop.latitude, shop.longitude], {
-          icon: coffeeMapPinIcon({ focus: shop.type, selected }),
-          title: shop.title,
-          zIndexOffset: selected ? 1000 : 0,
+      void ensureMapPinMascots().then(() => {
+        if (mapInstanceRef.current !== map) return;
+        clearMarkers();
+        shopsList.forEach((shop) => {
+          if (!shop.latitude || !shop.longitude) return;
+          const selected = selectedIdRef.current === shop.id;
+          const marker = L.marker([shop.latitude, shop.longitude], {
+            icon: coffeeMapPinIcon({ focus: shop.type, selected }),
+            title: shop.title,
+            zIndexOffset: selected ? 1000 : 0,
+          });
+          marker.on('click', () => {
+            selectedIdRef.current = shop.id;
+            setSelectedShop(shop);
+            void loadShopDetails(shop.id);
+            paintMarkers(shopsRef.current);
+          });
+          marker.addTo(map);
+          markersRef.current.push(marker);
         });
-        marker.on('click', () => {
-          selectedIdRef.current = shop.id;
-          setSelectedShop(shop);
-          void loadShopDetails(shop.id);
-          paintMarkers(shopsRef.current);
-        });
-        marker.addTo(map);
-        markersRef.current.push(marker);
       });
     };
     paintMarkersRef.current = paintMarkers;

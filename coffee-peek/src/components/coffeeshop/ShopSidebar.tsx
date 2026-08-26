@@ -8,7 +8,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppIcon } from '../icons';
 import { CaretDown } from '@/components/Icon';
-import { coffeeDetailIcon, createOsmMap } from '../../map/osmMap';
+import { coffeeDetailIcon, createOsmMap, ensureMapPinMascots } from '../../map/osmMap';
 
 interface ShopSidebarProps {
   shop: DetailedCoffeeShop;
@@ -39,8 +39,10 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
 
   useEffect(() => {
     if (!latitude || !longitude || !mapRef.current) return;
+    const container = mapRef.current;
+    let cancelled = false;
 
-    const map = createOsmMap(mapRef.current, {
+    const map = createOsmMap(container, {
       center: [latitude, longitude],
       zoom: 15,
       dark: isDark,
@@ -49,15 +51,18 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
     });
     mapInstanceRef.current = map;
 
-    L.marker([latitude, longitude], {
-      icon: coffeeDetailIcon(shop.type),
-      title: shop.name,
-      interactive: false,
-    }).addTo(map);
-
-    setIsMapLoaded(true);
+    void ensureMapPinMascots().then(() => {
+      if (cancelled || mapInstanceRef.current !== map) return;
+      L.marker([latitude, longitude], {
+        icon: coffeeDetailIcon(shop.type),
+        title: shop.name,
+        interactive: false,
+      }).addTo(map);
+      setIsMapLoaded(true);
+    });
 
     return () => {
+      cancelled = true;
       map.remove();
       mapInstanceRef.current = null;
       setIsMapLoaded(false);
