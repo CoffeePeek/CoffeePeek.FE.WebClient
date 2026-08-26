@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../ui/Button';
+import { BynSign } from '../ui/CoffeeBeanSign';
 import { uploadMenuPhotoFiles } from '../../api/photos';
 import {
   MenuAvailability,
@@ -14,11 +15,55 @@ import {
   suggestedRangeHint,
 } from '../../api/menu';
 
-const AVAIL_OPTIONS: { value: MenuAvailability; label: string }[] = [
-  { value: 'Unknown', label: 'Неизвестно' },
-  { value: 'Present', label: 'Есть' },
-  { value: 'Absent', label: 'Нет в меню' },
+const AVAIL_OPTIONS: { value: MenuAvailability; label: string; title: string }[] = [
+  { value: 'Present', label: 'Есть', title: 'Есть в меню' },
+  { value: 'Unknown', label: '?', title: 'Неизвестно' },
+  { value: 'Absent', label: 'Нет', title: 'Нет в меню' },
 ];
+
+function draftsFromItems(rows: ShopMenuItemDto[]): Record<string, string> {
+  return Object.fromEntries(rows.map((item) => [item.slug, item.price != null ? String(item.price) : '']));
+}
+
+function parsePriceDraft(raw: string): number | null {
+  const normalized = raw.replace(',', '.').trim();
+  if (!normalized) return null;
+  const value = Number(normalized);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function AvailabilityToggle({
+  value,
+  onChange,
+}: {
+  value: MenuAvailability;
+  onChange: (next: MenuAvailability) => void;
+}) {
+  return (
+    <div className="inline-flex shrink-0 rounded-full border border-border-light dark:border-border-dark p-0.5" role="radiogroup">
+      {AVAIL_OPTIONS.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            title={opt.title}
+            onClick={() => onChange(opt.value)}
+            className={`min-w-[2.25rem] px-2.5 py-1 rounded-full text-[12px] font-medium font-body leading-none transition-colors ${
+              active
+                ? 'bg-text-main text-white dark:bg-white dark:text-black'
+                : 'text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white'
+            }`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 interface MenuEditorProps {
   menu: ShopMenuDto | null;
@@ -43,6 +88,9 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
 }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<ShopMenuItemDto[]>(() => cloneItems(menu?.items ?? []));
+  const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>(() =>
+    draftsFromItems(menu?.items ?? [])
+  );
   const [applyRange, setApplyRange] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -50,7 +98,9 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setItems(cloneItems(menu?.items ?? []));
+    const next = cloneItems(menu?.items ?? []);
+    setItems(next);
+    setPriceDrafts(draftsFromItems(next));
     setApplyRange(false);
   }, [menu]);
 
@@ -203,61 +253,56 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
       )}
 
       {items.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-2xl">
           {grouped.map((group) =>
             group.rows.length === 0 ? null : (
               <div key={group.title}>
                 <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-1.5">
                   {group.title}
                 </p>
-                <div className="space-y-1.5">
-                  {group.rows.map((item) => (
-                    <div
-                      key={item.slug}
-                      className="rounded-md border border-border-light dark:border-border-dark px-2 py-2 space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium min-w-0 truncate">{item.nameRu}</p>
-                        <span className="text-[10px] text-text-muted shrink-0">{item.source}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <select
+                <div className="rounded-lg border border-border-light dark:border-border-dark divide-y divide-border-light dark:divide-border-dark">
+                  {group.rows.map((item) => {
+                    const present = item.availability === 'Present';
+                    return (
+                      <div
+                        key={item.slug}
+                        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2"
+                      >
+                        <div className="min-w-[7rem] flex-1">
+                          <p className="text-sm font-medium font-body truncate">{item.nameRu}</p>
+                          {item.source === 'Manual' && (
+                            <p className="text-[10px] text-text-muted leading-none mt-0.5">вручную</p>
+                          )}
+                        </div>
+                        <AvailabilityToggle
                           value={item.availability}
-                          onChange={(e) =>
-                            patchItem(item.slug, { availability: e.target.value as MenuAvailability })
-                          }
-                          className="flex-1 min-w-0 rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-xs py-1.5 px-2"
+                          onChange={(availability) => patchItem(item.slug, { availability })}
+                        />
+                        <label
+                          className={`inline-flex items-center gap-1 h-8 w-[5.75rem] shrink-0 rounded-md border px-2 ${
+                            present
+                              ? 'border-border-light dark:border-border-dark bg-white dark:bg-surface-dark'
+                              : 'border-transparent opacity-0 pointer-events-none'
+                          }`}
                         >
-                          {AVAIL_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                        {item.availability === 'Present' && (
                           <input
-                            type="number"
+                            type="text"
                             inputMode="decimal"
-                            step="0.01"
-                            min="0"
-                            placeholder="Цена"
-                            value={item.price ?? ''}
-                            onChange={(e) =>
-                              patchItem(item.slug, {
-                                price: e.target.value === '' ? null : Number(e.target.value),
-                              })
-                            }
-                            className="w-[5.5rem] rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-xs py-1.5 px-2"
+                            placeholder="0"
+                            aria-label={`Цена ${item.nameRu}`}
+                            value={priceDrafts[item.slug] ?? ''}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              setPriceDrafts((current) => ({ ...current, [item.slug]: raw }));
+                              patchItem(item.slug, { price: parsePriceDraft(raw) });
+                            }}
+                            className="w-full min-w-0 bg-transparent text-sm text-right outline-none font-body tabular-nums text-text-main dark:text-white"
                           />
-                        )}
+                          <BynSign size={11} />
+                        </label>
                       </div>
-                      {item.availability === 'Present' && item.price != null && (
-                        <p className="text-[11px] text-text-muted">
-                          {formatMenuPrice(item.price, item.currency || 'BYN')}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )
