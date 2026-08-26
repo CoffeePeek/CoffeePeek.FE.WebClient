@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import Button from '../components/Button';
+import { Icons } from '../constants';
 import { usePageTitle } from '../hooks/usePageTitle';
 import Mascot from '../components/Mascot';
 
@@ -12,13 +13,42 @@ interface ErrorPageProps {
   onGoHome?: () => void;
 }
 
-const ErrorPage: React.FC<ErrorPageProps> = ({ 
-  errorCode = 404, 
-  title, 
+function getErrorContent(
+  errorCode: number | string,
+  title?: string,
+  message?: string,
+): { title: string; message: string } {
+  switch (errorCode) {
+    case 403:
+      return {
+        title: title || 'Доступ запрещён',
+        message: message || 'У вас нет прав для доступа к этой странице.',
+      };
+    case 404:
+      return {
+        title: title || 'Страница не найдена',
+        message: message || 'К сожалению, запрашиваемая страница не существует. Возможно, она была перемещена или удалена.',
+      };
+    case 500:
+      return {
+        title: title || 'Ошибка сервера',
+        message: message || 'Произошла внутренняя ошибка сервера. Мы уже работаем над её устранением.',
+      };
+    default:
+      return {
+        title: title || 'Произошла ошибка',
+        message: message || 'Что-то пошло не так. Пожалуйста, попробуйте позже.',
+      };
+  }
+}
+
+const ErrorPage: React.FC<ErrorPageProps> = ({
+  errorCode = 404,
+  title,
   message,
-  onGoHome 
+  onGoHome,
 }) => {
-  const errorContent = getErrorContent();
+  const errorContent = getErrorContent(errorCode, title, message);
   usePageTitle(errorContent.title);
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -26,32 +56,6 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
   const textClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
   const textSecondaryClass = theme === 'dark' ? 'text-[#A39E93]' : 'text-gray-600';
   const borderClass = theme === 'dark' ? 'border-[#3D2F28]' : 'border-gray-200';
-
-  // Определяем заголовок и сообщение по коду ошибки
-  const getErrorContent = (): { title: string; message: string } => {
-    switch (errorCode) {
-      case 403:
-        return {
-          title: title || 'Доступ запрещён',
-          message: message || 'У вас нет прав для доступа к этой странице.',
-        };
-      case 404:
-        return {
-          title: title || 'Страница не найдена',
-          message: message || 'К сожалению, запрашиваемая страница не существует. Возможно, она была перемещена или удалена.',
-        };
-      case 500:
-        return {
-          title: title || 'Ошибка сервера',
-          message: message || 'Произошла внутренняя ошибка сервера. Мы уже работаем над её устранением.',
-        };
-      default:
-        return {
-          title: title || 'Произошла ошибка',
-          message: message || 'Что-то пошло не так. Пожалуйста, попробуйте позже.',
-        };
-    }
-  };
 
   const handleGoHome = () => {
     if (onGoHome) {

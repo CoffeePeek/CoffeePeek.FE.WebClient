@@ -52,7 +52,7 @@ const Header: React.FC = () => {
   });
 
   return (
-    <header style={{ background: bg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
+    <header style={{ background: bg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 1100, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 12 }}>
 

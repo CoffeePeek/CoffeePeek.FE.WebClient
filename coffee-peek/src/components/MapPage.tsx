@@ -187,7 +187,7 @@ const MapPage: React.FC = () => {
         )}
 
         <div
-          className={`relative ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl overflow-hidden`}
+          className={`relative z-0 isolate ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl overflow-hidden`}
           style={{ height: '600px' }}
         >
           {isLoading && (

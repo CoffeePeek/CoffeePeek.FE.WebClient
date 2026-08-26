@@ -72,7 +72,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
   return (
     <div className={`${cardBg} rounded-3xl border ${borderColor} overflow-hidden shadow-sm min-w-0`}>
       {latitude && longitude && (
-        <div className="h-52 sm:h-64 w-full max-w-full relative overflow-hidden">
+        <div className="h-52 sm:h-64 w-full max-w-full relative z-0 isolate overflow-hidden">
           <div className="absolute inset-0 w-full h-full">
             <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
           </div>
