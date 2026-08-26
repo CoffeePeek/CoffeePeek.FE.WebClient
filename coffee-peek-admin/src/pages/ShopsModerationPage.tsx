@@ -83,7 +83,7 @@ export const ShopsModerationPage: React.FC = () => {
   return (
     <div className="page-container">
       <div>
-        <h2 className="page-header-title">Модерация кофеен</h2>
+        <h2 className="page-header-title">Пользовательская модерация</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           {data ? `Всего: ${data.totalCount}` : 'Загрузка...'}
         </p>

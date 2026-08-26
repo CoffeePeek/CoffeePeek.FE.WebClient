@@ -8,8 +8,8 @@ const ROUTE_TITLES: Record<string, string> = {
   '/dashboard': 'Дашборд',
   '/coffee-shops': 'Кофейни',
   '/map': 'Карта',
-  '/shops': 'Модерация',
-  '/import': 'Каталог OSM',
+  '/shops': 'Пользовательская модерация',
+  '/import': 'Парсинг',
   '/reviews': 'Отзывы',
   '/published-shops': 'Опубликованные',
   '/audit': 'Audit log',
@@ -39,13 +39,11 @@ export const AppLayout: React.FC = () => {
     };
   }, [mobileOpen]);
 
-  const isImportDossier =
-    pathname.startsWith('/import/') &&
-    !pathname.startsWith('/import/stats') &&
-    !pathname.startsWith('/import/duplicates') &&
-    !pathname.startsWith('/import/inbox');
+  const isImportWorkspace =
+    pathname === '/import' ||
+    (pathname.startsWith('/import/') && !pathname.startsWith('/import/duplicates'));
 
-  const title = isImportDossier
+  const title = isImportWorkspace
     ? ''
     : Object.entries(ROUTE_TITLES).find(([path]) => pathname.startsWith(path))?.[1] ??
       'CoffeePeek Admin';
@@ -83,7 +81,7 @@ export const AppLayout: React.FC = () => {
         />
         <main
           className={
-            isImportDossier
+            isImportWorkspace
               ? 'flex-1 min-h-0 overflow-hidden p-0 flex flex-col'
               : 'flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom))]'
           }

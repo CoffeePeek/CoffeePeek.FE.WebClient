@@ -20,11 +20,9 @@ const BrowseShopsPage = lazy(() => import('../pages/BrowseShopsPage').then((m) =
 const BrowseShopPage = lazy(() => import('../pages/BrowseShopPage').then((m) => ({ default: m.BrowseShopPage })));
 const BrowseMapPage = lazy(() => import('../pages/BrowseMapPage').then((m) => ({ default: m.BrowseMapPage })));
 const ImportQueuePage = lazy(() => import('../pages/ImportQueuePage').then((m) => ({ default: m.ImportQueuePage })));
-const ImportInboxPage = lazy(() => import('../pages/ImportInboxPage').then((m) => ({ default: m.ImportInboxPage })));
 const ImportDuplicatesPage = lazy(() =>
   import('../pages/ImportDuplicatesPage').then((m) => ({ default: m.ImportDuplicatesPage }))
 );
-const ImportStatsPage = lazy(() => import('../pages/ImportStatsPage').then((m) => ({ default: m.ImportStatsPage })));
 
 const Loader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -73,18 +71,8 @@ export const AppRoutes: React.FC = () => (
           }
         />
 
-        <Route
-          path="/import/inbox"
-          element={<Navigate to="/import" replace />}
-        />
-        <Route
-          path="/import/stats"
-          element={
-            <ProtectedRoute requireModerator>
-              <ImportStatsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/import/inbox" element={<Navigate to="/import?panel=list" replace />} />
+        <Route path="/import/stats" element={<Navigate to="/import?panel=stats" replace />} />
         <Route
           path="/import/duplicates"
           element={
@@ -94,15 +82,7 @@ export const AppRoutes: React.FC = () => (
           }
         />
         <Route
-          path="/import"
-          element={
-            <ProtectedRoute requireModerator>
-              <ImportInboxPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/import/:id"
+          path="/import/:id?"
           element={
             <ProtectedRoute requireModerator>
               <ImportQueuePage />

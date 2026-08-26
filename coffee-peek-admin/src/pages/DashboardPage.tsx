@@ -139,14 +139,14 @@ export const DashboardPage: React.FC = () => {
             <>
               <QuickAction
                 to="/import"
-                label="Каталог OSM"
-                description="Список OSM-кандидатов: фильтры, карточка, в ленту"
+                label="Парсинг"
+                description="Досье кандидатов: карта, список, статистика"
                 icon={<IconShop />}
                 color="text-primary"
               />
               <QuickAction
                 to="/shops?status=Pending"
-                label="Кофейни на модерации"
+                label="Пользовательская модерация"
                 description="Заявки владельцев, не OSM"
                 icon={<IconShop />}
                 color="text-primary"

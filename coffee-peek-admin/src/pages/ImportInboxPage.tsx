@@ -108,7 +108,10 @@ const SortButton: React.FC<{
   </button>
 );
 
-export const ImportInboxPage: React.FC = () => {
+export const ImportInboxPage: React.FC<{
+  embedded?: boolean;
+  selectedId?: string;
+}> = ({ embedded, selectedId }) => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { showToast } = useToast();
@@ -199,6 +202,12 @@ export const ImportInboxPage: React.FC = () => {
       void fetchNextPage();
     },
   );
+
+  const openCandidate = (itemId: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('panel', 'list');
+    navigate({ pathname: `/import/${itemId}`, search: next.toString() });
+  };
 
   const patchParams = (patch: Record<string, string>, resetPage = true) => {
     const next = new URLSearchParams(searchParams);
@@ -340,11 +349,18 @@ export const ImportInboxPage: React.FC = () => {
   const loadedCount = items.length;
 
   return (
-    <div className="page-container pb-24">
-      <ImportTabs />
+    <div
+      className={
+        embedded
+          ? 'h-full min-h-0 flex flex-col overflow-hidden pt-16'
+          : 'page-container pb-24'
+      }
+    >
+      {!embedded && <ImportTabs />}
+      {!embedded && (
         <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="page-header-title">Каталог OSM</h2>
+          <h2 className="page-header-title">Парсинг</h2>
           <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
             Кандидаты импорта. Пачкой — в ленту или не в ленту. Клик по строке — досье с картой точки.
           </p>
@@ -380,14 +396,21 @@ export const ImportInboxPage: React.FC = () => {
           </p>
         </div>
       </div>
+      )}
+      {embedded && (
+        <p className="shrink-0 px-4 py-2 text-sm font-body text-text-main dark:text-white tabular-nums">
+          В выборке:{' '}
+          <span className="font-semibold">{totalInFilter != null ? totalInFilter : loadedCount}</span>
+        </p>
+      )}
 
-      <Card padding="none">
+      <Card padding="none" className={embedded ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : undefined}>
         {isError && (
           <p className="p-6 text-sm text-red-600 dark:text-red-400">
             Не удалось загрузить список. Проверьте, что backend import API уже выкатили.
           </p>
         )}
-        <div className="table-scroll">
+        <div className={embedded ? 'flex-1 min-h-0 overflow-auto' : 'table-scroll'}>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border-light dark:border-border-dark align-bottom">
@@ -577,13 +600,9 @@ export const ImportInboxPage: React.FC = () => {
                       className={[
                         'hover:bg-gray-50 dark:hover:bg-white/3 cursor-pointer',
                         checked ? 'bg-primary/5 dark:bg-primary/10' : '',
+                        selectedId === item.id ? 'bg-primary/10 dark:bg-primary/15' : '',
                       ].join(' ')}
-                      onClick={() =>
-                        navigate({
-                          pathname: `/import/${item.id}`,
-                          search: searchParams.toString(),
-                        })
-                      }
+                      onClick={() => openCandidate(item.id)}
                     >
                       <td
                         className="pl-4 pr-1 py-2 align-middle"
@@ -603,7 +622,11 @@ export const ImportInboxPage: React.FC = () => {
                           <Link
                             to={{
                               pathname: `/import/${item.id}`,
-                              search: searchParams.toString(),
+                              search: (() => {
+                                const next = new URLSearchParams(searchParams);
+                                next.set('panel', 'list');
+                                return next.toString();
+                              })(),
                             }}
                             className="text-text-main dark:text-white hover:text-primary font-medium"
                             onClick={(e) => e.stopPropagation()}
@@ -679,7 +702,13 @@ export const ImportInboxPage: React.FC = () => {
       </Card>
 
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border-light dark:border-border-dark bg-white/95 dark:bg-surface-dark/95 backdrop-blur px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div
+          className={
+            embedded
+              ? 'shrink-0 border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark px-4 py-3'
+              : 'fixed bottom-0 inset-x-0 z-30 border-t border-border-light dark:border-border-dark bg-white/95 dark:bg-surface-dark/95 backdrop-blur px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]'
+          }
+        >
           <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-3 justify-between">
             <div className="text-sm font-body text-text-main dark:text-white">
               Выбрано: <span className="font-semibold">{selectedIds.size}</span>

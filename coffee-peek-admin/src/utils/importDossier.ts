@@ -5,7 +5,12 @@ import {
 } from '../constants/catalogIngest';
 import type { ImportCandidate, SuggestedTag } from '../api/import';
 
-export type MapTab = 'map' | 'pano' | 'google' | 'sv';
+export type WorkspacePanel = 'map' | 'list' | 'stats';
+
+export function parseWorkspacePanel(raw: string | null): WorkspacePanel {
+  if (raw === 'list' || raw === 'stats') return raw;
+  return 'map';
+}
 
 export const YANDEX_TO_OURS: { label: string; slug?: string; focus?: CoffeeFocus }[] = [
   { label: 'кофейня', focus: 'cafe' },
@@ -90,63 +95,15 @@ export function pickSafeUrl(url: string | undefined, fallback: string): string {
   return url;
 }
 
-export function canEmbedAsIframe(url: string): boolean {
-  if (!url) return false;
-  if (looksLikeNameSearch(url)) return false;
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.toLowerCase();
-    if (host.includes('map-widget')) return true;
-    if (parsed.searchParams.get('output') === 'embed') return true;
-    if (host.includes('yandex') && parsed.pathname.includes('/map-widget/')) return true;
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-export function mapTabSrc(
-  tab: MapTab,
-  candidate: ImportCandidate
-): { embed: string; openUrl: string } {
+export function mapTabSrc(candidate: ImportCandidate): { embed: string; openUrl: string } {
   const pair = coordPair(candidate.latitude, candidate.longitude);
   const lat = pair?.lat;
   const lon = pair?.lon;
-  const fallbackEmbed = {
-    map:
-      lat && lon
-        ? `https://yandex.ru/map-widget/v1/?ll=${lon},${lat}&z=18&pt=${lon},${lat},pm2rdm`
-        : '',
-    pano: lat && lon ? `https://yandex.ru/map-widget/v1/?ll=${lon},${lat}&z=17&l=stv,sta` : '',
-    google: lat && lon ? `https://maps.google.com/maps?q=${lat},${lon}&z=18&output=embed` : '',
-    sv:
-      lat && lon
-        ? `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lon}&cbp=11,0,0,0,0&output=embed`
-        : '',
-  };
-  const research = candidate.research;
-
-  if (tab === 'map') {
-    return {
-      embed: pickSafeUrl(research.yandexEmbed, fallbackEmbed.map),
-      openUrl: research.yandexMaps || fallbackEmbed.map,
-    };
-  }
-  if (tab === 'pano') {
-    const fromApi = pickSafeUrl(research.yandexImages, '');
-    const embed = canEmbedAsIframe(fromApi) ? fromApi : fallbackEmbed.pano;
-    return { embed, openUrl: fromApi || research.yandexImages || fallbackEmbed.pano };
-  }
-  if (tab === 'google') {
-    return {
-      embed: pickSafeUrl(research.googleEmbed, fallbackEmbed.google),
-      openUrl: research.googleMaps || fallbackEmbed.google,
-    };
-  }
-  const street = pickSafeUrl(research.streetView, '');
+  const fallback =
+    lat && lon ? `https://yandex.ru/map-widget/v1/?ll=${lon},${lat}&z=18&pt=${lon},${lat},pm2rdm` : '';
   return {
-    embed: canEmbedAsIframe(street) ? street : fallbackEmbed.sv,
-    openUrl: street || research.streetView || fallbackEmbed.sv,
+    embed: pickSafeUrl(candidate.research.yandexEmbed, fallback),
+    openUrl: candidate.research.yandexMaps || fallback,
   };
 }
 

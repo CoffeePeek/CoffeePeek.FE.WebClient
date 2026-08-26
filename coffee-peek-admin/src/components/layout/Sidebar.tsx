@@ -64,8 +64,8 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/dashboard', label: 'Дашборд', icon: <IconDashboard /> },
   { path: '/coffee-shops', label: 'Кофейни', icon: <IconShop />, browseOnly: true },
   { path: '/map', label: 'Карта', icon: <IconMap />, browseOnly: true },
-  { path: '/shops', label: 'Модерация', icon: <IconShop />, moderatorOnly: true },
-  { path: '/import', label: 'Каталог OSM', icon: <IconImport />, moderatorOnly: true },
+  { path: '/shops', label: 'Пользовательская модерация', icon: <IconShop />, moderatorOnly: true },
+  { path: '/import', label: 'Парсинг', icon: <IconImport />, moderatorOnly: true },
   { path: '/reviews', label: 'Отзывы', icon: <IconReview />, moderatorOnly: true },
   { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
   { path: '/shop-tags', label: 'Теги', icon: <IconTags />, adminOnly: true },
@@ -131,7 +131,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
             key={item.path}
             to={item.path}
             onClick={onNavigate}
-            title={collapsed && !mobileOpen ? item.label : undefined}
+            title={item.label}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors text-sm font-body min-h-[44px] ${
                 isActive
@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
             }
           >
             {item.icon}
-            {showLabels && <span className="truncate">{item.label}</span>}
+            {showLabels && <span className="leading-tight">{item.label}</span>}
           </NavLink>
         ))}
       </nav>

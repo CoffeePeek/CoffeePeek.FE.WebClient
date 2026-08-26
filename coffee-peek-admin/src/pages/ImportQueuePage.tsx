@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   decideImportCandidate,
@@ -12,9 +12,7 @@ import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { DossierMap } from '../components/import/DossierMap';
-import { DossierQueue } from '../components/import/DossierQueue';
 import LogoMark from '../components/LogoMark';
-import { useMediaQuery } from '../hooks/useMediaQuery';
 import {
   CATALOG_TAG_OPTIONS,
   COFFEE_FOCUS_OPTIONS,
@@ -32,14 +30,16 @@ import {
   normalizeInstagramUrl,
 } from '../constants/catalogIngest';
 import {
-  MapTab,
   YANDEX_TO_OURS,
   clientSuggestedTags,
   displayFacts,
   dossierSoftWarning,
+  parseWorkspacePanel,
   suggestedFocusFromSignals,
   yandexChipApplies,
 } from '../utils/importDossier';
+import { ImportInboxPage } from './ImportInboxPage';
+import { ImportStatsPage } from './ImportStatsPage';
 
 function openBlank(url?: string) {
   if (!url) return;
@@ -57,12 +57,9 @@ export const ImportQueuePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
   const qc = useQueryClient();
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const igInputRef = useRef<HTMLInputElement>(null);
 
-  const queuePage = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
-  const [queueOpen, setQueueOpen] = useState(false);
-  const [mapTab, setMapTab] = useState<MapTab>('map');
+  const panel = parseWorkspacePanel(searchParams.get('panel'));
   const [focus, setFocus] = useState<CoffeeFocus | undefined>();
   const [tagSlugs, setTagSlugs] = useState<string[]>([]);
   const [instagramDraft, setInstagramDraft] = useState('');
@@ -74,11 +71,11 @@ export const ImportQueuePage: React.FC = () => {
   const [rejectPickerOpen, setRejectPickerOpen] = useState(false);
 
   const queueQuery = useQuery({
-    queryKey: ['admin', 'import', 'queue', queuePage],
+    queryKey: ['admin', 'import', 'queue', 1],
     queryFn: () =>
       getImportCandidates({
         status: 'Pending',
-        page: queuePage,
+        page: 1,
         pageSize: IMPORT_QUEUE_PAGE_SIZE,
       }).then((r) => r.data),
   });
@@ -107,7 +104,6 @@ export const ImportQueuePage: React.FC = () => {
   const candidateFromQueue = queueItems.find((item) => item.id === id);
   const candidate = candidateQuery.data ?? candidateFromQueue;
   const totalCount = queueQuery.data?.totalCount ?? 0;
-  const totalPages = queueQuery.data?.totalPages ?? 1;
   const currentIndex = queueItems.findIndex((item) => item.id === id);
 
   const instagram = instagramDraft || candidate?.instagram || '';
@@ -127,7 +123,6 @@ export const ImportQueuePage: React.FC = () => {
     setPhoneDraft('');
     setWebsiteDraft('');
     setIgPaste('');
-    setMapTab('map');
     setRejectPickerOpen(false);
   }, [candidate?.id]);
 
@@ -136,39 +131,44 @@ export const ImportQueuePage: React.FC = () => {
   const needsOverride = Boolean(closed || candidate?.suggestReject);
   const canPublish = Boolean(focus) && isUsableShopName(candidate?.name);
 
-  const setQueuePage = (page: number) => {
+  const setPanel = (nextPanel: typeof panel) => {
     const next = new URLSearchParams(searchParams);
-    next.set('page', String(page));
-    setSearchParams(next, { replace: true });
+    next.set('panel', nextPanel);
+    if (id) navigate(`/import/${id}?${next.toString()}`, { replace: true });
+    else setSearchParams(next, { replace: true });
   };
 
-  const goToCandidate = (nextId: string, page = queuePage) => {
+  const goToCandidate = (nextId: string) => {
     const next = new URLSearchParams(searchParams);
-    next.set('page', String(page));
     navigate(`/import/${nextId}?${next.toString()}`, { replace: true });
-    setQueueOpen(false);
   };
+
+  useEffect(() => {
+    if (id || panel !== 'map' || queueQuery.isLoading) return;
+    const first = queueItems[0];
+    if (first) goToCandidate(first.id);
+  }, [id, panel, queueItems, queueQuery.isLoading]);
 
   const afterDecide = async (decidedId: string) => {
     const remaining = queueItems.filter((item) => item.id !== decidedId);
     const nextSamePage = remaining[currentIndex] ?? remaining[0];
     if (nextSamePage) {
-      goToCandidate(nextSamePage.id, queuePage);
+      goToCandidate(nextSamePage.id);
       return;
     }
-    if (queuePage < totalPages) {
-      const nextPage = await getImportCandidates({
-        status: 'Pending',
-        page: queuePage + 1,
-        pageSize: IMPORT_QUEUE_PAGE_SIZE,
-      });
-      const first = nextPage.data.items[0];
-      if (first) {
-        goToCandidate(first.id, queuePage + 1);
-        return;
-      }
+    const nextPage = await getImportCandidates({
+      status: 'Pending',
+      page: 1,
+      pageSize: IMPORT_QUEUE_PAGE_SIZE,
+    });
+    const first = nextPage.data.items.find((item) => item.id !== decidedId) ?? nextPage.data.items[0];
+    if (first) {
+      goToCandidate(first.id);
+      return;
     }
-    navigate('/import', { replace: true });
+    const next = new URLSearchParams(searchParams);
+    next.set('panel', panel === 'stats' ? 'stats' : 'list');
+    navigate(`/import?${next.toString()}`, { replace: true });
   };
 
   const decideMutation = useMutation({
@@ -195,7 +195,7 @@ export const ImportQueuePage: React.FC = () => {
     },
     onMutate: async ({ status }) => {
       await qc.cancelQueries({ queryKey: ['admin', 'import', 'queue'] });
-      const key = ['admin', 'import', 'queue', queuePage] as const;
+      const key = ['admin', 'import', 'queue', 1] as const;
       const previous = qc.getQueryData(key);
       qc.setQueryData(key, (old: typeof queueQuery.data) => {
         if (!old || !id) return old;
@@ -222,7 +222,7 @@ export const ImportQueuePage: React.FC = () => {
     },
     onError: (err: { message?: string }, _vars, ctx) => {
       if (ctx?.previous) {
-        qc.setQueryData(['admin', 'import', 'queue', queuePage], ctx.previous);
+        qc.setQueryData(['admin', 'import', 'queue', 1], ctx.previous);
       }
       showToast(err?.message ?? 'Ошибка решения', 'error');
     },
@@ -257,7 +257,7 @@ export const ImportQueuePage: React.FC = () => {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!id || decideMutation.isPending) return;
+      if (!id || decideMutation.isPending || panel === 'stats') return;
       const target = event.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
 
@@ -295,36 +295,17 @@ export const ImportQueuePage: React.FC = () => {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [id, canPublish, needsOverride, decideMutation, rejectPickerOpen]);
+  }, [id, canPublish, needsOverride, decideMutation, rejectPickerOpen, panel]);
 
-  if (!id) return null;
-
-  if (candidateQuery.isLoading && !candidate) {
-    return (
-      <div className="h-full flex items-center justify-center text-sm text-text-muted">
-        Загрузка досье…
-      </div>
-    );
-  }
-
-  if (!candidate) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 p-6">
-        <p className="text-red-600 dark:text-red-400 text-sm">Карточка не найдена</p>
-        <Link to="/import" className="text-sm text-primary hover:underline">
-          К списку
-        </Link>
-      </div>
-    );
-  }
-
-  const title = displayShopName(candidate.name, candidate.brand);
-  const facts = displayFacts(candidate);
-  const softWarning = dossierSoftWarning(candidate);
-  const suggested = clientSuggestedTags(candidate).filter(
-    (tag) => catalogSlugs.has(tag.slug) && !tagSlugs.includes(tag.slug)
-  );
-  const queuePosition = currentIndex >= 0 ? (queuePage - 1) * IMPORT_QUEUE_PAGE_SIZE + currentIndex + 1 : '—';
+  const title = candidate ? displayShopName(candidate.name, candidate.brand) : '';
+  const facts = candidate ? displayFacts(candidate) : [];
+  const softWarning = candidate ? dossierSoftWarning(candidate) : undefined;
+  const suggested = candidate
+    ? clientSuggestedTags(candidate).filter(
+        (tag) => catalogSlugs.has(tag.slug) && !tagSlugs.includes(tag.slug)
+      )
+    : [];
+  const queuePosition = currentIndex >= 0 ? currentIndex + 1 : '—';
 
   const addTag = (slug: string) => {
     if (!catalogSlugs.has(slug) || tagSlugs.includes(slug)) return;
@@ -345,6 +326,7 @@ export const ImportQueuePage: React.FC = () => {
   };
 
   const runGap = (gap: 'ig' | 'phone' | 'site' | 'photo' | 'hours' | 'here') => {
+    if (!candidate) return;
     if (gap === 'ig' && !igHandle) {
       igInputRef.current?.focus();
       openBlank(candidate.research.yandexMaps);
@@ -366,8 +348,8 @@ export const ImportQueuePage: React.FC = () => {
       return;
     }
     if (gap === 'here') {
-      setMapTab('pano');
-      showToast('Панорама — сверь вывеску', 'info');
+      setPanel('map');
+      showToast('Карта — сверь вывеску', 'info');
     }
   };
 
@@ -399,67 +381,83 @@ export const ImportQueuePage: React.FC = () => {
     {
       id: 'hours',
       title: 'Часы',
-      ok: Boolean(candidate.openingHours),
-      val: candidate.openingHours || 'нет',
+      ok: Boolean(candidate?.openingHours),
+      val: candidate?.openingHours || 'нет',
     },
     { id: 'here', title: 'Это это здание?', ok: true, val: 'смотри карту' },
   ];
 
-  const queuePanel = (
-    <DossierQueue
-      items={queueItems}
-      activeId={id}
-      page={queuePage}
-      totalPages={totalPages}
-      totalCount={totalCount}
-      loading={queueQuery.isLoading}
-      onSelect={(nextId) => goToCandidate(nextId)}
-      onPageChange={setQueuePage}
-    />
+  const PANEL_TABS = [
+    { id: 'map' as const, label: 'Карта' },
+    { id: 'list' as const, label: 'Список' },
+    { id: 'stats' as const, label: 'Статистика' },
+  ];
+
+  const panelTabs = (
+    <div className="absolute top-3 left-3 z-10 flex items-center gap-0.5 rounded-full bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-md p-1">
+      {PANEL_TABS.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => setPanel(item.id)}
+          className={[
+            'px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors font-body',
+            panel === item.id
+              ? 'bg-text-main text-white dark:bg-white dark:text-black'
+              : 'text-text-muted hover:text-text-main dark:text-stone-400 dark:hover:text-white',
+          ].join(' ')}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
   );
+
+  const showCard = Boolean(candidate) && panel !== 'stats';
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-background-light dark:bg-background-dark">
       <header className="shrink-0 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 h-11 border-b border-border-light dark:border-border-dark bg-white dark:bg-surface-dark">
-        {!isDesktop && (
-          <button
-            type="button"
-            onClick={() => setQueueOpen(true)}
-            className="px-2.5 py-1.5 rounded-full text-xs font-medium border border-border-light dark:border-border-dark hover:bg-background-light dark:hover:bg-white/5"
-          >
-            Очередь
-          </button>
-        )}
         <LogoMark size={22} className="hidden sm:inline-flex shrink-0" />
         <span className="hidden sm:inline text-sm font-semibold font-display text-text-main dark:text-white">
-          CoffeePeek
+          Парсинг
         </span>
-        <Link
-          to="/import"
-          className="text-sm text-text-muted hover:text-text-main dark:text-stone-400 dark:hover:text-white"
-        >
-          Импорт → досье
-        </Link>
         <span className="flex-1" />
-        <span className="text-sm text-text-muted tabular-nums hidden sm:inline">
-          {queuePosition} / {totalCount} в очереди
-        </span>
-        <span className="text-sm text-text-muted tabular-nums sm:hidden">
-          {queuePosition}/{totalCount}
-        </span>
-        <span className="text-[11px] px-2.5 py-1 rounded-full bg-background-light dark:bg-white/10 text-text-muted font-medium">
-          {String(candidate.source)}
-        </span>
-        <span className="text-[11px] px-2.5 py-1 rounded-full bg-primary text-black font-semibold">
-          {QUEUE_STATUS_LABELS[candidate.queueStatus]}
-        </span>
+        {candidate && panel !== 'stats' && (
+          <>
+            <span className="text-sm text-text-muted tabular-nums hidden sm:inline">
+              {queuePosition} / {totalCount} в очереди
+            </span>
+            <span className="text-sm text-text-muted tabular-nums sm:hidden">
+              {queuePosition}/{totalCount}
+            </span>
+            <span className="text-[11px] px-2.5 py-1 rounded-full bg-background-light dark:bg-white/10 text-text-muted font-medium">
+              {String(candidate.source)}
+            </span>
+            <span className="text-[11px] px-2.5 py-1 rounded-full bg-primary text-black font-semibold">
+              {QUEUE_STATUS_LABELS[candidate.queueStatus]}
+            </span>
+          </>
+        )}
       </header>
 
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
-        {isDesktop && <div className="w-[248px] shrink-0 min-h-0">{queuePanel}</div>}
+        <div className="relative flex flex-col min-h-[280px] lg:min-h-0 flex-1 min-w-0">
+          {panelTabs}
+          {panel === 'map' && <DossierMap candidate={candidate} />}
+          {panel === 'list' && (
+            <div className="flex-1 min-h-0">
+              <ImportInboxPage embedded selectedId={id} />
+            </div>
+          )}
+          {panel === 'stats' && (
+            <div className="flex-1 min-h-0">
+              <ImportStatsPage embedded />
+            </div>
+          )}
+        </div>
 
-        <DossierMap candidate={candidate} tab={mapTab} onTab={setMapTab} />
-
+        {showCard && candidate && (
         <section className="w-full lg:w-[420px] shrink-0 flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l border-border-light dark:border-border-dark bg-white dark:bg-surface-dark">
           <div className="flex-1 overflow-y-auto px-[18px] pt-[18px] pb-3 space-y-4 font-body">
             <div>
@@ -785,21 +783,8 @@ export const ImportQueuePage: React.FC = () => {
             </button>
           </div>
         </section>
+        )}
       </div>
-
-      {!isDesktop && queueOpen && (
-        <div className="fixed inset-0 z-40 flex">
-          <button
-            type="button"
-            aria-label="Закрыть очередь"
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setQueueOpen(false)}
-          />
-          <div className="relative w-[260px] max-w-[80vw] h-full bg-white dark:bg-surface-dark shadow-xl">
-            {queuePanel}
-          </div>
-        </div>
-      )}
 
       {rejectPickerOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">

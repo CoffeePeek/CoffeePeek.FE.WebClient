@@ -16,7 +16,7 @@ import { BUCKET_LABELS, COFFEE_FOCUS_LABELS } from '../constants/catalogIngest';
 
 const MAX_IMPORT_FILE_BYTES = 32 * 1024 * 1024;
 
-export const ImportStatsPage: React.FC = () => {
+export const ImportStatsPage: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -105,8 +105,14 @@ export const ImportStatsPage: React.FC = () => {
   };
 
   return (
-    <div className="page-container max-w-4xl">
-      <ImportTabs />
+    <div
+      className={
+        embedded
+          ? 'h-full overflow-y-auto p-4 sm:p-6 space-y-4 pt-16'
+          : 'page-container max-w-4xl'
+      }
+    >
+      {!embedded && <ImportTabs />}
       <div>
         <h2 className="page-header-title">Статистика каталога</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
