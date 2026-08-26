@@ -34,6 +34,29 @@ export const CoffeeBeanSign: React.FC<CoffeeBeanSignProps> = ({
   </svg>
 );
 
+/** Official NBRB Belarusian ruble sign (PUA U+E901 via nbrb webfont). */
+export const BynSign: React.FC<{
+  size?: number;
+  className?: string;
+  color?: string;
+  style?: React.CSSProperties;
+}> = ({ size = 14, className, color = ACCENT, style }) => (
+  <span
+    className={`nbrb-icon${className ? ` ${className}` : ''}`}
+    style={{
+      display: 'inline-block',
+      color,
+      fontSize: size,
+      lineHeight: 1,
+      verticalAlign: '-0.05em',
+      ...style,
+    }}
+    aria-hidden
+  >
+    {'\uE901'}
+  </span>
+);
+
 export const BeanPriceMarks: React.FC<{
   count: number;
   size?: number;
@@ -45,22 +68,11 @@ export const BeanPriceMarks: React.FC<{
   return (
     <span
       className={className}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'baseline',
-        gap: 3,
-        color,
-        fontFamily: 'inherit',
-        fontWeight: 700,
-        fontSize: size,
-        lineHeight: 1,
-        letterSpacing: '0.02em',
-        whiteSpace: 'nowrap',
-      }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap' }}
       aria-label={`Ценовой уровень ${n}`}
     >
       {Array.from({ length: n }, (_, i) => (
-        <span key={i}>Br</span>
+        <BynSign key={i} size={size} color={color} />
       ))}
     </span>
   );

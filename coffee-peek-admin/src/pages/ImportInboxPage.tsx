@@ -1,21 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { getImportCandidates, ImportCandidate } from '../api/import';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { decideImportCandidate, getImportCandidates, ImportCandidate } from '../api/import';
 import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { FocusBadge, GoogleStatusBadge, ImportTabs } from '../components/import/catalogControls';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
+import {
+  CoffeeFocusPicker,
+  FocusBadge,
+  GoogleStatusBadge,
+  ImportTabs,
+} from '../components/import/catalogControls';
+import { useToast } from '../contexts/ToastContext';
 import { useLoadMoreOnScroll } from '../hooks/useLoadMoreOnScroll';
 import {
   BUCKET_LABELS,
   COFFEE_FOCUS_OPTIONS,
+  CoffeeFocus,
   CollectorBucket,
   IMPORT_LIST_PAGE_SIZE,
   QUEUE_STATUS_LABELS,
   REJECT_REASON_LABELS,
   REJECT_REASON_OPTIONS,
+  RejectReason,
   QueueStatus,
   displayShopName,
+  isClosedPermanently,
+  isUsableShopName,
   parseImportListSearch,
 } from '../constants/catalogIngest';
 
@@ -23,6 +35,7 @@ const PAGE_SIZE = IMPORT_LIST_PAGE_SIZE;
 
 type SortKey = 'name' | 'focus' | 'google' | 'osm' | 'bucket' | 'status';
 type SortDir = 'asc' | 'desc';
+type BatchModal = 'publish' | 'reject' | null;
 
 const STATUSES: { value: QueueStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Все' },
@@ -41,6 +54,10 @@ const BUCKETS: { value: CollectorBucket | 'all'; label: string }[] = [
 
 const headerControl =
   'w-full min-w-[7.5rem] rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-text-main dark:text-white text-xs py-1.5 px-2 font-body focus:outline-none focus:ring-2 focus:ring-primary/30';
+
+function isSelectable(item: ImportCandidate): boolean {
+  return item.queueStatus === 'Pending' || item.queueStatus === 'Skipped';
+}
 
 function compareItems(a: ImportCandidate, b: ImportCandidate, key: SortKey): number {
   const emptyLast = (value?: string) => value || '\uffff';
@@ -81,12 +98,18 @@ const SortButton: React.FC<{
 
 export const ImportInboxPage: React.FC = () => {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const { status, bucket, focus, search, hasAddress, rejectReason } =
     parseImportListSearch(searchParams);
   const sortKey = (searchParams.get('sort') ?? '') as SortKey | '';
   const sortDir = (searchParams.get('dir') === 'desc' ? 'desc' : 'asc') as SortDir;
   const [localSearch, setLocalSearch] = useState(search);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [batchModal, setBatchModal] = useState<BatchModal>(null);
+  const [batchFocus, setBatchFocus] = useState<CoffeeFocus | undefined>();
+  const [confirmPublishClosed, setConfirmPublishClosed] = useState(false);
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
@@ -131,6 +154,23 @@ export const ImportInboxPage: React.FC = () => {
     return [...list].sort((a, b) => compareItems(a, b, sortKey) * dir);
   }, [data, hasAddress, rejectReason, sortKey, sortDir]);
 
+  const selectableItems = useMemo(() => items.filter(isSelectable), [items]);
+  const selectedItems = useMemo(
+    () => items.filter((item) => selectedIds.has(item.id)),
+    [items, selectedIds],
+  );
+  const publishableSelected = useMemo(
+    () => selectedItems.filter((item) => isSelectable(item) && isUsableShopName(item.name)),
+    [selectedItems],
+  );
+  const skippedNoName = selectedItems.filter(isSelectable).length - publishableSelected.length;
+  const closedSelected = publishableSelected.filter((item) =>
+    isClosedPermanently(item.googleBusinessStatus),
+  );
+  const allSelectableChecked =
+    selectableItems.length > 0 && selectableItems.every((item) => selectedIds.has(item.id));
+  const someSelectableChecked = selectableItems.some((item) => selectedIds.has(item.id));
+
   const loadMoreRef = useLoadMoreOnScroll(
     Boolean(hasNextPage) && !isFetchingNextPage && items.length > 0,
     () => {
@@ -159,6 +199,13 @@ export const ImportInboxPage: React.FC = () => {
     setLocalSearch(search);
   }, [search]);
 
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setBatchModal(null);
+    setBatchFocus(undefined);
+    setConfirmPublishClosed(false);
+  }, [status, bucket, focus, search, hasAddress, rejectReason]);
+
   const onSort = (column: SortKey) => {
     if (sortKey === column) {
       patchParams({ sort: column, dir: sortDir === 'asc' ? 'desc' : 'asc' }, false);
@@ -167,13 +214,116 @@ export const ImportInboxPage: React.FC = () => {
     }
   };
 
+  const toggleOne = (id: string, next: boolean) => {
+    setSelectedIds((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(id);
+      else copy.delete(id);
+      return copy;
+    });
+  };
+
+  const toggleAllVisible = () => {
+    setSelectedIds((prev) => {
+      const copy = new Set(prev);
+      if (allSelectableChecked) {
+        selectableItems.forEach((item) => copy.delete(item.id));
+      } else {
+        selectableItems.forEach((item) => copy.add(item.id));
+      }
+      return copy;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setBatchModal(null);
+    setBatchFocus(undefined);
+    setConfirmPublishClosed(false);
+  };
+
+  const batchMutation = useMutation({
+    mutationFn: async ({
+      mode,
+      coffeeFocus,
+      rejectReason: reason,
+      overrideClosed,
+    }: {
+      mode: 'Published' | 'Rejected';
+      coffeeFocus?: CoffeeFocus;
+      rejectReason?: RejectReason;
+      overrideClosed?: boolean;
+    }) => {
+      const targets =
+        mode === 'Published' ? publishableSelected : selectedItems.filter(isSelectable);
+
+      const tagSlugs = coffeeFocus === 'specialty' ? (['specialty'] as string[]) : ([] as string[]);
+
+      const results = await Promise.allSettled(
+        targets.map((item) =>
+          decideImportCandidate(item.id, {
+            status: mode,
+            coffeeFocus: mode === 'Published' ? coffeeFocus : undefined,
+            tagSlugs: mode === 'Published' ? tagSlugs : undefined,
+            overrideClosed: mode === 'Published' ? Boolean(overrideClosed) : undefined,
+            rejectReason: mode === 'Rejected' ? reason : undefined,
+          }),
+        ),
+      );
+
+      const ok = results.filter((r) => r.status === 'fulfilled').length;
+      const fail = results.length - ok;
+      return { ok, fail, total: results.length, mode, reason };
+    },
+    onSuccess: ({ ok, fail, mode, reason }) => {
+      const base =
+        mode === 'Published'
+          ? `В ленте: ${ok}`
+          : `Не в ленту · ${reason ? REJECT_REASON_LABELS[reason] : ''}: ${ok}`;
+      if (fail > 0) showToast(`${base}, ошибок: ${fail}`, 'error');
+      else showToast(base, 'success');
+      clearSelection();
+      void qc.invalidateQueries({ queryKey: ['admin', 'import'] });
+    },
+    onError: (err: { message?: string }) => {
+      showToast(err?.message ?? 'Не удалось применить решение', 'error');
+    },
+  });
+
+  const openPublish = () => {
+    if (!selectedItems.some(isSelectable)) return;
+    setBatchFocus(undefined);
+    setBatchModal('publish');
+  };
+
+  const openReject = () => {
+    if (!selectedItems.some(isSelectable)) return;
+    setBatchModal('reject');
+  };
+
+  const runPublish = (overrideClosed = false) => {
+    if (!batchFocus || publishableSelected.length === 0) return;
+    if (!overrideClosed && closedSelected.length > 0) {
+      setConfirmPublishClosed(true);
+      return;
+    }
+    batchMutation.mutate({
+      mode: 'Published',
+      coffeeFocus: batchFocus,
+      overrideClosed,
+    });
+  };
+
+  const colCount = 7;
+
   return (
-    <div className="page-container">
+    <div className="page-container pb-24">
       <ImportTabs />
       <div>
         <h2 className="page-header-title">Каталог OSM</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
-          Кандидаты из OpenStreetMap. Клик по строке — карточка, по заголовку — сортировка.
+          Кандидаты из OpenStreetMap. Выберите несколько — в ленту или не в ленту пачкой. Клик по
+          строке — карточка.
         </p>
       </div>
 
@@ -187,9 +337,28 @@ export const ImportInboxPage: React.FC = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border-light dark:border-border-dark align-bottom">
-                <th className="text-left px-5 py-3">
+                <th className="text-left pl-4 pr-1 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={allSelectableChecked}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelectableChecked && !allSelectableChecked;
+                    }}
+                    onChange={toggleAllVisible}
+                    disabled={!selectableItems.length}
+                    aria-label="Выбрать все на странице"
+                    className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-pointer disabled:opacity-40"
+                  />
+                </th>
+                <th className="text-left px-3 py-3">
                   <div className="flex flex-col gap-1.5">
-                    <SortButton label="Название" column="name" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                    <SortButton
+                      label="Название"
+                      column="name"
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={onSort}
+                    />
                     <input
                       value={localSearch}
                       onChange={(e) => setLocalSearch(e.target.value)}
@@ -209,7 +378,13 @@ export const ImportInboxPage: React.FC = () => {
                 </th>
                 <th className="text-left px-4 py-3">
                   <div className="flex flex-col gap-1.5">
-                    <SortButton label="Focus" column="focus" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                    <SortButton
+                      label="Focus"
+                      column="focus"
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={onSort}
+                    />
                     <select
                       value={focus}
                       onChange={(e) => patchParams({ focus: e.target.value })}
@@ -225,14 +400,32 @@ export const ImportInboxPage: React.FC = () => {
                   </div>
                 </th>
                 <th className="text-left px-4 py-3 hidden md:table-cell">
-                  <SortButton label="Google" column="google" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                  <SortButton
+                    label="Google"
+                    column="google"
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={onSort}
+                  />
                 </th>
                 <th className="text-left px-4 py-3 hidden lg:table-cell">
-                  <SortButton label="OSM" column="osm" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                  <SortButton
+                    label="OSM"
+                    column="osm"
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={onSort}
+                  />
                 </th>
                 <th className="text-left px-4 py-3 hidden md:table-cell">
                   <div className="flex flex-col gap-1.5">
-                    <SortButton label="Корзина" column="bucket" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                    <SortButton
+                      label="Корзина"
+                      column="bucket"
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={onSort}
+                    />
                     <select
                       value={bucket}
                       onChange={(e) => patchParams({ bucket: e.target.value })}
@@ -248,7 +441,13 @@ export const ImportInboxPage: React.FC = () => {
                 </th>
                 <th className="text-left px-4 py-3">
                   <div className="flex flex-col gap-1.5">
-                    <SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+                    <SortButton
+                      label="Статус"
+                      column="status"
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={onSort}
+                    />
                     <select
                       value={status}
                       onChange={(e) => {
@@ -289,76 +488,111 @@ export const ImportInboxPage: React.FC = () => {
               {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    <td colSpan={6} className="px-5 py-2">
+                    <td colSpan={colCount} className="px-5 py-2">
                       <div className="h-8 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
                     </td>
                   </tr>
                 ))
               ) : !items.length ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-sm text-text-muted dark:text-stone-400">
+                  <td
+                    colSpan={colCount}
+                    className="p-12 text-center text-sm text-text-muted dark:text-stone-400"
+                  >
                     Ничего не найдено
                   </td>
                 </tr>
               ) : (
-                items.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-gray-50 dark:hover:bg-white/3 cursor-pointer"
-                    onClick={() =>
-                      navigate({ pathname: `/import/${item.id}`, search: searchParams.toString() })
-                    }
-                  >
-                    <td className="px-5 py-2">
-                      <Link
-                        to={{ pathname: `/import/${item.id}`, search: searchParams.toString() }}
-                        className="text-text-main dark:text-white hover:text-primary font-medium"
+                items.map((item) => {
+                  const selectable = isSelectable(item);
+                  const checked = selectedIds.has(item.id);
+                  return (
+                    <tr
+                      key={item.id}
+                      className={[
+                        'hover:bg-gray-50 dark:hover:bg-white/3 cursor-pointer',
+                        checked ? 'bg-primary/5 dark:bg-primary/10' : '',
+                      ].join(' ')}
+                      onClick={() =>
+                        navigate({
+                          pathname: `/import/${item.id}`,
+                          search: searchParams.toString(),
+                        })
+                      }
+                    >
+                      <td
+                        className="pl-4 pr-1 py-2 align-middle"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {displayShopName(item.name, item.brand)}
-                      </Link>
-                      {item.address && (
-                        <p className="text-xs text-text-muted dark:text-stone-500 truncate max-w-xs">{item.address}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">
-                      <FocusBadge focus={item.coffeeFocus} />
-                    </td>
-                    <td className="px-4 py-2 hidden md:table-cell">
-                      {item.googleBusinessStatus ? (
-                        <GoogleStatusBadge status={item.googleBusinessStatus} />
-                      ) : (
-                        <span className="text-xs text-text-muted dark:text-stone-500">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 hidden lg:table-cell text-xs text-text-muted dark:text-stone-400">
-                      {item.osmAgeDays != null ? `${item.osmAgeDays} дн.` : '—'}
-                    </td>
-                    <td className="px-4 py-2 hidden md:table-cell text-xs text-text-muted dark:text-stone-400">
-                      {item.collectorBucket ? BUCKET_LABELS[item.collectorBucket] : '—'}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge
-                        variant={
-                          item.queueStatus === 'Published'
-                            ? 'approved'
-                            : item.queueStatus === 'Rejected'
-                              ? 'rejected'
-                              : 'pending'
-                        }
-                      >
-                        {QUEUE_STATUS_LABELS[item.queueStatus]}
-                        {item.queueStatus === 'Rejected' && item.rejectReason
-                          ? ` · ${REJECT_REASON_LABELS[item.rejectReason]}`
-                          : ''}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={!selectable}
+                          onChange={(e) => toggleOne(item.id, e.target.checked)}
+                          aria-label={`Выбрать ${displayShopName(item.name, item.brand)}`}
+                          className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-pointer disabled:opacity-40"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <Link
+                          to={{
+                            pathname: `/import/${item.id}`,
+                            search: searchParams.toString(),
+                          }}
+                          className="text-text-main dark:text-white hover:text-primary font-medium"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {displayShopName(item.name, item.brand)}
+                        </Link>
+                        {item.address && (
+                          <p className="text-xs text-text-muted dark:text-stone-500 truncate max-w-xs">
+                            {item.address}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        <FocusBadge focus={item.coffeeFocus} />
+                      </td>
+                      <td className="px-4 py-2 hidden md:table-cell">
+                        {item.googleBusinessStatus ? (
+                          <GoogleStatusBadge status={item.googleBusinessStatus} />
+                        ) : (
+                          <span className="text-xs text-text-muted dark:text-stone-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 hidden lg:table-cell text-xs text-text-muted dark:text-stone-400">
+                        {item.osmAgeDays != null ? `${item.osmAgeDays} дн.` : '—'}
+                      </td>
+                      <td className="px-4 py-2 hidden md:table-cell text-xs text-text-muted dark:text-stone-400">
+                        {item.collectorBucket ? BUCKET_LABELS[item.collectorBucket] : '—'}
+                      </td>
+                      <td className="px-4 py-2">
+                        <Badge
+                          variant={
+                            item.queueStatus === 'Published'
+                              ? 'approved'
+                              : item.queueStatus === 'Rejected'
+                                ? 'rejected'
+                                : 'pending'
+                          }
+                        >
+                          {QUEUE_STATUS_LABELS[item.queueStatus]}
+                          {item.queueStatus === 'Rejected' && item.rejectReason
+                            ? ` · ${REJECT_REASON_LABELS[item.rejectReason]}`
+                            : ''}
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
-        <div ref={loadMoreRef} className="px-5 py-3 border-t border-border-light dark:border-border-dark">
+        <div
+          ref={loadMoreRef}
+          className="px-5 py-3 border-t border-border-light dark:border-border-dark"
+        >
           {isFetchingNextPage && (
             <p className="text-center text-xs text-text-muted dark:text-stone-500">Загрузка…</p>
           )}
@@ -370,6 +604,142 @@ export const ImportInboxPage: React.FC = () => {
           )}
         </div>
       </Card>
+
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border-light dark:border-border-dark bg-white/95 dark:bg-surface-dark/95 backdrop-blur px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-3 justify-between">
+            <div className="text-sm font-body text-text-main dark:text-white">
+              Выбрано: <span className="font-semibold">{selectedIds.size}</span>
+              <button
+                type="button"
+                className="ml-3 text-xs text-text-muted dark:text-stone-400 hover:text-primary"
+                onClick={clearSelection}
+              >
+                Сбросить
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="primary" disabled={batchMutation.isPending} onClick={openPublish}>
+                В ленту
+              </Button>
+              <Button variant="danger" disabled={batchMutation.isPending} onClick={openReject}>
+                Не в ленту
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {batchModal === 'publish' && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => !batchMutation.isPending && setBatchModal(null)}
+          />
+          <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg p-5 sm:p-6 border border-border-light dark:border-border-dark pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-1">
+              В ленту · {publishableSelected.length}
+            </h3>
+            <p className="text-sm text-text-muted dark:text-stone-400 font-body mb-4">
+              Один coffee focus на всю пачку.
+            </p>
+            {skippedNoName > 0 && (
+              <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
+                Без нормального имени пропущены: {skippedNoName}.
+              </p>
+            )}
+            {closedSelected.length > 0 && (
+              <p className="text-xs text-red-600 dark:text-red-400 mb-3">
+                Google пометил закрытыми: {closedSelected.length}. Перед публикацией спросим
+                подтверждение.
+              </p>
+            )}
+            <CoffeeFocusPicker
+              value={batchFocus}
+              onChange={setBatchFocus}
+              disabled={batchMutation.isPending}
+            />
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="primary"
+                className="flex-1 min-h-[44px]"
+                disabled={!batchFocus || publishableSelected.length === 0 || batchMutation.isPending}
+                loading={batchMutation.isPending}
+                onClick={() => runPublish(false)}
+              >
+                Опубликовать
+              </Button>
+              <Button
+                variant="ghost"
+                className="min-h-[44px]"
+                disabled={batchMutation.isPending}
+                onClick={() => setBatchModal(null)}
+              >
+                Отмена
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {batchModal === 'reject' && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => !batchMutation.isPending && setBatchModal(null)}
+          />
+          <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 border border-border-light dark:border-border-dark pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-1">
+              Почему не в ленту? · {selectedItems.filter(isSelectable).length}
+            </h3>
+            <p className="text-sm text-text-muted dark:text-stone-400 font-body mb-4">
+              Одна причина на всю пачку.
+            </p>
+            <div className="flex flex-col gap-2">
+              {REJECT_REASON_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={batchMutation.isPending}
+                  onClick={() =>
+                    batchMutation.mutate({ mode: 'Rejected', rejectReason: opt.value })
+                  }
+                  className="flex flex-col items-start gap-0.5 rounded-xl border border-border-light dark:border-border-dark hover:border-primary/60 px-3 py-3 text-left min-h-[56px] transition-colors disabled:opacity-50"
+                >
+                  <span className="text-sm font-semibold text-text-main dark:text-white font-display">
+                    {opt.key}. {opt.label}
+                  </span>
+                  <span className="text-xs text-text-muted dark:text-stone-400 font-body">
+                    {opt.hint}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3 w-full min-h-[44px]"
+              onClick={() => setBatchModal(null)}
+              disabled={batchMutation.isPending}
+            >
+              Отмена
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        isOpen={confirmPublishClosed}
+        title="Есть закрытые по Google"
+        message={`Среди выбранных ${closedSelected.length} с статусом «Закрыто». Опубликовать их всё равно?`}
+        confirmLabel="Всё равно в ленту"
+        variant="danger"
+        onCancel={() => setConfirmPublishClosed(false)}
+        onConfirm={() => {
+          setConfirmPublishClosed(false);
+          runPublish(true);
+        }}
+      />
     </div>
   );
 };

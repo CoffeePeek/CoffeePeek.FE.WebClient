@@ -38,6 +38,29 @@ export const CoffeeBeanSign: React.FC<CoffeeBeanSignProps> = ({
   </svg>
 );
 
+/** Official NBRB Belarusian ruble sign (PUA U+E901 via nbrb webfont). */
+export const BynSign: React.FC<{
+  size?: number;
+  className?: string;
+  color?: string;
+  style?: React.CSSProperties;
+}> = ({ size = 14, className, color = brand.primary, style }) => (
+  <span
+    className={`nbrb-icon${className ? ` ${className}` : ''}`}
+    style={{
+      display: 'inline-block',
+      color,
+      fontSize: size,
+      lineHeight: 1,
+      verticalAlign: '-0.05em',
+      ...style,
+    }}
+    aria-hidden
+  >
+    {'\uE901'}
+  </span>
+);
+
 interface BeanPriceMarksProps {
   count: number;
   size?: number;
@@ -46,35 +69,24 @@ interface BeanPriceMarksProps {
   gap?: number;
 }
 
-/** Repeat BYN (Br) marks for price-range tiers. */
+/** Repeat official BYN signs for price-range tiers. */
 export const BeanPriceMarks: React.FC<BeanPriceMarksProps> = ({
   count,
   size = 13,
   className,
   color = brand.primary,
-  gap = 3,
+  gap = 2,
 }) => {
   const n = Math.max(0, Math.min(4, Math.floor(count)));
   if (n === 0) return null;
   return (
     <span
       className={className}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'baseline',
-        gap,
-        color,
-        fontFamily: '"RF Dewi Expanded", system-ui, sans-serif',
-        fontWeight: 700,
-        fontSize: size,
-        lineHeight: 1,
-        letterSpacing: '0.02em',
-        whiteSpace: 'nowrap',
-      }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap, whiteSpace: 'nowrap' }}
       aria-label={`Ценовой уровень ${n}`}
     >
       {Array.from({ length: n }, (_, i) => (
-        <span key={i}>Br</span>
+        <BynSign key={i} size={size} color={color} />
       ))}
     </span>
   );

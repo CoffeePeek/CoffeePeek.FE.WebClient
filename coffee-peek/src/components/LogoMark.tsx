@@ -1,13 +1,21 @@
 import React from 'react';
 import { useTheme, type Theme } from '../contexts/ThemeContext';
+import { dark as darkTokens, light as lightTokens } from '../design-system/tokens';
 
+/** Transparent mascot mark — background comes from theme. */
+export const LOGO_SRC = '/logo/logo-mark.png';
+/** Baked favicon / static assets with theme background. */
 export const LOGO_SRC_LIGHT = '/logo/logo-white.png';
 export const LOGO_SRC_DARK = '/logo/logo-dark.png';
-export const LOGO_SRC = LOGO_SRC_DARK;
 export const HEADER_LOGO_SIZE = 52;
 
-export function logoSrcForTheme(theme: Theme): string {
-  return theme === 'dark' ? LOGO_SRC_DARK : LOGO_SRC_LIGHT;
+const LOGO_BG: Record<Theme, string> = {
+  light: lightTokens.background,
+  dark: darkTokens.background,
+};
+
+export function logoSrcForTheme(_theme: Theme): string {
+  return LOGO_SRC;
 }
 
 interface LogoMarkProps {
@@ -27,26 +35,39 @@ const LogoMark: React.FC<LogoMarkProps> = ({
   variant,
 }) => {
   const { theme } = useTheme();
-  const src = logoSrcForTheme(variant ?? theme);
+  const resolved = variant ?? theme;
+  const radius = Math.round(size * 0.28);
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      width={size}
-      height={size}
+    <span
       className={className}
-      draggable={false}
       style={{
         width: size,
         height: size,
-        borderRadius: Math.round(size * 0.28),
-        objectFit: 'cover',
-        display: 'block',
+        borderRadius: radius,
+        background: LOGO_BG[resolved],
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
         flexShrink: 0,
         ...style,
       }}
-    />
+    >
+      <img
+        src={LOGO_SRC}
+        alt={alt}
+        width={size}
+        height={size}
+        draggable={false}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain',
+          display: 'block',
+        }}
+      />
+    </span>
   );
 };
 

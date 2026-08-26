@@ -1,8 +1,16 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
+/** Transparent mascot mark — background comes from theme. */
+export const LOGO_SRC = '/logo/logo-mark.png';
+/** Baked favicon / static assets with theme background. */
 export const LOGO_SRC_LIGHT = '/logo/logo-white.png';
 export const LOGO_SRC_DARK = '/logo/logo-dark.png';
+
+const LOGO_BG = {
+  light: '#FAFAF9',
+  dark: '#1A1412',
+} as const;
 
 interface LogoMarkProps {
   size?: number;
@@ -20,25 +28,37 @@ const LogoMark: React.FC<LogoMarkProps> = ({
 }) => {
   const { isDark } = useTheme();
   const dark = variant ? variant === 'dark' : isDark;
-  const src = dark ? LOGO_SRC_DARK : LOGO_SRC_LIGHT;
+  const radius = Math.round(size * 0.28);
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      width={size}
-      height={size}
-      draggable={false}
+    <span
       className={className}
       style={{
         width: size,
         height: size,
-        borderRadius: Math.round(size * 0.28),
-        objectFit: 'cover',
-        display: 'block',
+        borderRadius: radius,
+        background: dark ? LOGO_BG.dark : LOGO_BG.light,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
         flexShrink: 0,
       }}
-    />
+    >
+      <img
+        src={LOGO_SRC}
+        alt={alt}
+        width={size}
+        height={size}
+        draggable={false}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain',
+          display: 'block',
+        }}
+      />
+    </span>
   );
 };
 

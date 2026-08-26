@@ -6,7 +6,7 @@ import {
   SquaresFour, Clock, Sparkle, CheckCircle, Heart,
   MapPin, CaretDown, Check,
 } from '@/components/Icon';
-import { BeanPriceMarks } from './icons';
+import { BeanPriceMarks, BynSign } from './icons';
 import { PRICE_FILTER_OPTIONS, toPriceRangeLevel } from '../utils/priceRange';
 
 const LIST_PREVIEW = 6;
@@ -295,7 +295,15 @@ const PriceSlider: React.FC<{
               whiteSpace: 'nowrap' as const,
             }}
           >
-            {i === 0 ? 'Любая' : Array.from({ length: i }, () => 'Br').join(' ')}
+            {i === 0 ? (
+              'Любая'
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                {Array.from({ length: i }, (_, n) => (
+                  <BynSign key={n} size={11} color={i === index ? gold : muted} />
+                ))}
+              </span>
+            )}
           </button>
         ))}
       </div>
