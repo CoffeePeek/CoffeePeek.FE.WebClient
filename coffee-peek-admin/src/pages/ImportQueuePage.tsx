@@ -393,35 +393,32 @@ export const ImportQueuePage: React.FC = () => {
     { id: 'stats' as const, label: 'Статистика' },
   ];
 
-  const panelTabs = (
-    <div className="absolute top-3 left-3 z-10 flex items-center gap-0.5 rounded-full bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-md p-1">
-      {PANEL_TABS.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          onClick={() => setPanel(item.id)}
-          className={[
-            'px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors font-body',
-            panel === item.id
-              ? 'bg-text-main text-white dark:bg-white dark:text-black'
-              : 'text-text-muted hover:text-text-main dark:text-stone-400 dark:hover:text-white',
-          ].join(' ')}
-        >
-          {item.label}
-        </button>
-      ))}
-    </div>
-  );
-
   const showCard = Boolean(candidate) && panel !== 'stats';
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-background-light dark:bg-background-dark">
-      <header className="shrink-0 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 h-11 border-b border-border-light dark:border-border-dark bg-white dark:bg-surface-dark">
+      <header className="shrink-0 flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-4 min-h-11 py-2 border-b border-border-light dark:border-border-dark bg-white dark:bg-surface-dark">
         <LogoMark size={22} className="hidden sm:inline-flex shrink-0" />
         <span className="hidden sm:inline text-sm font-semibold font-display text-text-main dark:text-white">
           Парсинг
         </span>
+        <div className="flex items-center gap-0.5 rounded-full bg-background-light dark:bg-white/5 border border-border-light dark:border-border-dark p-1">
+          {PANEL_TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setPanel(item.id)}
+              className={[
+                'px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors font-body',
+                panel === item.id
+                  ? 'bg-text-main text-white dark:bg-white dark:text-black'
+                  : 'text-text-muted hover:text-text-main dark:text-stone-400 dark:hover:text-white',
+              ].join(' ')}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
         <span className="flex-1" />
         {candidate && panel !== 'stats' && (
           <>
@@ -443,7 +440,6 @@ export const ImportQueuePage: React.FC = () => {
 
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         <div className="relative flex flex-col min-h-[280px] lg:min-h-0 flex-1 min-w-0">
-          {panelTabs}
           {panel === 'map' && <DossierMap candidate={candidate} />}
           {panel === 'list' && (
             <div className="flex-1 min-h-0">

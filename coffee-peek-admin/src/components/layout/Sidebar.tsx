@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import { logout as apiLogout } from '../../api/auth';
 import LogoMark from '../LogoMark';
@@ -13,6 +13,15 @@ interface NavItem {
   ownerOnly?: boolean;
   browseOnly?: boolean;
 }
+
+interface NavGroup {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  children: NavItem[];
+}
+
+type NavEntry = { type: 'link'; item: NavItem } | { type: 'group'; group: NavGroup };
 
 const IconDashboard = () => (
   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,21 +68,58 @@ const IconImport = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h7" />
   </svg>
 );
+const IconChevron = ({ open }: { open: boolean }) => (
+  <svg
+    className={`w-4 h-4 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+  </svg>
+);
 
-const NAV_ITEMS: NavItem[] = [
-  { path: '/dashboard', label: 'Дашборд', icon: <IconDashboard /> },
-  { path: '/coffee-shops', label: 'Кофейни', icon: <IconShop />, browseOnly: true },
-  { path: '/map', label: 'Карта', icon: <IconMap />, browseOnly: true },
-  { path: '/shops', label: 'Пользовательская модерация', icon: <IconShop />, moderatorOnly: true },
-  { path: '/import', label: 'Парсинг', icon: <IconImport />, moderatorOnly: true },
-  { path: '/reviews', label: 'Отзывы', icon: <IconReview />, moderatorOnly: true },
-  { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
-  { path: '/shop-tags', label: 'Теги', icon: <IconTags />, adminOnly: true },
-  { path: '/audit', label: 'Audit log', icon: <IconAudit />, adminOnly: true },
-  { path: '/my-shops', label: 'Мои кофейни', icon: <IconShop />, ownerOnly: true },
-  { path: '/users', label: 'Пользователи', icon: <IconUsers />, adminOnly: true },
-  { path: '/cache', label: 'Кеши', icon: <IconCache />, adminOnly: true },
+const NAV: NavEntry[] = [
+  { type: 'link', item: { path: '/dashboard', label: 'Дашборд', icon: <IconDashboard /> } },
+  { type: 'link', item: { path: '/coffee-shops', label: 'Кофейни', icon: <IconShop />, browseOnly: true } },
+  { type: 'link', item: { path: '/map', label: 'Карта', icon: <IconMap />, browseOnly: true } },
+  {
+    type: 'group',
+    group: {
+      id: 'moderation',
+      label: 'Модерация',
+      icon: <IconShop />,
+      children: [
+        { path: '/shops', label: 'Пользовательская модерация', icon: <IconShop />, moderatorOnly: true },
+        { path: '/import', label: 'Парсинг', icon: <IconImport />, moderatorOnly: true },
+        { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
+      ],
+    },
+  },
+  { type: 'link', item: { path: '/reviews', label: 'Отзывы', icon: <IconReview />, moderatorOnly: true } },
+  { type: 'link', item: { path: '/shop-tags', label: 'Теги', icon: <IconTags />, adminOnly: true } },
+  { type: 'link', item: { path: '/audit', label: 'Audit log', icon: <IconAudit />, adminOnly: true } },
+  { type: 'link', item: { path: '/my-shops', label: 'Мои кофейни', icon: <IconShop />, ownerOnly: true } },
+  { type: 'link', item: { path: '/users', label: 'Пользователи', icon: <IconUsers />, adminOnly: true } },
+  { type: 'link', item: { path: '/cache', label: 'Кеши', icon: <IconCache />, adminOnly: true } },
 ];
+
+function canSee(item: NavItem, roles: { isAdmin: boolean; isModerator: boolean; isOwner: boolean }) {
+  if (item.adminOnly) return roles.isAdmin;
+  if (item.moderatorOnly) return roles.isModerator;
+  if (item.ownerOnly) return roles.isOwner;
+  if (item.browseOnly) return !roles.isAdmin && !roles.isModerator;
+  return true;
+}
+
+function pathActive(pathname: string, path: string) {
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
+
+const linkClass = (active: boolean, extra = '') =>
+  `flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors text-sm font-body min-h-[44px] ${
+    active ? 'bg-primary/20 text-primary' : 'text-stone-400 hover:text-white hover:bg-white/5'
+  } ${extra}`;
 
 interface SidebarProps {
   collapsed: boolean;
@@ -84,7 +130,21 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavigate }) => {
   const { user, isAdmin, isModerator, isOwner, logout } = useUser();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  const roles = { isAdmin, isModerator, isOwner };
+  const showLabels = !collapsed || mobileOpen;
+
+  useEffect(() => {
+    for (const entry of NAV) {
+      if (entry.type !== 'group') continue;
+      if (entry.group.children.some((child) => pathActive(pathname, child.path))) {
+        setOpenGroups((current) => ({ ...current, [entry.group.id]: true }));
+      }
+    }
+  }, [pathname]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -96,15 +156,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
     }
   };
 
-  const visibleItems = NAV_ITEMS.filter((item) => {
-    if (item.adminOnly) return isAdmin;
-    if (item.moderatorOnly) return isModerator;
-    if (item.ownerOnly) return isOwner;
-    if (item.browseOnly) return !isAdmin && !isModerator;
-    return true;
+  const visibleEntries = NAV.flatMap((entry): NavEntry[] => {
+    if (entry.type === 'link') {
+      return canSee(entry.item, roles) ? [entry] : [];
+    }
+    const children = entry.group.children.filter((child) => canSee(child, roles));
+    return children.length > 0 ? [{ type: 'group', group: { ...entry.group, children } }] : [];
   });
 
-  const showLabels = !collapsed || mobileOpen;
+  const renderLink = (item: NavItem, nested = false) => (
+    <NavLink
+      key={item.path}
+      to={item.path}
+      onClick={onNavigate}
+      title={item.label}
+      className={({ isActive }) =>
+        linkClass(isActive || pathActive(pathname, item.path), nested && showLabels ? 'pl-9 py-2 min-h-[40px]' : '')
+      }
+    >
+      {item.icon}
+      {showLabels && <span className="leading-tight">{item.label}</span>}
+    </NavLink>
+  );
 
   return (
     <aside
@@ -126,24 +199,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
       </div>
 
       <nav className="flex-1 py-3 overflow-y-auto overscroll-contain">
-        {visibleItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            onClick={onNavigate}
-            title={item.label}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors text-sm font-body min-h-[44px] ${
-                isActive
-                  ? 'bg-primary/20 text-primary'
-                  : 'text-stone-400 hover:text-white hover:bg-white/5'
-              }`
-            }
-          >
-            {item.icon}
-            {showLabels && <span className="leading-tight">{item.label}</span>}
-          </NavLink>
-        ))}
+        {visibleEntries.map((entry) => {
+          if (entry.type === 'link') return renderLink(entry.item);
+
+          const { group } = entry;
+          const childActive = group.children.some((child) => pathActive(pathname, child.path));
+          const open = Boolean(openGroups[group.id]);
+
+          return (
+            <div key={group.id} className="mb-1">
+              <button
+                type="button"
+                title={group.label}
+                onClick={() => setOpenGroups((current) => ({ ...current, [group.id]: !open }))}
+                className={linkClass(childActive && !open)}
+              >
+                {group.icon}
+                {showLabels && <span className="leading-tight flex-1 text-left">{group.label}</span>}
+                {showLabels && <IconChevron open={open} />}
+              </button>
+              {open && group.children.map((child) => renderLink(child, true))}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="border-t border-border-dark p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">

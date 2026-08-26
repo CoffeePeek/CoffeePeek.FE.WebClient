@@ -352,7 +352,7 @@ export const ImportInboxPage: React.FC<{
     <div
       className={
         embedded
-          ? 'h-full min-h-0 flex flex-col overflow-hidden pt-16'
+          ? 'h-full min-h-0 flex flex-col overflow-hidden'
           : 'page-container pb-24'
       }
     >

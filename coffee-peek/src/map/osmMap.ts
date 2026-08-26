@@ -129,17 +129,18 @@ export function parseCoffeeFocus(value: unknown): MapCoffeeFocus {
 
 const PIN_BY_FOCUS: Record<MapCoffeeFocus, { color: string; mascot: string }> = {
   specialty: { color: '#EAB308', mascot: '/maskot-props/maskot-with-bean.png' },
-  coffee_bar: { color: '#22C55E', mascot: '/maskot-props/maskot-wthi-cup.png' },
-  cafe: { color: '#3B82F6', mascot: '/maskot-props/maskot-with-dessert.png' },
+  coffee_bar: { color: '#D4A84B', mascot: '/maskot-props/maskot-wthi-cup.png' },
+  cafe: { color: '#3D2F28', mascot: '/maskot-props/maskot-with-dessert.png' },
 };
 
 const PIN_PATH =
   'M20 1.6C29.2 1.6 36.8 9.3 36.8 18.8C36.8 29.8 20 50.4 20 50.4C20 50.4 3.2 29.8 3.2 18.8C3.2 9.3 10.8 1.6 20 1.6Z';
 
-const PIN_W = 52;
-const PIN_H = 68;
+const PIN_W = 34;
+const PIN_H = 44;
 const PIN_VB_W = 40;
 const PIN_VB_H = 52;
+const SELECTED_FILL = '#EAB308';
 
 const mascotCanvases = new Map<string, HTMLCanvasElement>();
 const pinIconCache = new Map<string, L.Icon>();
@@ -229,11 +230,11 @@ function renderPinDataUrl(color: string, mascotSrc: string, selected: boolean): 
   ctx.scale(PIN_W / PIN_VB_W, PIN_H / PIN_VB_H);
 
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.38)';
-  ctx.shadowBlur = 3;
-  ctx.shadowOffsetY = 1.5;
+  ctx.shadowColor = 'rgba(26,20,18,0.32)';
+  ctx.shadowBlur = 2.4;
+  ctx.shadowOffsetY = 1.2;
   const pin = new Path2D(PIN_PATH);
-  ctx.fillStyle = color;
+  ctx.fillStyle = selected ? SELECTED_FILL : color;
   ctx.fill(pin);
   ctx.restore();
 
@@ -241,26 +242,14 @@ function renderPinDataUrl(color: string, mascotSrc: string, selected: boolean): 
   if (mascot) {
     ctx.save();
     ctx.clip(pin);
-    ctx.drawImage(mascot, 2.2, 0.4, 35.6, 38);
+    ctx.drawImage(mascot, -2, -5, 44, 48);
     ctx.restore();
   }
 
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = selected ? '#EAB308' : '#1A1412';
-  ctx.lineWidth = selected ? 1.7 : 1.35;
+  ctx.strokeStyle = '#1A1412';
+  ctx.lineWidth = selected ? 1.5 : 1.15;
   ctx.stroke(pin);
-
-  if (selected) {
-    ctx.save();
-    ctx.shadowColor = 'rgba(234,179,8,0.85)';
-    ctx.shadowBlur = 6;
-    ctx.beginPath();
-    ctx.arc(20, 18.4, 16.2, 0, Math.PI * 2);
-    ctx.strokeStyle = '#EAB308';
-    ctx.lineWidth = 2.3;
-    ctx.stroke();
-    ctx.restore();
-  }
 
   return canvas.toDataURL('image/png');
 }
@@ -278,6 +267,7 @@ export function coffeeMapPinIcon(options: { focus?: unknown; selected?: boolean 
     iconSize: [PIN_W, PIN_H],
     iconAnchor: [PIN_W / 2, PIN_H - 2],
     popupAnchor: [0, -(PIN_H - 10)],
+    className: 'coffee-map-pin',
   });
   pinIconCache.set(key, icon);
   return icon;

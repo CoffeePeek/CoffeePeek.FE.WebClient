@@ -108,6 +108,7 @@ const MapPage: React.FC = () => {
           const marker = L.marker([shop.latitude, shop.longitude], {
             icon: coffeeMapPinIcon({ focus: shop.type, selected }),
             title: shop.title,
+            keyboard: false,
             zIndexOffset: selected ? 1000 : 0,
           });
           marker.on('click', () => {

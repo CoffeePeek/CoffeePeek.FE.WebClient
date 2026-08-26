@@ -235,6 +235,7 @@
   z-index: 0;
   background: #1c1917;
   font-family: "RF Dewi Expanded", system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* OSM fallback has no dark style — approximate dark theme when CARTO key is absent */
@@ -264,4 +265,16 @@
 }
 .leaflet-control-attribution a:hover {
   color: #facc15 !important;
+}
+
+.leaflet-marker-icon.coffee-map-pin {
+  outline: none !important;
+  background: none !important;
+  border: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.leaflet-marker-icon.coffee-map-pin:focus,
+.leaflet-marker-icon.coffee-map-pin:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }

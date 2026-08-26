@@ -5,6 +5,7 @@ interface HeaderProps {
   title: string;
   onToggleSidebar: () => void;
   sidebarCollapsed: boolean;
+  hideBorder?: boolean;
 }
 
 const MoonIcon = () => (
@@ -18,11 +19,21 @@ const SunIcon = () => (
   </svg>
 );
 
-export const Header: React.FC<HeaderProps> = ({ title, onToggleSidebar, sidebarCollapsed }) => {
+export const Header: React.FC<HeaderProps> = ({
+  title,
+  onToggleSidebar,
+  sidebarCollapsed,
+  hideBorder,
+}) => {
   const { isDark, toggleTheme } = useTheme();
 
   return (
-    <header className="h-14 bg-white dark:bg-surface-dark border-b border-border-light dark:border-border-dark flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 pt-[env(safe-area-inset-top)]">
+    <header
+      className={[
+        'h-14 bg-white dark:bg-surface-dark flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 pt-[env(safe-area-inset-top)]',
+        hideBorder ? '' : 'border-b border-border-light dark:border-border-dark',
+      ].join(' ')}
+    >
       <button
         onClick={onToggleSidebar}
         className="p-2 -ml-1 rounded-lg text-text-muted dark:text-stone-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors touch-manipulation"

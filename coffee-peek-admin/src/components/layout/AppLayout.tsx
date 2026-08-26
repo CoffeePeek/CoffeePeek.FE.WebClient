@@ -78,6 +78,7 @@ export const AppLayout: React.FC = () => {
           title={title}
           onToggleSidebar={handleMenuClick}
           sidebarCollapsed={isDesktop ? collapsed : mobileOpen}
+          hideBorder={isImportWorkspace}
         />
         <main
           className={

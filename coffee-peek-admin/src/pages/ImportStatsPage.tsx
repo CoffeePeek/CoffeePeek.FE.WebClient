@@ -108,17 +108,24 @@ export const ImportStatsPage: React.FC<{ embedded?: boolean }> = ({ embedded }) 
     <div
       className={
         embedded
-          ? 'h-full overflow-y-auto p-4 sm:p-6 space-y-4 pt-16'
+          ? 'h-full overflow-y-auto p-4 sm:p-6 space-y-4'
           : 'page-container max-w-4xl'
       }
     >
       {!embedded && <ImportTabs />}
-      <div>
-        <h2 className="page-header-title">Статистика каталога</h2>
-        <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
+      {!embedded && (
+        <div>
+          <h2 className="page-header-title">Статистика каталога</h2>
+          <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
+            В ленте = только Published. Заявки владельцев сюда не входят.
+          </p>
+        </div>
+      )}
+      {embedded && (
+        <p className="text-sm text-text-muted dark:text-stone-400">
           В ленте = только Published. Заявки владельцев сюда не входят.
         </p>
-      </div>
+      )}
 
       {isError && (
         <p className="text-sm text-red-400">Статистика недоступна — import API ещё не на Gateway?</p>
