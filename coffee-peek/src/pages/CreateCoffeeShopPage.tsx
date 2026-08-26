@@ -12,7 +12,7 @@ import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { AppIcon, CoffeeBeanSign } from '../components/icons';
+import { AppIcon, BeanPriceMarks } from '../components/icons';
 import {
   MapPin, Images, Factory, Leaf, Flame, Drop, Lightbulb,
 } from '@/components/Icon';
@@ -293,7 +293,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
                   { value: 'Expensive', label: 'Дорого' },
                   { value: 'Luxury', label: 'Премиум' },
                 ]}
-                icon={<CoffeeBeanSign size={20} />}
+                icon={<BeanPriceMarks count={1} size={14} />}
               />
             </div>
           </div>

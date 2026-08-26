@@ -286,14 +286,16 @@ const PriceSlider: React.FC<{
               padding: 0,
               cursor: 'pointer',
               fontFamily: '"RF Dewi Expanded"',
-              fontSize: 10,
+              fontSize: i === 0 ? 10 : 9,
               fontWeight: i === index ? 700 : 500,
               color: i === index ? gold : muted,
               textAlign: i === 0 ? 'left' : i === PRICE_SLIDER_STOPS.length - 1 ? 'right' : 'center',
               flex: 1,
+              letterSpacing: i === 0 ? undefined : '-0.02em',
+              whiteSpace: 'nowrap' as const,
             }}
           >
-            {i === 0 ? 'Любая' : '•'.repeat(i)}
+            {i === 0 ? 'Любая' : Array.from({ length: i }, () => 'Br').join(' ')}
           </button>
         ))}
       </div>

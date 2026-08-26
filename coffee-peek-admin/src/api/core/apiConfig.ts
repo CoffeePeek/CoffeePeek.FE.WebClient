@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
     SHOP_TAGS_ASSIGN: (shopId: string) => `/api/admin/shops/${shopId}/tags`,
     IMPORT_OSM_REFRESH: '/api/admin/import/osm/refresh',
     IMPORT_DECISIONS: '/api/admin/import/decisions',
+    IMPORT_FILE: '/api/admin/import/file',
     IMPORT_CANDIDATES: '/api/admin/import/candidates',
     IMPORT_CANDIDATE_BY_ID: (id: string) => `/api/admin/import/candidates/${id}`,
     IMPORT_CANDIDATE_GOOGLE: (id: string) => `/api/admin/import/candidates/${id}/google-refresh`,

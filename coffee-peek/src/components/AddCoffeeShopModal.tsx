@@ -9,7 +9,7 @@ import { getThemeClasses } from '../utils/theme';
 import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
-import { CoffeeBeanSign } from './icons';
+import { BeanPriceMarks } from './icons';
 import {
   MapPin, Images, Factory, Leaf, Flame, Drop, Lightbulb, X,
 } from '@/components/Icon';
@@ -257,7 +257,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                     { value: 'Expensive', label: 'Дорого' },
                     { value: 'Luxury', label: 'Премиум' },
                   ]}
-                  icon={<CoffeeBeanSign size={20} />}
+                  icon={<BeanPriceMarks count={1} size={14} />}
                 />
               </div>
             </div>

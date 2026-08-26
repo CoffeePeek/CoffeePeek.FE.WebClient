@@ -46,24 +46,35 @@ interface BeanPriceMarksProps {
   gap?: number;
 }
 
-/** Repeat coffee beans for price-range tiers (accent gold by default). */
+/** Repeat BYN (Br) marks for price-range tiers. */
 export const BeanPriceMarks: React.FC<BeanPriceMarksProps> = ({
   count,
   size = 13,
   className,
   color = brand.primary,
-  gap = 2,
+  gap = 3,
 }) => {
   const n = Math.max(0, Math.min(4, Math.floor(count)));
   if (n === 0) return null;
   return (
     <span
       className={className}
-      style={{ display: 'inline-flex', alignItems: 'center', gap }}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'baseline',
+        gap,
+        color,
+        fontFamily: '"RF Dewi Expanded", system-ui, sans-serif',
+        fontWeight: 700,
+        fontSize: size,
+        lineHeight: 1,
+        letterSpacing: '0.02em',
+        whiteSpace: 'nowrap',
+      }}
       aria-label={`Ценовой уровень ${n}`}
     >
       {Array.from({ length: n }, (_, i) => (
-        <CoffeeBeanSign key={i} size={size} color={color} title={null} />
+        <span key={i}>Br</span>
       ))}
     </span>
   );

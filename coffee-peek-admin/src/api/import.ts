@@ -328,3 +328,27 @@ export async function refreshOsmImport(): Promise<ApiResponse<unknown>> {
 export async function applyImportDecisions(json: unknown): Promise<ApiResponse<unknown>> {
   return httpClient.post(API_ENDPOINTS.ADMIN.IMPORT_DECISIONS, json);
 }
+
+export interface IngestImportFileResult {
+  parsed: number;
+  inserted: number;
+  enriched: number;
+  unchanged: number;
+  invalid: number;
+}
+
+export async function ingestImportFile(json: unknown): Promise<ApiResponse<IngestImportFileResult>> {
+  const response = await httpClient.post<Record<string, unknown>>(API_ENDPOINTS.ADMIN.IMPORT_FILE, json);
+  const raw = asRecord(response.data);
+
+  return {
+    ...response,
+    data: {
+      parsed: Number(pick(raw, 'parsed', 'Parsed') ?? 0),
+      inserted: Number(pick(raw, 'inserted', 'Inserted') ?? 0),
+      enriched: Number(pick(raw, 'enriched', 'Enriched') ?? 0),
+      unchanged: Number(pick(raw, 'unchanged', 'Unchanged') ?? 0),
+      invalid: Number(pick(raw, 'invalid', 'Invalid') ?? 0),
+    },
+  };
+}

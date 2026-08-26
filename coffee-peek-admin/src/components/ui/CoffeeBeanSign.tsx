@@ -43,9 +43,24 @@ export const BeanPriceMarks: React.FC<{
   const n = Math.max(0, Math.min(4, Math.floor(count)));
   if (n === 0) return null;
   return (
-    <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+    <span
+      className={className}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'baseline',
+        gap: 3,
+        color,
+        fontFamily: 'inherit',
+        fontWeight: 700,
+        fontSize: size,
+        lineHeight: 1,
+        letterSpacing: '0.02em',
+        whiteSpace: 'nowrap',
+      }}
+      aria-label={`Ценовой уровень ${n}`}
+    >
       {Array.from({ length: n }, (_, i) => (
-        <CoffeeBeanSign key={i} size={size} color={color} title={null} />
+        <span key={i}>Br</span>
       ))}
     </span>
   );
