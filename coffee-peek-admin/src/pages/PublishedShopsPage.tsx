@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
-import { getPublishedShops, CoffeeShopStatus } from '../api/admin';
+import { getPublishedShops, setPublishedShopVisibility, CoffeeShopStatus } from '../api/admin';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
+import { useToast } from '../contexts/ToastContext';
 import {
   COFFEE_SHOP_STATUS_LABELS,
   coffeeShopStatusBadgeVariant,
@@ -44,6 +45,8 @@ export const PublishedShopsPage: React.FC = () => {
   const status = (searchParams.get('status') ?? '') as CoffeeShopStatus | '';
   const importedFromFile = searchParams.get('importedFromFile') === '1';
   const [localSearch, setLocalSearch] = useState(search);
+  const { showToast } = useToast();
+  const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'published-shops', { page, search, status, importedFromFile }],
@@ -55,6 +58,17 @@ export const PublishedShopsPage: React.FC = () => {
         status: status || undefined,
         importedFromFile: importedFromFile || undefined,
       }).then((r) => r.data),
+  });
+
+  const visibilityMutation = useMutation({
+    mutationFn: ({ id, hidden }: { id: string; hidden: boolean }) =>
+      setPublishedShopVisibility(id, hidden),
+    onSuccess: (_response, { hidden }) => {
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
+      qc.invalidateQueries({ queryKey: ['browse'] });
+      showToast(hidden ? 'Кофейня скрыта из приложения' : 'Кофейня снова видна в приложении', 'success');
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось изменить видимость', 'error'),
   });
 
   const setParam = (key: string, value: string) => {
@@ -192,11 +206,26 @@ export const PublishedShopsPage: React.FC = () => {
                         {new Date(shop.createdAtUtc).toLocaleDateString('ru')}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Link to={`/published-shops/${shop.id}`}>
-                          <Button variant="ghost" size="sm">
-                            Редактировать
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            loading={
+                              visibilityMutation.isPending &&
+                              visibilityMutation.variables?.id === shop.id
+                            }
+                            onClick={() =>
+                              visibilityMutation.mutate({ id: shop.id, hidden: !shop.isHidden })
+                            }
+                          >
+                            {shop.isHidden ? 'Показать' : 'Скрыть'}
                           </Button>
-                        </Link>
+                          <Link to={`/published-shops/${shop.id}`}>
+                            <Button variant="ghost" size="sm">
+                              Редактировать
+                            </Button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

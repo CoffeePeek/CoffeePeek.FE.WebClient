@@ -178,11 +178,12 @@ export const PublishedShopEditPage: React.FC = () => {
       return { previous };
     },
     onSuccess: (response, hidden) => {
-      if (response.data) {
-        qc.setQueryData(['admin', 'published-shop', id], response.data);
-      }
-      qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] });
+      qc.setQueryData(['admin', 'published-shop', id], (current: typeof shop) => {
+        const base = response.data ?? current;
+        return base ? { ...base, isHidden: hidden } : current;
+      });
       qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
+      qc.invalidateQueries({ queryKey: ['browse'] });
       showToast(hidden ? 'Кофейня скрыта из приложения' : 'Кофейня снова видна в приложении', 'success');
     },
     onError: (err: any, _hidden, context) => {

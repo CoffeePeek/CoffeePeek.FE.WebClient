@@ -743,6 +743,12 @@ function pickHiddenFlag(shop: Record<string, unknown>): boolean {
     if (value === true || value === 1 || value === 'true' || value === 'True') return true;
     if (value === false || value === 0 || value === 'false' || value === 'False') return false;
   }
+  for (const key of ['isVisible', 'visible', 'IsVisible', 'Visible']) {
+    if (!(key in shop)) continue;
+    const value = shop[key];
+    if (value === true || value === 1 || value === 'true' || value === 'True') return false;
+    if (value === false || value === 0 || value === 'false' || value === 'False') return true;
+  }
   return false;
 }
 
@@ -878,12 +884,16 @@ export async function getPublishedShops(
       },
     }
   );
-  const raw = response.data as unknown as GetAdminCoffeeShopsResponse;
+  const raw = response.data as unknown as GetAdminCoffeeShopsResponse & {
+    coffeeShops?: Record<string, unknown>[];
+    shops?: Record<string, unknown>[];
+  };
+  const list = raw.items ?? raw.coffeeShops ?? raw.shops ?? [];
 
   return {
     ...response,
     data: toPaginatedResult(
-      (raw.items ?? []).map((item) => mapPublishedShop(item)),
+      list.map((item) => mapPublishedShop(item)),
       response.meta,
       page,
       pageSize
@@ -893,7 +903,14 @@ export async function getPublishedShops(
 
 export async function getPublishedShopById(id: string): Promise<ApiResponse<PublishedShop>> {
   const response = await httpClient.get<Record<string, unknown>>(API_ENDPOINTS.ADMIN.SHOP_BY_ID(id));
-  return { ...response, data: mapPublishedShop(response.data) };
+  const raw = response.data ?? {};
+  const nested = ['shop', 'Shop', 'coffeeShop', 'CoffeeShop']
+    .map((key) => raw[key])
+    .find((value) => value && typeof value === 'object' && !Array.isArray(value));
+  return {
+    ...response,
+    data: mapPublishedShop((nested as Record<string, unknown> | undefined) ?? raw),
+  };
 }
 
 export async function reorderPublishedShopPhotos(
@@ -955,12 +972,17 @@ export async function setPublishedShopVisibility(
     API_ENDPOINTS.ADMIN.SHOP_VISIBILITY(id),
     { hidden }
   );
+  if (response.isSuccess === false) {
+    throw { message: response.message || 'Не удалось изменить видимость' };
+  }
   const raw = response.data;
   const looksLikeShop = raw && typeof raw === 'object' && (raw.id || raw.Id);
+  const mapped = looksLikeShop ? mapPublishedShop(raw) : undefined;
+  if (mapped) mapped.isHidden = hidden;
 
   return {
     ...response,
-    data: looksLikeShop ? mapPublishedShop(raw) : undefined,
+    data: mapped,
   };
 }
 

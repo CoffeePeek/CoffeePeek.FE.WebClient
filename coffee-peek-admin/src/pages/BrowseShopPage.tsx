@@ -1,19 +1,33 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { getBrowseCoffeeShopById } from '../api/coffeeShops';
+import { setPublishedShopVisibility } from '../api/admin';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { useToast } from '../contexts/ToastContext';
 
 const DAY_NAMES = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 
 export const BrowseShopPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { showToast } = useToast();
+  const qc = useQueryClient();
 
   const { data: shop, isLoading, isError } = useQuery({
     queryKey: ['browse', 'coffee-shop', id],
     queryFn: () => getBrowseCoffeeShopById(id!).then((r) => r.data),
     enabled: Boolean(id),
+  });
+
+  const hideMutation = useMutation({
+    mutationFn: () => setPublishedShopVisibility(id!, true),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['browse'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
+      showToast('Кофейня скрыта из приложения', 'success');
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось скрыть кофейню', 'error'),
   });
 
   if (isLoading) {
@@ -44,13 +58,24 @@ export const BrowseShopPage: React.FC = () => {
 
   return (
     <div className="page-container max-w-3xl">
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <Link to="/coffee-shops">
           <Button variant="ghost" size="sm">← К списку</Button>
         </Link>
         <Link to="/map">
           <Button variant="secondary" size="sm">На карте</Button>
         </Link>
+        <Link to={`/published-shops/${shop.id}`}>
+          <Button variant="secondary" size="sm">Редактировать</Button>
+        </Link>
+        <Button
+          variant="danger"
+          size="sm"
+          loading={hideMutation.isPending}
+          onClick={() => hideMutation.mutate()}
+        >
+          Скрыть из приложения
+        </Button>
       </div>
 
       <Card className="overflow-hidden">
