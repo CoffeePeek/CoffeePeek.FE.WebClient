@@ -154,7 +154,10 @@
 .shop-price-slider {
   -webkit-appearance: none;
   appearance: none;
-  width: 100%;
+  display: block;
+  width: 100% !important;
+  max-width: 100%;
+  box-sizing: border-box;
   height: 18px;
   border-radius: 99px;
   background: linear-gradient(
@@ -170,6 +173,17 @@
   outline: none;
   margin: 8px 0 4px;
   cursor: pointer;
+}
+
+.price-slider-root:focus,
+.price-slider-root:focus-visible,
+.price-slider-stop:focus,
+.price-slider-stop:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.price-slider-stop::-moz-focus-inner {
+  border: 0;
 }
 
 .shop-price-slider::-webkit-slider-runnable-track {
