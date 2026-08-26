@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
+import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getCoffeeShopsByMapBounds, getCoffeeShopById, MapShop, DetailedCoffeeShop } from '../api/coffeeshop';
@@ -6,105 +8,58 @@ import { getErrorMessage } from '../utils/errorHandler';
 import { Star, BookmarkSimple } from '@/components/Icon';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
-
-declare global {
-  interface Window {
-    ymaps: any;
-  }
-}
+import {
+  applyOsmMapTheme,
+  coffeeCircleIcon,
+  createOsmMap,
+  getMapBoundsBox,
+} from '../map/osmMap';
 
 const MapPage: React.FC = () => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapInstance, setMapInstance] = useState<any>(null);
+  const mapInstanceRef = useRef<LeafletMap | null>(null);
+  const markersRef = useRef<LeafletMarker[]>([]);
+  const selectedIdRef = useRef<string | null>(null);
+  const shopsRef = useRef<MapShop[]>([]);
+  const paintMarkersRef = useRef<(shopsList: MapShop[]) => void>(() => undefined);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shops, setShops] = useState<MapShop[]>([]);
   const [shopsLoaded, setShopsLoaded] = useState(false);
-  const markersRef = useRef<any[]>([]);
-  const clustererRef = useRef<any>(null);
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
   const [selectedShopDetails, setSelectedShopDetails] = useState<DetailedCoffeeShop | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  useEffect(() => {
-    // Проверяем, загружена ли библиотека Яндекс.Карт
-    if (window.ymaps) {
-      initMap();
-      return;
-    }
-
-    // Загружаем скрипт Яндекс.Карт (Enterprise версия)
-    const apiKey = (import.meta.env as any).VITE_YANDEX_MAP_API_KEY || '';
-    const version = '2.1'; // Версия API
-    const lang = 'ru_RU'; // Язык интерфейса
-    const script = document.createElement('script');
-    script.src = `https://enterprise.api-maps.yandex.ru/${version}/?${apiKey ? `apikey=${apiKey}&` : ''}lang=${lang}`;
-    script.async = true;
-    script.onload = () => {
-      window.ymaps.ready(() => {
-        initMap();
-      });
-    };
-    script.onerror = () => {
-      setError('Не удалось загрузить Яндекс.Карты');
-      setIsLoading(false);
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      // Очистка при размонтировании
-      if (mapInstance) {
-        mapInstance.destroy();
-      }
-    };
-  }, []);
-
-  // Загружаем кофейни по границам видимой области карты
-  const loadCoffeeShops = async (bounds?: number[][]) => {
+  const loadCoffeeShops = async (map: LeafletMap) => {
     try {
-      let minLat: number | undefined;
-      let minLon: number | undefined;
-      let maxLat: number | undefined;
-      let maxLon: number | undefined;
-
-      if (bounds && bounds.length >= 2) {
-        // В Яндекс.Картах bounds возвращает [широта, долгота]
-        // bounds[0] - левый нижний угол [широта, долгота]
-        // bounds[1] - правый верхний угол [широта, долгота]
-        minLat = Math.min(bounds[0][0], bounds[1][0]);
-        minLon = Math.min(bounds[0][1], bounds[1][1]);
-        maxLat = Math.max(bounds[0][0], bounds[1][0]);
-        maxLon = Math.max(bounds[0][1], bounds[1][1]);
-        
-      }
-
+      const { minLat, minLon, maxLat, maxLon } = getMapBoundsBox(map);
       const response = await getCoffeeShopsByMapBounds(minLat, minLon, maxLat, maxLon);
-      
-      // API возвращает { data: { shops: MapShop[] } }
+
       let shopsList: MapShop[] = [];
-      
-      if (response.data && response.data.shops && Array.isArray(response.data.shops)) {
-        shopsList = response.data.shops.map((shop: any) => ({
+      if (response.data?.shops && Array.isArray(response.data.shops)) {
+        shopsList = response.data.shops.map((shop: MapShop & { name?: string }) => ({
           id: shop.id,
           latitude: Number(shop.latitude),
           longitude: Number(shop.longitude),
           title: shop.title || shop.name || 'Кофейня',
         }));
       }
-      
+
+      shopsRef.current = shopsList;
       setShops(shopsList);
       setShopsLoaded(true);
+      setError(null);
       return shopsList;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setShopsLoaded(true);
       setError('Ошибка при загрузке кофеен: ' + getErrorMessage(err));
       return [];
     }
   };
 
-  // Загружаем детальную информацию о кофейне
   const loadShopDetails = async (shopId: string) => {
     setIsLoadingDetails(true);
     try {
@@ -112,207 +67,98 @@ const MapPage: React.FC = () => {
       if (response.success && response.data) {
         setSelectedShopDetails(response.data);
       }
-    } catch (err: any) {
+    } catch {
+      /* name-only card is enough */
     } finally {
       setIsLoadingDetails(false);
     }
   };
 
-  // Добавляем маркеры кофеен на карту
-  const addCoffeeShopMarkers = (map: any, ymaps: any, shopsList: MapShop[] = shops) => {
-    
-    // Удаляем старые маркеры
-    markersRef.current.forEach(marker => {
-      map.geoObjects.remove(marker);
-    });
-    markersRef.current = [];
+  useEffect(() => {
+    const container = mapRef.current;
+    if (!container || mapInstanceRef.current) return;
 
-    if (!shopsList || shopsList.length === 0) {
-      return;
-    }
+    let cancelled = false;
+    let updateTimeout: ReturnType<typeof setTimeout> | undefined;
 
-    shopsList.forEach((shop: MapShop) => {
-      const coordinates = [shop.latitude, shop.longitude];
-      
-      if (!coordinates || coordinates.length !== 2 || !coordinates[0] || !coordinates[1]) {
-        return;
-      }
-      
-      const isSelected = selectedShop?.id === shop.id;
-      const circleColor = isSelected ? '#1A1412' : '#FFFFFF';
-      const iconColor = isSelected ? '#FFFFFF' : '#1A1412';
-      const borderColor = isSelected ? '#EAB308' : '#EAB308';
-      const borderWidth = isSelected ? 3 : 2;
-
-      // Создаем кастомную иконку
-      const iconContent = `
-        <div style="
-          width: 40px;
-          height: 50px;
-          background: linear-gradient(135deg, #EAB308 0%, #FACC15 100%);
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        ">
-          <div style="
-            transform: rotate(45deg);
-            color: #1A1412;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          "><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V192a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,192H48V96H208v96Z"/></svg></div>
-        </div>
-      `;
-
-      const marker = new ymaps.Placemark(
-        coordinates,
-        {
-          hintContent: shop.title,
-        },
-        {
-          iconLayout: 'default#imageWithContent',
-          iconImageHref: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-            <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="24" cy="24" r="22" fill="${circleColor}" stroke="${borderColor}" stroke-width="${borderWidth}"/>
-              <g transform="translate(12, 12) scale(0.045)">
-                <path fill="${iconColor}" d="M378.596,374.959c1.729-2.724,3.363-5.429,4.953-8.222c13.649,12.403,31.767,20.005,51.619,20.005c42.366,0,76.832-34.45,76.832-76.815c0-42.366-34.508-76.824-76.874-76.824c-8.883,0-17.481,1.541-25.394,4.326v-39.62c0-9.364-7.508-17.354-16.872-17.354H48.544c-9.364,0-17.49,7.988-17.49,17.354v69.826c0,38.118,11.063,75.14,31.488,107.324c9.008,14.194,19.96,27.051,32.045,38.355H16.956C7.592,413.314,0,420.905,0,430.27s7.592,16.956,16.956,16.956h30.942c4.867,32.781,32.579,56.519,65.933,56.519h213.642c33.353,0,61.065-23.738,65.933-56.519h31.043c9.364,0,16.956-7.592,16.956-16.956s-7.592-16.956-16.956-16.956h-77.631C358.902,402.01,369.588,389.153,378.596,374.959z M409.653,275.455c7.137-5.295,15.966-8.432,25.515-8.432c23.667-0.001,42.921,19.254,42.921,42.921c0,23.667-19.254,42.921-42.921,42.921c-15.248,0-28.655-7.999-36.271-20.015C405.239,314.417,408.89,295.105,409.653,275.455z M358.666,447.225c-4.258,13.565-16.629,22.608-31.194,22.608H113.831c-14.565,0-26.935-9.043-31.194-22.608H358.666z M289.631,413.314H151.773c-52.73-28.26-86.808-84.98-86.808-145.679v-53.268H375.82v53.268C375.82,328.334,342.361,385.054,289.631,413.314z"/>
-                <path fill="${iconColor}" d="M169.907,122.299l-8.316-6.683c-3.207-2.577-5.014-6.414-4.958-10.527c0.055-4.113,1.966-7.9,5.242-10.389c11.481-8.727,18.268-21.999,18.62-36.417s-5.78-28.005-16.822-37.281c-7.17-6.023-17.866-5.092-23.889,2.078c-6.023,7.17-5.092,17.866,2.078,23.89c4.254,3.572,4.791,8.104,4.733,10.488c-0.059,2.383-0.817,6.883-5.239,10.245c-11.642,8.848-18.433,22.308-18.63,36.93c-0.198,14.621,6.226,28.261,17.625,37.42l8.316,6.683c3.132,2.516,6.883,3.739,10.611,3.739c4.961,0,9.878-2.167,13.228-6.335C178.369,138.838,177.207,128.166,169.907,122.299z"/>
-                <path fill="${iconColor}" d="M240.322,131.073l-9.754-7.838c-4.468-3.591-6.987-8.938-6.909-14.67c0.077-5.732,2.74-11.009,7.303-14.478c12.753-9.692,20.292-24.435,20.681-40.448c0.39-16.013-6.419-31.107-18.684-41.409c-7.17-6.024-17.867-5.094-23.888,2.077c-6.024,7.17-5.094,17.866,2.076,23.888c4.329,3.636,6.734,8.964,6.595,14.616c-0.138,5.652-2.799,10.856-7.3,14.277c-12.93,9.826-20.474,24.777-20.693,41.018c-0.22,16.24,6.915,31.39,19.575,41.563l9.754,7.838c3.132,2.517,6.883,3.739,10.611,3.739c4.961,0,9.878-2.167,13.228-6.335C248.782,147.611,247.62,136.939,240.322,131.073z"/>
-                <path fill="${iconColor}" d="M308.086,122.299l-8.316-6.683c-3.207-2.577-5.014-6.414-4.958-10.527c0.055-4.113,1.966-7.9,5.242-10.389c11.481-8.727,18.268-21.999,18.62-36.417c0.352-14.418-5.78-28.005-16.822-37.281c-7.171-6.023-17.867-5.092-23.889,2.078c-6.023,7.17-5.092,17.866,2.078,23.89c4.254,3.572,4.791,8.104,4.733,10.488c-0.06,2.383-0.817,6.883-5.239,10.245c-11.642,8.848-18.433,22.308-18.63,36.93c-0.198,14.621,6.226,28.261,17.625,37.42l8.316,6.683c3.132,2.516,6.883,3.739,10.611,3.739c4.961,0,9.878-2.167,13.228-6.335C316.548,138.838,315.386,128.166,308.086,122.299z"/>
-              </g>
-            </svg>
-          `),
-          iconImageSize: [48, 48],
-          iconImageOffset: [-24, -24],
-          shopData: shop,
+    const clearMarkers = () => {
+      const map = mapInstanceRef.current;
+      markersRef.current.forEach((marker) => {
+        try {
+          map?.removeLayer(marker);
+        } catch {
+          /* ignore */
         }
-      );
-
-      // Обработчик клика на маркер
-      marker.events.add('click', () => {
-        setSelectedShop(shop);
-        loadShopDetails(shop.id);
-        // Обновляем все маркеры для обновления визуального состояния
-        setTimeout(() => {
-          addCoffeeShopMarkers(map, ymaps, shopsList);
-        }, 100);
       });
+      markersRef.current = [];
+    };
 
-      try {
-        map.geoObjects.add(marker);
+    const paintMarkers = (shopsList: MapShop[]) => {
+      const map = mapInstanceRef.current;
+      if (!map) return;
+      clearMarkers();
+      shopsList.forEach((shop) => {
+        if (!shop.latitude || !shop.longitude) return;
+        const selected = selectedIdRef.current === shop.id;
+        const marker = L.marker([shop.latitude, shop.longitude], {
+          icon: coffeeCircleIcon(selected),
+          title: shop.title,
+        });
+        marker.on('click', () => {
+          selectedIdRef.current = shop.id;
+          setSelectedShop(shop);
+          void loadShopDetails(shop.id);
+          paintMarkers(shopsRef.current);
+        });
+        marker.addTo(map);
         markersRef.current.push(marker);
-      } catch (err: any) {
-      }
-    });
-    
-  };
-
-  const initMap = () => {
-    if (!mapRef.current || !window.ymaps) return;
-
-    try {
-      window.ymaps.ready(() => {
-        const map = new window.ymaps.Map(mapRef.current, {
-          center: [53.9, 27.5667], // Минск по умолчанию
-          zoom: 12,
-          controls: [
-            'zoomControl',
-            'fullscreenControl',
-            'geolocationControl',
-          ],
-          behaviors: ['default', 'scrollZoom'],
-        });
-
-        // Устанавливаем тему карты в зависимости от темы приложения
-        if (theme === 'dark') {
-          map.options.set('theme', 'dark');
-        }
-
-        // Кастомизация элементов управления (как на скриншоте - справа вверху)
-        map.controls.get('zoomControl').options.set({
-          size: 'small',
-          position: { right: 10, top: 10 },
-        });
-
-        map.controls.get('geolocationControl').options.set({
-          position: { right: 10, top: 60 },
-        });
-
-        setMapInstance(map);
-        setIsLoading(false);
-
-        // Функция для загрузки кофеен при изменении границ карты
-        let updateTimeout: NodeJS.Timeout;
-        const updateCoffeeShops = () => {
-          // Дебаунс для избежания слишком частых запросов
-          clearTimeout(updateTimeout);
-          updateTimeout = setTimeout(() => {
-            try {
-              const bounds = map.getBounds();
-              
-              if (bounds && Array.isArray(bounds) && bounds.length >= 2) {
-                // В Яндекс.Картах bounds[0] - левый нижний угол [широта, долгота]
-                // bounds[1] - правый верхний угол [широта, долгота]
-                const boundsArray = [
-                  [bounds[0][0], bounds[0][1]], // левый нижний угол [lat, lon]
-                  [bounds[1][0], bounds[1][1]]  // правый верхний угол [lat, lon]
-                ];
-                
-                loadCoffeeShops(boundsArray).then((loadedShops) => {
-                  if (loadedShops && loadedShops.length > 0) {
-                    addCoffeeShopMarkers(map, window.ymaps, loadedShops);
-                  } else {
-                  }
-                });
-              } else {
-              }
-            } catch (err: any) {
-            }
-          }, 300); // Задержка 300мс для дебаунса
-        };
-
-        // Загружаем кофейни при первой загрузке
-        setTimeout(() => {
-          updateCoffeeShops();
-        }, 500); // Небольшая задержка для полной инициализации карты
-
-        // Обновляем кофейни при изменении границ карты (движение, зум)
-        map.events.add('boundschange', () => {
-          updateCoffeeShops();
-        });
       });
-    } catch (err: any) {
-      setError('Ошибка при инициализации карты: ' + getErrorMessage(err));
-      setIsLoading(false);
-    }
-  };
+    };
+    paintMarkersRef.current = paintMarkers;
 
-  // Обновляем маркеры при изменении списка кофеен (резервный механизм)
+    const map = createOsmMap(container, {
+      zoom: 12,
+      dark: theme === 'dark',
+    });
+    mapInstanceRef.current = map;
+    setIsLoading(false);
+
+    const updateCoffeeShops = () => {
+      clearTimeout(updateTimeout);
+      updateTimeout = setTimeout(() => {
+        void loadCoffeeShops(map).then((loaded) => {
+          if (!cancelled) paintMarkers(loaded);
+        });
+      }, 300);
+    };
+
+    updateTimeout = setTimeout(updateCoffeeShops, 400);
+    map.on('moveend', updateCoffeeShops);
+    map.on('zoomend', updateCoffeeShops);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(updateTimeout);
+      clearMarkers();
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
-    if (mapInstance && shops.length > 0 && window.ymaps) {
-      addCoffeeShopMarkers(mapInstance, window.ymaps, shops);
-    }
-  }, [shops, mapInstance]);
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    applyOsmMapTheme(map, theme === 'dark');
+  }, [theme]);
 
-  useEffect(() => {
-    if (mapInstance) {
-      mapInstance.options.set('theme', theme === 'dark' ? 'dark' : 'light');
-    }
-  }, [theme, mapInstance]);
-
-
-  // Форматируем часы работы
-  const formatWorkingHours = (schedules?: Array<{ dayOfWeek: number; openTime?: string; closeTime?: string }>) => {
+  const formatWorkingHours = (
+    schedules?: Array<{ dayOfWeek: number; openTime?: string; closeTime?: string }>,
+  ) => {
     if (!schedules || schedules.length === 0) return 'Часы работы не указаны';
-    
-    const today = new Date().getDay(); // 0 = воскресенье, 1 = понедельник и т.д.
-    const todaySchedule = schedules.find(s => s.dayOfWeek === today);
-    
-    if (todaySchedule && todaySchedule.openTime && todaySchedule.closeTime) {
+    const today = new Date().getDay();
+    const todaySchedule = schedules.find((s) => s.dayOfWeek === today);
+    if (todaySchedule?.openTime && todaySchedule?.closeTime) {
       return `${todaySchedule.openTime} - ${todaySchedule.closeTime}`;
     }
     return 'Часы работы не указаны';
@@ -332,8 +178,10 @@ const MapPage: React.FC = () => {
           </div>
         )}
 
-        {/* Карта в виде плитки */}
-        <div className={`relative ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl overflow-hidden`} style={{ height: '600px' }}>
+        <div
+          className={`relative ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl overflow-hidden`}
+          style={{ height: '600px' }}
+        >
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="text-[#EAB308] text-xl">Загрузка карты...</div>
@@ -342,7 +190,7 @@ const MapPage: React.FC = () => {
 
           {shopsLoaded && shops.length === 0 && !isLoading && (
             <div
-              className="absolute top-4 left-4 right-4 z-20 px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5"
+              className="absolute top-4 left-4 right-4 z-[500] px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5 pointer-events-none"
               style={{
                 backgroundColor: theme === 'dark' ? 'rgba(45,36,31,0.94)' : 'rgba(255,255,255,0.96)',
                 borderColor: theme === 'dark' ? '#3D2F28' : '#E7E5E4',
@@ -358,93 +206,82 @@ const MapPage: React.FC = () => {
               </span>
             </div>
           )}
-          <div
-            ref={mapRef}
-            style={{ width: '100%', height: '100%', minHeight: '600px' }}
-            className={isLoading ? 'hidden' : ''}
-          />
 
-          {/* Кнопка "Поиск в этой области" внизу по центру */}
+          <div
+            style={{ width: '100%', height: '100%', minHeight: '600px' }}
+            className={isLoading ? 'opacity-0' : 'opacity-100'}
+          >
+            <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+          </div>
+
           <button
+            type="button"
             onClick={() => {
-              if (mapInstance) {
-                const bounds = mapInstance.getBounds();
-                if (bounds) {
-                  const boundsArray = [
-                    [bounds[0][0], bounds[0][1]],
-                    [bounds[1][0], bounds[1][1]]
-                  ];
-                  loadCoffeeShops(boundsArray).then((loadedShops) => {
-                    if (loadedShops && loadedShops.length > 0) {
-                      addCoffeeShopMarkers(mapInstance, window.ymaps, loadedShops);
-                    }
-                  });
-                }
-              }
+              const map = mapInstanceRef.current;
+              if (!map) return;
+              void loadCoffeeShops(map).then((loaded) => paintMarkersRef.current(loaded));
             }}
-            className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 px-6 py-3 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-full shadow-lg hover:bg-opacity-90 transition-all`}
+            className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 z-[500] px-6 py-3 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-full shadow-lg hover:bg-opacity-90 transition-all`}
           >
             <span className={`${themeClasses.text.primary} font-medium`}>Поиск в этой области</span>
           </button>
 
-          {/* Карточка деталей кофейни внизу (как на скриншоте) */}
           {selectedShop && (
-            <div className={`absolute bottom-4 left-4 right-4 z-20 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl shadow-2xl transform transition-transform duration-300 max-w-md mx-auto`}>
-            {isLoadingDetails ? (
-              <div className="p-4 flex items-center justify-center">
-                <div className="text-[#EAB308]">Загрузка...</div>
-              </div>
-            ) : (
-              <div className="p-4">
-                <div className="flex gap-4">
-                  {/* Изображение слева */}
-                  <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                    <MapShopThumb
-                      alt={selectedShop.title}
-                      src={(() => {
-                        const imageUrls = selectedShopDetails?.photos && Array.isArray(selectedShopDetails.photos) && selectedShopDetails.photos.length > 0
-                          ? selectedShopDetails.photos.map((p: any) => p.fullUrl || p)
-                          : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
-                            ? selectedShopDetails.imageUrls
-                            : [];
-                        return imageUrls.length > 0 ? imageUrls[0] : undefined;
-                      })()}
-                    />
-                  </div>
-
-                  {/* Информация справа */}
-                  <div className="flex-1 min-w-0">
-                    {/* Рейтинг и отзывы */}
-                    <div className="flex items-center gap-2 mb-1">
-                      <Star size={16} weight="fill" color="#EAB308" />
-                      <span className={`${themeClasses.text.secondary} text-sm`}>
-                        {selectedShopDetails?.reviewCount ? `${selectedShopDetails.reviewCount} отзывов` : 'Нет отзывов'}
-                      </span>
+            <div
+              className={`absolute bottom-4 left-4 right-4 z-[500] ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl shadow-2xl max-w-md mx-auto`}
+            >
+              {isLoadingDetails ? (
+                <div className="p-4 flex items-center justify-center">
+                  <div className="text-[#EAB308]">Загрузка...</div>
+                </div>
+              ) : (
+                <div className="p-4">
+                  <div className="flex gap-4">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                      <MapShopThumb
+                        alt={selectedShop.title}
+                        src={(() => {
+                          const imageUrls =
+                            selectedShopDetails?.photos &&
+                            Array.isArray(selectedShopDetails.photos) &&
+                            selectedShopDetails.photos.length > 0
+                              ? selectedShopDetails.photos.map((p: { fullUrl?: string } | string) =>
+                                  typeof p === 'string' ? p : p.fullUrl || '',
+                                )
+                              : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
+                                ? selectedShopDetails.imageUrls
+                                : [];
+                          return imageUrls.length > 0 ? imageUrls[0] : undefined;
+                        })()}
+                      />
                     </div>
 
-                    {/* Название */}
-                    <h3 className={`${themeClasses.text.primary} font-bold text-lg mb-1 truncate`}>
-                      {selectedShop.title}
-                    </h3>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Star size={16} weight="fill" color="#EAB308" />
+                        <span className={`${themeClasses.text.secondary} text-sm`}>
+                          {selectedShopDetails?.reviewCount
+                            ? `${selectedShopDetails.reviewCount} отзывов`
+                            : 'Нет отзывов'}
+                        </span>
+                      </div>
+                      <h3 className={`${themeClasses.text.primary} font-bold text-lg mb-1 truncate`}>
+                        {selectedShop.title}
+                      </h3>
+                      <p className={`${themeClasses.text.secondary} text-sm`}>
+                        {formatWorkingHours(selectedShopDetails?.schedules)}
+                      </p>
+                    </div>
 
-                    {/* Часы работы */}
-                    <p className={`${themeClasses.text.secondary} text-sm`}>
-                      {formatWorkingHours(selectedShopDetails?.schedules)}
-                    </p>
+                    <button type="button" className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                      <BookmarkSimple
+                        size={24}
+                        className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
+                      />
+                    </button>
                   </div>
-
-                  {/* Иконка закладки справа вверху */}
-                  <button
-                    className="flex-shrink-0 w-8 h-8 flex items-center justify-center"
-                    onClick={() => {
-                      // TODO: Добавить функционал закладок
-                    }}
-                  >
-                    <BookmarkSimple size={24} className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`} />
-                  </button>
                 </div>
-              </div>
-            )}
+              )}
             </div>
           )}
         </div>
@@ -457,14 +294,8 @@ const MapShopThumb: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => 
   const [failed, setFailed] = useState(false);
   if (!src || failed) return <ShopPhotoPlaceholder fontSize={7} />;
   return (
-    <img
-      src={src}
-      alt={alt}
-      className="w-full h-full object-cover"
-      onError={() => setFailed(true)}
-    />
+    <img src={src} alt={alt} className="w-full h-full object-cover" onError={() => setFailed(true)} />
   );
 };
 
 export default MapPage;
-

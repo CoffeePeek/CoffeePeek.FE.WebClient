@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import L from 'leaflet';
+import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import {
   getCoffeeShopsByMapBounds,
   getBrowseCoffeeShopById,
@@ -7,43 +9,31 @@ import {
   BrowseCoffeeShopDetails,
 } from '../api/coffeeShops';
 import { Button } from '../components/ui/Button';
-
-declare global {
-  interface Window {
-    ymaps: any;
-  }
-}
+import { coffeeCircleIcon, createOsmMap, getMapBoundsBox } from '../map/osmMap';
 
 export const BrowseMapPage: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapInstance, setMapInstance] = useState<any>(null);
+  const mapInstanceRef = useRef<LeafletMap | null>(null);
+  const markersRef = useRef<LeafletMarker[]>([]);
+  const selectedIdRef = useRef<string | null>(null);
+  const paintMarkersRef = useRef<(shopsList: MapShop[]) => void>(() => undefined);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shops, setShops] = useState<MapShop[]>([]);
   const [shopsLoaded, setShopsLoaded] = useState(false);
-  const markersRef = useRef<any[]>([]);
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
   const [selectedDetails, setSelectedDetails] = useState<BrowseCoffeeShopDetails | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  const loadCoffeeShops = async (bounds?: number[][]) => {
+  const loadCoffeeShops = async (map: LeafletMap) => {
     try {
-      let minLat: number | undefined;
-      let minLon: number | undefined;
-      let maxLat: number | undefined;
-      let maxLon: number | undefined;
-
-      if (bounds && bounds.length >= 2) {
-        minLat = Math.min(bounds[0][0], bounds[1][0]);
-        minLon = Math.min(bounds[0][1], bounds[1][1]);
-        maxLat = Math.max(bounds[0][0], bounds[1][0]);
-        maxLon = Math.max(bounds[0][1], bounds[1][1]);
-      }
-
+      const { minLat, minLon, maxLat, maxLon } = getMapBoundsBox(map);
       const response = await getCoffeeShopsByMapBounds(minLat, minLon, maxLat, maxLon);
       const shopsList = response.data?.shops ?? [];
       setShops(shopsList);
       setShopsLoaded(true);
+      setError(null);
       return shopsList;
     } catch {
       setShopsLoaded(true);
@@ -62,104 +52,80 @@ export const BrowseMapPage: React.FC = () => {
     }
   };
 
-  const clearMarkers = () => {
-    markersRef.current.forEach((marker) => {
-      try {
-        mapInstance?.geoObjects.remove(marker);
-      } catch {
-        /* ignore */
-      }
-    });
-    markersRef.current = [];
-  };
-
-  const addMarkers = (map: any, ymaps: any, shopsList: MapShop[]) => {
-    clearMarkers();
-    shopsList.forEach((shop) => {
-      if (!shop.latitude || !shop.longitude) return;
-
-      const marker = new ymaps.Placemark(
-        [shop.latitude, shop.longitude],
-        { hintContent: shop.title },
-        {
-          preset: selectedShop?.id === shop.id ? 'islands#goldCoffeeIcon' : 'islands#darkBlueCoffeeIcon',
-        }
-      );
-
-      marker.events.add('click', () => {
-        setSelectedShop(shop);
-        loadShopDetails(shop.id);
-      });
-
-      map.geoObjects.add(marker);
-      markersRef.current.push(marker);
-    });
-  };
-
-  const initMap = () => {
-    if (!mapRef.current || !window.ymaps) return;
-
-    window.ymaps.ready(() => {
-      const map = new window.ymaps.Map(mapRef.current, {
-        center: [53.9, 27.5667],
-        zoom: 12,
-        controls: ['zoomControl', 'fullscreenControl', 'geolocationControl'],
-      });
-
-      map.options.set('theme', 'dark');
-      setMapInstance(map);
-      setIsLoading(false);
-
-      const updateShops = () => {
-        const bounds = map.getBounds();
-        if (!bounds || bounds.length < 2) return;
-
-        const boundsArray = [
-          [bounds[0][0], bounds[0][1]],
-          [bounds[1][0], bounds[1][1]],
-        ];
-
-        loadCoffeeShops(boundsArray).then((loaded) => {
-          if (loaded.length > 0) addMarkers(map, window.ymaps, loaded);
-        });
-      };
-
-      setTimeout(updateShops, 500);
-      map.events.add('boundschange', () => {
-        setTimeout(updateShops, 300);
-      });
-    });
-  };
-
   useEffect(() => {
-    if (window.ymaps) {
-      initMap();
-      return;
-    }
+    const container = mapRef.current;
+    if (!container || mapInstanceRef.current) return;
 
-    const apiKey = import.meta.env.VITE_YANDEX_MAP_API_KEY ?? '';
-    const script = document.createElement('script');
-    script.src = `https://enterprise.api-maps.yandex.ru/2.1/?${apiKey ? `apikey=${apiKey}&` : ''}lang=ru_RU`;
-    script.async = true;
-    script.onload = () => initMap();
-    script.onerror = () => {
-      setError('Не удалось загрузить Яндекс.Карты');
-      setIsLoading(false);
+    let cancelled = false;
+    let updateTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const clearMarkers = () => {
+      const map = mapInstanceRef.current;
+      markersRef.current.forEach((marker) => {
+        try {
+          map?.removeLayer(marker);
+        } catch {
+          /* ignore */
+        }
+      });
+      markersRef.current = [];
     };
-    document.head.appendChild(script);
+
+    const paintMarkers = (shopsList: MapShop[]) => {
+      const map = mapInstanceRef.current;
+      if (!map) return;
+      clearMarkers();
+      shopsList.forEach((shop) => {
+        if (!shop.latitude || !shop.longitude) return;
+        const selected = selectedIdRef.current === shop.id;
+        const marker = L.marker([shop.latitude, shop.longitude], {
+          icon: coffeeCircleIcon(selected),
+          title: shop.title,
+        });
+        marker.on('click', () => {
+          selectedIdRef.current = shop.id;
+          setSelectedShop(shop);
+          void loadShopDetails(shop.id);
+          paintMarkers(shopsList);
+        });
+        marker.addTo(map);
+        markersRef.current.push(marker);
+      });
+    };
+    paintMarkersRef.current = paintMarkers;
+
+    const map = createOsmMap(container, {
+      zoom: 12,
+      dark: true,
+    });
+    mapInstanceRef.current = map;
+    setIsLoading(false);
+
+    const updateShops = () => {
+      clearTimeout(updateTimeout);
+      updateTimeout = setTimeout(() => {
+        void loadCoffeeShops(map).then((loaded) => {
+          if (!cancelled) paintMarkers(loaded);
+        });
+      }, 300);
+    };
+
+    updateTimeout = setTimeout(updateShops, 400);
+    map.on('moveend', updateShops);
+    map.on('zoomend', updateShops);
 
     return () => {
-      if (mapInstance) mapInstance.destroy();
+      cancelled = true;
+      clearTimeout(updateTimeout);
+      clearMarkers();
+      map.remove();
+      mapInstanceRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (mapInstance && shops.length > 0 && window.ymaps) {
-      addMarkers(mapInstance, window.ymaps, shops);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shops, mapInstance, selectedShop?.id]);
+    if (shops.length > 0) paintMarkersRef.current(shops);
+  }, [shops, selectedShop?.id]);
 
   return (
     <div className="page-container max-w-6xl">
@@ -171,7 +137,9 @@ export const BrowseMapPage: React.FC = () => {
           </p>
         </div>
         <Link to="/coffee-shops">
-          <Button variant="secondary" size="sm">Список кофеен</Button>
+          <Button variant="secondary" size="sm">
+            Список кофеен
+          </Button>
         </Link>
       </div>
 
@@ -192,15 +160,17 @@ export const BrowseMapPage: React.FC = () => {
         )}
 
         {shopsLoaded && shops.length === 0 && !isLoading && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full bg-[#2D241F]/90 border border-border-dark text-stone-300 text-sm">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500] px-4 py-2 rounded-full bg-[#2D241F]/90 border border-border-dark text-stone-300 text-sm pointer-events-none">
             Кофейни в этой области не найдены
           </div>
         )}
 
-        <div ref={mapRef} className="w-full h-full min-h-[400px]" />
+        <div className="w-full h-full min-h-[400px]">
+          <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: 400 }} />
+        </div>
 
         {selectedShop && (
-          <div className="absolute bottom-4 left-4 right-4 z-20 max-w-md mx-auto bg-surface-dark border border-border-dark rounded-xl shadow-2xl p-4">
+          <div className="absolute bottom-4 left-4 right-4 z-[500] max-w-md mx-auto bg-surface-dark border border-border-dark rounded-xl shadow-2xl p-4">
             {isLoadingDetails ? (
               <p className="text-primary text-sm text-center">Загрузка...</p>
             ) : (
@@ -218,7 +188,9 @@ export const BrowseMapPage: React.FC = () => {
                   )}
                 </div>
                 <Link to={`/coffee-shops/${selectedShop.id}`}>
-                  <Button variant="primary" size="sm">Открыть</Button>
+                  <Button variant="primary" size="sm">
+                    Открыть
+                  </Button>
                 </Link>
               </div>
             )}
