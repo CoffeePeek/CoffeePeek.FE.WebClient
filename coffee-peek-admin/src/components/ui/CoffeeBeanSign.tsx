@@ -44,8 +44,8 @@ export const BynSign: React.FC<{
   color?: string;
   style?: React.CSSProperties;
 }> = ({ size = 14, className, color = ACCENT, style }) => {
-  const height = size;
-  const width = Math.max(1, Math.round(size * BYN_ASPECT));
+  const height = size * 0.9;
+  const width = Math.max(1, Math.round(height * BYN_ASPECT));
   return (
     <svg
       width={width}

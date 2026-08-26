@@ -45,8 +45,8 @@ export const BynSign: React.FC<{
   color?: string;
   style?: React.CSSProperties;
 }> = ({ size = 14, className, color = brand.primary, style }) => {
-  const height = size;
-  const width = Math.max(1, Math.round(size * (945 / 1170)));
+  const height = size * 0.9;
+  const width = Math.max(1, Math.round(height * (945 / 1170)));
   return (
     <svg
       width={width}

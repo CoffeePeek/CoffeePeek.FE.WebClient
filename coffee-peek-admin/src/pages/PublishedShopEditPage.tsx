@@ -182,9 +182,12 @@ export const PublishedShopEditPage: React.FC = () => {
 
   if (isLoading || !shop) {
     return (
-      <div className="max-w-2xl space-y-4">
+      <div className="page-container">
         <div className="h-8 w-48 bg-gray-100 dark:bg-white/5 rounded animate-pulse" />
-        <div className="h-64 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <div className="h-64 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse" />
+          <div className="h-64 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -198,115 +201,168 @@ export const PublishedShopEditPage: React.FC = () => {
       subtitle: tag.slug,
     }));
 
+  const fieldClass =
+    'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body';
+
   return (
-    <div className="space-y-5 w-full min-w-0 max-w-2xl">
-      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/published-shops')} className="self-start min-h-[44px] sm:min-h-0">
+    <div className="page-container pb-8">
+      <div className="flex items-start gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/published-shops')}
+          className="shrink-0 self-start min-h-[44px] sm:min-h-0"
+        >
           ← Назад
         </Button>
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-bold text-text-main dark:text-white font-display">{shop.name}</h2>
-          <div className="mt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="page-header-title text-xl sm:text-2xl">{shop.name}</h2>
             <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>
               {COFFEE_SHOP_STATUS_LABELS[shop.status]}
             </Badge>
-            <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1">
-              {COFFEE_SHOP_STATUS_HINTS[shop.status]}
-            </p>
           </div>
+          <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1">
+            {COFFEE_SHOP_STATUS_HINTS[shop.status]}
+          </p>
         </div>
       </div>
 
-      <Card>
-        <form onSubmit={handleSubmit((data) => saveMutation.mutateAsync(data))} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Название</label>
-            <input {...register('name')} className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body" />
-            {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
-          </div>
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-5 items-start">
+        <div className="space-y-5 min-w-0">
+          <Card>
+            <form onSubmit={handleSubmit((data) => saveMutation.mutateAsync(data))} className="space-y-4">
+              <h3 className="text-sm font-semibold text-text-main dark:text-white font-display">Карточка</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                    Название
+                  </label>
+                  <input {...register('name')} className={fieldClass} />
+                  {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                    Статус
+                  </label>
+                  <select {...register('status')} className={fieldClass}>
+                    {COFFEE_SHOP_STATUS_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Описание</label>
-            <textarea {...register('description')} rows={3} className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body resize-none" />
-          </div>
+              <div>
+                <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                  Описание
+                </label>
+                <textarea {...register('description')} rows={4} className={`${fieldClass} resize-y min-h-[96px]`} />
+              </div>
 
-          <div>
-            <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-2 font-body">
-              Ценовой диапазон
-            </label>
-            <PriceRangePicker
-              value={watch('priceRange')}
-              onChange={(value) => setValue('priceRange', value ?? 2, { shouldValidate: true })}
-              error={errors.priceRange?.message}
-            />
-          </div>
+              <div>
+                <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-2 font-body">
+                  Ценовой диапазон
+                </label>
+                <PriceRangePicker
+                  value={watch('priceRange')}
+                  onChange={(value) => setValue('priceRange', value ?? 2, { shouldValidate: true })}
+                  error={errors.priceRange?.message}
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Статус</label>
-            <select {...register('status')} className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body">
-              {COFFEE_SHOP_STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1.5">
-              Открыта — на карте и в поиске. Временно закрыта — скрыта, можно вернуть. Закрыта навсегда — больше не работает.
-            </p>
-          </div>
+              <p className="text-xs text-text-muted dark:text-stone-400 font-body">
+                Открыта — на карте и в поиске. Временно закрыта — скрыта, можно вернуть. Закрыта навсегда — больше
+                не работает.
+              </p>
 
-          <Button type="submit" variant="primary" loading={isSubmitting || saveMutation.isPending} className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
-            Сохранить
-          </Button>
-        </form>
-      </Card>
+              <Button
+                type="submit"
+                variant="primary"
+                loading={isSubmitting || saveMutation.isPending}
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+              >
+                Сохранить
+              </Button>
+            </form>
+          </Card>
 
-      <Card>
-        <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Coffee focus</h3>
-        <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
-          Одна категория для ленты. Specialty синхронизирует тег specialty.
-        </p>
-        <CoffeeFocusPicker value={focus} onChange={handleFocusChange} />
-        <Button
-          variant="secondary"
-          size="sm"
-          className="mt-3"
-          disabled={!focus}
-          loading={focusMutation.isPending}
-          onClick={() => focus && focusMutation.mutate(focus)}
-        >
-          Сохранить focus
-        </Button>
-      </Card>
-
-      <Card>
-        <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Теги</h3>
-        <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
-          Полная замена набора тегов. Не более {MAX_SHOP_TAGS} штук.
-        </p>
-        <CatalogMultiSelect
-          label="Активные теги"
-          items={tagItems}
-          selectedIds={selectedTagIds}
-          onChange={handleTagChange}
-          emptyLabel="Теги не выбраны"
-        />
-        <div className="mt-4">
-          <Button
-            variant="secondary"
-            size="sm"
-            loading={tagsMutation.isPending}
-            onClick={() => tagsMutation.mutate(selectedTagIds)}
-            className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
-          >
-            Сохранить теги
-          </Button>
+          <PhotoOrderEditor
+            photos={shop.photos}
+            isSaving={photoOrderMutation.isPending}
+            onSave={(photoIds) => photoOrderMutation.mutateAsync(photoIds)}
+          />
         </div>
-      </Card>
 
-      <PhotoOrderEditor
-        photos={shop.photos}
-        isSaving={photoOrderMutation.isPending}
-        onSave={(photoIds) => photoOrderMutation.mutateAsync(photoIds)}
-      />
+        <div className="space-y-5 min-w-0">
+          <Card>
+            <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Coffee focus</h3>
+            <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
+              Одна категория для ленты. Specialty синхронизирует тег specialty.
+            </p>
+            <CoffeeFocusPicker value={focus} onChange={handleFocusChange} />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="mt-3 w-full sm:w-auto"
+              disabled={!focus}
+              loading={focusMutation.isPending}
+              onClick={() => focus && focusMutation.mutate(focus)}
+            >
+              Сохранить focus
+            </Button>
+          </Card>
+
+          <Card>
+            <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Теги</h3>
+            <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
+              Полная замена набора. Не более {MAX_SHOP_TAGS} штук.
+            </p>
+            <CatalogMultiSelect
+              label="Активные теги"
+              items={tagItems}
+              selectedIds={selectedTagIds}
+              onChange={handleTagChange}
+              emptyLabel="Теги не выбраны"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={tagsMutation.isPending}
+              onClick={() => tagsMutation.mutate(selectedTagIds)}
+              className="mt-4 w-full sm:w-auto min-h-[44px] sm:min-h-0"
+            >
+              Сохранить теги
+            </Button>
+          </Card>
+
+          <Card>
+            <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Владелец</h3>
+            <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
+              UUID пользователя с ролью Owner. Роль выдаётся в разделе «Пользователи».
+            </p>
+            <div className="flex flex-col gap-2">
+              <input
+                value={ownerInput}
+                onChange={(e) => setOwnerInput(e.target.value)}
+                placeholder="owner-user-id (UUID)"
+                className={`${fieldClass} font-mono min-h-[44px] sm:min-h-0`}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={ownerMutation.isPending}
+                onClick={() => ownerMutation.mutate(ownerInput.trim() || null)}
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-0 self-start"
+              >
+                Назначить
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
 
       {id && (
         <Card>
@@ -333,30 +389,6 @@ export const PublishedShopEditPage: React.FC = () => {
           />
         </Card>
       )}
-
-      <Card>
-        <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Владелец</h3>
-        <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
-          UUID пользователя с ролью Owner. Роль Owner выдаётся отдельно в разделе «Пользователи».
-        </p>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            value={ownerInput}
-            onChange={(e) => setOwnerInput(e.target.value)}
-            placeholder="owner-user-id (UUID)"
-            className="flex-1 min-w-0 border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-mono min-h-[44px] sm:min-h-0"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            loading={ownerMutation.isPending}
-            onClick={() => ownerMutation.mutate(ownerInput.trim() || null)}
-            className="w-full sm:w-auto min-h-[44px] sm:min-h-0 shrink-0"
-          >
-            Назначить
-          </Button>
-        </div>
-      </Card>
     </div>
   );
 };

@@ -123,9 +123,11 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
           disabled={isCheckingFavorite}
           aria-label={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
           className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all shrink-0 ${
-            isFavorite
-              ? `${themeClasses.primary.bgLight} ${themeClasses.primary.borderLight}`
-              : `${theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`
+            theme === 'dark'
+              ? 'bg-white hover:bg-white/90'
+              : isFavorite
+                ? `${themeClasses.primary.bgLight} ${themeClasses.primary.borderLight}`
+                : 'bg-black/5 hover:bg-black/10'
           }`}
           style={{ padding: 0 }}
         >
@@ -133,7 +135,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
             name="favorite"
             filled={isFavorite}
             size={26}
-            color={isFavorite ? '#EAB308' : iconMuted}
+            color={theme === 'dark' ? '#1A1412' : isFavorite ? '#EAB308' : iconMuted}
           />
         </button>
         <button

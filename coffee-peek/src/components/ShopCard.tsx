@@ -4,6 +4,7 @@ import { COLORS } from '../constants/colors';
 import { AppIcon, StarIcon, BeanPriceMarks } from './icons';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
+import { useTheme } from '../contexts/ThemeContext';
 import { getPriceRangeTier } from '../utils/priceRange';
 
 interface ShopCardColors {
@@ -41,6 +42,7 @@ function extractPhotos(shop: CoffeeShop): string[] {
 const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
   const [hovered, setHovered] = useState(false);
   const [favHovered, setFavHovered] = useState(false);
+  const { theme } = useTheme();
   const { isFavorite, toggleFavorite } = useLocalFavorites();
   const fav = isFavorite(shop.id);
   const photos = extractPhotos(shop);
@@ -127,9 +129,12 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
             onMouseLeave={() => setFavHovered(false)}
             style={{
               width: 32, height: 32, padding: 0,
-              background: 'none', border: 'none', cursor: 'pointer',
+              background: theme === 'dark' ? '#fff' : 'none',
+              border: 'none',
+              borderRadius: 99,
+              cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
+              filter: theme === 'dark' ? 'none' : 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
               transform: favHovered ? 'scale(1.18)' : 'scale(1)',
               transition: 'transform .15s ease',
             }}
@@ -138,7 +143,15 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
               name="favorite"
               filled={fav || favHovered}
               size={22}
-              color={fav ? '#EF4444' : favHovered ? '#F87171' : '#fff'}
+              color={
+                theme === 'dark'
+                  ? '#1A1412'
+                  : fav
+                    ? '#EF4444'
+                    : favHovered
+                      ? '#F87171'
+                      : '#fff'
+              }
             />
           </button>
         </div>
