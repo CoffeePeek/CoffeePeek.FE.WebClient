@@ -172,20 +172,6 @@
   cursor: pointer;
 }
 
-.price-label-full {
-  display: inline;
-}
-.price-label-short {
-  display: none;
-}
-@media (max-width: 640px) {
-  .price-label-full {
-    display: none;
-  }
-  .price-label-short {
-    display: inline;
-  }
-}
 .shop-price-slider::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 99px;

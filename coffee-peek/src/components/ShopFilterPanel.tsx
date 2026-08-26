@@ -6,6 +6,7 @@ import {
   SquaresFour, Clock, Sparkle, CheckCircle, Heart,
   MapPin, CaretDown, Check,
 } from '@/components/Icon';
+import { BynSign } from './icons';
 import { PRICE_FILTER_OPTIONS, toPriceFilterLevel } from '../utils/priceRange';
 
 const LIST_PREVIEW = 6;
@@ -237,6 +238,19 @@ const PRICE_SLIDER_STOPS = [
   ...PRICE_OPTIONS.map(({ value, label, labelShort }) => ({ value, label, labelShort })),
 ] as const;
 
+function useCompactPriceCopy() {
+  return React.useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === 'undefined') return () => {};
+      const mq = window.matchMedia('(max-width: 640px)');
+      mq.addEventListener('change', onStoreChange);
+      return () => mq.removeEventListener('change', onStoreChange);
+    },
+    () => (typeof window !== 'undefined' ? window.matchMedia('(max-width: 640px)').matches : false),
+    () => false,
+  );
+}
+
 const PriceSlider: React.FC<{
   value?: string;
   onChange: (value?: string) => void;
@@ -244,6 +258,7 @@ const PriceSlider: React.FC<{
   muted: string;
   track: string;
 }> = ({ value, onChange, gold, muted, track }) => {
+  const compact = useCompactPriceCopy();
   const filterLevel = toPriceFilterLevel(value);
   const index = Math.max(
     0,
@@ -251,6 +266,7 @@ const PriceSlider: React.FC<{
   );
   const fill = `${(index / (PRICE_SLIDER_STOPS.length - 1)) * 100}%`;
   const current = PRICE_SLIDER_STOPS[index];
+  const currentLabel = compact ? current.labelShort : current.label;
 
   return (
     <div style={{ padding: '4px 2px 8px' }}>
@@ -264,14 +280,7 @@ const PriceSlider: React.FC<{
           color: gold,
         }}
       >
-        {current.label ? (
-          <>
-            <span className="price-label-full">{current.label}</span>
-            <span className="price-label-short">{current.labelShort}</span>
-          </>
-        ) : (
-          <span style={{ color: muted }}>&nbsp;</span>
-        )}
+        {currentLabel || <span style={{ color: muted }}>&nbsp;</span>}
       </div>
       <input
         type="range"
@@ -300,27 +309,20 @@ const PriceSlider: React.FC<{
               border: 'none',
               padding: 0,
               cursor: 'pointer',
-              fontFamily: '"RF Dewi Expanded"',
-              fontSize: 10,
-              fontWeight: i === index ? 700 : 500,
-              color: i === index ? gold : muted,
-              textAlign: i === 0 ? 'left' : i === PRICE_SLIDER_STOPS.length - 1 ? 'right' : 'center',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent:
+                i === 0 ? 'flex-start' : i === PRICE_SLIDER_STOPS.length - 1 ? 'flex-end' : 'center',
               flex: 1,
-              letterSpacing: '-0.02em',
-              whiteSpace: 'nowrap' as const,
               minHeight: 20,
+              gap: 1,
             }}
           >
-            {i === 0 ? (
-              ''
-            ) : (
-              <>
-                <span className="price-label-full">{stop.label.replace(/^Капучино\s+/, '')}</span>
-                <span className="price-label-short">
-                  {stop.value === 'Cheap' ? '< 8' : stop.value === 'Expensive' ? '> 8' : 'за 8'}
-                </span>
-              </>
-            )}
+            {i === 0
+              ? null
+              : Array.from({ length: i }, (_, n) => (
+                  <BynSign key={n} size={11} color={i === index ? gold : muted} />
+                ))}
           </button>
         ))}
       </div>
@@ -499,16 +501,8 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
         {current.priceRange && (
           <AppliedChip
             label={
-              <>
-                <span className="price-label-full">
-                  {PRICE_OPTIONS.find((p) => p.value === toPriceFilterLevel(current.priceRange))?.label ??
-                    current.priceRange}
-                </span>
-                <span className="price-label-short">
-                  {PRICE_OPTIONS.find((p) => p.value === toPriceFilterLevel(current.priceRange))
-                    ?.labelShort ?? current.priceRange}
-                </span>
-              </>
+              PRICE_OPTIONS.find((p) => p.value === toPriceFilterLevel(current.priceRange))?.label ??
+              current.priceRange
             }
             gold={gold}
             onRemove={() => patch({ priceRange: undefined })}

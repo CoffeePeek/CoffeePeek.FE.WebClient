@@ -54,10 +54,16 @@ export function getDefaultSchedules(): FrontendSchedule[] {
 }
 
 /**
- * Форматирует день недели для отображения
+ * Форматирует день недели для отображения (0 = Пн … 6 = Вс)
  */
 export function formatDayOfWeek(dayOfWeek: number): string {
   const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+  return days[dayOfWeek] || '';
+}
+
+/** Короткие названия: Пн, Вт, … Вс */
+export function formatDayOfWeekShort(dayOfWeek: number): string {
+  const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   return days[dayOfWeek] || '';
 }
 

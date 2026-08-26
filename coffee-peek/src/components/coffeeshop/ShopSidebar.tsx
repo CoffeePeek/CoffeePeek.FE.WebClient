@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import type { Map as LeafletMap } from 'leaflet';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
-import { formatDayOfWeek } from '../../utils/shopUtils';
+import { formatDayOfWeekShort } from '../../utils/shopUtils';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppIcon } from '../icons';
@@ -97,19 +97,23 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
               </div>
               <span>Часы работы</span>
             </div>
-            <div className="space-y-3 ml-16 text-sm">
-              {shop.schedules.map((schedule) => {
+            <div className="space-y-2.5 text-sm">
+              {[...shop.schedules]
+                .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+                .map((schedule) => {
                 const isToday = schedule.dayOfWeek === currentDay;
                 return (
                   <div
                     key={schedule.dayOfWeek}
-                    className={`flex justify-between gap-3 min-w-0 ${isToday ? `font-bold ${themeClasses.primary.text}` : textMuted}`}
+                    className={`flex items-center gap-3 ${isToday ? `font-bold ${themeClasses.primary.text}` : textMuted}`}
                   >
-                    <span className="min-w-0 truncate">
-                      {isToday ? 'Сегодня' : formatDayOfWeek(schedule.dayOfWeek)}
+                    <span className="w-7 shrink-0">
+                      {formatDayOfWeekShort(schedule.dayOfWeek)}
                     </span>
-                    <span className="shrink-0">
-                      {schedule.openTime} - {schedule.closeTime}
+                    <span>
+                      {schedule.openTime && schedule.closeTime
+                        ? `${schedule.openTime} - ${schedule.closeTime}`
+                        : 'Закрыто'}
                     </span>
                   </div>
                 );
