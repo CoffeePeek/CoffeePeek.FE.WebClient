@@ -183,9 +183,9 @@ export async function responseInterceptor<T>(
   if (!response.ok) {
     const err: ApiError = {
       status: response.status,
-      message: data.message || getErrorMessageByStatus(response.status),
-      errors: data.errors,
-      errorCode: data.errorCode,
+      message: formatErrorMessage(data, response.status),
+      errors: data.errors ?? data.Errors,
+      errorCode: data.errorCode ?? data.ErrorCode,
     };
     throw err;
   }
@@ -246,6 +246,33 @@ function getErrorMessageByStatus(status: number): string {
     case 503: return 'Сервис недоступен';
     default: return 'Произошла ошибка';
   }
+}
+
+function formatErrorMessage(data: Record<string, unknown>, status: number): string {
+  const direct =
+    (typeof data.message === 'string' && data.message) ||
+    (typeof data.Message === 'string' && data.Message) ||
+    (typeof data.title === 'string' && data.title) ||
+    (typeof data.Title === 'string' && data.Title) ||
+    (typeof data.detail === 'string' && data.detail) ||
+    (typeof data.Detail === 'string' && data.Detail) ||
+    '';
+
+  const errors = (data.errors ?? data.Errors) as Record<string, string[] | string> | undefined;
+  const fromErrors = errors
+    ? Object.entries(errors)
+        .flatMap(([key, value]) => {
+          const texts = Array.isArray(value) ? value : [String(value)];
+          return texts.map((text) => (key && key !== '' ? `${key}: ${text}` : text));
+        })
+        .filter(Boolean)
+        .join('; ')
+    : '';
+
+  if (direct && fromErrors) return `${direct} — ${fromErrors}`;
+  if (direct) return direct;
+  if (fromErrors) return fromErrors;
+  return getErrorMessageByStatus(status);
 }
 
 function createApiError(status: number, message: string): ApiError {

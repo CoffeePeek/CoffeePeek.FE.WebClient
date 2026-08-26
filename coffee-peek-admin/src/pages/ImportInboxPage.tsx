@@ -59,6 +59,16 @@ function isSelectable(item: ImportCandidate): boolean {
   return item.queueStatus === 'Pending' || item.queueStatus === 'Skipped';
 }
 
+function matchesSearch(item: ImportCandidate, rawQuery: string): boolean {
+  const q = rawQuery.trim().toLowerCase();
+  if (!q) return true;
+  const haystack = [item.name, item.brand, item.address]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(q);
+}
+
 function compareItems(a: ImportCandidate, b: ImportCandidate, key: SortKey): number {
   const emptyLast = (value?: string) => value || '\uffff';
   switch (key) {
@@ -120,6 +130,7 @@ export const ImportInboxPage: React.FC = () => {
         { status, bucket, focus, search, hasAddress, rejectReason },
       ],
       initialPageParam: 1,
+      staleTime: 0,
       queryFn: ({ pageParam }) =>
         getImportCandidates({
           status: status === 'all' ? undefined : status,
@@ -143,6 +154,8 @@ export const ImportInboxPage: React.FC = () => {
 
   const items = useMemo(() => {
     let list = data?.pages.flatMap((page) => page.items) ?? [];
+    // Backend search can return extras / stale pages — keep the visible list in sync with the box.
+    list = list.filter((item) => matchesSearch(item, localSearch));
     if (hasAddress) {
       list = list.filter((item) => Boolean(item.address?.trim()));
     }
@@ -152,7 +165,13 @@ export const ImportInboxPage: React.FC = () => {
     if (!sortKey) return list;
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...list].sort((a, b) => compareItems(a, b, sortKey) * dir);
-  }, [data, hasAddress, rejectReason, sortKey, sortDir]);
+  }, [data, localSearch, hasAddress, rejectReason, sortKey, sortDir]);
+
+  // Prefer filtered length when search is active; API totalCount often disagrees with returned rows.
+  const totalInFilter = useMemo(() => {
+    if (localSearch.trim()) return items.length;
+    return data?.pages[0]?.totalCount;
+  }, [data, localSearch, items.length]);
 
   const selectableItems = useMemo(() => items.filter(isSelectable), [items]);
   const selectedItems = useMemo(
@@ -315,16 +334,41 @@ export const ImportInboxPage: React.FC = () => {
   };
 
   const colCount = 7;
+  const loadedCount = items.length;
 
   return (
     <div className="page-container pb-24">
       <ImportTabs />
-      <div>
-        <h2 className="page-header-title">Каталог OSM</h2>
-        <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
-          Кандидаты из OpenStreetMap. Выберите несколько — в ленту или не в ленту пачкой. Клик по
-          строке — карточка.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="page-header-title">Каталог OSM</h2>
+          <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
+            Кандидаты из OpenStreetMap. Выберите несколько — в ленту или не в ленту пачкой. Клик по
+            строке — карточка.
+          </p>
+        </div>
+        {!isLoading && !isError && (
+          <p className="text-sm font-body text-text-main dark:text-white tabular-nums">
+            В выборке:{' '}
+            <span className="font-semibold">
+              {totalInFilter != null ? totalInFilter : loadedCount}
+            </span>
+            {localSearch.trim()
+              ? hasNextPage && (
+                  <span className="text-text-muted dark:text-stone-400 font-normal">
+                    {' '}
+                    · подгрузка…
+                  </span>
+                )
+              : totalInFilter != null &&
+                loadedCount < totalInFilter && (
+                  <span className="text-text-muted dark:text-stone-400 font-normal">
+                    {' '}
+                    · загружено {loadedCount}
+                  </span>
+                )}
+          </p>
+        )}
       </div>
 
       <Card padding="none">
@@ -599,7 +643,9 @@ export const ImportInboxPage: React.FC = () => {
           {!hasNextPage && items.length > 0 && (
             <p className="text-center text-xs text-text-muted dark:text-stone-500">
               {items.length}
-              {data?.pages[0]?.totalCount != null ? ` из ${data.pages[0].totalCount}` : ''}
+              {totalInFilter != null && totalInFilter !== items.length
+                ? ` из ${totalInFilter}`
+                : ''}
             </p>
           )}
         </div>
@@ -610,6 +656,12 @@ export const ImportInboxPage: React.FC = () => {
           <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-3 justify-between">
             <div className="text-sm font-body text-text-main dark:text-white">
               Выбрано: <span className="font-semibold">{selectedIds.size}</span>
+              {(totalInFilter != null || loadedCount > 0) && (
+                <span className="text-text-muted dark:text-stone-400">
+                  {' '}
+                  из {totalInFilter != null ? totalInFilter : loadedCount}
+                </span>
+              )}
               <button
                 type="button"
                 className="ml-3 text-xs text-text-muted dark:text-stone-400 hover:text-primary"
