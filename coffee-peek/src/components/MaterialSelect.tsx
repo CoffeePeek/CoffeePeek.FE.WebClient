@@ -1,3 +1,4 @@
+import React, { useState, useRef, useEffect } from 'react';
 import { CaretDown } from '@/components/Icon';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
