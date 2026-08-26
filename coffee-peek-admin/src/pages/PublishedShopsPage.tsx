@@ -163,7 +163,10 @@ export const PublishedShopsPage: React.FC = () => {
                   {data.items.map((shop) => (
                     <tr key={shop.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
                       <td className="px-5 py-3 font-medium text-text-main dark:text-white font-body text-sm">
-                        {shop.name}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span>{shop.name}</span>
+                          {shop.isHidden && <Badge variant="rejected">Скрыта</Badge>}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <FocusBadge focus={shop.coffeeFocus} />

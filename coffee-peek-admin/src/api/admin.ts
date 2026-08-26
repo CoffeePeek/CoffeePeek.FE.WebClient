@@ -736,6 +736,16 @@ function mapEnumStatus<T extends string>(value: T | number | undefined, labels: 
   return (labels[value] ?? labels[0]) as T;
 }
 
+function pickHiddenFlag(shop: Record<string, unknown>): boolean {
+  for (const key of ['isHidden', 'hidden', 'IsHidden', 'Hidden']) {
+    if (!(key in shop)) continue;
+    const value = shop[key];
+    if (value === true || value === 1 || value === 'true' || value === 'True') return true;
+    if (value === false || value === 0 || value === 'false' || value === 'False') return false;
+  }
+  return false;
+}
+
 export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
   const photos = Array.isArray(shop.photos) ? shop.photos as Record<string, unknown>[] : [];
   const tags = Array.isArray(shop.tags) ? shop.tags as Record<string, unknown>[] : undefined;
@@ -752,7 +762,7 @@ export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
     ownerUserId: shop.ownerUserId ? String(shop.ownerUserId) : null,
     moderationId: shop.moderationId ? String(shop.moderationId) : null,
     createdAtUtc: String(shop.createdAtUtc),
-    isHidden: Boolean(shop.isHidden),
+    isHidden: pickHiddenFlag(shop),
     priceRange: parsePriceRange(shop.priceRange),
     description: shop.description ? String(shop.description) : undefined,
     coffeeFocus: parseCoffeeFocus(shop.coffeeFocus ?? shop.CoffeeFocus),
@@ -940,13 +950,18 @@ export async function updatePublishedShopTags(
 export async function setPublishedShopVisibility(
   id: string,
   hidden: boolean
-): Promise<ApiResponse<PublishedShop>> {
+): Promise<ApiResponse<PublishedShop | undefined>> {
   const response = await httpClient.patch<Record<string, unknown>>(
     API_ENDPOINTS.ADMIN.SHOP_VISIBILITY(id),
     { hidden }
   );
+  const raw = response.data;
+  const looksLikeShop = raw && typeof raw === 'object' && (raw.id || raw.Id);
 
-  return { ...response, data: mapPublishedShop(response.data) };
+  return {
+    ...response,
+    data: looksLikeShop ? mapPublishedShop(raw) : undefined,
+  };
 }
 
 export async function assignPublishedShopOwner(

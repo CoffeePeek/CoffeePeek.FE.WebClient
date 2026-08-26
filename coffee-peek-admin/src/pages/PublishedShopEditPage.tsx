@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -11,13 +11,13 @@ import {
   reorderPublishedShopPhotos,
   patchPublishedShopFocus,
   assignShopTags,
+  setPublishedShopVisibility,
 } from '../api/admin';
 import { getShopTags } from '../api/catalogs';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { CatalogMultiSelect } from '../components/moderation/CatalogMultiSelect';
 import { PhotoOrderEditor } from '../components/PhotoOrderEditor';
 import { PriceRangePicker } from '../components/PriceRangePicker';
 import {
@@ -27,8 +27,8 @@ import {
   coffeeShopStatusBadgeVariant,
 } from '../constants/coffeeShopStatus';
 import { parsePriceRange } from '../constants/priceRange';
-import { CoffeeFocus } from '../constants/catalogIngest';
-import { CoffeeFocusPicker } from '../components/import/catalogControls';
+import { CATALOG_TAG_OPTIONS, catalogTagLabel, CoffeeFocus } from '../constants/catalogIngest';
+import { CatalogTagChips, CoffeeFocusPicker } from '../components/import/catalogControls';
 import { MenuEditor } from '../components/menu/MenuEditor';
 import {
   attachPublishedShopMenuPhotos,
@@ -56,7 +56,7 @@ export const PublishedShopEditPage: React.FC = () => {
   const qc = useQueryClient();
   const [ownerInput, setOwnerInput] = useState('');
   const [focus, setFocus] = useState<CoffeeFocus | undefined>();
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['admin', 'published-shop', id],
@@ -103,7 +103,8 @@ export const PublishedShopEditPage: React.FC = () => {
       });
       setOwnerInput(shop.ownerUserId ?? '');
       setFocus(shop.coffeeFocus);
-      setSelectedTagIds((shop.tags ?? []).map((t) => t.id));
+      const fromTags = (shop.tags ?? []).map((t) => t.slug).filter(Boolean);
+      setSelectedTagSlugs(fromTags.length ? fromTags : shop.tagSlugs ?? []);
     }
   }, [shop, reset]);
 
@@ -152,7 +153,13 @@ export const PublishedShopEditPage: React.FC = () => {
   });
 
   const tagsMutation = useMutation({
-    mutationFn: (tagIds: string[]) => assignShopTags(id!, tagIds),
+    mutationFn: (slugs: string[]) => {
+      const slugToId = new Map(catalogTags.map((tag) => [tag.slug, tag.id]));
+      const tagIds = slugs
+        .map((slug) => slugToId.get(slug))
+        .filter((tagId): tagId is string => Boolean(tagId));
+      return assignShopTags(id!, tagIds);
+    },
     onSuccess: () => {
       showToast('Теги сохранены', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] });
@@ -160,25 +167,55 @@ export const PublishedShopEditPage: React.FC = () => {
     onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить теги', 'error'),
   });
 
-  const specialtyTagId = catalogTags.find((tag) => tag.slug === 'specialty')?.id;
+  const visibilityMutation = useMutation({
+    mutationFn: (hidden: boolean) => setPublishedShopVisibility(id!, hidden),
+    onMutate: async (hidden) => {
+      await qc.cancelQueries({ queryKey: ['admin', 'published-shop', id] });
+      const previous = qc.getQueryData(['admin', 'published-shop', id]);
+      qc.setQueryData(['admin', 'published-shop', id], (current: typeof shop) =>
+        current ? { ...current, isHidden: hidden } : current
+      );
+      return { previous };
+    },
+    onSuccess: (response, hidden) => {
+      if (response.data) {
+        qc.setQueryData(['admin', 'published-shop', id], response.data);
+      }
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] });
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
+      showToast(hidden ? 'Кофейня скрыта из приложения' : 'Кофейня снова видна в приложении', 'success');
+    },
+    onError: (err: any, _hidden, context) => {
+      if (context?.previous) {
+        qc.setQueryData(['admin', 'published-shop', id], context.previous);
+      }
+      showToast(err?.message ?? 'Не удалось изменить видимость', 'error');
+    },
+  });
 
   const handleFocusChange = (next: CoffeeFocus) => {
     setFocus(next);
-    if (!specialtyTagId) return;
-    setSelectedTagIds((current) => {
-      const without = current.filter((id) => id !== specialtyTagId);
-      return next === 'specialty' ? [...without, specialtyTagId] : without;
+    setSelectedTagSlugs((current) => {
+      const without = current.filter((slug) => slug !== 'specialty');
+      return next === 'specialty' ? [...without, 'specialty'] : without;
     });
   };
 
-  const handleTagChange = (ids: string[]) => {
-    if (ids.length > MAX_SHOP_TAGS) {
+  const handleTagChange = (slugs: string[]) => {
+    if (slugs.length > MAX_SHOP_TAGS) {
       showToast(`Максимум ${MAX_SHOP_TAGS} тегов`, 'error');
-      setSelectedTagIds(ids.slice(0, MAX_SHOP_TAGS));
       return;
     }
-    setSelectedTagIds(ids);
+    setSelectedTagSlugs(slugs);
   };
+
+  const tagOptions = useMemo(() => {
+    const fromApi = catalogTags
+      .slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ru'))
+      .map((tag) => ({ slug: tag.slug, label: catalogTagLabel(tag.slug, tag.name) }));
+    return fromApi.length > 0 ? fromApi : CATALOG_TAG_OPTIONS;
+  }, [catalogTags]);
 
   if (isLoading || !shop) {
     return (
@@ -191,15 +228,6 @@ export const PublishedShopEditPage: React.FC = () => {
       </div>
     );
   }
-
-  const tagItems = catalogTags
-    .slice()
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
-    .map((tag) => ({
-      id: tag.id,
-      name: tag.name,
-      subtitle: tag.slug,
-    }));
 
   const fieldClass =
     'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body';
@@ -221,9 +249,12 @@ export const PublishedShopEditPage: React.FC = () => {
             <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>
               {COFFEE_SHOP_STATUS_LABELS[shop.status]}
             </Badge>
+            {shop.isHidden && <Badge variant="rejected">Скрыта</Badge>}
           </div>
           <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1">
-            {COFFEE_SHOP_STATUS_HINTS[shop.status]}
+            {shop.isHidden
+              ? 'Не показывается в поиске и на карте. Статус работы при этом не меняется.'
+              : COFFEE_SHOP_STATUS_HINTS[shop.status]}
           </p>
         </div>
       </div>
@@ -298,6 +329,23 @@ export const PublishedShopEditPage: React.FC = () => {
 
         <div className="space-y-5 min-w-0">
           <Card>
+            <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Видимость</h3>
+            <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
+              Скрытая кофейня остаётся в админке, но не попадает в поиск и на карту. Это отдельно от статуса
+              «временно закрыта».
+            </p>
+            <Button
+              variant={shop.isHidden ? 'success' : 'danger'}
+              size="sm"
+              loading={visibilityMutation.isPending}
+              onClick={() => visibilityMutation.mutate(!shop.isHidden)}
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+            >
+              {shop.isHidden ? 'Показать в приложении' : 'Скрыть из приложения'}
+            </Button>
+          </Card>
+
+          <Card>
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Coffee focus</h3>
             <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
               Одна категория для ленты. Specialty синхронизирует тег specialty.
@@ -320,18 +368,16 @@ export const PublishedShopEditPage: React.FC = () => {
             <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
               Полная замена набора. Не более {MAX_SHOP_TAGS} штук.
             </p>
-            <CatalogMultiSelect
-              label="Активные теги"
-              items={tagItems}
-              selectedIds={selectedTagIds}
+            <CatalogTagChips
+              value={selectedTagSlugs}
               onChange={handleTagChange}
-              emptyLabel="Теги не выбраны"
+              options={tagOptions}
             />
             <Button
               variant="secondary"
               size="sm"
               loading={tagsMutation.isPending}
-              onClick={() => tagsMutation.mutate(selectedTagIds)}
+              onClick={() => tagsMutation.mutate(selectedTagSlugs)}
               className="mt-4 w-full sm:w-auto min-h-[44px] sm:min-h-0"
             >
               Сохранить теги

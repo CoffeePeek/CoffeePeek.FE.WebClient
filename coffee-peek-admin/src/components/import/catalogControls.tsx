@@ -81,7 +81,7 @@ export const CatalogTagChips: React.FC<{
   options?: CatalogTagOption[];
   disabled?: boolean;
 }> = ({ value, onChange, options = CATALOG_TAG_OPTIONS, disabled }) => (
-  <div className="flex flex-wrap gap-2">
+  <div className="flex flex-wrap gap-1.5">
     {options.map((tag) => {
       const active = value.includes(tag.slug);
       return (
@@ -92,11 +92,11 @@ export const CatalogTagChips: React.FC<{
           onClick={() =>
             onChange(active ? value.filter((slug) => slug !== tag.slug) : [...value, tag.slug])
           }
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium font-body whitespace-nowrap transition-colors ${
+          className={
             active
-              ? 'bg-primary text-black'
-              : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
-          }`}
+              ? 'inline-flex items-center rounded-full px-2.5 py-[5px] text-[13px] font-medium font-body border border-text-main bg-text-main text-white dark:border-white dark:bg-white dark:text-black'
+              : 'inline-flex items-center rounded-full px-2.5 py-[5px] text-[13px] font-medium font-body border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-text-main dark:text-white hover:border-text-muted dark:hover:border-stone-500 transition-colors'
+          }
         >
           {tag.label}
         </button>
