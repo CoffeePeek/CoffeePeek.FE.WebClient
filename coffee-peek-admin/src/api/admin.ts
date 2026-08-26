@@ -259,6 +259,8 @@ export interface PublishedShop {
   tagSlugs: string[];
   photos: PublishedShopPhoto[];
   tags?: ShopTagDto[];
+  /** Admin-only: set when shop came from file ingest. */
+  importedFromFileAt?: string;
 }
 
 export interface ShopTagDto {
@@ -755,6 +757,11 @@ export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
       : Array.isArray(shop.TagSlugs)
         ? (shop.TagSlugs as unknown[]).map(String)
         : [],
+    importedFromFileAt: shop.importedFromFileAt
+      ? String(shop.importedFromFileAt)
+      : shop.ImportedFromFileAt
+        ? String(shop.ImportedFromFileAt)
+        : undefined,
     photos: photos
       .map((photo) => ({
         id: String(photo.id),
@@ -840,13 +847,22 @@ export async function getPublishedShops(
     pageSize?: number;
     search?: string;
     status?: CoffeeShopStatus;
+    importedFromFile?: boolean;
   } = {}
 ): Promise<ApiResponse<PaginatedResult<PublishedShop>>> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
   const response = await httpClient.get<GetAdminCoffeeShopsResponse>(
     API_ENDPOINTS.ADMIN.SHOPS,
-    { params }
+    {
+      params: {
+        page,
+        pageSize,
+        search: params.search,
+        status: params.status,
+        importedFromFile: params.importedFromFile === true ? true : undefined,
+      },
+    }
   );
   const raw = response.data as unknown as GetAdminCoffeeShopsResponse;
 

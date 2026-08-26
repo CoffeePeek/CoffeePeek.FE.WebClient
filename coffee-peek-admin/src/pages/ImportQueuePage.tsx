@@ -19,6 +19,7 @@ import {
   CoffeeFocusPicker,
   GoogleStatusBadge,
   ImportTabs,
+  SourceBadge,
 } from '../components/import/catalogControls';
 import {
   BUCKET_LABELS,
@@ -79,6 +80,7 @@ export const ImportQueuePage: React.FC = () => {
         search: listFilters.search || undefined,
         hasAddress: listFilters.hasAddress || undefined,
         rejectReason: listFilters.rejectReason || undefined,
+        source: listFilters.source || undefined,
         page: listFilters.page,
         pageSize: IMPORT_LIST_PAGE_SIZE,
       }).then((r) => r.data),
@@ -101,6 +103,7 @@ export const ImportQueuePage: React.FC = () => {
         search: listFilters.search || undefined,
         hasAddress: listFilters.hasAddress || undefined,
         rejectReason: listFilters.rejectReason || undefined,
+        source: listFilters.source || undefined,
         page: listFilters.page + 1,
         pageSize: IMPORT_LIST_PAGE_SIZE,
       }).then((r) => r.data),
@@ -307,6 +310,10 @@ export const ImportQueuePage: React.FC = () => {
           <p className="text-xs text-text-muted dark:text-stone-500 mt-1 font-mono">{candidate.externalId}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <SourceBadge
+            source={String(candidate.source)}
+            importedFromFile={candidate.importedFromFile}
+          />
           <GoogleStatusBadge status={candidate.googleBusinessStatus} />
           {candidate.collectorBucket && (
             <Badge variant="default">{BUCKET_LABELS[candidate.collectorBucket]}</Badge>

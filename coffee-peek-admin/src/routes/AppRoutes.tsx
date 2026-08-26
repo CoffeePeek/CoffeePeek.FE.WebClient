@@ -21,6 +21,9 @@ const BrowseShopPage = lazy(() => import('../pages/BrowseShopPage').then((m) => 
 const BrowseMapPage = lazy(() => import('../pages/BrowseMapPage').then((m) => ({ default: m.BrowseMapPage })));
 const ImportQueuePage = lazy(() => import('../pages/ImportQueuePage').then((m) => ({ default: m.ImportQueuePage })));
 const ImportInboxPage = lazy(() => import('../pages/ImportInboxPage').then((m) => ({ default: m.ImportInboxPage })));
+const ImportDuplicatesPage = lazy(() =>
+  import('../pages/ImportDuplicatesPage').then((m) => ({ default: m.ImportDuplicatesPage }))
+);
 const ImportStatsPage = lazy(() => import('../pages/ImportStatsPage').then((m) => ({ default: m.ImportStatsPage })));
 
 const Loader = () => (
@@ -79,6 +82,14 @@ export const AppRoutes: React.FC = () => (
           element={
             <ProtectedRoute requireModerator>
               <ImportStatsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/import/duplicates"
+          element={
+            <ProtectedRoute requireModerator>
+              <ImportDuplicatesPage />
             </ProtectedRoute>
           }
         />

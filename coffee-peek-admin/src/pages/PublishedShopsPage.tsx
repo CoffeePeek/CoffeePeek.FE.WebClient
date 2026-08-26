@@ -21,21 +21,39 @@ const STATUS_OPTIONS: { value: CoffeeShopStatus | ''; label: string }[] = [
   { value: 'PermanentlyClosed', label: 'Закрыта навсегда' },
 ];
 
+function formatRelativeRu(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const diffMs = date.getTime() - Date.now();
+  const absSec = Math.round(Math.abs(diffMs) / 1000);
+  const rtf = new Intl.RelativeTimeFormat('ru', { numeric: 'auto' });
+  if (absSec < 60) return rtf.format(Math.round(diffMs / 1000), 'second');
+  const absMin = Math.round(absSec / 60);
+  if (absMin < 60) return rtf.format(Math.round(diffMs / 60000), 'minute');
+  const absHr = Math.round(absMin / 60);
+  if (absHr < 48) return rtf.format(Math.round(diffMs / 3600000), 'hour');
+  const absDay = Math.round(absHr / 24);
+  if (absDay < 60) return rtf.format(Math.round(diffMs / 86400000), 'day');
+  return date.toLocaleDateString('ru');
+}
+
 export const PublishedShopsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get('page') ?? '1');
   const search = searchParams.get('search') ?? '';
   const status = (searchParams.get('status') ?? '') as CoffeeShopStatus | '';
+  const importedFromFile = searchParams.get('importedFromFile') === '1';
   const [localSearch, setLocalSearch] = useState(search);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'published-shops', { page, search, status }],
+    queryKey: ['admin', 'published-shops', { page, search, status, importedFromFile }],
     queryFn: () =>
       getPublishedShops({
         page,
         pageSize: PAGE_SIZE,
         search: search || undefined,
         status: status || undefined,
+        importedFromFile: importedFromFile || undefined,
       }).then((r) => r.data),
   });
 
@@ -71,9 +89,23 @@ export const PublishedShopsPage: React.FC = () => {
               {opt.label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setParam('importedFromFile', importedFromFile ? '' : '1')}
+            className={`filter-chip ${
+              importedFromFile
+                ? 'bg-primary text-black'
+                : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
+            }`}
+          >
+            Импорт из файла
+          </button>
         </div>
         <form
-          onSubmit={(e) => { e.preventDefault(); setParam('search', localSearch); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            setParam('search', localSearch);
+          }}
           className="search-form"
         >
           <input
@@ -83,7 +115,9 @@ export const PublishedShopsPage: React.FC = () => {
             placeholder="Название..."
             className="search-input"
           />
-          <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">Найти</Button>
+          <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
+            Найти
+          </Button>
         </form>
       </div>
 
@@ -104,11 +138,24 @@ export const PublishedShopsPage: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
-                    <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Название</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Focus</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Статус</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Владелец</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Создана</th>
+                    <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
+                      Название
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
+                      Focus
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
+                      Статус
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">
+                      Владелец
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">
+                      Из файла
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">
+                      Создана
+                    </th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -129,12 +176,23 @@ export const PublishedShopsPage: React.FC = () => {
                       <td className="px-4 py-3 text-xs font-mono text-text-muted dark:text-stone-400 hidden lg:table-cell">
                         {shop.ownerUserId ? `${shop.ownerUserId.slice(0, 8)}…` : '—'}
                       </td>
+                      <td className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 hidden md:table-cell font-body">
+                        {shop.importedFromFileAt ? (
+                          <span title={new Date(shop.importedFromFileAt).toLocaleString('ru')}>
+                            {formatRelativeRu(shop.importedFromFileAt)}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 hidden lg:table-cell font-body">
                         {new Date(shop.createdAtUtc).toLocaleDateString('ru')}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link to={`/published-shops/${shop.id}`}>
-                          <Button variant="ghost" size="sm">Редактировать</Button>
+                          <Button variant="ghost" size="sm">
+                            Редактировать
+                          </Button>
                         </Link>
                       </td>
                     </tr>

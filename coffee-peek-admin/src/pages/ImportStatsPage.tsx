@@ -1,6 +1,13 @@
 import React, { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { applyImportDecisions, getImportStats, ingestImportFile, refreshOsmImport } from '../api/import';
+import {
+  applyImportDecisions,
+  getImportStats,
+  ingestImportFile,
+  refreshDuplicateSuggestions,
+  refreshOsmImport,
+} from '../api/import';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
 import { Card, StatCard } from '../components/ui/Card';
@@ -11,6 +18,7 @@ const MAX_IMPORT_FILE_BYTES = 32 * 1024 * 1024;
 
 export const ImportStatsPage: React.FC = () => {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const placesFileRef = useRef<HTMLInputElement>(null);
@@ -29,6 +37,21 @@ export const ImportStatsPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'import'] });
     },
     onError: (err: { message?: string }) => showToast(err?.message ?? 'Не удалось обновить OSM', 'error'),
+  });
+
+  const duplicatesMutation = useMutation({
+    mutationFn: refreshDuplicateSuggestions,
+    onSuccess: (response) => {
+      const { suggested, scanned, alreadyTracked } = response.data;
+      showToast(
+        `Похожие: предложено ${suggested} (скан ${scanned}, уже было ${alreadyTracked})`,
+        'success'
+      );
+      qc.invalidateQueries({ queryKey: ['admin', 'import'] });
+      if (suggested > 0) navigate('/import/duplicates');
+    },
+    onError: (err: { message?: string }) =>
+      showToast(err?.message ?? 'Не удалось найти похожие', 'error'),
   });
 
   const onDecisionsFile = async (file: File) => {
@@ -64,12 +87,15 @@ export const ImportStatsPage: React.FC = () => {
     setIngesting(true);
     try {
       const result = await ingestImportFile(json);
-      const { parsed, inserted, enriched, unchanged, invalid } = result.data;
+      const { parsed, inserted, enriched, unchanged, invalid, suggestedDuplicates } = result.data;
       const suffix = invalid > 0 ? `, пропущено ${invalid}` : '';
       showToast(
         `Разобрано ${parsed}: новых ${inserted}, дополнено ${enriched}, без изменений ${unchanged}${suffix}`,
         'success'
       );
+      if (suggestedDuplicates > 0) {
+        showToast(`Найдено похожих: ${suggestedDuplicates}. Откройте вкладку «Похожие».`, 'success');
+      }
       qc.invalidateQueries({ queryKey: ['admin', 'import'] });
     } catch (err: any) {
       showToast(err?.message ?? 'Не удалось загрузить JSON', 'error');
@@ -93,14 +119,14 @@ export const ImportStatsPage: React.FC = () => {
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-28 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
           ))}
         </div>
       ) : data ? (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <StatCard label="Ожидает" value={data.pending} icon={<span />} color="text-yellow-400" />
             <StatCard label="Позже" value={data.skipped} icon={<span />} />
             <StatCard
@@ -113,6 +139,14 @@ export const ImportStatsPage: React.FC = () => {
                 .join(' · ')}
             />
             <StatCard label="Не в ленту" value={data.rejected} icon={<span />} color="text-red-400" />
+            <StatCard
+              label="Похожие"
+              value={data.pendingDuplicates}
+              icon={<span />}
+              color="text-primary"
+              subtitle="на подтверждение"
+              onClick={() => navigate('/import/duplicates')}
+            />
           </div>
           <Card>
             <h3 className="text-sm font-semibold text-text-main dark:text-white mb-3">Корзины коллектора</h3>
@@ -134,10 +168,10 @@ export const ImportStatsPage: React.FC = () => {
           Снимок OSM и JSON решений из spike. Не вызывает Overpass/Google с браузера.
         </p>
         <p className="text-xs text-text-muted dark:text-stone-500 mb-4">
-          Дамп кофеен (OSM, 2GIS, Google, GeoJSON) → очередь. Дубли дополняют карточку, не создают вторую.
-          import-decisions.json — отдельной кнопкой.
+          Дамп кофеен (OSM, 2GIS, Google, GeoJSON) → очередь. Жёсткие дубли мержатся сами; похожие —
+          на вкладке «Похожие». import-decisions.json — отдельной кнопкой.
         </p>
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
           <Button
             variant="secondary"
             loading={refreshMutation.isPending}
@@ -157,6 +191,13 @@ export const ImportStatsPage: React.FC = () => {
           />
           <Button variant="secondary" loading={ingesting} onClick={() => placesFileRef.current?.click()}>
             Загрузить JSON мест
+          </Button>
+          <Button
+            variant="primary"
+            loading={duplicatesMutation.isPending}
+            onClick={() => duplicatesMutation.mutate()}
+          >
+            Найти похожие
           </Button>
           <input
             ref={fileRef}

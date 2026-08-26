@@ -5,14 +5,21 @@ import {
   COFFEE_FOCUS_LABELS,
   COFFEE_FOCUS_OPTIONS,
   GOOGLE_STATUS_LABELS,
+  IMPORT_SOURCE_LABELS,
   CoffeeFocus,
   GoogleBusinessStatus,
+  ImportSource,
+  parseImportSource,
 } from '../../constants/catalogIngest';
 import { Badge, BadgeVariant } from '../ui/Badge';
 
 export const ImportTabs: React.FC = () => {
   const { pathname, search } = useLocation();
-  const listActive = pathname === '/import' || (pathname.startsWith('/import/') && !pathname.startsWith('/import/stats'));
+  const isStats = pathname.startsWith('/import/stats');
+  const isDuplicates = pathname.startsWith('/import/duplicates');
+  const listActive =
+    pathname === '/import' ||
+    (pathname.startsWith('/import/') && !isStats && !isDuplicates);
 
   const tabClass = (active: boolean) =>
     `px-3 py-2 rounded-lg text-sm font-body min-h-[40px] ${
@@ -21,12 +28,17 @@ export const ImportTabs: React.FC = () => {
         : 'text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5'
     }`;
 
+  const listSearch = isStats || isDuplicates ? '' : search;
+
   return (
     <div className="flex gap-1 overflow-x-auto">
-      <NavLink to={{ pathname: '/import', search: pathname.startsWith('/import/stats') ? '' : search }} className={tabClass(listActive)}>
+      <NavLink to={{ pathname: '/import', search: listSearch }} className={tabClass(listActive)}>
         Список
       </NavLink>
-      <NavLink to="/import/stats" className={({ isActive }) => tabClass(isActive)}>
+      <NavLink to="/import/duplicates" className={tabClass(isDuplicates)}>
+        Похожие
+      </NavLink>
+      <NavLink to="/import/stats" className={tabClass(isStats)}>
         Статистика
       </NavLink>
     </div>
@@ -121,3 +133,16 @@ export const GoogleStatusBadge: React.FC<{ status?: GoogleBusinessStatus }> = ({
 
 export const FocusBadge: React.FC<{ focus?: CoffeeFocus }> = ({ focus }) =>
   focus ? <Badge variant="info">{COFFEE_FOCUS_LABELS[focus]}</Badge> : <span className="text-stone-500">—</span>;
+
+export const SourceBadge: React.FC<{
+  source?: string;
+  importedFromFile?: boolean;
+}> = ({ source, importedFromFile }) => {
+  const parsed = parseImportSource(source);
+  const fromFile = importedFromFile || parsed === 'File';
+  if (!fromFile && parsed !== 'Osm' && !source) return null;
+  const label = fromFile
+    ? IMPORT_SOURCE_LABELS.File
+    : IMPORT_SOURCE_LABELS[(parsed ?? 'Osm') as ImportSource] ?? String(source);
+  return <Badge variant={fromFile ? 'info' : 'default'}>{label}</Badge>;
+};

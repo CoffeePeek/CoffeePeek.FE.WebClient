@@ -2,7 +2,9 @@ export type QueueStatus = 'Pending' | 'Skipped' | 'Published' | 'Rejected';
 export type CoffeeFocus = 'specialty' | 'coffee_bar' | 'cafe';
 export type CollectorBucket = 'priority' | 'review' | 'noise' | 'vending';
 /** Why an OSM candidate was rejected (not published). */
-export type RejectReason = 'closed' | 'invalid' | 'not_coffee';
+export type RejectReason = 'closed' | 'invalid' | 'not_coffee' | 'duplicate';
+export type ImportSource = 'Osm' | 'File';
+export type DuplicateSuggestionStatus = 'Pending' | 'Confirmed' | 'Rejected';
 export type GoogleBusinessStatus =
   | 'Operational'
   | 'ClosedPermanently'
@@ -32,13 +34,39 @@ export const REJECT_REASON_LABELS: Record<RejectReason, string> = {
   closed: 'Закрыта',
   invalid: 'Невалидные данные',
   not_coffee: 'Не кофейня',
+  duplicate: 'Дубликат',
 };
 
-/** Numeric enum for decide + list filter. Backend contract: 1=Closed, 2=Invalid, 3=NotCoffee. */
+/** Numeric enum for decide + list filter. Backend: 1=Closed, 2=Invalid, 3=NotCoffee, 4=Duplicate. */
 export const REJECT_REASON_TO_API: Record<RejectReason, number> = {
   closed: 1,
   invalid: 2,
   not_coffee: 3,
+  duplicate: 4,
+};
+
+export const IMPORT_SOURCE_LABELS: Record<ImportSource, string> = {
+  Osm: 'OSM',
+  File: 'файл',
+};
+
+/** Backend: Osm=1, File=2. */
+export const IMPORT_SOURCE_TO_API: Record<ImportSource, number> = {
+  Osm: 1,
+  File: 2,
+};
+
+export const DUPLICATE_STATUS_LABELS: Record<DuplicateSuggestionStatus, string> = {
+  Pending: 'Ожидает',
+  Confirmed: 'Одно место',
+  Rejected: 'Разные',
+};
+
+/** Backend: Pending=1, Confirmed=2, Rejected=3. */
+export const DUPLICATE_STATUS_TO_API: Record<DuplicateSuggestionStatus, number> = {
+  Pending: 1,
+  Confirmed: 2,
+  Rejected: 3,
 };
 
 export const COFFEE_FOCUS_OPTIONS: { value: CoffeeFocus; label: string; hint: string; key: string }[] = [
@@ -129,8 +157,9 @@ export function parseImportListSearch(searchParams: URLSearchParams) {
   const search = searchParams.get('search') ?? '';
   const hasAddress = searchParams.get('hasAddress') === '1';
   const rejectReason = (searchParams.get('rejectReason') ?? '') as RejectReason | '';
+  const source = (searchParams.get('source') ?? '') as ImportSource | '';
   const page = parseInt(searchParams.get('page') ?? '1', 10) || 1;
-  return { status, bucket, focus, search, hasAddress, rejectReason, page };
+  return { status, bucket, focus, search, hasAddress, rejectReason, source, page };
 }
 
 const BUCKET_ALIASES: Record<string, CollectorBucket> = {
@@ -178,6 +207,31 @@ const REJECT_ALIASES: Record<string, RejectReason> = {
   NotCoffee: 'not_coffee',
   notCoffee: 'not_coffee',
   '3': 'not_coffee',
+  duplicate: 'duplicate',
+  Duplicate: 'duplicate',
+  '4': 'duplicate',
+};
+
+const SOURCE_ALIASES: Record<string, ImportSource> = {
+  Osm: 'Osm',
+  OSM: 'Osm',
+  osm: 'Osm',
+  '1': 'Osm',
+  File: 'File',
+  file: 'File',
+  '2': 'File',
+};
+
+const DUPLICATE_STATUS_ALIASES: Record<string, DuplicateSuggestionStatus> = {
+  Pending: 'Pending',
+  pending: 'Pending',
+  '1': 'Pending',
+  Confirmed: 'Confirmed',
+  confirmed: 'Confirmed',
+  '2': 'Confirmed',
+  Rejected: 'Rejected',
+  rejected: 'Rejected',
+  '3': 'Rejected',
 };
 
 export function parseCoffeeFocus(value: unknown): CoffeeFocus | undefined {
@@ -198,6 +252,16 @@ export function parseGoogleStatus(value: unknown): GoogleBusinessStatus | undefi
 export function parseRejectReason(value: unknown): RejectReason | undefined {
   if (value === undefined || value === null || value === '') return undefined;
   return REJECT_ALIASES[String(value)];
+}
+
+export function parseImportSource(value: unknown): ImportSource | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  return SOURCE_ALIASES[String(value)];
+}
+
+export function parseDuplicateStatus(value: unknown): DuplicateSuggestionStatus {
+  if (value === undefined || value === null || value === '') return 'Pending';
+  return DUPLICATE_STATUS_ALIASES[String(value)] ?? 'Pending';
 }
 
 export function isClosedPermanently(status?: GoogleBusinessStatus): boolean {

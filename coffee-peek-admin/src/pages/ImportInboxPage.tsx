@@ -11,6 +11,7 @@ import {
   FocusBadge,
   GoogleStatusBadge,
   ImportTabs,
+  SourceBadge,
 } from '../components/import/catalogControls';
 import { useToast } from '../contexts/ToastContext';
 import { useLoadMoreOnScroll } from '../hooks/useLoadMoreOnScroll';
@@ -20,6 +21,7 @@ import {
   CoffeeFocus,
   CollectorBucket,
   IMPORT_LIST_PAGE_SIZE,
+  ImportSource,
   QUEUE_STATUS_LABELS,
   REJECT_REASON_LABELS,
   REJECT_REASON_OPTIONS,
@@ -111,7 +113,7 @@ export const ImportInboxPage: React.FC = () => {
   const qc = useQueryClient();
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { status, bucket, focus, search, hasAddress, rejectReason } =
+  const { status, bucket, focus, search, hasAddress, rejectReason, source } =
     parseImportListSearch(searchParams);
   const sortKey = (searchParams.get('sort') ?? '') as SortKey | '';
   const sortDir = (searchParams.get('dir') === 'desc' ? 'desc' : 'asc') as SortDir;
@@ -127,7 +129,7 @@ export const ImportInboxPage: React.FC = () => {
         'admin',
         'import',
         'inbox',
-        { status, bucket, focus, search, hasAddress, rejectReason },
+        { status, bucket, focus, search, hasAddress, rejectReason, source },
       ],
       initialPageParam: 1,
       staleTime: 0,
@@ -139,6 +141,7 @@ export const ImportInboxPage: React.FC = () => {
           search: search || undefined,
           hasAddress: hasAddress || undefined,
           rejectReason: rejectReason || undefined,
+          source: (source as ImportSource) || undefined,
           page: pageParam,
           pageSize: PAGE_SIZE,
         }).then((r) => r.data),
@@ -223,7 +226,7 @@ export const ImportInboxPage: React.FC = () => {
     setBatchModal(null);
     setBatchFocus(undefined);
     setConfirmPublishClosed(false);
-  }, [status, bucket, focus, search, hasAddress, rejectReason]);
+  }, [status, bucket, focus, search, hasAddress, rejectReason, source]);
 
   const onSort = (column: SortKey) => {
     if (sortKey === column) {
@@ -418,6 +421,16 @@ export const ImportInboxPage: React.FC = () => {
                       <option value="">Все адреса</option>
                       <option value="1">Только с адресами</option>
                     </select>
+                    <select
+                      value={source}
+                      onChange={(e) => patchParams({ source: e.target.value })}
+                      className={headerControl}
+                      aria-label="Источник"
+                    >
+                      <option value="">Все источники</option>
+                      <option value="File">Из файла</option>
+                      <option value="Osm">OSM</option>
+                    </select>
                   </div>
                 </th>
                 <th className="text-left px-4 py-3">
@@ -578,16 +591,22 @@ export const ImportInboxPage: React.FC = () => {
                         />
                       </td>
                       <td className="px-3 py-2">
-                        <Link
-                          to={{
-                            pathname: `/import/${item.id}`,
-                            search: searchParams.toString(),
-                          }}
-                          className="text-text-main dark:text-white hover:text-primary font-medium"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {displayShopName(item.name, item.brand)}
-                        </Link>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link
+                            to={{
+                              pathname: `/import/${item.id}`,
+                              search: searchParams.toString(),
+                            }}
+                            className="text-text-main dark:text-white hover:text-primary font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {displayShopName(item.name, item.brand)}
+                          </Link>
+                          <SourceBadge
+                            source={String(item.source)}
+                            importedFromFile={item.importedFromFile}
+                          />
+                        </div>
                         {item.address && (
                           <p className="text-xs text-text-muted dark:text-stone-500 truncate max-w-xs">
                             {item.address}

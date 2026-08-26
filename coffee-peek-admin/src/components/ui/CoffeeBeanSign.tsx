@@ -1,6 +1,9 @@
 import React from 'react';
 
 const ACCENT = '#EAB308';
+const BYN_ASPECT = 945 / 1170;
+const BYN_PATH =
+  'M945 826Q941 973 837 1070Q733 1167 578 1170H295H166V890H0V760H166V0H816V130H295V482H578Q733 486 837 583Q941 680 945 826ZM295 759H592V891H295V1041H579Q680 1039 748 977Q815 917 818 826Q815 734 747.5 673.0Q680 612 579 610H437H295Z';
 
 interface CoffeeBeanSignProps {
   size?: number | string;
@@ -34,28 +37,30 @@ export const CoffeeBeanSign: React.FC<CoffeeBeanSignProps> = ({
   </svg>
 );
 
-/** Official NBRB Belarusian ruble sign (PUA U+E901 via nbrb webfont). */
+/** Official NBRB Belarusian ruble sign (glyph from nbrb webfont, rendered as SVG). */
 export const BynSign: React.FC<{
   size?: number;
   className?: string;
   color?: string;
   style?: React.CSSProperties;
-}> = ({ size = 14, className, color = ACCENT, style }) => (
-  <span
-    className={`nbrb-icon${className ? ` ${className}` : ''}`}
-    style={{
-      display: 'inline-block',
-      color,
-      fontSize: size,
-      lineHeight: 1,
-      verticalAlign: '-0.05em',
-      ...style,
-    }}
-    aria-hidden
-  >
-    {'\uE901'}
-  </span>
-);
+}> = ({ size = 14, className, color = ACCENT, style }) => {
+  const height = size;
+  const width = Math.max(1, Math.round(size * BYN_ASPECT));
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 0 945 1170"
+      fill={color}
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ display: 'inline-block', verticalAlign: '-0.12em', flexShrink: 0, ...style }}
+      aria-hidden
+    >
+      <path d={BYN_PATH} />
+    </svg>
+  );
+};
 
 export const BeanPriceMarks: React.FC<{
   count: number;

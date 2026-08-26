@@ -4,17 +4,23 @@ import { ApiResponse, PaginatedMeta } from './core/types';
 import {
   CoffeeFocus,
   CollectorBucket,
+  DuplicateSuggestionStatus,
   GoogleBusinessStatus,
+  ImportSource,
   QueueStatus,
   RejectReason,
   BUCKET_TO_API,
   COFFEE_FOCUS_TO_API,
+  DUPLICATE_STATUS_TO_API,
+  IMPORT_SOURCE_TO_API,
   QUEUE_STATUS_TO_API,
   REJECT_REASON_TO_API,
   fallbackResearchLinks,
   parseBucket,
   parseCoffeeFocus,
+  parseDuplicateStatus,
   parseGoogleStatus,
+  parseImportSource,
   parseRejectReason,
 } from '../constants/catalogIngest';
 
@@ -28,7 +34,7 @@ export interface ResearchLinks {
 
 export interface ImportCandidate {
   id: string;
-  source: string;
+  source: ImportSource | string;
   externalId: string;
   name?: string;
   brand?: string;
@@ -43,6 +49,8 @@ export interface ImportCandidate {
   osmUpdatedAt?: string;
   osmAgeDays?: number;
   checkDate?: string;
+  createdAtUtc?: string;
+  importedFromFile: boolean;
   signals: string[];
   collectorBucket?: CollectorBucket;
   queueStatus: QueueStatus;
@@ -66,6 +74,7 @@ export interface ImportCandidatesQuery {
   /** When true, only candidates with a non-empty address. */
   hasAddress?: boolean;
   rejectReason?: RejectReason;
+  source?: ImportSource;
   page?: number;
   pageSize?: number;
 }
@@ -83,6 +92,7 @@ export interface ImportStats {
   skipped: number;
   published: number;
   rejected: number;
+  pendingDuplicates: number;
   publishedByFocus: Record<CoffeeFocus, number>;
   byBucket: Record<CollectorBucket, number>;
 }
@@ -94,6 +104,53 @@ export interface DecideCandidateRequest {
   overrideClosed?: boolean;
   /** Required when status is Rejected. */
   rejectReason?: RejectReason;
+}
+
+export interface DuplicateCandidateSide {
+  id: string;
+  source: ImportSource | string;
+  name?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  phone?: string;
+  website?: string;
+  instagram?: string;
+  queueStatus: QueueStatus;
+  importedFromFile: boolean;
+  resultingShopId?: string;
+  externalId?: string;
+}
+
+export interface DuplicateSuggestion {
+  id: string;
+  score: number;
+  distanceMeters?: number;
+  reasons: string[];
+  status: DuplicateSuggestionStatus;
+  left: DuplicateCandidateSide;
+  right: DuplicateCandidateSide;
+}
+
+export interface DuplicateSuggestionsPage {
+  items: DuplicateSuggestion[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface RefreshDuplicatesResult {
+  scanned: number;
+  suggested: number;
+  alreadyTracked: number;
+}
+
+export interface DecideDuplicateResult {
+  suggestionId: string;
+  status: DuplicateSuggestionStatus;
+  keeperCandidateId?: string;
+  mergedCandidateId?: string;
 }
 
 function pick(raw: Record<string, unknown>, ...keys: string[]): unknown {
@@ -156,7 +213,7 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
 
   return {
     id: String(pick(raw, 'id', 'Id') ?? ''),
-    source: asString(pick(raw, 'source', 'Source')) ?? 'Osm',
+    source: parseImportSource(pick(raw, 'source', 'Source')) ?? asString(pick(raw, 'source', 'Source')) ?? 'Osm',
     externalId,
     name,
     brand,
@@ -171,6 +228,11 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
     osmUpdatedAt: asString(pick(raw, 'osmUpdatedAt', 'OsmUpdatedAt')),
     osmAgeDays: asNumber(pick(raw, 'osmAgeDays', 'OsmAgeDays')),
     checkDate: asString(pick(raw, 'checkDate', 'CheckDate')),
+    createdAtUtc: asString(pick(raw, 'createdAtUtc', 'CreatedAtUtc')),
+    importedFromFile:
+      Boolean(pick(raw, 'importedFromFile', 'ImportedFromFile')) ||
+      parseImportSource(pick(raw, 'source', 'Source')) === 'File' ||
+      asStringArray(pick(raw, 'signals', 'Signals')).some((s) => s.toLowerCase().includes('import:file')),
     signals: asStringArray(pick(raw, 'signals', 'Signals')),
     collectorBucket: parseBucket(pick(raw, 'collectorBucket', 'CollectorBucket')),
     queueStatus: mapQueueStatus(pick(raw, 'queueStatus', 'QueueStatus')),
@@ -250,6 +312,7 @@ export async function getImportCandidates(
       hasAddress: params.hasAddress === true ? true : undefined,
       rejectReason:
         params.rejectReason !== undefined ? REJECT_REASON_TO_API[params.rejectReason] : undefined,
+      source: params.source !== undefined ? IMPORT_SOURCE_TO_API[params.source] : undefined,
       page,
       pageSize,
     },
@@ -306,6 +369,7 @@ export async function getImportStats(): Promise<ApiResponse<ImportStats>> {
       skipped: Number(pick(raw, 'skipped', 'Skipped') ?? 0),
       published: Number(pick(raw, 'published', 'Published') ?? 0),
       rejected: Number(pick(raw, 'rejected', 'Rejected') ?? 0),
+      pendingDuplicates: Number(pick(raw, 'pendingDuplicates', 'PendingDuplicates') ?? 0),
       publishedByFocus: {
         specialty: Number(pick(byFocus, 'specialty', 'Specialty') ?? 0),
         coffee_bar: Number(pick(byFocus, 'coffee_bar', 'CoffeeBar', 'coffeeBar') ?? 0),
@@ -335,6 +399,7 @@ export interface IngestImportFileResult {
   enriched: number;
   unchanged: number;
   invalid: number;
+  suggestedDuplicates: number;
 }
 
 export async function ingestImportFile(json: unknown): Promise<ApiResponse<IngestImportFileResult>> {
@@ -349,6 +414,130 @@ export async function ingestImportFile(json: unknown): Promise<ApiResponse<Inges
       enriched: Number(pick(raw, 'enriched', 'Enriched') ?? 0),
       unchanged: Number(pick(raw, 'unchanged', 'Unchanged') ?? 0),
       invalid: Number(pick(raw, 'invalid', 'Invalid') ?? 0),
+      suggestedDuplicates: Number(
+        pick(raw, 'suggestedDuplicates', 'SuggestedDuplicates') ?? 0
+      ),
+    },
+  };
+}
+
+function mapDuplicateSide(rawInput: unknown): DuplicateCandidateSide {
+  const raw = asRecord(rawInput);
+  const source =
+    parseImportSource(pick(raw, 'source', 'Source')) ??
+    asString(pick(raw, 'source', 'Source')) ??
+    'Osm';
+  return {
+    id: String(pick(raw, 'id', 'Id') ?? ''),
+    source,
+    name: asString(pick(raw, 'name', 'Name')),
+    address: asString(pick(raw, 'address', 'Address')),
+    latitude: asNumber(pick(raw, 'latitude', 'Latitude', 'lat', 'Lat')),
+    longitude: asNumber(pick(raw, 'longitude', 'Longitude', 'lon', 'Lon')),
+    phone: asString(pick(raw, 'phone', 'Phone')),
+    website: asString(pick(raw, 'website', 'Website')),
+    instagram: asString(pick(raw, 'instagram', 'Instagram')),
+    queueStatus: mapQueueStatus(pick(raw, 'queueStatus', 'QueueStatus')),
+    importedFromFile:
+      Boolean(pick(raw, 'importedFromFile', 'ImportedFromFile')) || source === 'File',
+    resultingShopId: asString(pick(raw, 'resultingShopId', 'ResultingShopId')),
+    externalId: asString(pick(raw, 'externalId', 'ExternalId')),
+  };
+}
+
+function mapDuplicateSuggestion(rawInput: unknown): DuplicateSuggestion {
+  const raw = asRecord(rawInput);
+  return {
+    id: String(pick(raw, 'id', 'Id') ?? ''),
+    score: Number(pick(raw, 'score', 'Score') ?? 0),
+    distanceMeters: asNumber(pick(raw, 'distanceMeters', 'DistanceMeters')),
+    reasons: asStringArray(pick(raw, 'reasons', 'Reasons')),
+    status: parseDuplicateStatus(pick(raw, 'status', 'Status')),
+    left: mapDuplicateSide(pick(raw, 'left', 'Left')),
+    right: mapDuplicateSide(pick(raw, 'right', 'Right')),
+  };
+}
+
+export async function getDuplicateSuggestions(
+  params: {
+    status?: DuplicateSuggestionStatus;
+    page?: number;
+    pageSize?: number;
+  } = {}
+): Promise<ApiResponse<DuplicateSuggestionsPage>> {
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 20;
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.IMPORT_DUPLICATES, {
+    params: {
+      status: params.status !== undefined ? DUPLICATE_STATUS_TO_API[params.status] : undefined,
+      page,
+      pageSize,
+    },
+  });
+
+  const raw = asRecord(Array.isArray(response.data) ? {} : response.data);
+  const items = unwrapCandidateList(response.data).map(mapDuplicateSuggestion);
+  const parsedPage = Number(
+    pick(raw, 'currentPage', 'page', 'CurrentPage', 'Page') ?? response.meta?.currentPage ?? page
+  );
+  const parsedPageSize = Number(
+    pick(raw, 'pageSize', 'PageSize') ?? response.meta?.pageSize ?? pageSize
+  );
+  const totalCount = Number(
+    pick(raw, 'totalItems', 'totalCount', 'TotalItems', 'TotalCount') ??
+      response.meta?.totalCount ??
+      items.length
+  );
+  const parsedTotalPages = Number(
+    pick(raw, 'totalPages', 'TotalPages') ?? response.meta?.totalPages ?? 0
+  );
+
+  return {
+    ...response,
+    data: {
+      items,
+      totalCount,
+      page: parsedPage > 0 ? parsedPage : page,
+      pageSize: parsedPageSize > 0 ? parsedPageSize : pageSize,
+      totalPages:
+        parsedTotalPages > 0
+          ? parsedTotalPages
+          : Math.max(1, Math.ceil(totalCount / (parsedPageSize > 0 ? parsedPageSize : pageSize))),
+    },
+  };
+}
+
+export async function refreshDuplicateSuggestions(): Promise<ApiResponse<RefreshDuplicatesResult>> {
+  const response = await httpClient.post<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.IMPORT_DUPLICATES_REFRESH
+  );
+  const raw = asRecord(response.data);
+  return {
+    ...response,
+    data: {
+      scanned: Number(pick(raw, 'scanned', 'Scanned') ?? 0),
+      suggested: Number(pick(raw, 'suggested', 'Suggested') ?? 0),
+      alreadyTracked: Number(pick(raw, 'alreadyTracked', 'AlreadyTracked') ?? 0),
+    },
+  };
+}
+
+export async function decideDuplicateSuggestion(
+  id: string,
+  accept: boolean
+): Promise<ApiResponse<DecideDuplicateResult>> {
+  const response = await httpClient.post<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.IMPORT_DUPLICATE_DECIDE(id),
+    { accept }
+  );
+  const raw = asRecord(response.data);
+  return {
+    ...response,
+    data: {
+      suggestionId: String(pick(raw, 'suggestionId', 'SuggestionId') ?? id),
+      status: parseDuplicateStatus(pick(raw, 'status', 'Status')),
+      keeperCandidateId: asString(pick(raw, 'keeperCandidateId', 'KeeperCandidateId')),
+      mergedCandidateId: asString(pick(raw, 'mergedCandidateId', 'MergedCandidateId')),
     },
   };
 }
