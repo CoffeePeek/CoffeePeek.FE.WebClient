@@ -6,8 +6,7 @@ import {
   SquaresFour, Clock, Sparkle, CheckCircle, Heart,
   MapPin, CaretDown, Check,
 } from '@/components/Icon';
-import { BeanPriceMarks, BynSign } from './icons';
-import { PRICE_FILTER_OPTIONS, toPriceRangeLevel } from '../utils/priceRange';
+import { PRICE_FILTER_OPTIONS, toPriceFilterLevel } from '../utils/priceRange';
 
 const LIST_PREVIEW = 6;
 
@@ -62,6 +61,7 @@ const FIXED_QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentTyp
 const PRICE_OPTIONS = PRICE_FILTER_OPTIONS.map((o) => ({
   value: o.value,
   label: o.label,
+  labelShort: o.labelShort,
   tiers: o.tiers,
 }));
 
@@ -233,8 +233,8 @@ const ExpandableOptions: React.FC<{
 };
 
 const PRICE_SLIDER_STOPS = [
-  { value: undefined as string | undefined, label: 'Любая' },
-  ...PRICE_OPTIONS.map(({ value, label }) => ({ value, label })),
+  { value: undefined as string | undefined, label: '', labelShort: '' },
+  ...PRICE_OPTIONS.map(({ value, label, labelShort }) => ({ value, label, labelShort })),
 ] as const;
 
 const PriceSlider: React.FC<{
@@ -242,21 +242,35 @@ const PriceSlider: React.FC<{
   onChange: (value?: string) => void;
   gold: string;
   muted: string;
-  textPrimary: string;
   track: string;
-}> = ({ value, onChange, gold, muted, textPrimary, track }) => {
-  const index = Math.max(0, PRICE_SLIDER_STOPS.findIndex((s) => s.value === toPriceRangeLevel(value)));
+}> = ({ value, onChange, gold, muted, track }) => {
+  const filterLevel = toPriceFilterLevel(value);
+  const index = Math.max(
+    0,
+    PRICE_SLIDER_STOPS.findIndex((s) => s.value === filterLevel)
+  );
   const fill = `${(index / (PRICE_SLIDER_STOPS.length - 1)) * 100}%`;
   const current = PRICE_SLIDER_STOPS[index];
 
   return (
     <div style={{ padding: '4px 2px 8px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 2 }}>
-        <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, color: textPrimary }}>
-          {current.label}
-        </span>
-        {index > 0 && (
-          <BeanPriceMarks count={index} size={12} color={gold} />
+      <div
+        style={{
+          minHeight: 18,
+          marginBottom: 6,
+          fontFamily: '"RF Dewi Expanded"',
+          fontSize: 12,
+          fontWeight: 600,
+          color: gold,
+        }}
+      >
+        {current.label ? (
+          <>
+            <span className="price-label-full">{current.label}</span>
+            <span className="price-label-short">{current.labelShort}</span>
+          </>
+        ) : (
+          <span style={{ color: muted }}>&nbsp;</span>
         )}
       </div>
       <input
@@ -274,35 +288,38 @@ const PriceSlider: React.FC<{
           ['--slider-fill' as string]: fill,
         } as React.CSSProperties}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4, marginTop: 4 }}>
         {PRICE_SLIDER_STOPS.map((stop, i) => (
           <button
-            key={stop.label}
+            key={stop.value ?? 'any'}
             type="button"
             onClick={() => onChange(stop.value)}
+            aria-label={stop.label || 'Любая цена'}
             style={{
               background: 'none',
               border: 'none',
               padding: 0,
               cursor: 'pointer',
               fontFamily: '"RF Dewi Expanded"',
-              fontSize: i === 0 ? 10 : 9,
+              fontSize: 10,
               fontWeight: i === index ? 700 : 500,
               color: i === index ? gold : muted,
               textAlign: i === 0 ? 'left' : i === PRICE_SLIDER_STOPS.length - 1 ? 'right' : 'center',
               flex: 1,
-              letterSpacing: i === 0 ? undefined : '-0.02em',
+              letterSpacing: '-0.02em',
               whiteSpace: 'nowrap' as const,
+              minHeight: 20,
             }}
           >
             {i === 0 ? (
-              'Любая'
+              ''
             ) : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-                {Array.from({ length: i }, (_, n) => (
-                  <BynSign key={n} size={11} color={i === index ? gold : muted} />
-                ))}
-              </span>
+              <>
+                <span className="price-label-full">{stop.label.replace(/^Капучино\s+/, '')}</span>
+                <span className="price-label-short">
+                  {stop.value === 'Cheap' ? '< 8' : stop.value === 'Expensive' ? '> 8' : 'за 8'}
+                </span>
+              </>
             )}
           </button>
         ))}
@@ -482,14 +499,16 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
         {current.priceRange && (
           <AppliedChip
             label={
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <BeanPriceMarks
-                  count={PRICE_OPTIONS.find(p => p.value === current.priceRange)?.tiers ?? 1}
-                  size={11}
-                  color={gold}
-                />
-                {PRICE_OPTIONS.find(p => p.value === current.priceRange)?.label ?? current.priceRange}
-              </span>
+              <>
+                <span className="price-label-full">
+                  {PRICE_OPTIONS.find((p) => p.value === toPriceFilterLevel(current.priceRange))?.label ??
+                    current.priceRange}
+                </span>
+                <span className="price-label-short">
+                  {PRICE_OPTIONS.find((p) => p.value === toPriceFilterLevel(current.priceRange))
+                    ?.labelShort ?? current.priceRange}
+                </span>
+              </>
             }
             gold={gold}
             onRemove={() => patch({ priceRange: undefined })}
@@ -564,7 +583,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
           onChange={(priceRange) => patch({ priceRange })}
           gold={gold}
           muted={muted}
-          textPrimary={textPrimary}
           track={dark ? '#3D2F28' : '#E7E5E4'}
         />
       </FilterAccordion>

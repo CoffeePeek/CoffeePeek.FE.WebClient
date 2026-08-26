@@ -10,6 +10,7 @@ import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
 import { BeanPriceMarks } from './icons';
+import { PRICE_FILTER_OPTIONS } from '../utils/priceRange';
 import {
   MapPin, Images, Factory, Leaf, Flame, Drop, Lightbulb, X,
 } from '@/components/Icon';
@@ -252,10 +253,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                   onChange={(value) => handleInputChange('priceRange', value || undefined)}
                   options={[
                     { value: '', label: 'Выберите диапазон' },
-                    { value: 'Cheap', label: 'Бюджетно' },
-                    { value: 'Moderate', label: 'Средне' },
-                    { value: 'Expensive', label: 'Дорого' },
-                    { value: 'Luxury', label: 'Премиум' },
+                    ...PRICE_FILTER_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
                   ]}
                   icon={<BeanPriceMarks count={1} size={14} />}
                 />

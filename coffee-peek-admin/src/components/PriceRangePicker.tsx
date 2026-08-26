@@ -1,23 +1,9 @@
 import React from 'react';
 import {
-  PRICE_RANGE_OPTIONS,
+  PRICE_RANGE_PICKER_OPTIONS,
   parsePriceRange,
   type PriceRangeOption,
 } from '../constants/priceRange';
-import { BeanPriceMarks } from './ui/CoffeeBeanSign';
-
-function PriceRangeSymbols({ count, active }: { count: number; active: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center leading-none ${
-        active ? 'text-black' : 'text-primary'
-      }`}
-      aria-hidden
-    >
-      <BeanPriceMarks count={count} size={16} color="currentColor" />
-    </span>
-  );
-}
 
 interface PriceRangePickerProps {
   value: unknown;
@@ -35,10 +21,12 @@ export const PriceRangePicker: React.FC<PriceRangePickerProps> = ({
   disabled = false,
 }) => {
   const selected = parsePriceRange(value);
+  /** Luxury (4) highlights the «больше 8» bucket (3). */
+  const activeValue = selected === 4 ? 3 : selected;
 
   const handleSelect = (option: PriceRangeOption) => {
     if (disabled) return;
-    if (allowEmpty && selected === option.value) {
+    if (allowEmpty && activeValue === option.value) {
       onChange(undefined);
       return;
     }
@@ -47,9 +35,9 @@ export const PriceRangePicker: React.FC<PriceRangePickerProps> = ({
 
   return (
     <div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {PRICE_RANGE_OPTIONS.map((option) => {
-          const active = selected === option.value;
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {PRICE_RANGE_PICKER_OPTIONS.map((option) => {
+          const active = activeValue === option.value;
           return (
             <button
               key={option.value}
@@ -58,20 +46,20 @@ export const PriceRangePicker: React.FC<PriceRangePickerProps> = ({
               onClick={() => handleSelect(option)}
               aria-pressed={active}
               className={[
-                'flex flex-col items-center justify-center gap-1.5 rounded-xl border px-3 py-3 min-h-[88px] transition-colors',
+                'flex flex-col items-center justify-center gap-1.5 rounded-xl border px-3 py-3 min-h-[72px] transition-colors',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
                 active
                   ? 'border-primary bg-primary/15 ring-1 ring-primary/40'
                   : 'border-border-light dark:border-border-dark bg-white dark:bg-surface-dark hover:border-primary/60 hover:bg-primary/5',
               ].join(' ')}
             >
-              <PriceRangeSymbols count={option.symbolCount} active={active} />
               <span
                 className={`text-xs font-medium font-body text-center ${
                   active ? 'text-text-main dark:text-white' : 'text-text-muted dark:text-stone-400'
                 }`}
               >
-                {option.label}
+                <span className="hidden sm:inline">{option.label}</span>
+                <span className="sm:hidden">{option.labelShort}</span>
               </span>
             </button>
           );
@@ -96,13 +84,15 @@ export const PriceRangeDisplay: React.FC<{ value: unknown }> = ({ value }) => {
   const selected = parsePriceRange(value);
   if (!selected) return <span>—</span>;
 
-  const option = PRICE_RANGE_OPTIONS.find((item) => item.value === selected);
+  const option =
+    PRICE_RANGE_PICKER_OPTIONS.find((item) => item.value === (selected === 4 ? 3 : selected)) ??
+    PRICE_RANGE_PICKER_OPTIONS.find((item) => item.value === selected);
   if (!option) return <span>{String(value)}</span>;
 
   return (
     <span className="inline-flex items-center gap-2">
-      <PriceRangeSymbols count={option.symbolCount} active={false} />
-      <span>{option.label}</span>
+      <span className="hidden sm:inline">{option.label}</span>
+      <span className="sm:hidden">{option.labelShort}</span>
     </span>
   );
 };

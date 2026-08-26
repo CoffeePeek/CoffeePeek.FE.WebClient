@@ -13,6 +13,7 @@ import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon, BeanPriceMarks } from '../components/icons';
+import { PRICE_FILTER_OPTIONS } from '../utils/priceRange';
 import {
   MapPin, Images, Factory, Leaf, Flame, Drop, Lightbulb,
 } from '@/components/Icon';
@@ -282,16 +283,13 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
                 )}
               </div>
 
-              <MaterialSelect
+                <MaterialSelect
                 label="Ценовой диапазон"
                 value={formData.priceRange || ''}
                 onChange={(value) => handleInputChange('priceRange', value || undefined)}
                 options={[
                   { value: '', label: 'Выберите диапазон' },
-                  { value: 'Cheap', label: 'Бюджетно' },
-                  { value: 'Moderate', label: 'Средне' },
-                  { value: 'Expensive', label: 'Дорого' },
-                  { value: 'Luxury', label: 'Премиум' },
+                  ...PRICE_FILTER_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
                 ]}
                 icon={<BeanPriceMarks count={1} size={14} />}
               />

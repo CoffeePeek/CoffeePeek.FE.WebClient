@@ -4,16 +4,49 @@ export interface PriceRangeOption {
   value: 1 | 2 | 3 | 4;
   level: PriceRangeLevel;
   label: string;
+  labelShort: string;
   shortLabel: string;
   symbolCount: number;
 }
 
+/** UI picker shows the first three; Luxury still parses/displays as «больше 8». */
 export const PRICE_RANGE_OPTIONS: PriceRangeOption[] = [
-  { value: 1, level: 'Cheap', label: 'Бюджетно', shortLabel: 'BYN', symbolCount: 1 },
-  { value: 2, level: 'Moderate', label: 'Средне', shortLabel: 'BYN×2', symbolCount: 2 },
-  { value: 3, level: 'Expensive', label: 'Дорого', shortLabel: 'BYN×3', symbolCount: 3 },
-  { value: 4, level: 'Luxury', label: 'Премиум', shortLabel: 'BYN×4', symbolCount: 4 },
+  {
+    value: 1,
+    level: 'Cheap',
+    label: 'Капучино меньше 8',
+    labelShort: 'Капучино < 8',
+    shortLabel: 'BYN',
+    symbolCount: 1,
+  },
+  {
+    value: 2,
+    level: 'Moderate',
+    label: 'Капучино за 8',
+    labelShort: 'Капучино за 8',
+    shortLabel: 'BYN×2',
+    symbolCount: 2,
+  },
+  {
+    value: 3,
+    level: 'Expensive',
+    label: 'Капучино больше 8',
+    labelShort: 'Капучино > 8',
+    shortLabel: 'BYN×3',
+    symbolCount: 3,
+  },
+  {
+    value: 4,
+    level: 'Luxury',
+    label: 'Капучино больше 8',
+    labelShort: 'Капучино > 8',
+    shortLabel: 'BYN×4',
+    symbolCount: 4,
+  },
 ];
+
+/** Options shown in admin pickers (3 buckets). */
+export const PRICE_RANGE_PICKER_OPTIONS = PRICE_RANGE_OPTIONS.filter((o) => o.value <= 3);
 
 export const PRICE_RANGE_LEVEL_TO_NUMBER: Record<PriceRangeLevel, 1 | 2 | 3 | 4> = {
   Cheap: 1,
@@ -49,10 +82,12 @@ export function parsePriceRange(value: unknown): 1 | 2 | 3 | 4 | undefined {
   return undefined;
 }
 
-export function getPriceRangeLabel(value: unknown): string {
+export function getPriceRangeLabel(value: unknown, compact = false): string {
   const parsed = parsePriceRange(value);
   if (!parsed) return '—';
-  return PRICE_RANGE_OPTIONS.find((opt) => opt.value === parsed)?.label ?? String(parsed);
+  const option = PRICE_RANGE_OPTIONS.find((opt) => opt.value === parsed);
+  if (!option) return String(parsed);
+  return compact ? option.labelShort : option.label;
 }
 
 export function toPriceRangeLevel(value: unknown): PriceRangeLevel {
