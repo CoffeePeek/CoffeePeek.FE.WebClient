@@ -5,6 +5,7 @@ import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getPriceRangeTier } from '../utils/priceRange';
+import { formatDayOfWeek, getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
 import {
   X, Camera, Star, MapPin, Phone, Envelope, Globe, DeviceMobile,
   Coffee, Gear, Leaf, Flame, Drop, Clock, Circle, PriceRangeLabel,
@@ -53,14 +54,6 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
   const photoUrls = extractPhotoUrls();
 
   const priceLevel = getPriceRangeTier(shop.priceRange);
-
-  const formatDayOfWeek = (day: number) => {
-    const days = [
-      'Воскресенье', 'Понедельник', 'Вторник', 'Среда',
-      'Четверг', 'Пятница', 'Суббота',
-    ];
-    return days[day] || '';
-  };
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -287,10 +280,10 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
               </h3>
               <div className="space-y-2">
                 {shop.schedules.map(schedule => {
-                  const isToday = new Date().getDay() === schedule.dayOfWeek;
+                  const isToday = normalizeDayOfWeek(schedule.dayOfWeek) === getCurrentDayOfWeek();
                   return (
                     <div
-                      key={schedule.dayOfWeek}
+                      key={String(schedule.dayOfWeek)}
                       className={`flex justify-between items-center py-2 px-3 rounded-lg ${
                         isToday ? `${themeClasses.bg.primary} border ${themeClasses.border.default}` : ''
                       }`}

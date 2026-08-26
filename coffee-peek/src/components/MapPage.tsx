@@ -14,6 +14,7 @@ import {
   createOsmMap,
   getMapBoundsBox,
 } from '../map/osmMap';
+import { getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
 
 const MapPage: React.FC = () => {
   const { theme } = useTheme();
@@ -153,11 +154,11 @@ const MapPage: React.FC = () => {
   }, [theme]);
 
   const formatWorkingHours = (
-    schedules?: Array<{ dayOfWeek: number; openTime?: string; closeTime?: string }>,
+    schedules?: Array<{ dayOfWeek: number | string; openTime?: string; closeTime?: string }>,
   ) => {
     if (!schedules || schedules.length === 0) return 'Часы работы не указаны';
-    const today = new Date().getDay();
-    const todaySchedule = schedules.find((s) => s.dayOfWeek === today);
+    const today = getCurrentDayOfWeek();
+    const todaySchedule = schedules.find((s) => normalizeDayOfWeek(s.dayOfWeek) === today);
     if (todaySchedule?.openTime && todaySchedule?.closeTime) {
       return `${todaySchedule.openTime} - ${todaySchedule.closeTime}`;
     }

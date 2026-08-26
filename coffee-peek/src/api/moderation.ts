@@ -6,6 +6,7 @@ import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 import { SendShopSuccessResponse } from './core/apiError';
+import { normalizeDayOfWeek } from '../utils/shopUtils';
 
 // ==================== Types ====================
 
@@ -28,7 +29,7 @@ export interface ShopScheduleIntervalDto {
  * Расписание работы кофейни (соответствует ScheduleDto на бэкенде)
  */
 export interface ScheduleDto {
-  dayOfWeek: number; // 0 = Monday, 6 = Sunday
+  dayOfWeek: number | string; // 0 = Monday … 6 = Sunday, or .NET name ("Monday")
   isClosed: boolean;
   intervals: ShopScheduleIntervalDto[] | null;
 }
@@ -181,12 +182,15 @@ export function transformSchedulesFromBackend(
       const interval = schedule.intervals![0];
       const openTime = interval.openTime.substring(0, 5);
       const closeTime = interval.closeTime.substring(0, 5);
+      const dayOfWeek = normalizeDayOfWeek(schedule.dayOfWeek);
+      if (dayOfWeek === null) return null;
       return {
-        dayOfWeek: schedule.dayOfWeek,
+        dayOfWeek,
         openTime,
         closeTime,
       };
-    });
+    })
+    .filter((s): s is FrontendSchedule => s !== null);
 }
 
 /**

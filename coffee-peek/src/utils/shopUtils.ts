@@ -1,5 +1,3 @@
-import { FrontendSchedule } from '../api/moderation';
-
 /**
  * Получает текущий день недели (0 = Понедельник, 6 = Воскресенье)
  */
@@ -12,9 +10,50 @@ export function getCurrentDayOfWeek(): number {
 }
 
 /**
+ * Нормализует день недели к 0 = Пн … 6 = Вс.
+ * API может отдать число 0–6, ISO 1–7 или строку ("Monday" / .NET DayOfWeek).
+ */
+export function normalizeDayOfWeek(
+  dayOfWeek: number | string | null | undefined
+): number | null {
+  if (dayOfWeek === null || dayOfWeek === undefined || dayOfWeek === '') return null;
+
+  if (typeof dayOfWeek === 'string') {
+    const named: Record<string, number> = {
+      monday: 0,
+      mon: 0,
+      tuesday: 1,
+      tue: 1,
+      wednesday: 2,
+      wed: 2,
+      thursday: 3,
+      thu: 3,
+      friday: 4,
+      fri: 4,
+      saturday: 5,
+      sat: 5,
+      sunday: 6,
+      sun: 6,
+    };
+    const key = dayOfWeek.trim().toLowerCase();
+    if (key in named) return named[key];
+    const asNum = Number(dayOfWeek);
+    if (!Number.isFinite(asNum)) return null;
+    dayOfWeek = asNum;
+  }
+
+  if (typeof dayOfWeek !== 'number' || !Number.isFinite(dayOfWeek)) return null;
+  const n = Math.trunc(dayOfWeek);
+  if (n >= 0 && n <= 6) return n;
+  // ISO-8601: 1 = Monday … 7 = Sunday
+  if (n >= 1 && n <= 7) return n === 7 ? 6 : n - 1;
+  return null;
+}
+
+/**
  * Получает статус работы кофейни на основе расписания
  */
-export function getCurrentStatus(shop: { schedules?: Array<{ dayOfWeek: number; openTime?: string; closeTime?: string }> } | null): {
+export function getCurrentStatus(shop: { schedules?: Array<{ dayOfWeek: number | string; openTime?: string; closeTime?: string }> } | null): {
   isOpen: boolean;
   openTime?: string;
   closeTime?: string;
@@ -22,7 +61,7 @@ export function getCurrentStatus(shop: { schedules?: Array<{ dayOfWeek: number; 
   if (!shop?.schedules || shop.schedules.length === 0) return null;
 
   const currentDay = getCurrentDayOfWeek();
-  const todaySchedule = shop.schedules.find(s => s.dayOfWeek === currentDay);
+  const todaySchedule = shop.schedules.find((s) => normalizeDayOfWeek(s.dayOfWeek) === currentDay);
   if (!todaySchedule || !todaySchedule.openTime || !todaySchedule.closeTime) return null;
 
   const openTime = parseInt(todaySchedule.openTime.split(':')[0]) * 60 + parseInt(todaySchedule.openTime.split(':')[1]);
@@ -41,7 +80,11 @@ export function getCurrentStatus(shop: { schedules?: Array<{ dayOfWeek: number; 
  * Дефолтное расписание работы кофейни
  * Пн-Пт: 8:00-22:00, Сб-Вс: 10:00-22:00
  */
-export function getDefaultSchedules(): FrontendSchedule[] {
+export function getDefaultSchedules(): Array<{
+  dayOfWeek: number;
+  openTime: string;
+  closeTime: string;
+}> {
   return [
     { dayOfWeek: 0, openTime: '08:00', closeTime: '22:00' }, // Понедельник
     { dayOfWeek: 1, openTime: '08:00', closeTime: '22:00' }, // Вторник
@@ -56,15 +99,17 @@ export function getDefaultSchedules(): FrontendSchedule[] {
 /**
  * Форматирует день недели для отображения (0 = Пн … 6 = Вс)
  */
-export function formatDayOfWeek(dayOfWeek: number): string {
+export function formatDayOfWeek(dayOfWeek: number | string): string {
   const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
-  return days[dayOfWeek] || '';
+  const idx = normalizeDayOfWeek(dayOfWeek);
+  return idx === null ? '' : days[idx];
 }
 
 /** Короткие названия: Пн, Вт, … Вс */
-export function formatDayOfWeekShort(dayOfWeek: number): string {
+export function formatDayOfWeekShort(dayOfWeek: number | string): string {
   const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  return days[dayOfWeek] || '';
+  const idx = normalizeDayOfWeek(dayOfWeek);
+  return idx === null ? '' : days[idx];
 }
 
 /** `https://instagram.com/alt.minsk` → `@alt.minsk` */

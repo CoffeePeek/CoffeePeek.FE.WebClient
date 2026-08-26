@@ -3,11 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import type { Map as LeafletMap } from 'leaflet';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
-import { formatDayOfWeekShort } from '../../utils/shopUtils';
-import { useTheme } from '../../contexts/ThemeContext';
-import { getThemeClasses } from '../../utils/theme';
-import { AppIcon } from '../icons';
-import { coffeeDetailIcon, createOsmMap } from '../../map/osmMap';
+import { formatDayOfWeekShort, getCurrentDayOfWeek } from '../../utils/shopUtils';
 
 interface ShopSidebarProps {
   shop: DetailedCoffeeShop;
@@ -26,14 +22,14 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
-  const now = new Date();
-  const currentDay = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const currentDay = getCurrentDayOfWeek();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   const latitude = shop.location?.latitude;
   const longitude = shop.location?.longitude;
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     if (!latitude || !longitude || !mapRef.current) return;
@@ -41,7 +37,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
     const map = createOsmMap(mapRef.current, {
       center: [latitude, longitude],
       zoom: 15,
-      dark: true,
+      dark: isDark,
       interactive: false,
       zoomControl: false,
     });
@@ -60,7 +56,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
       mapInstanceRef.current = null;
       setIsMapLoaded(false);
     };
-  }, [latitude, longitude, shop.name]);
+  }, [latitude, longitude, shop.name, isDark]);
 
   return (
     <div className={`${cardBg} rounded-3xl border ${borderColor} overflow-hidden shadow-sm min-w-0`}>
@@ -70,7 +66,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
             <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
           </div>
           {!isMapLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#2D241F]">
+            <div className={`absolute inset-0 flex items-center justify-center ${isDark ? 'bg-[#2D241F]' : 'bg-[#F5F5F4]'}`}>
               <WobbleRing size={32} />
             </div>
           )}
@@ -99,16 +95,17 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
             </div>
             <div className="space-y-2.5 text-sm">
               {[...shop.schedules]
-                .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+                .sort((a, b) => Number(a.dayOfWeek) - Number(b.dayOfWeek))
                 .map((schedule) => {
-                const isToday = schedule.dayOfWeek === currentDay;
+                const dayLabel = formatDayOfWeekShort(schedule.dayOfWeek);
+                const isToday = Number(schedule.dayOfWeek) === currentDay;
                 return (
                   <div
-                    key={schedule.dayOfWeek}
+                    key={String(schedule.dayOfWeek)}
                     className={`flex items-center gap-3 ${isToday ? `font-bold ${themeClasses.primary.text}` : textMuted}`}
                   >
-                    <span className="w-7 shrink-0">
-                      {formatDayOfWeekShort(schedule.dayOfWeek)}
+                    <span className="w-7 shrink-0 tabular-nums">
+                      {dayLabel || '—'}
                     </span>
                     <span>
                       {schedule.openTime && schedule.closeTime

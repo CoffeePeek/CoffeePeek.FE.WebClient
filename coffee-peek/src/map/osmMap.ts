@@ -12,19 +12,45 @@ export type MapBoundsBox = {
 
 const tileLayers = new WeakMap<L.Map, L.TileLayer>();
 
+function cartoApiKey(): string {
+  return (import.meta.env.VITE_CARTO_API_KEY ?? '').trim();
+}
+
 function tileUrl(dark: boolean): string {
-  return dark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  const key = cartoApiKey();
+  if (key) {
+    const style = dark ? 'dark_all' : 'rastertiles/voyager';
+    return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(key)}`;
+  }
+  // CARTO raster tiles now require a key (watermark otherwise). Fall back to OSM.
+  return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+}
+
+function tileAttribution(): string {
+  if (cartoApiKey()) {
+    return '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OSM</a> · <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>';
+  }
+  return '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a>';
 }
 
 function createTileLayer(dark: boolean): L.TileLayer {
+  const key = cartoApiKey();
+  if (key) {
+    return L.tileLayer(tileUrl(dark), {
+      attribution: tileAttribution(),
+      maxZoom: 20,
+      subdomains: 'abcd',
+    });
+  }
   return L.tileLayer(tileUrl(dark), {
-    attribution:
-      '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OSM</a> · <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>',
-    maxZoom: 20,
-    subdomains: 'abcd',
+    attribution: tileAttribution(),
+    maxZoom: 19,
   });
+}
+
+function syncMapDarkClass(map: L.Map, dark: boolean): void {
+  const el = map.getContainer();
+  el.classList.toggle('map-tiles-dark', dark && !cartoApiKey());
 }
 
 export function createOsmMap(
@@ -38,6 +64,7 @@ export function createOsmMap(
   } = {},
 ): L.Map {
   const interactive = options.interactive !== false;
+  const dark = Boolean(options.dark);
   const map = L.map(container, {
     center: options.center ?? MINSK_CENTER,
     zoom: options.zoom ?? 12,
@@ -50,9 +77,10 @@ export function createOsmMap(
     keyboard: interactive,
   });
 
-  const tiles = createTileLayer(Boolean(options.dark));
+  const tiles = createTileLayer(dark);
   tiles.addTo(map);
   tileLayers.set(map, tiles);
+  syncMapDarkClass(map, dark);
 
   map.attributionControl?.setPrefix('');
   map.attributionControl?.setPosition('bottomright');
@@ -73,6 +101,7 @@ export function applyOsmMapTheme(map: L.Map, dark: boolean): void {
   const next = createTileLayer(dark);
   next.addTo(map);
   tileLayers.set(map, next);
+  syncMapDarkClass(map, dark);
 }
 
 export function getMapBoundsBox(map: L.Map): MapBoundsBox {

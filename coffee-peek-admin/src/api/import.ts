@@ -342,9 +342,10 @@ export async function decideImportCandidate(
   const payload: Record<string, unknown> = {
     status: QUEUE_STATUS_TO_API[body.status],
     overrideClosed: body.overrideClosed ?? false,
+    tagSlugs: body.tagSlugs ?? [],
   };
-  if (body.coffeeFocus) payload.coffeeFocus = COFFEE_FOCUS_TO_API[body.coffeeFocus];
-  if (body.tagSlugs) payload.tagSlugs = body.tagSlugs;
+  // Backend DecideImportCandidateRequest uses CoffeeShopType? Type (not coffeeFocus).
+  if (body.coffeeFocus) payload.type = COFFEE_FOCUS_TO_API[body.coffeeFocus];
   if (body.status === 'Rejected' && body.rejectReason) {
     payload.rejectReason = REJECT_REASON_TO_API[body.rejectReason];
   }

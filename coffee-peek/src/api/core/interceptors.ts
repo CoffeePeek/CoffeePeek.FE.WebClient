@@ -9,6 +9,7 @@ import { getErrorMessageByStatus } from '../../utils/errorHandler';
 import { logger } from '../../utils/logger';
 import { isTokenExpired } from '../../utils/jwt';
 import { normalizeReviewDto } from './reviewNormalize';
+import { normalizeDayOfWeek } from '../../utils/shopUtils';
 
 /**
  * Token Manager для работы с токенами аутентификации
@@ -273,7 +274,7 @@ export function normalizeResponseData<T>(data: any): T {
  * Интерфейсы для нормализации данных API
  */
 interface BackendSchedule {
-  dayOfWeek: number;
+  dayOfWeek: number | string;
   isClosed?: boolean;
   intervals?: Array<{
     openTime: string;
@@ -360,6 +361,8 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
         return schedule.openTime && schedule.closeTime;
       })
       .map((schedule: BackendSchedule) => {
+        const dayOfWeek = normalizeDayOfWeek(schedule.dayOfWeek);
+        if (dayOfWeek === null) return null;
         if (schedule.intervals && Array.isArray(schedule.intervals) && schedule.intervals.length > 0) {
           // Новый формат с intervals
           const interval = schedule.intervals[0];
@@ -367,7 +370,7 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
           const openTime = interval.openTime ? interval.openTime.substring(0, 5) : '';
           const closeTime = interval.closeTime ? interval.closeTime.substring(0, 5) : '';
           return {
-            dayOfWeek: schedule.dayOfWeek,
+            dayOfWeek,
             openTime,
             closeTime,
           };
@@ -376,12 +379,13 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
           const openTime = schedule.openTime ? schedule.openTime.substring(0, 5) : '';
           const closeTime = schedule.closeTime ? schedule.closeTime.substring(0, 5) : '';
           return {
-            dayOfWeek: schedule.dayOfWeek,
+            dayOfWeek,
             openTime,
             closeTime,
           };
         }
-      });
+      })
+      .filter((s): s is { dayOfWeek: number; openTime: string; closeTime: string } => s !== null);
   }
 
   // Нормализуем reviews если они есть (ReviewDto: rating — объект, дата — createdAtUtc)

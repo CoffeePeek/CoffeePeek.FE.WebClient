@@ -237,6 +237,14 @@
   font-family: "RF Dewi Expanded", system-ui, sans-serif;
 }
 
+/* OSM fallback has no dark style — approximate dark theme when CARTO key is absent */
+.leaflet-container.map-tiles-dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+.leaflet-container.map-tiles-dark {
+  background: #1c1917;
+}
+
 .leaflet-control-attribution {
   margin: 0 8px 8px 0 !important;
   padding: 4px 10px !important;
