@@ -226,6 +226,10 @@ export function normalizeResponseData<T>(data: any): T {
   }
   
   if ('moderationShop' in data) {
+    const shop = data.moderationShop;
+    if (shop && typeof shop === 'object' && data.menu !== undefined) {
+      return { ...shop, menu: data.menu };
+    }
     return data.moderationShop;
   }
 
@@ -316,6 +320,10 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
 
   const shopData = shop as BackendShopData;
   const normalized: Record<string, unknown> = { ...shopData };
+
+  if (normalized.menu === undefined && 'Menu' in shopData) {
+    normalized.menu = shopData.Menu;
+  }
 
   // Flatten location.address → address for list cards / legacy fields
   const loc = (shopData as { location?: { address?: string } }).location;

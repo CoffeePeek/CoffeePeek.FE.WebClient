@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { getShopUploadUrls } from '../api/photos';
+import { useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
+import { getMenuUploadUrls, getShopUploadUrls, UploadUrlRequest, UploadUrlResponse } from '../api/photos';
+import { ApiResponse } from '../api/core/types';
 import { TokenManager } from '../api/core/httpClient';
 import { isApiRequestError } from '../api/core/apiError';
 import { ErrorCodes } from '../utils/errorHandler';
@@ -17,33 +18,39 @@ export interface UsePhotoUploadReturn {
   selectedFiles: File[];
   uploadingPhotos: boolean;
   error: string | null;
-  setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>;
-  handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setSelectedFiles: Dispatch<SetStateAction<File[]>>;
+  handleFileSelect: (e: ChangeEvent<HTMLInputElement>) => void;
   removeFile: (index: number) => void;
   uploadPhotos: () => Promise<UploadedPhoto[]>;
   clearFiles: () => void;
   clearError: () => void;
 }
 
-/**
- * Хук для управления загрузкой фотографий
- * Предоставляет функциональность для выбора, удаления и загрузки фотографий
- */
-export function usePhotoUpload(): UsePhotoUploadReturn {
+type GetUrls = (requests: UploadUrlRequest[]) => Promise<ApiResponse<UploadUrlResponse[]>>;
+
+export function usePhotoUpload(options?: {
+  getUrls?: GetUrls;
+  maxFiles?: number;
+}): UsePhotoUploadReturn {
+  const getUrls = options?.getUrls ?? getShopUploadUrls;
+  const maxFiles = options?.maxFiles;
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      setSelectedFiles(prev => [...prev, ...files]);
+      setSelectedFiles((prev) => {
+        const next = [...prev, ...files];
+        return typeof maxFiles === 'number' ? next.slice(0, maxFiles) : next;
+      });
       setError(null);
     }
   };
 
   const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const clearFiles = () => {
@@ -65,7 +72,7 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
     setError(null);
 
     try {
-      const uploadRequests = selectedFiles.map(file => ({
+      const uploadRequests = selectedFiles.map((file) => ({
         fileName: file.name,
         contentType: file.type,
         sizeBytes: file.size,
@@ -73,7 +80,7 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
 
       let uploadUrlsResponse;
       try {
-        uploadUrlsResponse = await getShopUploadUrls(uploadRequests);
+        uploadUrlsResponse = await getUrls(uploadRequests);
       } catch (err) {
         if (isApiRequestError(err) && err.status === 429) {
           setError(RATE_LIMIT_MESSAGE);
@@ -87,7 +94,7 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
 
       const uploadPromises = selectedFiles.map(async (file, index) => {
         const { uploadUrl, storageKey } = uploadUrlsResponse.data[index];
-        
+
         const uploadResponse = await fetch(uploadUrl, {
           method: 'PUT',
           body: file,
@@ -108,13 +115,12 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
         return {
           fileName: file.name,
           contentType: file.type,
-          storageKey: storageKey,
+          storageKey,
           size: file.size,
         };
       });
 
-      const uploadedPhotos = await Promise.all(uploadPromises);
-      return uploadedPhotos;
+      return Promise.all(uploadPromises);
     } finally {
       setUploadingPhotos(false);
     }
@@ -131,4 +137,8 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
     clearFiles,
     clearError,
   };
+}
+
+export function useMenuPhotoUpload(): UsePhotoUploadReturn {
+  return usePhotoUpload({ getUrls: getMenuUploadUrls, maxFiles: 4 });
 }

@@ -6,12 +6,16 @@ import {
   getImportCandidate,
   getImportCandidates,
   patchImportCandidate,
+  attachImportCandidateMenuPhotos,
+  parseImportCandidateMenu,
+  updateImportCandidateMenu,
 } from '../api/import';
 import { getShopTags } from '../api/catalogs';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { DossierMap } from '../components/import/DossierMap';
+import { MenuEditor } from '../components/menu/MenuEditor';
 import LogoMark from '../components/LogoMark';
 import {
   CATALOG_TAG_OPTIONS,
@@ -84,6 +88,10 @@ export const ImportQueuePage: React.FC = () => {
     queryKey: ['admin', 'import', 'candidate', id],
     queryFn: () => getImportCandidate(id!).then((r) => r.data),
     enabled: Boolean(id),
+    refetchInterval: (query) => {
+      const status = query.state.data?.menu?.parseStatus;
+      return status === 'Pending' || status === 'Running' ? 2500 : false;
+    },
   });
 
   const tagsQuery = useQuery({
@@ -713,6 +721,25 @@ export const ImportQueuePage: React.FC = () => {
                 })}
               </div>
             </div>
+
+            {id && (
+              <MenuEditor
+                compact
+                menu={candidate.menu ?? null}
+                onAttach={async (photos) => {
+                  await attachImportCandidateMenuPhotos(id, { photos });
+                  await qc.invalidateQueries({ queryKey: ['admin', 'import', 'candidate', id] });
+                }}
+                onParse={async () => {
+                  await parseImportCandidateMenu(id);
+                  await qc.invalidateQueries({ queryKey: ['admin', 'import', 'candidate', id] });
+                }}
+                onSave={async (body) => {
+                  await updateImportCandidateMenu(id, body);
+                  await qc.invalidateQueries({ queryKey: ['admin', 'import', 'candidate', id] });
+                }}
+              />
+            )}
 
             <div>
               <h2 className="text-sm font-semibold mb-2">Исследовать точку</h2>

@@ -118,6 +118,12 @@ export interface SendCoffeeShopToModerationRequest {
     storageKey: string;
     size: number;
   }>;
+  menuPhotos?: Array<{
+    fileName: string;
+    contentType: string;
+    storageKey: string;
+    size: number;
+  }>;
 }
 
 export interface SendReviewToModerationRequest {
@@ -259,7 +265,8 @@ export interface SendShopModerationResult {
  */
 export async function sendCoffeeShopToModeration(
   shopData: SendCoffeeShopToModerationRequest,
-  shopPhotos?: SendCoffeeShopToModerationRequest['shopPhotos']
+  shopPhotos?: SendCoffeeShopToModerationRequest['shopPhotos'],
+  menuPhotos?: SendCoffeeShopToModerationRequest['menuPhotos']
 ): Promise<ApiResponse<SendShopModerationResult>> {
   const backendData: Record<string, unknown> = {
     name: shopData.name,
@@ -278,6 +285,7 @@ export async function sendCoffeeShopToModeration(
     roasterIds: shopData.roasterIds,
     brewMethodIds: shopData.brewMethodIds,
     shopPhotos: shopPhotos ?? shopData.shopPhotos,
+    menuPhotos: menuPhotos ?? shopData.menuPhotos,
   };
 
   const response = await httpClient.post<SendShopSuccessResponse['data']>(

@@ -6,6 +6,7 @@ import { ShopHeader } from '../components/coffeeshop/ShopHeader';
 import { ContactButtons } from '../components/coffeeshop/ContactButtons';
 import { ReviewsSection } from '../components/coffeeshop/ReviewsSection';
 import { ShopSidebar } from '../components/coffeeshop/ShopSidebar';
+import { ShopMenuSection } from '../components/coffeeshop/ShopMenuSection';
 import CheckInModal from '../components/CheckInModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
@@ -188,6 +189,14 @@ const CoffeeShopPage: React.FC = () => {
             borderColor={borderColor}
             textMain={textMain}
             textMuted={textMuted}
+          />
+
+          <ShopMenuSection
+            menu={shop.menu ?? null}
+            textMain={textMain}
+            textMuted={textMuted}
+            cardBg={cardBg}
+            borderColor={borderColor}
           />
 
           {/* Детали кофе */}

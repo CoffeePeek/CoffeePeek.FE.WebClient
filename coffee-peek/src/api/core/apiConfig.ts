@@ -40,6 +40,10 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/api/CoffeeShops/${id}`,
   },
 
+  MENU: {
+    DRINKS: "/api/menu/drinks",
+  },
+
   MAP: {
     BASE: "/api/Map",
   },
@@ -64,6 +68,7 @@ export const API_ENDPOINTS = {
   PHOTOS: {
     AVATAR: "/api/photos/avatar",
     SHOP: "/api/photos/shop",
+    MENU: "/api/Photos/menu",
   },
 
   MODERATION: {

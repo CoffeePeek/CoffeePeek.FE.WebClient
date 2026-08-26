@@ -25,6 +25,12 @@ import {
   parseRejectReason,
 } from '../constants/catalogIngest';
 import { parseFacts, parseSuggestedTags } from '../utils/importDossier';
+import {
+  AttachMenuPhotosRequest,
+  ShopMenuDto,
+  UpdateShopMenuRequest,
+  mapShopMenu,
+} from './menu';
 
 export interface ResearchLinks {
   instagram: string;
@@ -77,6 +83,7 @@ export interface ImportCandidate {
   research: ResearchLinks;
   facts?: string[];
   suggestedTags?: SuggestedTag[];
+  menu?: ShopMenuDto | null;
 }
 
 export interface ImportCandidatesQuery {
@@ -283,6 +290,7 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
     },
     facts: parseFacts(pick(raw, 'facts', 'Facts')),
     suggestedTags: parseSuggestedTags(pick(raw, 'suggestedTags', 'SuggestedTags')),
+    menu: mapShopMenu(pick(raw, 'menu', 'Menu') ?? (pick(raw, 'parseStatus', 'ParseStatus', 'items', 'Items') ? raw : undefined)),
   };
 }
 
@@ -353,6 +361,35 @@ export async function getImportCandidates(
 export async function getImportCandidate(id: string): Promise<ApiResponse<ImportCandidate>> {
   const response = await httpClient.get<Record<string, unknown>>(
     API_ENDPOINTS.ADMIN.IMPORT_CANDIDATE_BY_ID(id)
+  );
+  return { ...response, data: mapImportCandidate(asRecord(response.data)) };
+}
+
+export async function attachImportCandidateMenuPhotos(
+  id: string,
+  body: AttachMenuPhotosRequest
+): Promise<ApiResponse<ImportCandidate>> {
+  const response = await httpClient.post<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.IMPORT_CANDIDATE_MENU_PHOTOS(id),
+    body
+  );
+  return { ...response, data: mapImportCandidate(asRecord(response.data)) };
+}
+
+export async function parseImportCandidateMenu(id: string): Promise<ApiResponse<ImportCandidate>> {
+  const response = await httpClient.post<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.IMPORT_CANDIDATE_MENU_PARSE(id)
+  );
+  return { ...response, data: mapImportCandidate(asRecord(response.data)) };
+}
+
+export async function updateImportCandidateMenu(
+  id: string,
+  body: UpdateShopMenuRequest
+): Promise<ApiResponse<ImportCandidate>> {
+  const response = await httpClient.put<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.IMPORT_CANDIDATE_MENU(id),
+    body
   );
   return { ...response, data: mapImportCandidate(asRecord(response.data)) };
 }

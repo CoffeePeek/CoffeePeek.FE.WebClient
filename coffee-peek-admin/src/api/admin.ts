@@ -5,6 +5,7 @@ import type { PriceRangeLevel } from '../constants/priceRange';
 import { parsePriceRange, toPriceRangeLevel } from '../constants/priceRange';
 import type { CoffeeFocus } from '../constants/catalogIngest';
 import { COFFEE_FOCUS_TO_API, parseCoffeeFocus } from '../constants/catalogIngest';
+import { mapShopMenu, ShopMenuDto } from './menu';
 
 // ==================== Types ====================
 
@@ -60,6 +61,7 @@ interface BackendModerationShop {
   roasterIds?: string[];
   brewMethodIds?: string[];
   shopPhotos?: BackendShopPhoto[] | null;
+  menu?: unknown;
 }
 
 interface BackendModerationReview {
@@ -156,6 +158,7 @@ export interface AdminCoffeeShop {
   beans?: { id: string; name: string }[];
   roasters?: { id: string; name: string }[];
   brewMethods?: { id: string; name: string }[];
+  menu?: ShopMenuDto | null;
 }
 
 export interface UpdateCoffeeShopRequest {
@@ -411,6 +414,7 @@ function mapShopToAdmin(shop: BackendModerationShop): AdminCoffeeShop {
     roasterIds: shop.roasterIds ?? [],
     brewMethodIds: shop.brewMethodIds ?? [],
     createdAtUtc: '',
+    menu: mapShopMenu(shop.menu),
   };
 }
 

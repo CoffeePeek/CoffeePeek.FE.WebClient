@@ -204,7 +204,11 @@ export function normalizeResponseData<T>(data: unknown): T {
   const record = data as Record<string, unknown>;
 
   if ('moderationShop' in record) {
-    return record.moderationShop as T;
+    const shop = record.moderationShop;
+    if (shop && typeof shop === 'object' && !Array.isArray(shop) && record.menu !== undefined) {
+      return { ...(shop as Record<string, unknown>), menu: record.menu } as T;
+    }
+    return shop as T;
   }
 
   return data as T;

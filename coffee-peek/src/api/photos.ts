@@ -49,3 +49,17 @@ export async function getShopUploadUrls(
     { requiresAuth: true }
   );
 }
+
+/**
+ * Presign for menu photos. Do not use PHOTOS.SHOP for menus.
+ * POST /api/Photos/menu
+ */
+export async function getMenuUploadUrls(
+  requests: UploadUrlRequest[]
+): Promise<ApiResponse<UploadUrlResponse[]>> {
+  return httpClient.post<UploadUrlResponse[]>(
+    API_ENDPOINTS.PHOTOS.MENU,
+    requests,
+    { requiresAuth: true }
+  );
+}

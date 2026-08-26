@@ -7,6 +7,7 @@ import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 import { logger } from '../utils/logger';
 import { normalizeReviewDto } from './core/reviewNormalize';
+import type { ShopMenuDto } from './menu';
 
 // ==================== Types ====================
 
@@ -145,6 +146,7 @@ export interface DetailedCoffeeShop {
     openTime?: string;
     closeTime?: string;
   }>;
+  menu?: ShopMenuDto | null;
 }
 
 export interface CoffeeShopFilters {

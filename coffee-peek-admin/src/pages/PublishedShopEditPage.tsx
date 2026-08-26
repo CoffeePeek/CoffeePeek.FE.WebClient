@@ -29,6 +29,13 @@ import {
 import { parsePriceRange } from '../constants/priceRange';
 import { CoffeeFocus } from '../constants/catalogIngest';
 import { CoffeeFocusPicker } from '../components/import/catalogControls';
+import { MenuEditor } from '../components/menu/MenuEditor';
+import {
+  attachPublishedShopMenuPhotos,
+  getPublishedShopMenu,
+  parsePublishedShopMenu,
+  updatePublishedShopMenu,
+} from '../api/menu';
 
 const MAX_SHOP_TAGS = 20;
 
@@ -55,6 +62,16 @@ export const PublishedShopEditPage: React.FC = () => {
     queryKey: ['admin', 'published-shop', id],
     queryFn: () => getPublishedShopById(id!).then((r) => r.data),
     enabled: !!id,
+  });
+
+  const { data: shopMenu } = useQuery({
+    queryKey: ['admin', 'published-shop-menu', id],
+    queryFn: () => getPublishedShopMenu(id!).then((r) => r.data),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      const status = query.state.data?.menu?.parseStatus;
+      return status === 'Pending' || status === 'Running' ? 2500 : false;
+    },
   });
 
   const { data: catalogTags = [] } = useQuery({
@@ -290,6 +307,32 @@ export const PublishedShopEditPage: React.FC = () => {
         isSaving={photoOrderMutation.isPending}
         onSave={(photoIds) => photoOrderMutation.mutateAsync(photoIds)}
       />
+
+      {id && (
+        <Card>
+          <MenuEditor
+            menu={shopMenu?.menu ?? null}
+            unmatched={shopMenu?.unmatched}
+            onAttach={async (photos) => {
+              await attachPublishedShopMenuPhotos(id, { photos });
+              await qc.invalidateQueries({ queryKey: ['admin', 'published-shop-menu', id] });
+            }}
+            onParse={async () => {
+              await parsePublishedShopMenu(id);
+              await qc.invalidateQueries({ queryKey: ['admin', 'published-shop-menu', id] });
+            }}
+            onSave={async (body) => {
+              await updatePublishedShopMenu(id, body);
+              await Promise.all([
+                qc.invalidateQueries({ queryKey: ['admin', 'published-shop-menu', id] }),
+                body.applySuggestedPriceRange
+                  ? qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] })
+                  : Promise.resolve(),
+              ]);
+            }}
+          />
+        </Card>
+      )}
 
       <Card>
         <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Владелец</h3>

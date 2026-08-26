@@ -21,7 +21,13 @@ import { PhotoGallery } from '../components/moderation/PhotoGallery';
 import { ScheduleEditor, getDefaultSchedules } from '../components/moderation/ScheduleEditor';
 import { CatalogMultiSelect } from '../components/moderation/CatalogMultiSelect';
 import { PriceRangePicker } from '../components/PriceRangePicker';
+import { MenuEditor } from '../components/menu/MenuEditor';
 import { getPriceRangeLabel } from '../constants/priceRange';
+import {
+  attachModerationShopMenuPhotos,
+  parseModerationShopMenu,
+  updateModerationShopMenu,
+} from '../api/menu';
 
 const schema = z.object({
   name: z.string().min(1, 'Обязательное поле'),
@@ -55,6 +61,10 @@ export const ShopEditPage: React.FC = () => {
     queryKey: ['admin', 'shop', id],
     queryFn: () => getModerationShopById(id!).then((r) => r.data),
     enabled: !!id,
+    refetchInterval: (query) => {
+      const status = query.state.data?.menu?.parseStatus;
+      return status === 'Pending' || status === 'Running' ? 2500 : false;
+    },
   });
 
   const { data: catalogs, isLoading: catalogsLoading } = useCatalogs();
@@ -360,6 +370,26 @@ export const ShopEditPage: React.FC = () => {
               </div>
             )}
           </Card>
+
+          {id && (
+            <Card>
+              <MenuEditor
+                menu={shop.menu ?? null}
+                onAttach={async (photos) => {
+                  await attachModerationShopMenuPhotos(id, { photos });
+                  await qc.invalidateQueries({ queryKey: ['admin', 'shop', id] });
+                }}
+                onParse={async () => {
+                  await parseModerationShopMenu(id);
+                  await qc.invalidateQueries({ queryKey: ['admin', 'shop', id] });
+                }}
+                onSave={async (body) => {
+                  await updateModerationShopMenu(id, body);
+                  await qc.invalidateQueries({ queryKey: ['admin', 'shop', id] });
+                }}
+              />
+            </Card>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-2 sm:justify-end sticky bottom-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur py-3 -mx-1 px-1 border-t border-border-light dark:border-border-dark sm:border-0 sm:static sm:bg-transparent sm:backdrop-blur-none sm:py-0">
             <Button

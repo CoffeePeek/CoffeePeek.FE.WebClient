@@ -23,6 +23,9 @@ export const API_ENDPOINTS = {
     AUDIT_MODERATION: '/api/admin/audit/moderation',
     SHOPS: '/api/admin/shops',
     SHOP_BY_ID: (id: string) => `/api/admin/shops/${id}`,
+    SHOP_MENU: (id: string) => `/api/admin/shops/${id}/menu`,
+    SHOP_MENU_PHOTOS: (id: string) => `/api/admin/shops/${id}/menu/photos`,
+    SHOP_MENU_PARSE: (id: string) => `/api/admin/shops/${id}/menu/parse`,
     SHOP_VISIBILITY: (id: string) => `/api/admin/shops/${id}/visibility`,
     SHOP_OWNER: (id: string) => `/api/admin/shops/${id}/owner`,
     SHOP_FOCUS: (id: string) => `/api/admin/shops/${id}/focus`,
@@ -34,6 +37,9 @@ export const API_ENDPOINTS = {
     IMPORT_FILE: '/api/admin/import/file',
     IMPORT_CANDIDATES: '/api/admin/import/candidates',
     IMPORT_CANDIDATE_BY_ID: (id: string) => `/api/admin/import/candidates/${id}`,
+    IMPORT_CANDIDATE_MENU: (id: string) => `/api/admin/import/candidates/${id}/menu`,
+    IMPORT_CANDIDATE_MENU_PHOTOS: (id: string) => `/api/admin/import/candidates/${id}/menu/photos`,
+    IMPORT_CANDIDATE_MENU_PARSE: (id: string) => `/api/admin/import/candidates/${id}/menu/parse`,
     IMPORT_CANDIDATE_GOOGLE: (id: string) => `/api/admin/import/candidates/${id}/google-refresh`,
     IMPORT_CANDIDATE_DECIDE: (id: string) => `/api/admin/import/candidates/${id}/decide`,
     IMPORT_STATS: '/api/admin/import/stats',
@@ -43,6 +49,10 @@ export const API_ENDPOINTS = {
     CACHE_KEYS: '/api/admin/cache/keys',
     CACHE_CLEAR: '/api/admin/cache/clear',
     CACHE_CLEAR_KEY: (key: string) => `/api/admin/cache/clear/${encodeURIComponent(key)}`,
+  },
+
+  PHOTOS: {
+    MENU: '/api/Photos/menu',
   },
 
   REALTIME: {

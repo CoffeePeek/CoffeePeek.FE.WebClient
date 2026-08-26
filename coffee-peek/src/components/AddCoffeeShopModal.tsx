@@ -7,7 +7,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { getThemeClasses } from '../utils/theme';
 import { getDefaultSchedules } from '../utils/shopUtils';
-import { usePhotoUpload } from '../hooks/usePhotoUpload';
+import { usePhotoUpload, useMenuPhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
 import { BeanPriceMarks } from './icons';
 import { PRICE_FILTER_OPTIONS } from '../utils/priceRange';
@@ -56,6 +56,15 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
   const [formData, setFormData] = useState<ShopFormData>(INITIAL_SHOP_FORM_DATA);
 
   const { selectedFiles, uploadingPhotos, error: uploadError, handleFileSelect, removeFile, uploadPhotos, clearFiles } = usePhotoUpload();
+  const {
+    selectedFiles: menuFiles,
+    uploadingPhotos: uploadingMenu,
+    error: menuUploadError,
+    handleFileSelect: handleMenuFileSelect,
+    removeFile: removeMenuFile,
+    uploadPhotos: uploadMenuPhotos,
+    clearFiles: clearMenuFiles,
+  } = useMenuPhotoUpload();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ShopFormField, string>>>({});
@@ -135,9 +144,16 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
     try {
       setIsSubmitting(true);
 
-      const uploadedPhotos = await uploadPhotos();
+      const [uploadedPhotos, uploadedMenuPhotos] = await Promise.all([
+        uploadPhotos(),
+        uploadMenuPhotos(),
+      ]);
       const shopData = buildShopSubmissionPayload(formData);
-      const response = await sendCoffeeShopToModeration(shopData, uploadedPhotos.length > 0 ? uploadedPhotos : undefined);
+      const response = await sendCoffeeShopToModeration(
+        shopData,
+        uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
+        uploadedMenuPhotos.length > 0 ? uploadedMenuPhotos : undefined
+      );
 
       if (response.data?.isAddressValidated) {
         showToast('Заявка отправлена на модерацию', 'success');
@@ -149,6 +165,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
       onClose();
       setFormData({ ...INITIAL_SHOP_FORM_DATA, schedules: getDefaultSchedules() });
       clearFiles();
+      clearMenuFiles();
     } catch (err: unknown) {
       const parsed = parseShopModerationError(err);
       setFieldErrors(parsed.fieldErrors);
@@ -175,9 +192,9 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
             </button>
           </div>
 
-          {(error || uploadError) && (
+          {(error || uploadError || menuUploadError) && (
             <div className={`mb-6 p-4 ${theme === 'dark' ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'} border rounded-2xl`}>
-              <p className={`text-sm ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{error || uploadError}</p>
+              <p className={`text-sm ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{error || uploadError || menuUploadError}</p>
             </div>
           )}
 
@@ -345,6 +362,48 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                       <button
                         type="button"
                         onClick={() => removeFile(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <h3 className={`text-xl font-semibold ${themeClasses.text.primary}`}>Фото меню</h3>
+              <p className={`text-sm ${themeClasses.text.secondary}`}>До 4 фото меню напитков. Не галерея кофейни.</p>
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleMenuFileSelect}
+                  className="hidden"
+                  id="menu-photo-upload-modal"
+                />
+                <label
+                  htmlFor="menu-photo-upload-modal"
+                  className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-pointer hover:border-[#EAB308] transition-all`}
+                >
+                  <Images size={48} className={`mx-auto mb-2 ${themeClasses.text.secondary}`} />
+                  <span className={themeClasses.text.secondary}>Нажмите для выбора фото меню</span>
+                </label>
+              </div>
+              {menuFiles.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {menuFiles.map((file, index) => (
+                    <div key={`${file.name}-${index}`} className="relative group">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`Меню ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-xl"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeMenuFile(index)}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         ×
@@ -572,17 +631,17 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                 type="submit"
                 variant="primary"
                 className="flex-1"
-                isLoading={isSubmitting || uploadingPhotos}
-                disabled={isSubmitting || uploadingPhotos}
+                isLoading={isSubmitting || uploadingPhotos || uploadingMenu}
+                disabled={isSubmitting || uploadingPhotos || uploadingMenu}
               >
-                {uploadingPhotos ? 'Загрузка фотографий...' : isSubmitting ? 'Отправка...' : 'Отправить на модерацию'}
+                {uploadingPhotos || uploadingMenu ? 'Загрузка фотографий...' : isSubmitting ? 'Отправка...' : 'Отправить на модерацию'}
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 onClick={onClose}
                 className="flex-1"
-                disabled={isSubmitting || uploadingPhotos}
+                disabled={isSubmitting || uploadingPhotos || uploadingMenu}
               >
                 Отмена
               </Button>

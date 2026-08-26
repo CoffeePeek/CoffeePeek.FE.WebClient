@@ -1,0 +1,295 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Button } from '../ui/Button';
+import { uploadMenuPhotoFiles } from '../../api/photos';
+import {
+  MenuAvailability,
+  ShopMenuDto,
+  ShopMenuItemDto,
+  UnmatchedMenuItem,
+  UpdateShopMenuRequest,
+  UploadedPhotoDto,
+  formatMenuCapturedAt,
+  formatMenuPrice,
+  isMenuParsing,
+  suggestedRangeHint,
+} from '../../api/menu';
+
+const AVAIL_OPTIONS: { value: MenuAvailability; label: string }[] = [
+  { value: 'Unknown', label: 'Неизвестно' },
+  { value: 'Present', label: 'Есть' },
+  { value: 'Absent', label: 'Нет в меню' },
+];
+
+interface MenuEditorProps {
+  menu: ShopMenuDto | null;
+  unmatched?: UnmatchedMenuItem[];
+  onAttach: (photos: UploadedPhotoDto[]) => Promise<void>;
+  onParse: () => Promise<void>;
+  onSave: (body: UpdateShopMenuRequest) => Promise<void>;
+  compact?: boolean;
+}
+
+function cloneItems(items: ShopMenuItemDto[]): ShopMenuItemDto[] {
+  return items.map((item) => ({ ...item }));
+}
+
+export const MenuEditor: React.FC<MenuEditorProps> = ({
+  menu,
+  unmatched,
+  onAttach,
+  onParse,
+  onSave,
+  compact,
+}) => {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [items, setItems] = useState<ShopMenuItemDto[]>(() => cloneItems(menu?.items ?? []));
+  const [applyRange, setApplyRange] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems(cloneItems(menu?.items ?? []));
+    setApplyRange(false);
+  }, [menu]);
+
+  const parsingNow = isMenuParsing(menu?.parseStatus);
+  const hint = suggestedRangeHint(menu?.suggestedPriceRange);
+  const photos = menu?.photos ?? [];
+
+  const grouped = useMemo(() => {
+    const espresso = items.filter((item) => item.category === 'Espresso');
+    const filter = items.filter((item) => item.category === 'Filter');
+    return [
+      { title: 'Эспрессо', rows: espresso },
+      { title: 'Фильтр', rows: filter },
+    ];
+  }, [items]);
+
+  const patchItem = (slug: string, patch: Partial<ShopMenuItemDto>) => {
+    setItems((current) => current.map((item) => (item.slug === slug ? { ...item, ...patch } : item)));
+  };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const uploaded = await uploadMenuPhotoFiles(Array.from(files));
+      await onAttach(uploaded);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Не удалось загрузить фото меню');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const handleParse = async () => {
+    setError(null);
+    setParsing(true);
+    try {
+      await onParse();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Не удалось распознать меню');
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setError(null);
+    setSaving(true);
+    try {
+      await onSave({
+        items: items.map((item) => ({
+          slug: item.slug,
+          availability: item.availability,
+          price: item.availability === 'Present' ? item.price ?? null : null,
+          volumeMl: item.volumeMl ?? null,
+        })),
+        applySuggestedPriceRange: applyRange || undefined,
+      });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Не удалось сохранить меню');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={compact ? 'space-y-3' : 'space-y-4'}>
+      <div>
+        <h2 className="text-sm font-semibold mb-1">Меню</h2>
+        {menu?.capturedAtUtc && (
+          <p className="text-[11px] text-text-muted">
+            Актуально на {formatMenuCapturedAt(menu.capturedAtUtc)}
+            {menu.updatedAtUtc && menu.updatedAtUtc !== menu.capturedAtUtc
+              ? ` · обновлено ${formatMenuCapturedAt(menu.updatedAtUtc)}`
+              : ''}
+          </p>
+        )}
+      </div>
+
+      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+      {parsingNow && (
+        <p className="text-sm text-text-muted flex items-center gap-2">
+          <span className="inline-block w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          Распознаём меню…
+        </p>
+      )}
+
+      {menu?.parseStatus === 'Failed' && (
+        <div className="rounded-[10px] border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-3 py-2 space-y-2">
+          <p className="text-sm text-red-800 dark:text-red-300">Не удалось распознать</p>
+          {menu.parseError && <p className="text-xs text-text-muted">{menu.parseError}</p>}
+          <Button variant="secondary" size="sm" loading={parsing} onClick={() => void handleParse()}>
+            Распознать снова
+          </Button>
+        </div>
+      )}
+
+      {photos.length > 0 && (
+        <div className="grid grid-cols-4 gap-1.5">
+          {photos.map((photo) =>
+            photo.fullUrl ? (
+              <a
+                key={photo.id ?? photo.storageKey}
+                href={photo.fullUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-lg overflow-hidden aspect-[3/4] bg-black/5"
+              >
+                <img src={photo.fullUrl} alt="Фото меню" className="w-full h-full object-cover" />
+              </a>
+            ) : null
+          )}
+        </div>
+      )}
+
+      <div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => void handleFiles(e.target.files)}
+        />
+        <Button variant="secondary" size="sm" loading={uploading} onClick={() => fileRef.current?.click()}>
+          {menu ? 'Загрузить фото меню' : 'Загрузить фото меню'}
+        </Button>
+        <p className="text-[11px] text-text-muted mt-1">До 4 фото на распознавание. Не галерея кофейни.</p>
+      </div>
+
+      {!menu && !parsingNow && (
+        <p className="text-sm text-text-muted">Меню пока не собрали</p>
+      )}
+
+      {hint && (
+        <div className="rounded-[10px] border border-border-light dark:border-border-dark px-3 py-2 space-y-2">
+          <p className="text-sm">{hint}</p>
+          <label className="flex items-center gap-2 text-xs text-text-muted">
+            <input
+              type="checkbox"
+              checked={applyRange}
+              onChange={(e) => setApplyRange(e.target.checked)}
+            />
+            Применить диапазон цен
+          </label>
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div className="space-y-4">
+          {grouped.map((group) =>
+            group.rows.length === 0 ? null : (
+              <div key={group.title}>
+                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-1.5">
+                  {group.title}
+                </p>
+                <div className="space-y-1.5">
+                  {group.rows.map((item) => (
+                    <div
+                      key={item.slug}
+                      className="rounded-md border border-border-light dark:border-border-dark px-2 py-2 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium min-w-0 truncate">{item.nameRu}</p>
+                        <span className="text-[10px] text-text-muted shrink-0">{item.source}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={item.availability}
+                          onChange={(e) =>
+                            patchItem(item.slug, { availability: e.target.value as MenuAvailability })
+                          }
+                          className="flex-1 min-w-0 rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-xs py-1.5 px-2"
+                        >
+                          {AVAIL_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                        {item.availability === 'Present' && (
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            min="0"
+                            placeholder="Цена"
+                            value={item.price ?? ''}
+                            onChange={(e) =>
+                              patchItem(item.slug, {
+                                price: e.target.value === '' ? null : Number(e.target.value),
+                              })
+                            }
+                            className="w-[5.5rem] rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-xs py-1.5 px-2"
+                          />
+                        )}
+                      </div>
+                      {item.availability === 'Present' && item.price != null && (
+                        <p className="text-[11px] text-text-muted">
+                          {formatMenuPrice(item.price, item.currency || 'BYN')}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          )}
+          <Button variant="primary" size="sm" loading={saving} onClick={() => void handleSave()}>
+            Сохранить меню
+          </Button>
+        </div>
+      )}
+
+      {menu?.parseStatus === 'None' && photos.length > 0 && !parsingNow && (
+        <Button variant="secondary" size="sm" loading={parsing} onClick={() => void handleParse()}>
+          Распознать меню
+        </Button>
+      )}
+
+      {unmatched && unmatched.length > 0 && (
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-1.5">
+            Не совпало с каталогом
+          </p>
+          <ul className="text-xs text-text-muted space-y-1">
+            {unmatched.map((row) => (
+              <li key={`${row.rawName}-${row.price ?? ''}`}>
+                {row.rawName}
+                {row.price != null ? ` · ${formatMenuPrice(row.price)}` : ''}
+                {row.confidence != null ? ` · ${Math.round(row.confidence * 100)}%` : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
