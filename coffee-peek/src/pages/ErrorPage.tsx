@@ -98,20 +98,13 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
         </p>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button 
-            onClick={handleGoHome}
-            className="sm:w-64 py-5 text-lg flex items-center justify-center gap-2"
-          >
-            <Icons.Home className="w-5 h-5" />
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Button onClick={handleGoHome} className="w-full sm:w-auto whitespace-nowrap">
+            <Icons.Home className="w-5 h-5 shrink-0" />
             Вернуться на главную
           </Button>
-          <Button 
-            variant="secondary"
-            onClick={handleGoBack}
-            className="sm:w-64 py-5 text-lg"
-          >
-            <Icons.Back className="w-5 h-5 inline mr-2" />
+          <Button variant="secondary" onClick={handleGoBack} className="w-full sm:w-auto whitespace-nowrap">
+            <Icons.Back className="w-5 h-5 shrink-0" />
             Назад
           </Button>
         </div>
