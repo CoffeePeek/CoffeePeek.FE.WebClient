@@ -4,6 +4,10 @@ import L from 'leaflet';
 import type { Map as LeafletMap } from 'leaflet';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { formatDayOfWeekShort, getCurrentDayOfWeek } from '../../utils/shopUtils';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeClasses } from '../../utils/theme';
+import { AppIcon } from '../icons';
+import { coffeeDetailIcon, createOsmMap } from '../../map/osmMap';
 
 interface ShopSidebarProps {
   shop: DetailedCoffeeShop;
