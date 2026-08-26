@@ -6,6 +6,9 @@ export const MASCOT_SRC = {
   book: '/maskot-props/maskot-with-book.png',
   laptop: '/maskot-props/maskot-with-laptop.png',
   search: '/maskot-props/maskot-with-magnifying-glass.png',
+  bean: '/maskot-props/maskot-with-bean.png',
+  cup: '/maskot-props/maskot-wthi-cup.png',
+  dessert: '/maskot-props/maskot-with-dessert.png',
 } as const;
 
 export type MascotPose = keyof typeof MASCOT_SRC;

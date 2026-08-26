@@ -114,42 +114,68 @@ export function getMapBoundsBox(map: L.Map): MapBoundsBox {
   };
 }
 
-/** Circle pin used on the main / landing maps. */
-export function coffeeCircleIcon(selected: boolean): L.Icon {
-  const fill = selected ? '#1A1412' : '#FFFFFF';
-  const stroke = selected ? '#EAB308' : '#1A1412';
-  const icon = selected ? '#FFFFFF' : '#1A1412';
-  const href =
-    'data:image/svg+xml;charset=utf-8,' +
-    encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
-        <circle cx="22" cy="22" r="20" fill="${fill}" stroke="${stroke}" stroke-width="${selected ? 3 : 1.5}"/>
-        <path fill="${icon}" d="M15 16h10.5a1.2 1.2 0 0 1 1.2 1.2v6.2a6.45 6.45 0 0 1-12.9 0v-6.2A1.2 1.2 0 0 1 15 16zm12.4 2.2h1.5a2.6 2.6 0 1 1 0 5.2h-1.5"/>
-      </svg>
-    `);
+/** Teardrop map pin: color + mascot by coffee focus. */
+export type MapCoffeeFocus = 'specialty' | 'coffee_bar' | 'cafe';
 
-  return L.icon({
-    iconUrl: href,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -22],
+export function parseCoffeeFocus(value: unknown): MapCoffeeFocus {
+  if (value === 1 || value === '1' || value === 'specialty' || value === 'Specialty') {
+    return 'specialty';
+  }
+  if (value === 3 || value === '3' || value === 'cafe' || value === 'Cafe') {
+    return 'cafe';
+  }
+  if (
+    value === 2 ||
+    value === '2' ||
+    value === 'coffee_bar' ||
+    value === 'coffeeBar' ||
+    value === 'CoffeeBar'
+  ) {
+    return 'coffee_bar';
+  }
+  return 'coffee_bar';
+}
+
+const PIN_BY_FOCUS: Record<MapCoffeeFocus, { color: string; mascot: string }> = {
+  specialty: { color: '#EAB308', mascot: '/maskot-props/maskot-with-bean.png' },
+  coffee_bar: { color: '#22C55E', mascot: '/maskot-props/maskot-wthi-cup.png' },
+  cafe: { color: '#3B82F6', mascot: '/maskot-props/maskot-with-dessert.png' },
+};
+
+const PIN_PATH =
+  'M20 1.6C29.2 1.6 36.8 9.3 36.8 18.8C36.8 29.8 20 50.4 20 50.4C20 50.4 3.2 29.8 3.2 18.8C3.2 9.3 10.8 1.6 20 1.6Z';
+
+export function coffeeMapPinIcon(options: { focus?: unknown; selected?: boolean } = {}): L.DivIcon {
+  const focus = parseCoffeeFocus(options.focus);
+  const { color, mascot } = PIN_BY_FOCUS[focus];
+  const selected = Boolean(options.selected);
+  const stroke = selected ? '#FFFFFF' : '#1A1412';
+  const strokeWidth = selected ? 2.4 : 1.5;
+
+  return L.divIcon({
+    className: `cp-map-pin-wrap${selected ? ' is-selected' : ''}`,
+    iconSize: [40, 52],
+    iconAnchor: [20, 50],
+    popupAnchor: [0, -44],
+    html: `
+      <div class="cp-pin${selected ? ' is-selected' : ''}">
+        <svg viewBox="0 0 40 52" width="40" height="52" aria-hidden="true">
+          <path d="${PIN_PATH}" fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
+        </svg>
+        <span class="cp-pin__face">
+          <img src="${mascot}" alt="" />
+        </span>
+      </div>
+    `,
   });
 }
 
-/** Gold cup pin for shop detail sidebar. */
-export function coffeeDetailIcon(): L.Icon {
-  const href =
-    'data:image/svg+xml;charset=utf-8,' +
-    encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-        <circle cx="24" cy="24" r="22" fill="#EAB308" stroke="#EAB308" stroke-width="2"/>
-        <path fill="#1A1412" d="M16 18h12a1.5 1.5 0 0 1 1.5 1.5v7a7.5 7.5 0 0 1-15 0v-7A1.5 1.5 0 0 1 16 18zm14.5 2.5H32a3 3 0 1 1 0 6h-1.5"/>
-      </svg>
-    `);
+/** @deprecated use coffeeMapPinIcon */
+export function coffeeCircleIcon(selected: boolean, focus?: unknown): L.DivIcon {
+  return coffeeMapPinIcon({ selected, focus });
+}
 
-  return L.icon({
-    iconUrl: href,
-    iconSize: [48, 48],
-    iconAnchor: [24, 24],
-  });
+/** Gold cup pin for shop detail sidebar. */
+export function coffeeDetailIcon(focus?: unknown): L.DivIcon {
+  return coffeeMapPinIcon({ focus, selected: true });
 }

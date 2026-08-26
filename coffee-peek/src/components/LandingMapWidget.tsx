@@ -9,7 +9,7 @@ import { AppIcon, StarIcon } from './icons';
 import WobbleRing from './WobbleRing';
 import {
   MINSK_CENTER,
-  coffeeCircleIcon,
+  coffeeMapPinIcon,
   createOsmMap,
   getMapBoundsBox,
 } from '../map/osmMap';
@@ -26,11 +26,12 @@ type PreviewShop = {
 function parseShops(response: Awaited<ReturnType<typeof getCoffeeShopsByMapBounds>>): MapShop[] {
   const shops = response.data?.shops;
   if (!Array.isArray(shops)) return [];
-  return shops.map((shop: MapShop & { name?: string }) => ({
+  return shops.map((shop: MapShop & { name?: string; Type?: unknown }) => ({
     id: shop.id,
     latitude: Number(shop.latitude),
     longitude: Number(shop.longitude),
     title: shop.title || shop.name || 'Кофейня',
+    type: shop.type ?? shop.Type,
   }));
 }
 
@@ -98,8 +99,9 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
         if (!shop.latitude || !shop.longitude) return;
         const selected = previewIdRef.current === shop.id;
         const marker = L.marker([shop.latitude, shop.longitude], {
-          icon: coffeeCircleIcon(selected),
+          icon: coffeeMapPinIcon({ focus: shop.type, selected }),
           title: shop.title,
+          zIndexOffset: selected ? 1000 : 0,
         });
         marker.on('click', () => {
           void pickPreview(shop, (list) => addMarkers(map, list));

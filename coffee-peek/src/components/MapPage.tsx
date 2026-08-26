@@ -10,7 +10,7 @@ import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
 import {
   applyOsmMapTheme,
-  coffeeCircleIcon,
+  coffeeMapPinIcon,
   createOsmMap,
   getMapBoundsBox,
 } from '../map/osmMap';
@@ -41,11 +41,12 @@ const MapPage: React.FC = () => {
 
       let shopsList: MapShop[] = [];
       if (response.data?.shops && Array.isArray(response.data.shops)) {
-        shopsList = response.data.shops.map((shop: MapShop & { name?: string }) => ({
+        shopsList = response.data.shops.map((shop: MapShop & { name?: string; Type?: unknown }) => ({
           id: shop.id,
           latitude: Number(shop.latitude),
           longitude: Number(shop.longitude),
           title: shop.title || shop.name || 'Кофейня',
+          type: shop.type ?? shop.Type,
         }));
       }
 
@@ -102,8 +103,9 @@ const MapPage: React.FC = () => {
         if (!shop.latitude || !shop.longitude) return;
         const selected = selectedIdRef.current === shop.id;
         const marker = L.marker([shop.latitude, shop.longitude], {
-          icon: coffeeCircleIcon(selected),
+          icon: coffeeMapPinIcon({ focus: shop.type, selected }),
           title: shop.title,
+          zIndexOffset: selected ? 1000 : 0,
         });
         marker.on('click', () => {
           selectedIdRef.current = shop.id;

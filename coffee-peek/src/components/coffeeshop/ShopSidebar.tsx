@@ -1,5 +1,5 @@
 import WobbleRing from '../WobbleRing';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import type { Map as LeafletMap } from 'leaflet';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
@@ -50,7 +50,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
     mapInstanceRef.current = map;
 
     L.marker([latitude, longitude], {
-      icon: coffeeDetailIcon(),
+      icon: coffeeDetailIcon(shop.type),
       title: shop.name,
       interactive: false,
     }).addTo(map);
@@ -62,7 +62,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
       mapInstanceRef.current = null;
       setIsMapLoaded(false);
     };
-  }, [latitude, longitude, shop.name, isDark]);
+  }, [latitude, longitude, shop.name, shop.type, isDark]);
 
   return (
     <div className={`${cardBg} rounded-3xl border ${borderColor} overflow-hidden shadow-sm min-w-0`}>
@@ -97,7 +97,8 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
             <div className="min-w-0 flex-1">
               <button
                 type="button"
-                className={`flex w-full items-center justify-between gap-2 min-h-12 ${textMain} font-bold lg:pointer-events-none`}
+                className={`flex w-full items-center justify-between gap-2 min-h-12 ${textMain} font-bold text-left lg:pointer-events-none`}
+                style={{ padding: 0, margin: 0, border: 'none', background: 'transparent', borderRadius: 0 }}
                 onClick={() => setHoursOpen((open) => !open)}
                 aria-expanded={hoursOpen}
               >
@@ -107,26 +108,22 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
                   className={`lg:hidden shrink-0 transition-transform ${hoursOpen ? 'rotate-180' : ''}`}
                 />
               </button>
-              <div className={`${hoursOpen ? 'block' : 'hidden'} lg:block space-y-2.5 text-sm mt-2.5`}>
+              <div className={`${hoursOpen ? 'grid' : 'hidden'} lg:grid grid-cols-[2.5rem_1fr] gap-x-3 gap-y-2 text-sm`}>
                 {[...shop.schedules]
                   .sort((a, b) => Number(a.dayOfWeek) - Number(b.dayOfWeek))
                   .map((schedule) => {
                   const dayLabel = formatDayOfWeekShort(schedule.dayOfWeek);
                   const isToday = Number(schedule.dayOfWeek) === currentDay;
+                  const rowClass = isToday ? `font-bold ${themeClasses.primary.text}` : textMuted;
                   return (
-                    <div
-                      key={String(schedule.dayOfWeek)}
-                      className={`flex items-center gap-3 ${isToday ? `font-bold ${themeClasses.primary.text}` : textMuted}`}
-                    >
-                      <span className="w-7 shrink-0 tabular-nums">
-                        {dayLabel || '—'}
-                      </span>
-                      <span>
+                    <Fragment key={String(schedule.dayOfWeek)}>
+                      <span className={rowClass}>{dayLabel || '—'}</span>
+                      <span className={`${rowClass} tabular-nums`}>
                         {schedule.openTime && schedule.closeTime
                           ? `${schedule.openTime} - ${schedule.closeTime}`
                           : 'Закрыто'}
                       </span>
-                    </div>
+                    </Fragment>
                   );
                 })}
               </div>

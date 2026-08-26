@@ -76,6 +76,7 @@ export interface CoffeeShop {
   isOpen?: boolean;
   isVisited?: boolean;
   isNew?: boolean;
+  type?: string;
   location?: {
     address?: string;
     latitude?: number;
@@ -91,6 +92,7 @@ export interface MapShop {
   latitude: number;
   longitude: number;
   title: string;
+  type?: string;
 }
 
 export interface GetShopsInBoundsResponse {
@@ -122,6 +124,7 @@ export interface DetailedCoffeeShop {
   isNew?: boolean;
   priceRange: number | string;
   tags?: ShopTagDto[];
+  type?: string;
   location?: {
     address?: string;
     latitude?: number;
@@ -160,6 +163,16 @@ export interface CoffeeShopFilters {
   isVisited?: boolean;
 }
 
+/** Query value for `type` — matches CoffeeShopType JSON names. */
+const SHOP_TYPE_QUERY: Record<string, string> = {
+  specialty: 'Specialty',
+  coffee_bar: 'CoffeeBar',
+  cafe: 'Cafe',
+  Specialty: 'Specialty',
+  CoffeeBar: 'CoffeeBar',
+  Cafe: 'Cafe',
+};
+
 export interface ShortShopDto {
   id: string;
   cityId: string;
@@ -172,6 +185,7 @@ export interface ShortShopDto {
   isOpen: boolean;
   priceRange: number | string;
   tags?: ShopTagDto[];
+  type?: string;
   location?: {
     address?: string;
     latitude?: number;
@@ -387,7 +401,7 @@ export async function getCoffeeShops(
     if (filters.roasterIds) params.roasters = filters.roasterIds;
     if (filters.brewMethodIds) params.brewMethods = filters.brewMethodIds;
     if (filters.tagIds?.length) params.tags = filters.tagIds;
-    if (filters.coffeeFocus) params.coffeeFocus = filters.coffeeFocus;
+    if (filters.coffeeFocus) params.type = SHOP_TYPE_QUERY[filters.coffeeFocus] ?? filters.coffeeFocus;
     if (filters.isOpen !== undefined) params.isOpen = filters.isOpen;
     if (filters.isNew !== undefined) params.isNew = filters.isNew;
     if (filters.isVisited !== undefined) params.isVisited = filters.isVisited;
@@ -429,7 +443,7 @@ export async function searchCoffeeShops(
     if (filters.roasterIds) params.roasters = filters.roasterIds;
     if (filters.brewMethodIds) params.brewMethods = filters.brewMethodIds;
     if (filters.tagIds?.length) params.tags = filters.tagIds;
-    if (filters.coffeeFocus) params.coffeeFocus = filters.coffeeFocus;
+    if (filters.coffeeFocus) params.type = SHOP_TYPE_QUERY[filters.coffeeFocus] ?? filters.coffeeFocus;
     if (filters.isOpen !== undefined) params.isOpen = filters.isOpen;
     if (filters.isNew !== undefined) params.isNew = filters.isNew;
     if (filters.isVisited !== undefined) params.isVisited = filters.isVisited;
