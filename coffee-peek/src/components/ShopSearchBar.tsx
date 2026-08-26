@@ -69,16 +69,10 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
       </div>
 
       {/* ── Mobile header ─────────────────────────────────────── */}
-      <div className="lg:hidden pt-[60px] pb-3">
-        <div className="flex items-center justify-between">
-          <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', color: dark ? '#fff' : '#1C1917' }}>
-            Кофейни рядом
-          </h1>
-          <button style={{ position: 'relative', width: 38, height: 38, borderRadius: 99, background: colors.surface, border: `1px solid ${borderColor}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <AppIcon name="notifications" size={20} color={dark ? '#fff' : '#1C1917'} />
-            <span style={{ position: 'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: 99, background: gold, border: `2px solid ${colors.surface}` }} />
-          </button>
-        </div>
+      <div className="lg:hidden pt-5 pb-3">
+        <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', color: dark ? '#fff' : '#1C1917' }}>
+          Кофейни рядом
+        </h1>
       </div>
 
       {/* ── Mobile search — Search left, Фильтры right ─────── */}
@@ -99,7 +93,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
           </div>
 
           {/* Фильтры — right */}
-          <button type="button" onClick={onFilterToggle} style={filterBtn(44)}>
+          <button type="button" onClick={onFilterToggle} style={{ ...filterBtn(44), background: showFilters ? gold : colors.surface }}>
             <AppIcon name="tune" size={16} color={showFilters ? '#1A1412' : gold} />
             <span>Фильтры</span>
             {activeFilterCount > 0 && (

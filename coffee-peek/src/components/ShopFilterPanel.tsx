@@ -460,6 +460,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     padding: '6px 12px', borderRadius: 99, whiteSpace: 'nowrap',
     fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12,
     cursor: 'pointer', transition: 'all .15s', border: '1px solid',
+    flexShrink: 0,
   };
 
   const quickChipStyle = (active: boolean): React.CSSProperties => ({
@@ -478,37 +479,37 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     brewMethods: selectedBrewMethods,
   };
 
-  const cityAndStatusChips = (
+  const cityChip = (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <button type="button" onClick={onCityDropdownToggle} style={{
+        ...chipBase,
+        background: dark ? 'rgba(255,255,255,0.04)' : '#fff',
+        color: textPrimary,
+        borderColor,
+      }}>
+        <MapPin size={14} color={goldWarm} />
+        {currentCityName}
+        <CaretDown size={13} color={muted} style={{ transition: 'transform .2s', transform: showCityDropdown ? 'rotate(180deg)' : 'none' }} />
+      </button>
+      {showCityDropdown && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={onCityDropdownToggle} />
+          <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: 12, border: `1px solid ${borderColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 20, minWidth: 160, maxHeight: 280, overflowY: 'auto' as const, background: dark ? '#2D241F' : '#fff' }}>
+            {cities.map(city => (
+              <button key={city.id} type="button" onClick={() => { onCityChange(city.id); onCityDropdownToggle(); }}
+                style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : textPrimary, border: 'none', cursor: 'pointer', fontFamily: '"RF Dewi Expanded"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                {selectedCity === city.id && <CheckCircle size={14} color={gold} />}
+                <span style={{ marginLeft: selectedCity === city.id ? 0 : 22 }}>{city.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  const statusAndFocusChips = (
     <>
-      <div style={{ position: 'relative' }}>
-        <button type="button" onClick={onCityDropdownToggle} style={{
-          ...chipBase,
-          background: dark ? 'rgba(255,255,255,0.04)' : '#fff',
-          color: textPrimary,
-          borderColor,
-        }}>
-          <MapPin size={14} color={goldWarm} />
-          {currentCityName}
-          <CaretDown size={13} color={muted} style={{ transition: 'transform .2s', transform: showCityDropdown ? 'rotate(180deg)' : 'none' }} />
-        </button>
-        {showCityDropdown && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={onCityDropdownToggle} />
-            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: 12, border: `1px solid ${borderColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 20, minWidth: 160, maxHeight: 280, overflowY: 'auto' as const, background: dark ? '#2D241F' : '#fff' }}>
-              {cities.map(city => (
-                <button key={city.id} type="button" onClick={() => { onCityChange(city.id); onCityDropdownToggle(); }}
-                  style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : textPrimary, border: 'none', cursor: 'pointer', fontFamily: '"RF Dewi Expanded"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {selectedCity === city.id && <CheckCircle size={14} color={gold} />}
-                  <span style={{ marginLeft: selectedCity === city.id ? 0 : 22 }}>{city.name}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      <div style={{ width: 1, height: 20, background: borderColor, flexShrink: 0 }} />
-
       {FIXED_QUICK_FILTERS.map(({ id, label, Icon }) => {
         const active = id === 'all'
           ? activeQuick.includes('all') && !filters.coffeeFocus
@@ -554,6 +555,14 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     </>
   );
 
+  const cityAndStatusChips = (
+    <>
+      {cityChip}
+      <div style={{ width: 1, height: 20, background: borderColor, flexShrink: 0 }} />
+      {statusAndFocusChips}
+    </>
+  );
+
   if (mode === 'quick') {
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center', justifyContent: 'center', paddingBottom: 16 }}>
@@ -563,53 +572,62 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   }
 
   if (mode === 'chips') {
+    const appliedTags = shopTags.filter((tag) => selectedTagIds.includes(tag.id));
+    const showApplied = hasApplied || appliedTags.length > 0;
     return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center', paddingBottom: 10 }}>
-        {cityAndStatusChips}
+      <div style={{ paddingBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+          {cityChip}
+          <div style={{ width: 1, height: 20, background: borderColor, flexShrink: 0 }} />
+          <div className="overflow-x-auto no-scrollbar" style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              {statusAndFocusChips}
+            </div>
+          </div>
+        </div>
 
-        {shopTags.map(tag => {
-          const active = selectedTagIds.includes(tag.id);
-          return (
-            <button key={tag.id} type="button" onClick={() => onTagToggle(tag.id)} style={quickChipStyle(active)}>
-              {tag.name}
+        {showApplied && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center', paddingTop: 8 }}>
+            {appliedTags.map((tag) => (
+              <AppliedChip key={tag.id} label={tag.name} gold={gold} onRemove={() => onTagToggle(tag.id)} />
+            ))}
+            {current.priceRange && (
+              <AppliedChip
+                label={
+                  PRICE_OPTIONS.find((p) => p.value === toPriceFilterLevel(current.priceRange))?.label ??
+                  current.priceRange
+                }
+                gold={gold}
+                onRemove={() => patch({ priceRange: undefined })}
+              />
+            )}
+            {current.equipments.map(id => {
+              const eq = equipments.find(e => e.id === id);
+              return eq ? <AppliedChip key={id} label={eq.name} gold={gold} onRemove={() => patch({ equipments: current.equipments.filter(x => x !== id) })} /> : null;
+            })}
+            {current.beans.map(id => {
+              const b = coffeeBeans.find(item => item.id === id);
+              return b ? <AppliedChip key={id} label={b.name} gold={gold} onRemove={() => patch({ beans: current.beans.filter(x => x !== id) })} /> : null;
+            })}
+            {current.roasters.map(id => {
+              const r = roasters.find(item => item.id === id);
+              return r ? <AppliedChip key={id} label={r.name} gold={gold} onRemove={() => patch({ roasters: current.roasters.filter(x => x !== id) })} /> : null;
+            })}
+            {current.brewMethods.map(id => {
+              const m = brewMethods.find(item => item.id === id);
+              return m ? <AppliedChip key={id} label={m.name} gold={gold} onRemove={() => patch({ brewMethods: current.brewMethods.filter(x => x !== id) })} /> : null;
+            })}
+            <button
+              type="button"
+              onClick={() => {
+                appliedTags.forEach((tag) => onTagToggle(tag.id));
+                onApplyFilters({ priceRange: undefined, coffeeFocus: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] });
+              }}
+              style={{ ...chipBase, background: 'transparent', color: muted, borderColor: 'transparent', fontSize: 11 }}
+            >
+              Сбросить всё
             </button>
-          );
-        })}
-
-        {current.priceRange && (
-          <AppliedChip
-            label={
-              PRICE_OPTIONS.find((p) => p.value === toPriceFilterLevel(current.priceRange))?.label ??
-              current.priceRange
-            }
-            gold={gold}
-            onRemove={() => patch({ priceRange: undefined })}
-          />
-        )}
-        {current.equipments.map(id => {
-          const eq = equipments.find(e => e.id === id);
-          return eq ? <AppliedChip key={id} label={eq.name} gold={gold} onRemove={() => patch({ equipments: current.equipments.filter(x => x !== id) })} /> : null;
-        })}
-        {current.beans.map(id => {
-          const b = coffeeBeans.find(item => item.id === id);
-          return b ? <AppliedChip key={id} label={b.name} gold={gold} onRemove={() => patch({ beans: current.beans.filter(x => x !== id) })} /> : null;
-        })}
-        {current.roasters.map(id => {
-          const r = roasters.find(item => item.id === id);
-          return r ? <AppliedChip key={id} label={r.name} gold={gold} onRemove={() => patch({ roasters: current.roasters.filter(x => x !== id) })} /> : null;
-        })}
-        {current.brewMethods.map(id => {
-          const m = brewMethods.find(item => item.id === id);
-          return m ? <AppliedChip key={id} label={m.name} gold={gold} onRemove={() => patch({ brewMethods: current.brewMethods.filter(x => x !== id) })} /> : null;
-        })}
-        {hasApplied && (
-          <button
-            type="button"
-            onClick={() => onApplyFilters({ priceRange: undefined, coffeeFocus: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] })}
-            style={{ ...chipBase, background: 'transparent', color: muted, borderColor: 'transparent', fontSize: 11 }}
-          >
-            Сбросить всё
-          </button>
+          </div>
         )}
       </div>
     );

@@ -7,6 +7,7 @@ import { formatDayOfWeekShort, getCurrentDayOfWeek } from '../../utils/shopUtils
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppIcon } from '../icons';
+import { CaretDown } from '@/components/Icon';
 import { coffeeDetailIcon, createOsmMap } from '../../map/osmMap';
 
 interface ShopSidebarProps {
@@ -30,6 +31,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [hoursOpen, setHoursOpen] = useState(false);
 
   const latitude = shop.location?.latitude;
   const longitude = shop.location?.longitude;
@@ -78,47 +80,56 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
       )}
 
       <div className="p-5">
-        <div className={`flex items-start gap-3 min-w-0 ${shop.schedules && shop.schedules.length > 0 ? 'mb-6' : ''}`}>
+        <div className={`flex items-center gap-3 min-w-0 ${shop.schedules && shop.schedules.length > 0 ? 'mb-6' : ''}`}>
           <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} flex items-center justify-center shrink-0`}>
             <AppIcon name="pin_drop" size={20} className={themeClasses.primary.text} />
           </div>
-          <div className="min-w-0 flex-1">
-            <h3 className={`font-bold ${textMain} mb-1 break-words`}>
-              {shop.location?.address || shop.address || 'Адрес не указан'}
-            </h3>
-          </div>
+          <h3 className={`font-bold ${textMain} break-words min-w-0 flex-1`}>
+            {shop.location?.address || shop.address || 'Адрес не указан'}
+          </h3>
         </div>
 
         {shop.schedules && shop.schedules.length > 0 && (
-          <div className={`space-y-4 pt-6 border-t ${borderColor}`}>
-            <div className={`flex items-center gap-4 ${textMain} font-bold`}>
-              <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} flex items-center justify-center shrink-0`}>
-                <AppIcon name="schedule" size={20} className={themeClasses.primary.text} />
-              </div>
-              <span>Часы работы</span>
+          <div className={`flex items-start gap-3 pt-6 border-t ${borderColor}`}>
+            <div className={`w-12 h-12 rounded-2xl ${themeClasses.primary.bgLight} flex items-center justify-center shrink-0`}>
+              <AppIcon name="schedule" size={20} className={themeClasses.primary.text} />
             </div>
-            <div className="space-y-2.5 text-sm">
-              {[...shop.schedules]
-                .sort((a, b) => Number(a.dayOfWeek) - Number(b.dayOfWeek))
-                .map((schedule) => {
-                const dayLabel = formatDayOfWeekShort(schedule.dayOfWeek);
-                const isToday = Number(schedule.dayOfWeek) === currentDay;
-                return (
-                  <div
-                    key={String(schedule.dayOfWeek)}
-                    className={`flex items-center gap-3 ${isToday ? `font-bold ${themeClasses.primary.text}` : textMuted}`}
-                  >
-                    <span className="w-7 shrink-0 tabular-nums">
-                      {dayLabel || '—'}
-                    </span>
-                    <span>
-                      {schedule.openTime && schedule.closeTime
-                        ? `${schedule.openTime} - ${schedule.closeTime}`
-                        : 'Закрыто'}
-                    </span>
-                  </div>
-                );
-              })}
+            <div className="min-w-0 flex-1">
+              <button
+                type="button"
+                className={`flex w-full items-center justify-between gap-2 min-h-12 ${textMain} font-bold lg:pointer-events-none`}
+                onClick={() => setHoursOpen((open) => !open)}
+                aria-expanded={hoursOpen}
+              >
+                <span>Часы работы</span>
+                <CaretDown
+                  size={16}
+                  className={`lg:hidden shrink-0 transition-transform ${hoursOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              <div className={`${hoursOpen ? 'block' : 'hidden'} lg:block space-y-2.5 text-sm mt-2.5`}>
+                {[...shop.schedules]
+                  .sort((a, b) => Number(a.dayOfWeek) - Number(b.dayOfWeek))
+                  .map((schedule) => {
+                  const dayLabel = formatDayOfWeekShort(schedule.dayOfWeek);
+                  const isToday = Number(schedule.dayOfWeek) === currentDay;
+                  return (
+                    <div
+                      key={String(schedule.dayOfWeek)}
+                      className={`flex items-center gap-3 ${isToday ? `font-bold ${themeClasses.primary.text}` : textMuted}`}
+                    >
+                      <span className="w-7 shrink-0 tabular-nums">
+                        {dayLabel || '—'}
+                      </span>
+                      <span>
+                        {schedule.openTime && schedule.closeTime
+                          ? `${schedule.openTime} - ${schedule.closeTime}`
+                          : 'Закрыто'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

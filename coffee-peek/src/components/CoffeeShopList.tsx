@@ -368,6 +368,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const activeFilterCount =
     selectedEquipments.length + selectedBeans.length +
     selectedRoasters.length + selectedBrewMethods.length +
+    selectedTagIds.length +
     (filters.priceRange ? 1 : 0);
 
   const filterPanelProps = {
@@ -444,7 +445,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           <div className="lg:hidden mb-6">
             <div className="flex items-baseline justify-between mb-3">
               <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>Подборка недели</h2>
-              <button style={{ background: 'none', border: 'none', color: '#D4A84B', fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Все →</button>
             </div>
             <div className="overflow-x-auto no-scrollbar -mx-4 sm:-mx-6 px-4 sm:px-6" style={{ display: 'flex', gap: 12, paddingBottom: 4 }}>
               {featured.map(shop => {
@@ -486,7 +486,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         {!isLoading && (
           <div className="flex items-baseline justify-between mb-3">
             <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>
-              Кофейни рядом <span style={{ color: colors.textSecondary, fontWeight: 500, fontSize: 13 }}>· {totalItems || shops.length}</span>
+              <span className="hidden lg:inline">Кофейни рядом · </span>
+              {totalItems || shops.length}
             </h2>
             <div style={{ position: 'relative' }}>
               <button
