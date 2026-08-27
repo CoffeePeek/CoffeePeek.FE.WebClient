@@ -482,13 +482,9 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           </div>
         )}
 
-        {/* ── Mobile: list section header ─────────────────────── */}
+        {/* ── List section header (sort only) ─────────────────── */}
         {!isLoading && (
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>
-              <span className="hidden lg:inline">Кофейни рядом · </span>
-              {totalItems || shops.length}
-            </h2>
+          <div className="flex items-baseline justify-end mb-3">
             <div style={{ position: 'relative' }}>
               <button
                 type="button"
