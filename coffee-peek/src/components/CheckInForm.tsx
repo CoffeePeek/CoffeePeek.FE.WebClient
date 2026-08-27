@@ -40,7 +40,8 @@ const StarRow: React.FC<{
   value: number;
   onChange: (value: number) => void;
   label: string;
-}> = ({ value, onChange, label }) => (
+  emptyColor: string;
+}> = ({ value, onChange, label, emptyColor }) => (
   <div className="flex items-center justify-center gap-0.5" role="radiogroup" aria-label={label}>
     {[1, 2, 3, 4, 5].map((star) => {
       const filled = star <= value;
@@ -57,7 +58,7 @@ const StarRow: React.FC<{
           <StarIcon
             filled={filled}
             size={14}
-            color={filled ? brand.primary : '#5C544F'}
+            color={filled ? brand.primary : emptyColor}
           />
         </button>
       );
@@ -113,6 +114,10 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
   const { theme } = useTheme();
   const colors = getThemeColors(theme);
   const gold = brand.primary;
+  const isDark = theme === 'dark';
+  const emptyStar = isDark ? '#5C544F' : '#D6D3D1';
+  const cardShadow = isDark ? 'none' : '0 4px 16px rgba(28, 25, 23, 0.08)';
+  const fieldBorder = `1px solid ${colors.border}`;
 
   const columns: RatingColumn[] = [
     { key: 'coffee', label: 'Кофе', pose: 'cup', value: ratingCoffee, onChange: onRatingCoffee },
@@ -145,7 +150,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           <div
             key={col.key}
             className="flex flex-col items-center gap-1.5 rounded-2xl px-1.5 pt-3 pb-2.5"
-            style={{ backgroundColor: colors.surface }}
+            style={{ backgroundColor: isDark ? colors.surface : '#FFFFFF', boxShadow: cardShadow }}
           >
             <Mascot pose={col.pose} size={72} eager />
             <span
@@ -154,7 +159,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
             >
               {col.label}
             </span>
-            <StarRow value={col.value} onChange={col.onChange} label={col.label} />
+            <StarRow value={col.value} onChange={col.onChange} label={col.label} emptyColor={emptyStar} />
           </div>
         ))}
       </div>
@@ -174,8 +179,9 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
             onChange={(e) => onVisitedDateChange(e.target.value)}
             className="w-full rounded-2xl py-3 px-4 font-body text-sm outline-none"
             style={{
-              backgroundColor: colors.surface,
+              backgroundColor: isDark ? colors.input : '#FFFFFF',
               color: colors.textPrimary,
+              border: fieldBorder,
               colorScheme: theme,
             }}
           />
@@ -189,7 +195,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           <label
             htmlFor="checkin-photos"
             className="w-16 h-16 shrink-0 rounded-xl border border-dashed flex flex-col items-center justify-center gap-0.5 cursor-pointer"
-            style={{ borderColor: colors.border, backgroundColor: colors.surface, color: colors.textSecondary }}
+            style={{ borderColor: colors.border, backgroundColor: isDark ? colors.surface : '#FFFFFF', color: colors.textSecondary }}
           >
             <Camera size={20} />
             <span className="text-[10px] font-body leading-none">Добавить</span>
@@ -231,8 +237,9 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           rows={3}
           className="w-full rounded-2xl px-4 py-3 font-body text-sm resize-none outline-none placeholder:opacity-50"
           style={{
-            backgroundColor: colors.surface,
+            backgroundColor: isDark ? colors.input : '#FFFFFF',
             color: colors.textPrimary,
+            border: fieldBorder,
           }}
         />
       </div>
@@ -252,7 +259,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           aria-checked={isPublic}
           onClick={() => onPublicChange(!isPublic)}
           className="relative w-12 h-7 rounded-full shrink-0 transition-colors"
-          style={{ backgroundColor: isPublic ? gold : '#5C544F' }}
+          style={{ backgroundColor: isPublic ? gold : isDark ? '#5C544F' : '#D6D3D1' }}
         >
           <span
             className="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform"

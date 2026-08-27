@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createCheckIn, CreateCheckInRequest, DetailedCoffeeShop } from '../api/coffeeshop';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeColors } from '../constants/colors';
@@ -43,6 +43,15 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   const [ratingService, setRatingService] = useState(0);
   const [ratingPlace, setRatingPlace] = useState(0);
   const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos, clearFiles } = usePhotoUpload();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
 
   if (!isOpen || !shop) return null;
 
@@ -109,47 +118,59 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
-      onClick={handleClose}
-    >
+    <div className="fixed inset-0 z-[1200] sm:flex sm:items-center sm:justify-center sm:p-4">
+      <button
+        type="button"
+        aria-label="Закрыть"
+        className="absolute inset-0 bg-black/45 sm:bg-black/60"
+        onClick={handleClose}
+      />
       <div
-        className="relative w-full sm:max-w-[420px] max-h-[92vh] overflow-y-auto rounded-t-[28px] sm:rounded-[28px] px-5 pt-3 pb-6"
-        style={{ backgroundColor: colors.background }}
+        className="absolute inset-x-0 bottom-0 sm:relative sm:inset-auto w-full sm:max-w-[420px] flex flex-col min-h-0 overflow-hidden max-h-[min(85dvh,calc(100dvh-4.5rem))] sm:max-h-[90vh] rounded-t-[28px] sm:rounded-[28px] shadow-[0_-8px_40px_rgba(0,0,0,0.18)]"
+        style={{ backgroundColor: colors.card }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sm:hidden mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="sm:hidden shrink-0 pt-2.5 pb-1">
+          <div
+            className="mx-auto h-1 w-10 rounded-full"
+            style={{ backgroundColor: colors.border }}
+          />
+        </div>
         <button
           type="button"
           onClick={handleClose}
           aria-label="Закрыть"
-          className="hidden sm:flex absolute top-4 right-4 w-8 h-8 items-center justify-center rounded-full"
+          className="hidden sm:flex absolute top-4 right-4 z-10 w-8 h-8 items-center justify-center rounded-full"
           style={{ color: colors.textSecondary }}
         >
           <X size={18} />
         </button>
-        <CheckInForm
-          shopName={shop.name}
-          note={note}
-          onNoteChange={setNote}
-          isPublic={isPublic}
-          onPublicChange={setIsPublic}
-          visitedDate={visitedDate}
-          onVisitedDateChange={setVisitedDate}
-          ratingCoffee={ratingCoffee}
-          ratingService={ratingService}
-          ratingPlace={ratingPlace}
-          onRatingCoffee={setRatingCoffee}
-          onRatingService={setRatingService}
-          onRatingPlace={setRatingPlace}
-          selectedFiles={selectedFiles}
-          onFileSelect={handleFileSelect}
-          onRemoveFile={removeFile}
-          uploadingPhotos={uploadingPhotos}
-          isSubmitting={isSubmitting}
-          onSubmit={handleSubmit}
-        />
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          <CheckInForm
+            shopName={shop.name}
+            note={note}
+            onNoteChange={setNote}
+            isPublic={isPublic}
+            onPublicChange={setIsPublic}
+            visitedDate={visitedDate}
+            onVisitedDateChange={setVisitedDate}
+            ratingCoffee={ratingCoffee}
+            ratingService={ratingService}
+            ratingPlace={ratingPlace}
+            onRatingCoffee={setRatingCoffee}
+            onRatingService={setRatingService}
+            onRatingPlace={setRatingPlace}
+            selectedFiles={selectedFiles}
+            onFileSelect={handleFileSelect}
+            onRemoveFile={removeFile}
+            uploadingPhotos={uploadingPhotos}
+            isSubmitting={isSubmitting}
+            onSubmit={handleSubmit}
+          />
+        </div>
       </div>
     </div>
   );

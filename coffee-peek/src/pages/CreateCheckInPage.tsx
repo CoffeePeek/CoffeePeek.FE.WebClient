@@ -123,38 +123,51 @@ const CreateCheckInPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pt-16" style={{ backgroundColor: colors.background }}>
-      <main className="max-w-[420px] mx-auto px-4 py-6">
+    <div className="min-h-[calc(100dvh-64px)]" style={{ backgroundColor: colors.background }}>
+      <main className="sm:max-w-[420px] sm:mx-auto sm:px-4 sm:py-6 h-[calc(100dvh-64px)] sm:h-auto flex flex-col">
         <button
           type="button"
           onClick={() => navigate(`/shops/${shopId}`)}
-          className="flex items-center gap-2 mb-5 font-body text-sm"
+          className="hidden sm:flex items-center gap-2 mb-5 font-body text-sm"
           style={{ color: colors.textSecondary }}
         >
           <ArrowLeft size={18} />
           Назад
         </button>
-        <CheckInForm
-          shopName={shopFromState.name}
-          note={note}
-          onNoteChange={setNote}
-          isPublic={isPublic}
-          onPublicChange={setIsPublic}
-          visitedDate={visitedDate}
-          onVisitedDateChange={setVisitedDate}
-          ratingCoffee={ratingCoffee}
-          ratingService={ratingService}
-          ratingPlace={ratingPlace}
-          onRatingCoffee={setRatingCoffee}
-          onRatingService={setRatingService}
-          onRatingPlace={setRatingPlace}
-          selectedFiles={selectedFiles}
-          onFileSelect={handleFileSelect}
-          onRemoveFile={removeFile}
-          uploadingPhotos={uploadingPhotos}
-          isSubmitting={isSubmitting}
-          onSubmit={handleSubmit}
-        />
+        <div
+          className="mt-auto sm:mt-0 flex flex-col min-h-0 max-h-[min(85dvh,100%)] sm:max-h-none overflow-hidden rounded-t-[28px] sm:rounded-[28px] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] sm:shadow-none"
+          style={{ backgroundColor: colors.card }}
+        >
+          <div className="sm:hidden shrink-0 pt-2.5 pb-1">
+            <div className="mx-auto h-1 w-10 rounded-full" style={{ backgroundColor: colors.border }} />
+          </div>
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <CheckInForm
+              shopName={shopFromState.name}
+              note={note}
+              onNoteChange={setNote}
+              isPublic={isPublic}
+              onPublicChange={setIsPublic}
+              visitedDate={visitedDate}
+              onVisitedDateChange={setVisitedDate}
+              ratingCoffee={ratingCoffee}
+              ratingService={ratingService}
+              ratingPlace={ratingPlace}
+              onRatingCoffee={setRatingCoffee}
+              onRatingService={setRatingService}
+              onRatingPlace={setRatingPlace}
+              selectedFiles={selectedFiles}
+              onFileSelect={handleFileSelect}
+              onRemoveFile={removeFile}
+              uploadingPhotos={uploadingPhotos}
+              isSubmitting={isSubmitting}
+              onSubmit={handleSubmit}
+            />
+          </div>
+        </div>
       </main>
     </div>
   );
