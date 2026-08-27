@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../ui/Button';
 import { BynSign } from '../ui/CoffeeBeanSign';
 import { uploadMenuPhotoFiles } from '../../api/photos';
@@ -30,6 +30,34 @@ function parsePriceDraft(raw: string): number | null {
   if (!normalized) return null;
   const value = Number(normalized);
   return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function filesFromClipboardData(data: DataTransfer | null): File[] {
+  if (!data) return [];
+  const out: File[] = [];
+  const items = data.items ? Array.from(data.items) : [];
+  for (const item of items) {
+    if (!item.type.startsWith('image/')) continue;
+    const blob = item.getAsFile();
+    if (!blob) continue;
+    const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+    const name =
+      blob.name && blob.name !== 'image.png'
+        ? blob.name
+        : `menu-paste-${Date.now()}-${out.length + 1}.${ext}`;
+    out.push(new File([blob], name, { type: blob.type || 'image/png' }));
+  }
+  if (out.length > 0) return out;
+
+  // Some browsers put images in files instead of items.
+  return Array.from(data.files ?? []).filter((file) => file.type.startsWith('image/'));
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }
 
 function AvailabilityToggle({
@@ -96,6 +124,7 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
   const [saving, setSaving] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pasteHint, setPasteHint] = useState(false);
 
   useEffect(() => {
     const next = cloneItems(menu?.items ?? []);
@@ -121,20 +150,39 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
     setItems((current) => current.map((item) => (item.slug === slug ? { ...item, ...patch } : item)));
   };
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files?.length) return;
-    setError(null);
-    setUploading(true);
-    try {
-      const uploaded = await uploadMenuPhotoFiles(Array.from(files));
-      await onAttach(uploaded);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Не удалось загрузить фото меню');
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = '';
-    }
-  };
+  const handleFiles = useCallback(
+    async (files: FileList | File[] | null) => {
+      const list = files ? Array.from(files as ArrayLike<File>) : [];
+      if (!list.length) return;
+      setError(null);
+      setUploading(true);
+      try {
+        const uploaded = await uploadMenuPhotoFiles(list);
+        await onAttach(uploaded);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Не удалось загрузить фото меню');
+      } finally {
+        setUploading(false);
+        if (fileRef.current) fileRef.current.value = '';
+      }
+    },
+    [onAttach]
+  );
+
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      if (uploading || parsingNow) return;
+      if (isTypingTarget(event.target)) return;
+      const pasted = filesFromClipboardData(event.clipboardData);
+      if (!pasted.length) return;
+      event.preventDefault();
+      setPasteHint(true);
+      window.setTimeout(() => setPasteHint(false), 1200);
+      void handleFiles(pasted);
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [handleFiles, uploading, parsingNow]);
 
   const handleParse = async () => {
     setError(null);
@@ -219,7 +267,21 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
         </div>
       )}
 
-      <div>
+      <div
+        className={`rounded-[10px] border border-dashed px-3 py-3 transition-colors ${
+          pasteHint
+            ? 'border-primary bg-primary/5'
+            : 'border-border-light dark:border-border-dark'
+        }`}
+        onPaste={(e) => {
+          if (uploading || parsingNow) return;
+          const pasted = filesFromClipboardData(e.clipboardData);
+          if (!pasted.length) return;
+          e.preventDefault();
+          e.stopPropagation();
+          void handleFiles(pasted);
+        }}
+      >
         <input
           ref={fileRef}
           type="file"
@@ -228,10 +290,15 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
           className="hidden"
           onChange={(e) => void handleFiles(e.target.files)}
         />
-        <Button variant="secondary" size="sm" loading={uploading} onClick={() => fileRef.current?.click()}>
-          {menu ? 'Загрузить фото меню' : 'Загрузить фото меню'}
-        </Button>
-        <p className="text-[11px] text-text-muted mt-1">До 4 фото на распознавание. Не галерея кофейни.</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" loading={uploading} onClick={() => fileRef.current?.click()}>
+            Загрузить фото меню
+          </Button>
+          <span className="text-[11px] text-text-muted">или Ctrl+V / ⌘V из буфера</span>
+        </div>
+        <p className="text-[11px] text-text-muted mt-1.5">
+          До 4 фото на распознавание. Не галерея кофейни. Можно вставить скриншот из буфера обмена.
+        </p>
       </div>
 
       {!menu && !parsingNow && (

@@ -3,6 +3,7 @@ import React from 'react';
 export const MASCOT_SRC = {
   happy: '/maskot-emotion/maskot-happy.png',
   astonishment: '/maskot-emotion/maskot-astonishment.png',
+  dance: '/maskot-emotion/maskot-dance.png',
   book: '/maskot-props/maskot-with-book.png',
   laptop: '/maskot-props/maskot-with-laptop.png',
   search: '/maskot-props/maskot-with-magnifying-glass.png',
