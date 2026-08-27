@@ -9,6 +9,22 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const THEME_KEY = 'admin_theme';
+
+function isTheme(value: string | null): value is Theme {
+  return value === 'dark' || value === 'light';
+}
+
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  root.classList.toggle('dark', theme === 'dark');
+  root.style.colorScheme = theme;
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    // ignore quota / private mode
+  }
+}
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
@@ -18,18 +34,19 @@ export const useTheme = () => {
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem('admin_theme') as Theme | null;
-    return stored ?? 'light';
+    let initial: Theme = 'light';
+    try {
+      const stored = localStorage.getItem(THEME_KEY);
+      if (isTheme(stored)) initial = stored;
+    } catch {
+      // ignore
+    }
+    applyTheme(initial);
+    return initial;
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('admin_theme', theme);
+    applyTheme(theme);
   }, [theme]);
 
   const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));

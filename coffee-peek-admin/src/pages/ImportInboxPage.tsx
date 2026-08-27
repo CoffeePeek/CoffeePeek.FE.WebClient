@@ -598,7 +598,7 @@ export const ImportInboxPage: React.FC<{
                     <tr
                       key={item.id}
                       className={[
-                        'hover:bg-gray-50 dark:hover:bg-white/3 cursor-pointer',
+                        'table-row cursor-pointer',
                         checked ? 'bg-primary/5 dark:bg-primary/10' : '',
                         selectedId === item.id ? 'bg-primary/10 dark:bg-primary/15' : '',
                       ].join(' ')}

@@ -39,7 +39,7 @@ const ACTION_VARIANT: Record<AuditAction, 'approved' | 'rejected' | 'pending'> =
 };
 
 const AuditRow: React.FC<{ entry: ModerationAuditEntry }> = ({ entry }) => (
-  <tr className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+  <tr className="table-row">
     <td className="px-5 py-3 text-xs text-text-muted dark:text-stone-400 font-body whitespace-nowrap">
       {new Date(entry.createdAtUtc).toLocaleString('ru')}
     </td>

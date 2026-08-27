@@ -451,7 +451,7 @@ export const UsersPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">
                   {data.items.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                    <tr key={user.id} className="table-row">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           {user.avatarUrl ? (

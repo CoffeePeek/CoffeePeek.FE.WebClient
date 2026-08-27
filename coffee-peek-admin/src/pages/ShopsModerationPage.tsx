@@ -212,7 +212,7 @@ export const ShopsModerationPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">
                   {data.items.map((shop) => (
-                    <tr key={shop.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors align-top">
+                    <tr key={shop.id} className="table-row align-top">
                       <td className="px-5 py-3">
                         {shop.photos?.[0] ? (
                           <img

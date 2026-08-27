@@ -175,7 +175,7 @@ export const PublishedShopsPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">
                   {data.items.map((shop) => (
-                    <tr key={shop.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                    <tr key={shop.id} className="table-row">
                       <td className="px-5 py-3 font-medium text-text-main dark:text-white font-body text-sm">
                         <div className="flex flex-wrap items-center gap-2">
                           <span>{shop.name}</span>

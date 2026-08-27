@@ -51,7 +51,11 @@
   }
 
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 }
 
@@ -102,6 +106,10 @@
 
   .table-actions .action-btn {
     @apply w-full justify-center whitespace-nowrap;
+  }
+
+  .table-row {
+    @apply hover:bg-gray-50 dark:hover:bg-white/5 transition-colors;
   }
 }
 

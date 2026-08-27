@@ -286,7 +286,7 @@ export const ShopTagsPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-border-light dark:divide-border-dark">
                 {sortedTags.map((tag) => (
-                  <tr key={tag.id} className="hover:bg-gray-50 dark:hover:bg-white/3 transition-colors">
+                  <tr key={tag.id} className="table-row">
                     <td className="px-5 py-3">
                       <p className="font-medium text-text-main dark:text-white font-body text-xs">{tag.name}</p>
                       {tag.description && (

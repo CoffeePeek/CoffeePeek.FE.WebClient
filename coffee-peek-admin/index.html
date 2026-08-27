@@ -8,6 +8,14 @@
     <link rel="apple-touch-icon" href="/logo/logo-dark.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CoffeePeek Admin</title>
+    <script>
+      try {
+        if (localStorage.getItem('admin_theme') === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = 'dark';
+        }
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
