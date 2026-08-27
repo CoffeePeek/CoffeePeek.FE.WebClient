@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import { Icons } from '../constants';
 import { usePageTitle } from '../hooks/usePageTitle';
 import Mascot from '../components/Mascot';
+import { LEGAL } from '../constants/legal';
 
 interface ErrorPageProps {
   errorCode?: number | string;
@@ -114,7 +115,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
           <p className={`${textSecondaryClass} text-sm`}>
             Если проблема сохраняется, пожалуйста,{' '}
             <a 
-              href="mailto:support@coffeepeek.com" 
+              href={`mailto:${LEGAL.contactEmail}`} 
               className="text-[#EAB308] hover:underline font-medium"
             >
               свяжитесь с поддержкой

@@ -47,14 +47,15 @@ const CookieBanner: React.FC = () => {
               <h3 className={`font-semibold ${textClass}`}>Использование данных</h3>
             </div>
             <p className={`text-sm ${textClass} opacity-90`}>
-              Мы используем localStorage для хранения токенов аутентификации и настроек темы, 
-              что необходимо для работы сайта. Продолжая использовать сайт, вы соглашаетесь с нашей{' '}
+              Для работы сайта мы сохраняем в браузере (localStorage) токены входа, тему и
+              отметки согласия; избранные кофейни — только на вашем устройстве. Также
+              используются технические метрики хостинга. Подробности — в{' '}
               <button
                 type="button"
                 onClick={() => navigate(LEGAL_ROUTES.privacy)}
                 className={`underline ${linkClass} font-medium`}
               >
-                Политикой конфиденциальности
+                Политике конфиденциальности
               </button>
               .
             </p>

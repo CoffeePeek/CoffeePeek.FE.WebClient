@@ -1,31 +1,31 @@
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import WobbleRing from '../components/WobbleRing';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AuthenticatedLayout } from '../components/layouts/AuthenticatedLayout';
-import { ShopDetailSkeleton } from '../components/skeletons';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 
-// Lazy load pages for better performance
-const LandingPage = lazy(() => import('../pages/LandingPage'));
-const LoginPage = lazy(() => import('../pages/LoginPage'));
-const RegisterPage = lazy(() => import('../pages/RegisterPage'));
-const DashboardPage = lazy(() => import('../pages/DashboardPage'));
-const CoffeeShopListPage = lazy(() => import('../pages/CoffeeShopListPage'));
-const CoffeeShopDetailPage = lazy(() => import('../pages/CoffeeShopPage'));
-const CreateReviewPage = lazy(() => import('../pages/CreateReviewPage'));
-const UserProfilePage = lazy(() => import('../pages/UserProfilePage'));
-const CreateCoffeeShopPage = lazy(() => import('../pages/CreateCoffeeShopPage'));
-const CreateCheckInPage = lazy(() => import('../pages/CreateCheckInPage'));
-const SettingsPage = lazy(() => import('../pages/SettingsPage'));
-const ErrorPage = lazy(() => import('../pages/ErrorPage'));
-const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage'));
-const TermsOfServicePage = lazy(() => import('../pages/TermsOfServicePage'));
-const ConfirmEmailPage = lazy(() => import('../pages/ConfirmEmailPage'));
-const ForgotPasswordPage = lazy(() => import('../pages/ForgotPasswordPage'));
-const ResetPasswordPage = lazy(() => import('../pages/ResetPasswordPage'));
-const CheckInsPage = lazy(() => import('../pages/CheckInsPage'));
-const ReviewsPage = lazy(() => import('../pages/ReviewsPage'));
+// Lazy load pages; retry via full reload if a deploy invalidated hashed chunks
+const LandingPage = lazyWithRetry(() => import('../pages/LandingPage'));
+const LoginPage = lazyWithRetry(() => import('../pages/LoginPage'));
+const RegisterPage = lazyWithRetry(() => import('../pages/RegisterPage'));
+const DashboardPage = lazyWithRetry(() => import('../pages/DashboardPage'));
+const CoffeeShopListPage = lazyWithRetry(() => import('../pages/CoffeeShopListPage'));
+const CoffeeShopDetailPage = lazyWithRetry(() => import('../pages/CoffeeShopPage'));
+const CreateReviewPage = lazyWithRetry(() => import('../pages/CreateReviewPage'));
+const UserProfilePage = lazyWithRetry(() => import('../pages/UserProfilePage'));
+const CreateCoffeeShopPage = lazyWithRetry(() => import('../pages/CreateCoffeeShopPage'));
+const CreateCheckInPage = lazyWithRetry(() => import('../pages/CreateCheckInPage'));
+const SettingsPage = lazyWithRetry(() => import('../pages/SettingsPage'));
+const ErrorPage = lazyWithRetry(() => import('../pages/ErrorPage'));
+const PrivacyPolicyPage = lazyWithRetry(() => import('../pages/PrivacyPolicyPage'));
+const TermsOfServicePage = lazyWithRetry(() => import('../pages/TermsOfServicePage'));
+const ConfirmEmailPage = lazyWithRetry(() => import('../pages/ConfirmEmailPage'));
+const ForgotPasswordPage = lazyWithRetry(() => import('../pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazyWithRetry(() => import('../pages/ResetPasswordPage'));
+const CheckInsPage = lazyWithRetry(() => import('../pages/CheckInsPage'));
+const ReviewsPage = lazyWithRetry(() => import('../pages/ReviewsPage'));
 
 const LoadingFallback = () => {
   const { theme } = useTheme();
