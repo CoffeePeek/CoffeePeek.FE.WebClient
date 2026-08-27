@@ -194,11 +194,11 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
         <div className="flex gap-2 overflow-x-auto pb-1">
           <label
             htmlFor="checkin-photos"
-            className="w-16 h-16 shrink-0 rounded-xl border border-dashed flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+            className="w-16 h-16 shrink-0 rounded-xl border border-dashed flex items-center justify-center cursor-pointer"
             style={{ borderColor: colors.border, backgroundColor: isDark ? colors.surface : '#FFFFFF', color: colors.textSecondary }}
+            aria-label="Добавить фото"
           >
-            <Camera size={20} />
-            <span className="text-[10px] font-body leading-none">Добавить</span>
+            <Camera size={22} />
           </label>
           <input
             id="checkin-photos"
@@ -258,11 +258,11 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           role="switch"
           aria-checked={isPublic}
           onClick={() => onPublicChange(!isPublic)}
-          className="relative w-12 h-7 rounded-full shrink-0 transition-colors"
+          className="inline-flex h-7 w-12 shrink-0 items-center rounded-full border-0 p-[2px] appearance-none"
           style={{ backgroundColor: isPublic ? gold : isDark ? '#5C544F' : '#D6D3D1' }}
         >
           <span
-            className="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform"
+            className="block h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out"
             style={{ transform: isPublic ? 'translateX(20px)' : 'translateX(0)' }}
           />
         </button>

@@ -53,9 +53,9 @@ const CreateCheckInPage: React.FC = () => {
   const [isPublic, setIsPublic] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visitedDate, setVisitedDate] = useState(todayInputValue);
-  const [ratingCoffee, setRatingCoffee] = useState(0);
-  const [ratingService, setRatingService] = useState(0);
-  const [ratingPlace, setRatingPlace] = useState(0);
+  const [ratingCoffee, setRatingCoffee] = useState(5);
+  const [ratingService, setRatingService] = useState(5);
+  const [ratingPlace, setRatingPlace] = useState(5);
   const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos } = usePhotoUpload();
 
   const handleSubmit = async () => {

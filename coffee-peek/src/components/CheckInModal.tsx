@@ -39,9 +39,9 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   const [isPublic, setIsPublic] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visitedDate, setVisitedDate] = useState(todayInputValue);
-  const [ratingCoffee, setRatingCoffee] = useState(0);
-  const [ratingService, setRatingService] = useState(0);
-  const [ratingPlace, setRatingPlace] = useState(0);
+  const [ratingCoffee, setRatingCoffee] = useState(5);
+  const [ratingService, setRatingService] = useState(5);
+  const [ratingPlace, setRatingPlace] = useState(5);
   const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos, clearFiles } = usePhotoUpload();
 
   useEffect(() => {
@@ -59,9 +59,9 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
     setNote('');
     setIsPublic(false);
     setVisitedDate(todayInputValue());
-    setRatingCoffee(0);
-    setRatingService(0);
-    setRatingPlace(0);
+    setRatingCoffee(5);
+    setRatingService(5);
+    setRatingPlace(5);
     clearFiles();
   };
 
