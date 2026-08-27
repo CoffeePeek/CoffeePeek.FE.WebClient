@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
     AUDIT_MODERATION: '/api/admin/audit/moderation',
     SHOPS: '/api/admin/shops',
     SHOP_BY_ID: (id: string) => `/api/admin/shops/${id}`,
+    SHOP_PHOTOS: (id: string) => `/api/admin/shops/${id}/photos`,
     SHOP_MENU: (id: string) => `/api/admin/shops/${id}/menu`,
     SHOP_MENU_PHOTOS: (id: string) => `/api/admin/shops/${id}/menu/photos`,
     SHOP_MENU_PARSE: (id: string) => `/api/admin/shops/${id}/menu/parse`,
@@ -53,6 +54,7 @@ export const API_ENDPOINTS = {
 
   PHOTOS: {
     MENU: '/api/Photos/menu',
+    SHOP: '/api/Photos/shop',
   },
 
   REALTIME: {
@@ -62,6 +64,7 @@ export const API_ENDPOINTS = {
   OWNER: {
     SHOPS: '/api/owner/coffee-shops',
     SHOP_BY_ID: (id: string) => `/api/owner/coffee-shops/${id}`,
+    SHOP_PHOTOS: (id: string) => `/api/owner/coffee-shops/${id}/photos`,
   },
 
   MODERATION: {

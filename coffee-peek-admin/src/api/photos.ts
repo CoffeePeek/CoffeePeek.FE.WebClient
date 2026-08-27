@@ -23,16 +23,29 @@ export async function getMenuUploadUrls(
   });
 }
 
-const MAX_MENU_PHOTOS = 4;
+export async function getShopUploadUrls(
+  requests: PhotoRequest[]
+): Promise<ApiResponse<GenerateUploadUrlResponse[]>> {
+  return httpClient.post<GenerateUploadUrlResponse[]>(API_ENDPOINTS.PHOTOS.SHOP, requests, {
+    requiresAuth: true,
+  });
+}
 
-export async function uploadMenuPhotoFiles(files: File[]): Promise<UploadedPhotoDto[]> {
-  const batch = files.slice(0, MAX_MENU_PHOTOS);
+const MAX_MENU_PHOTOS = 4;
+const MAX_SHOP_PHOTOS = 12;
+
+async function uploadPhotoFiles(
+  files: File[],
+  getUrls: (requests: PhotoRequest[]) => Promise<ApiResponse<GenerateUploadUrlResponse[]>>,
+  max: number
+): Promise<UploadedPhotoDto[]> {
+  const batch = files.slice(0, max);
   if (batch.length === 0) return [];
 
-  const response = await getMenuUploadUrls(
+  const response = await getUrls(
     batch.map((file) => ({
       fileName: file.name,
-      contentType: file.type,
+      contentType: file.type || 'image/jpeg',
       sizeBytes: file.size,
     }))
   );
@@ -47,15 +60,23 @@ export async function uploadMenuPhotoFiles(files: File[]): Promise<UploadedPhoto
       const uploaded = await fetch(slot.uploadUrl, {
         method: 'PUT',
         body: file,
-        headers: { 'Content-Type': file.type },
+        headers: { 'Content-Type': file.type || 'image/jpeg' },
       });
       if (!uploaded.ok) throw new Error(`Ошибка загрузки ${file.name}`);
       return {
         fileName: file.name,
-        contentType: file.type,
+        contentType: file.type || 'image/jpeg',
         storageKey: slot.storageKey,
         size: file.size,
       };
     })
   );
+}
+
+export async function uploadMenuPhotoFiles(files: File[]): Promise<UploadedPhotoDto[]> {
+  return uploadPhotoFiles(files, getMenuUploadUrls, MAX_MENU_PHOTOS);
+}
+
+export async function uploadShopPhotoFiles(files: File[]): Promise<UploadedPhotoDto[]> {
+  return uploadPhotoFiles(files, getShopUploadUrls, MAX_SHOP_PHOTOS);
 }

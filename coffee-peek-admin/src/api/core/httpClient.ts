@@ -128,8 +128,14 @@ class HttpClient {
   }
 
   async delete<T>(endpoint: string, config?: ApiConfig): Promise<ApiResponse<T>> {
+    const hasBody = config?.data !== undefined;
     return this.request<T>(endpoint, {
       method: 'DELETE',
+      body: hasBody
+        ? config!.data instanceof FormData
+          ? config!.data
+          : JSON.stringify(config!.data)
+        : undefined,
       params: config?.params,
       headers: config?.headers,
       requiresAuth: config?.requiresAuth,

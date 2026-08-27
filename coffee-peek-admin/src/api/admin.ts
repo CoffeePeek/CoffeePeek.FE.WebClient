@@ -6,6 +6,7 @@ import { parsePriceRange, toPriceRangeLevel } from '../constants/priceRange';
 import type { CoffeeFocus } from '../constants/catalogIngest';
 import { COFFEE_FOCUS_TO_API, parseCoffeeFocus } from '../constants/catalogIngest';
 import { mapShopMenu, ShopMenuDto } from './menu';
+import { apiDayOfWeekToUi, uiDayToDotNetName } from '../utils/dayOfWeek';
 
 // ==================== Types ====================
 
@@ -33,7 +34,7 @@ interface BackendScheduleInterval {
 }
 
 interface BackendSchedule {
-  dayOfWeek: number;
+  dayOfWeek: number | string;
   isClosed?: boolean;
   intervals?: BackendScheduleInterval[] | null;
 }
@@ -246,6 +247,20 @@ export type { PriceRangeLevel } from '../constants/priceRange';
 export type AuditEntityType = 'Shop' | 'Review' | 'CommunityPost';
 export type AuditAction = 'Approved' | 'Rejected' | 'Pending';
 
+export interface PublishedShopLocation {
+  cityId?: string;
+  address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+export interface PublishedShopContacts {
+  phoneNumber?: string | null;
+  email?: string | null;
+  siteLink?: string | null;
+  instagramLink?: string | null;
+}
+
 export interface PublishedShop {
   id: string;
   name: string;
@@ -264,6 +279,13 @@ export interface PublishedShop {
   tags?: ShopTagDto[];
   /** Admin-only: set when shop came from file ingest. */
   importedFromFileAt?: string;
+  location?: PublishedShopLocation;
+  contacts?: PublishedShopContacts;
+  schedules?: AdminShopSchedule[];
+  equipmentIds?: string[];
+  beanIds?: string[];
+  roasterIds?: string[];
+  brewMethodIds?: string[];
 }
 
 export interface ShopTagDto {
@@ -320,10 +342,32 @@ export interface PublishedShopPhoto {
 }
 
 export interface UpdatePublishedShopRequest {
-  name: string;
+  name?: string;
   description?: string | null;
-  priceRange: PriceRangeLevel | number;
+  priceRange?: PriceRangeLevel | number;
   status?: CoffeeShopStatus;
+  location?: PublishedShopLocation;
+  contacts?: PublishedShopContacts;
+  schedules?: AdminShopSchedule[];
+  catalogs?: {
+    equipmentIds?: string[];
+    beanIds?: string[];
+    roasterIds?: string[];
+    brewMethodIds?: string[];
+  };
+}
+
+export interface AttachPublishedShopPhotosRequest {
+  photos: Array<{
+    fileName: string;
+    contentType: string;
+    storageKey: string;
+    size: number;
+  }>;
+}
+
+export interface DeletePublishedShopPhotosRequest {
+  photoIds: string[];
 }
 
 export interface ModerationAuditEntry {
@@ -365,9 +409,10 @@ function mapBackendSchedules(schedules?: BackendSchedule[] | null): AdminShopSch
   if (!schedules?.length) return [];
 
   return schedules.map((schedule) => {
+    const dayOfWeek = apiDayOfWeekToUi(schedule.dayOfWeek);
     if (schedule.isClosed) {
       return {
-        dayOfWeek: schedule.dayOfWeek,
+        dayOfWeek,
         isClosed: true,
         openTime: '',
         closeTime: '',
@@ -376,7 +421,7 @@ function mapBackendSchedules(schedules?: BackendSchedule[] | null): AdminShopSch
 
     const interval = schedule.intervals?.[0];
     return {
-      dayOfWeek: schedule.dayOfWeek,
+      dayOfWeek,
       isClosed: false,
       openTime: formatTimeSpan(interval?.openTime),
       closeTime: formatTimeSpan(interval?.closeTime),
@@ -512,7 +557,7 @@ function buildModerationShopFormData(
 
   const schedules = updates.schedules ?? mapBackendSchedules(shop.schedules);
   schedules.forEach((schedule, scheduleIndex) => {
-    appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, schedule.dayOfWeek);
+    appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, uiDayToDotNetName(schedule.dayOfWeek));
     appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, schedule.isClosed ?? false);
     if (!schedule.isClosed && schedule.openTime && schedule.closeTime) {
       appendFormValue(
@@ -752,53 +797,209 @@ function pickHiddenFlag(shop: Record<string, unknown>): boolean {
   return false;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function pickString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (value === undefined || value === null) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return undefined;
+}
+
+function pickNumber(...values: unknown[]): number | undefined {
+  for (const value of values) {
+    if (value === undefined || value === null || value === '') continue;
+    const num = Number(value);
+    if (Number.isFinite(num)) return num;
+  }
+  return undefined;
+}
+
+function mapPublishedSchedules(raw: unknown): AdminShopSchedule[] {
+  if (!Array.isArray(raw)) return [];
+  return (raw as Record<string, unknown>[]).map((schedule) => {
+    const dayOfWeek = apiDayOfWeekToUi(
+      (schedule.dayOfWeek ?? schedule.DayOfWeek) as number | string | undefined
+    );
+    const isClosed = Boolean(schedule.isClosed ?? schedule.IsClosed);
+    const intervals = (schedule.intervals ?? schedule.Intervals) as
+      | Array<Record<string, unknown>>
+      | undefined;
+    const interval = Array.isArray(intervals) ? intervals[0] : undefined;
+    return {
+      dayOfWeek,
+      isClosed,
+      openTime: formatTimeSpan(
+        String(interval?.openTime ?? interval?.OpenTime ?? schedule.openTime ?? schedule.OpenTime ?? '')
+      ),
+      closeTime: formatTimeSpan(
+        String(interval?.closeTime ?? interval?.CloseTime ?? schedule.closeTime ?? schedule.CloseTime ?? '')
+      ),
+    };
+  });
+}
+
+function toPublishedApiSchedules(schedules: AdminShopSchedule[]) {
+  return schedules.map((schedule) => ({
+    dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
+    isClosed: Boolean(schedule.isClosed),
+    intervals:
+      schedule.isClosed || !schedule.openTime || !schedule.closeTime
+        ? []
+        : [
+            {
+              openTime: toBackendTime(schedule.openTime),
+              closeTime: toBackendTime(schedule.closeTime),
+            },
+          ],
+  }));
+}
+
 export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
-  const photos = Array.isArray(shop.photos) ? shop.photos as Record<string, unknown>[] : [];
-  const tags = Array.isArray(shop.tags) ? shop.tags as Record<string, unknown>[] : undefined;
+  const photos = Array.isArray(shop.photos)
+    ? (shop.photos as Record<string, unknown>[])
+    : Array.isArray(shop.Photos)
+      ? (shop.Photos as Record<string, unknown>[])
+      : [];
+  const tags = Array.isArray(shop.tags)
+    ? (shop.tags as Record<string, unknown>[])
+    : Array.isArray(shop.Tags)
+      ? (shop.Tags as Record<string, unknown>[])
+      : undefined;
+
+  const locationRaw = asRecord(shop.location ?? shop.Location);
+  const contactsRaw = asRecord(shop.contacts ?? shop.Contacts ?? shop.shopContact ?? shop.ShopContact);
+  const catalogsRaw = asRecord(shop.catalogs ?? shop.Catalogs);
+
+  const location: PublishedShopLocation | undefined = locationRaw
+    ? {
+        cityId: pickString(locationRaw.cityId, locationRaw.CityId),
+        address: pickString(locationRaw.address, locationRaw.Address),
+        latitude: pickNumber(locationRaw.latitude, locationRaw.Latitude) ?? null,
+        longitude: pickNumber(locationRaw.longitude, locationRaw.Longitude) ?? null,
+      }
+    : pickString(shop.address, shop.Address) || pickString(shop.cityId, shop.CityId)
+      ? {
+          cityId: pickString(shop.cityId, shop.CityId),
+          address: pickString(shop.address, shop.Address),
+          latitude: pickNumber(shop.latitude, shop.Latitude) ?? null,
+          longitude: pickNumber(shop.longitude, shop.Longitude) ?? null,
+        }
+      : undefined;
+
+  const contacts: PublishedShopContacts | undefined = contactsRaw
+    ? {
+        phoneNumber: pickString(
+          contactsRaw.phoneNumber,
+          contactsRaw.PhoneNumber,
+          contactsRaw.phone,
+          contactsRaw.Phone
+        ) ?? null,
+        email: pickString(contactsRaw.email, contactsRaw.Email) ?? null,
+        siteLink: pickString(
+          contactsRaw.siteLink,
+          contactsRaw.SiteLink,
+          contactsRaw.website,
+          contactsRaw.Website
+        ) ?? null,
+        instagramLink: pickString(
+          contactsRaw.instagramLink,
+          contactsRaw.InstagramLink,
+          contactsRaw.instagram,
+          contactsRaw.Instagram
+        ) ?? null,
+      }
+    : undefined;
+
+  const equipmentIds =
+    (Array.isArray(shop.equipmentIds) ? (shop.equipmentIds as unknown[]).map(String) : undefined) ??
+    (Array.isArray(catalogsRaw?.equipmentIds)
+      ? (catalogsRaw!.equipmentIds as unknown[]).map(String)
+      : undefined) ??
+    (Array.isArray(catalogsRaw?.EquipmentIds)
+      ? (catalogsRaw!.EquipmentIds as unknown[]).map(String)
+      : undefined);
+
+  const beanIds =
+    (Array.isArray(shop.beanIds) ? (shop.beanIds as unknown[]).map(String) : undefined) ??
+    (Array.isArray(shop.coffeeBeanIds) ? (shop.coffeeBeanIds as unknown[]).map(String) : undefined) ??
+    (Array.isArray(catalogsRaw?.beanIds) ? (catalogsRaw!.beanIds as unknown[]).map(String) : undefined) ??
+    (Array.isArray(catalogsRaw?.BeanIds) ? (catalogsRaw!.BeanIds as unknown[]).map(String) : undefined);
+
+  const roasterIds =
+    (Array.isArray(shop.roasterIds) ? (shop.roasterIds as unknown[]).map(String) : undefined) ??
+    (Array.isArray(catalogsRaw?.roasterIds)
+      ? (catalogsRaw!.roasterIds as unknown[]).map(String)
+      : undefined) ??
+    (Array.isArray(catalogsRaw?.RoasterIds)
+      ? (catalogsRaw!.RoasterIds as unknown[]).map(String)
+      : undefined);
+
+  const brewMethodIds =
+    (Array.isArray(shop.brewMethodIds) ? (shop.brewMethodIds as unknown[]).map(String) : undefined) ??
+    (Array.isArray(catalogsRaw?.brewMethodIds)
+      ? (catalogsRaw!.brewMethodIds as unknown[]).map(String)
+      : undefined) ??
+    (Array.isArray(catalogsRaw?.BrewMethodIds)
+      ? (catalogsRaw!.BrewMethodIds as unknown[]).map(String)
+      : undefined);
+
+  const cityId =
+    pickString(location?.cityId, shop.cityId, shop.CityId) ?? '';
+
   return {
-    id: String(shop.id),
-    name: String(shop.name),
-    cityId: String(shop.cityId),
-    status: mapEnumStatus<CoffeeShopStatus>(shop.status as CoffeeShopStatus | number, [
-      'Active',
-      'TemporarilyClosed',
-      'PermanentlyClosed',
-    ]),
-    creatorId: String(shop.creatorId),
-    ownerUserId: shop.ownerUserId ? String(shop.ownerUserId) : null,
-    moderationId: shop.moderationId ? String(shop.moderationId) : null,
-    createdAtUtc: String(shop.createdAtUtc),
+    id: String(shop.id ?? shop.Id ?? ''),
+    name: String(shop.name ?? shop.Name ?? ''),
+    cityId,
+    status: mapEnumStatus<CoffeeShopStatus>(
+      (shop.status ?? shop.Status) as CoffeeShopStatus | number,
+      ['Active', 'TemporarilyClosed', 'PermanentlyClosed']
+    ),
+    creatorId: String(shop.creatorId ?? shop.CreatorId ?? ''),
+    ownerUserId: shop.ownerUserId || shop.OwnerUserId ? String(shop.ownerUserId ?? shop.OwnerUserId) : null,
+    moderationId:
+      shop.moderationId || shop.ModerationId ? String(shop.moderationId ?? shop.ModerationId) : null,
+    createdAtUtc: String(shop.createdAtUtc ?? shop.CreatedAtUtc ?? ''),
     isHidden: pickHiddenFlag(shop),
-    priceRange: parsePriceRange(shop.priceRange),
-    description: shop.description ? String(shop.description) : undefined,
-    coffeeFocus: parseCoffeeFocus(shop.coffeeFocus ?? shop.CoffeeFocus),
+    priceRange: parsePriceRange(shop.priceRange ?? shop.PriceRange),
+    description: pickString(shop.description, shop.Description),
+    coffeeFocus: parseCoffeeFocus(shop.coffeeFocus ?? shop.CoffeeFocus ?? shop.type ?? shop.Type),
     tagSlugs: Array.isArray(shop.tagSlugs)
       ? (shop.tagSlugs as unknown[]).map(String)
       : Array.isArray(shop.TagSlugs)
         ? (shop.TagSlugs as unknown[]).map(String)
         : [],
-    importedFromFileAt: shop.importedFromFileAt
-      ? String(shop.importedFromFileAt)
-      : shop.ImportedFromFileAt
-        ? String(shop.ImportedFromFileAt)
-        : undefined,
+    importedFromFileAt: pickString(shop.importedFromFileAt, shop.ImportedFromFileAt),
+    location,
+    contacts,
+    schedules: mapPublishedSchedules(shop.schedules ?? shop.Schedules),
+    equipmentIds,
+    beanIds,
+    roasterIds,
+    brewMethodIds,
     photos: photos
       .map((photo) => ({
-        id: String(photo.id),
-        fileName: String(photo.fileName ?? ''),
-        contentType: String(photo.contentType ?? ''),
-        storageKey: String(photo.storageKey ?? ''),
-        fullUrl: String(photo.fullUrl ?? ''),
-        sizeBytes: Number(photo.sizeBytes ?? 0),
-        sortIndex: Number(photo.sortIndex ?? 0),
+        id: String(photo.id ?? photo.Id ?? ''),
+        fileName: String(photo.fileName ?? photo.FileName ?? ''),
+        contentType: String(photo.contentType ?? photo.ContentType ?? ''),
+        storageKey: String(photo.storageKey ?? photo.StorageKey ?? ''),
+        fullUrl: String(photo.fullUrl ?? photo.FullUrl ?? ''),
+        sizeBytes: Number(photo.sizeBytes ?? photo.SizeBytes ?? photo.size ?? photo.Size ?? 0),
+        sortIndex: Number(photo.sortIndex ?? photo.SortIndex ?? 0),
       }))
       .sort((left, right) => left.sortIndex - right.sortIndex),
     tags: tags?.map((tag) => ({
-      id: String(tag.id),
-      slug: String(tag.slug ?? ''),
-      name: String(tag.name ?? ''),
-      description: tag.description ? String(tag.description) : undefined,
-      sortOrder: Number(tag.sortOrder ?? 0),
+      id: String(tag.id ?? tag.Id ?? ''),
+      slug: String(tag.slug ?? tag.Slug ?? ''),
+      name: String(tag.name ?? tag.Name ?? ''),
+      description: pickString(tag.description, tag.Description),
+      sortOrder: Number(tag.sortOrder ?? tag.SortOrder ?? 0),
     })),
   };
 }
@@ -932,14 +1133,44 @@ export async function updatePublishedShop(
   id: string,
   data: UpdatePublishedShopRequest
 ): Promise<ApiResponse<PublishedShop>> {
-  const response = await httpClient.put<Record<string, unknown>>(API_ENDPOINTS.ADMIN.SHOP_BY_ID(id), {
-    name: data.name,
-    description: data.description ?? null,
-    priceRange: normalizePriceRange(data.priceRange),
-    status: data.status,
-  });
+  const body: Record<string, unknown> = {};
+  if (data.name !== undefined) body.name = data.name;
+  if (data.description !== undefined) body.description = data.description;
+  if (data.priceRange !== undefined) body.priceRange = normalizePriceRange(data.priceRange);
+  if (data.status !== undefined) body.status = data.status;
+  if (data.location !== undefined) body.location = data.location;
+  if (data.contacts !== undefined) body.contacts = data.contacts;
+  if (data.schedules !== undefined) body.schedules = toPublishedApiSchedules(data.schedules);
+  if (data.catalogs !== undefined) body.catalogs = data.catalogs;
 
-  return { ...response, data: mapPublishedShop(response.data) };
+  const response = await httpClient.put<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.SHOP_BY_ID(id),
+    body
+  );
+
+  return { ...response, data: mapPublishedShop(response.data ?? {}) };
+}
+
+export async function attachPublishedShopPhotos(
+  id: string,
+  data: AttachPublishedShopPhotosRequest
+): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.post<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.SHOP_PHOTOS(id),
+    data
+  );
+  return { ...response, data: mapPublishedShop(response.data ?? {}) };
+}
+
+export async function deletePublishedShopPhotos(
+  id: string,
+  data: DeletePublishedShopPhotosRequest
+): Promise<ApiResponse<PublishedShop>> {
+  const response = await httpClient.delete<Record<string, unknown>>(
+    API_ENDPOINTS.ADMIN.SHOP_PHOTOS(id),
+    { data }
+  );
+  return { ...response, data: mapPublishedShop(response.data ?? {}) };
 }
 
 export async function patchPublishedShopFocus(

@@ -19,6 +19,8 @@ export interface ApiConfig {
   requiresAuth?: boolean;
   skipAuthHeader?: boolean;
   signal?: AbortSignal;
+  /** JSON body for DELETE (photoIds, etc.). */
+  data?: unknown;
 }
 
 export interface PaginationParams {

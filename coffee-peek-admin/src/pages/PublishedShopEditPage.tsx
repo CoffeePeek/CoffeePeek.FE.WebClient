@@ -5,6 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
+  AdminShopSchedule,
+  attachPublishedShopPhotos,
+  deletePublishedShopPhotos,
   getPublishedShopById,
   updatePublishedShop,
   assignPublishedShopOwner,
@@ -13,13 +16,17 @@ import {
   assignShopTags,
   setPublishedShopVisibility,
 } from '../api/admin';
+import { uploadShopPhotoFiles } from '../api/photos';
 import { getShopTags } from '../api/catalogs';
+import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { PhotoOrderEditor } from '../components/PhotoOrderEditor';
 import { PriceRangePicker } from '../components/PriceRangePicker';
+import { ScheduleEditor, getDefaultSchedules } from '../components/moderation/ScheduleEditor';
+import { CatalogMultiSelect } from '../components/moderation/CatalogMultiSelect';
 import {
   COFFEE_SHOP_STATUS_HINTS,
   COFFEE_SHOP_STATUS_LABELS,
@@ -45,9 +52,25 @@ const schema = z.object({
   priceRange: z.coerce.number().min(1).max(4),
   status: z.enum(['Active', 'TemporarilyClosed', 'PermanentlyClosed']),
   ownerUserId: z.string().optional(),
+  cityId: z.string().optional(),
+  address: z.string().optional(),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  email: z.string().optional(),
+  siteLink: z.string().optional(),
+  instagramLink: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
+
+function parseOptionalNumber(value?: string): number | null | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const num = Number(trimmed.replace(',', '.'));
+  return Number.isFinite(num) ? num : null;
+}
 
 export const PublishedShopEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -57,6 +80,11 @@ export const PublishedShopEditPage: React.FC = () => {
   const [ownerInput, setOwnerInput] = useState('');
   const [focus, setFocus] = useState<CoffeeFocus | undefined>();
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
+  const [schedules, setSchedules] = useState<AdminShopSchedule[]>(getDefaultSchedules());
+  const [equipmentIds, setEquipmentIds] = useState<string[]>([]);
+  const [beanIds, setBeanIds] = useState<string[]>([]);
+  const [roasterIds, setRoasterIds] = useState<string[]>([]);
+  const [brewMethodIds, setBrewMethodIds] = useState<string[]>([]);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['admin', 'published-shop', id],
@@ -80,6 +108,8 @@ export const PublishedShopEditPage: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: catalogs, isLoading: catalogsLoading } = useCatalogs();
+
   const {
     register,
     handleSubmit,
@@ -93,32 +123,69 @@ export const PublishedShopEditPage: React.FC = () => {
   });
 
   useEffect(() => {
-    if (shop) {
-      reset({
-        name: shop.name,
-        description: shop.description ?? '',
-        priceRange: parsePriceRange(shop.priceRange) ?? 2,
-        status: shop.status,
-        ownerUserId: shop.ownerUserId ?? '',
-      });
-      setOwnerInput(shop.ownerUserId ?? '');
-      setFocus(shop.coffeeFocus);
-      const fromTags = (shop.tags ?? []).map((t) => t.slug).filter(Boolean);
-      setSelectedTagSlugs(fromTags.length ? fromTags : shop.tagSlugs ?? []);
-    }
+    if (!shop) return;
+    reset({
+      name: shop.name,
+      description: shop.description ?? '',
+      priceRange: parsePriceRange(shop.priceRange) ?? 2,
+      status: shop.status,
+      ownerUserId: shop.ownerUserId ?? '',
+      cityId: shop.location?.cityId ?? shop.cityId ?? '',
+      address: shop.location?.address ?? '',
+      latitude:
+        shop.location?.latitude != null && shop.location.latitude !== null
+          ? String(shop.location.latitude)
+          : '',
+      longitude:
+        shop.location?.longitude != null && shop.location.longitude !== null
+          ? String(shop.location.longitude)
+          : '',
+      phoneNumber: shop.contacts?.phoneNumber ?? '',
+      email: shop.contacts?.email ?? '',
+      siteLink: shop.contacts?.siteLink ?? '',
+      instagramLink: shop.contacts?.instagramLink ?? '',
+    });
+    setOwnerInput(shop.ownerUserId ?? '');
+    setFocus(shop.coffeeFocus);
+    const fromTags = (shop.tags ?? []).map((t) => t.slug).filter(Boolean);
+    setSelectedTagSlugs(fromTags.length ? fromTags : shop.tagSlugs ?? []);
+    setSchedules(shop.schedules?.length ? shop.schedules : getDefaultSchedules());
+    setEquipmentIds(shop.equipmentIds ?? []);
+    setBeanIds(shop.beanIds ?? []);
+    setRoasterIds(shop.roasterIds ?? []);
+    setBrewMethodIds(shop.brewMethodIds ?? []);
   }, [shop, reset]);
 
   const saveMutation = useMutation({
     mutationFn: (data: FormData) =>
       updatePublishedShop(id!, {
         name: data.name,
-        description: data.description,
+        description: data.description ?? null,
         priceRange: data.priceRange,
         status: data.status,
+        location: {
+          cityId: data.cityId || undefined,
+          address: data.address || undefined,
+          latitude: parseOptionalNumber(data.latitude),
+          longitude: parseOptionalNumber(data.longitude),
+        },
+        contacts: {
+          phoneNumber: data.phoneNumber || null,
+          email: data.email || null,
+          siteLink: data.siteLink || null,
+          instagramLink: data.instagramLink || null,
+        },
+        schedules,
+        catalogs: {
+          equipmentIds,
+          beanIds,
+          roasterIds,
+          brewMethodIds,
+        },
       }),
-    onSuccess: () => {
+    onSuccess: (response) => {
       showToast('Кофейня обновлена', 'success');
-      qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] });
+      qc.setQueryData(['admin', 'published-shop', id], response.data);
       qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
@@ -150,6 +217,29 @@ export const PublishedShopEditPage: React.FC = () => {
       showToast('Порядок фотографий сохранён', 'success');
     },
     onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить порядок фотографий', 'error'),
+  });
+
+  const photoAddMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      const uploaded = await uploadShopPhotoFiles(files);
+      return attachPublishedShopPhotos(id!, { photos: uploaded });
+    },
+    onSuccess: (response) => {
+      qc.setQueryData(['admin', 'published-shop', id], response.data);
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
+      showToast('Фото добавлены', 'success');
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось добавить фото', 'error'),
+  });
+
+  const photoDeleteMutation = useMutation({
+    mutationFn: (photoIds: string[]) => deletePublishedShopPhotos(id!, { photoIds }),
+    onSuccess: (response) => {
+      qc.setQueryData(['admin', 'published-shop', id], response.data);
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
+      showToast('Фото удалены', 'success');
+    },
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось удалить фото', 'error'),
   });
 
   const tagsMutation = useMutation({
@@ -218,6 +308,9 @@ export const PublishedShopEditPage: React.FC = () => {
     return fromApi.length > 0 ? fromApi : CATALOG_TAG_OPTIONS;
   }, [catalogTags]);
 
+  const fieldClass =
+    'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body';
+
   if (isLoading || !shop) {
     return (
       <div className="page-container">
@@ -229,9 +322,6 @@ export const PublishedShopEditPage: React.FC = () => {
       </div>
     );
   }
-
-  const fieldClass =
-    'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body';
 
   return (
     <div className="page-container pb-8">
@@ -263,7 +353,7 @@ export const PublishedShopEditPage: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-5 items-start">
         <div className="space-y-5 min-w-0">
           <Card>
-            <form onSubmit={handleSubmit((data) => saveMutation.mutateAsync(data))} className="space-y-4">
+            <form onSubmit={handleSubmit((data) => saveMutation.mutateAsync(data))} className="space-y-5">
               <h3 className="text-sm font-semibold text-text-main dark:text-white font-display">Карточка</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -305,10 +395,117 @@ export const PublishedShopEditPage: React.FC = () => {
                 />
               </div>
 
-              <p className="text-xs text-text-muted dark:text-stone-400 font-body">
-                Открыта — на карте и в поиске. Временно закрыта — скрыта, можно вернуть. Закрыта навсегда — больше
-                не работает.
-              </p>
+              <div className="border-t border-border-light dark:border-border-dark pt-4 space-y-4">
+                <h4 className="text-sm font-semibold text-text-main dark:text-white font-display">Адрес и карта</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                      Город
+                    </label>
+                    <select {...register('cityId')} className={fieldClass}>
+                      <option value="">Выберите город</option>
+                      {(catalogs?.cities ?? []).map((city) => (
+                        <option key={city.id} value={city.id}>
+                          {city.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                      Адрес
+                    </label>
+                    <input {...register('address')} className={fieldClass} placeholder="Улица и дом" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                      Широта
+                    </label>
+                    <input {...register('latitude')} className={fieldClass} placeholder="53.9" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                      Долгота
+                    </label>
+                    <input {...register('longitude')} className={fieldClass} placeholder="27.56" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border-light dark:border-border-dark pt-4 space-y-4">
+                <h4 className="text-sm font-semibold text-text-main dark:text-white font-display">Контакты</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                      Телефон
+                    </label>
+                    <input {...register('phoneNumber')} className={fieldClass} placeholder="+375..." />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                      Email
+                    </label>
+                    <input {...register('email')} className={fieldClass} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                      Сайт
+                    </label>
+                    <input {...register('siteLink')} className={fieldClass} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
+                      Instagram
+                    </label>
+                    <input {...register('instagramLink')} className={fieldClass} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border-light dark:border-border-dark pt-4 space-y-3">
+                <h4 className="text-sm font-semibold text-text-main dark:text-white font-display">Расписание</h4>
+                <ScheduleEditor value={schedules} onChange={setSchedules} />
+              </div>
+
+              <div className="border-t border-border-light dark:border-border-dark pt-4 space-y-3">
+                <h4 className="text-sm font-semibold text-text-main dark:text-white font-display">
+                  Оборудование и ассортимент
+                </h4>
+                {catalogsLoading ? (
+                  <p className="text-sm text-text-muted dark:text-stone-400 font-body">Загрузка справочников…</p>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <CatalogMultiSelect
+                      label="Оборудование"
+                      items={(catalogs?.equipments ?? []).map((item) => ({
+                        id: item.id,
+                        name: item.name,
+                        subtitle: [item.brand, item.model].filter(Boolean).join(' '),
+                      }))}
+                      selectedIds={equipmentIds}
+                      onChange={setEquipmentIds}
+                    />
+                    <CatalogMultiSelect
+                      label="Кофейные зёрна"
+                      items={(catalogs?.beans ?? []).map((item) => ({ id: item.id, name: item.name }))}
+                      selectedIds={beanIds}
+                      onChange={setBeanIds}
+                    />
+                    <CatalogMultiSelect
+                      label="Обжарщики"
+                      items={(catalogs?.roasters ?? []).map((item) => ({ id: item.id, name: item.name }))}
+                      selectedIds={roasterIds}
+                      onChange={setRoasterIds}
+                    />
+                    <CatalogMultiSelect
+                      label="Методы заваривания"
+                      items={(catalogs?.brewMethods ?? []).map((item) => ({ id: item.id, name: item.name }))}
+                      selectedIds={brewMethodIds}
+                      onChange={setBrewMethodIds}
+                    />
+                  </div>
+                )}
+              </div>
 
               <Button
                 type="submit"
@@ -324,7 +521,11 @@ export const PublishedShopEditPage: React.FC = () => {
           <PhotoOrderEditor
             photos={shop.photos}
             isSaving={photoOrderMutation.isPending}
+            isUploading={photoAddMutation.isPending}
+            isDeleting={photoDeleteMutation.isPending}
             onSave={(photoIds) => photoOrderMutation.mutateAsync(photoIds)}
+            onAddFiles={(files) => photoAddMutation.mutateAsync(files)}
+            onDelete={(photoIds) => photoDeleteMutation.mutateAsync(photoIds)}
           />
         </div>
 
