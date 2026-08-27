@@ -35,8 +35,8 @@ export function useUserReviews(
     queryFn: async () => {
       if (!userId) throw new Error('User ID is required');
       const response = await getReviewsByUserId(userId, page, pageSize);
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch user reviews');
+      if (!response.success && response.isSuccess === false) {
+        throw new Error(response.message || 'Не удалось загрузить отзывы');
       }
       return response.data;
     },

@@ -17,8 +17,8 @@ import WobbleRing from '../components/WobbleRing';
 import type { IconProps } from '@phosphor-icons/react';
 import {
   User, Lock, Palette, Coffee, CaretRight, SignOut, Camera, PencilSimple, Check,
-  ShoppingCart, ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
-  ArrowClockwise, X,
+  ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
+  ArrowClockwise, X, MapPin,
 } from '@/components/Icon';
 
 // ── Section types ────────────────────────────────────────────────────
@@ -216,6 +216,7 @@ const SettingsPage: React.FC = () => {
             onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
             onAvatarSelect={handleAvatarSelect}
             onOpenCheckIns={() => navigate('/check-ins')}
+            onOpenReviews={() => navigate('/reviews')}
           />
         ) : null;
       case 'security':
@@ -412,12 +413,13 @@ interface ProfileSectionProps {
   onInputChange: (field: string, value: string) => void;
   onAvatarSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onOpenCheckIns: () => void;
+  onOpenReviews: () => void;
 }
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({
   profile, isEditing, editValues, isSaving, selectedAvatarFile, avatarPreview,
   isDark, surface, border, textPrimary, textMuted, gold, goldWarm,
-  onEditStart, onEditCancel, onSave, onInputChange, onAvatarSelect, onOpenCheckIns,
+  onEditStart, onEditCancel, onSave, onInputChange, onAvatarSelect, onOpenCheckIns, onOpenReviews,
 }) => {
   const displayAvatar = avatarPreview || profile.avatarUrl;
   const memberSince = profile.createdAtUtc ? new Date(profile.createdAtUtc).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
@@ -497,8 +499,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
         {/* Stats row */}
         <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${border}`, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           {[
-            { Icon: ShoppingCart, value: profile.checkInCount ?? 0, label: 'Посещений', onClick: onOpenCheckIns as (() => void) | undefined },
-            { Icon: ChatCircleText, value: profile.reviewCount ?? 0, label: 'Отзывов' },
+            { Icon: MapPin, value: profile.checkInCount ?? 0, label: 'Чекинов', onClick: onOpenCheckIns as (() => void) | undefined },
+            { Icon: ChatCircleText, value: profile.reviewCount ?? 0, label: 'Отзывов', onClick: onOpenReviews as (() => void) | undefined },
             { Icon: Storefront, value: profile.addedShopsCount ?? 0, label: 'Добавлено' },
           ].map(stat => (
             <div
@@ -512,7 +514,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                 cursor: stat.onClick ? 'pointer' : 'default',
                 borderRadius: 12, padding: stat.onClick ? '4px 6px' : 0, margin: stat.onClick ? '-4px -6px' : 0,
               }}
-              title={stat.onClick ? 'Смотреть посещения' : undefined}
+              title={stat.onClick ? `Смотреть ${stat.label.toLowerCase()}` : undefined}
             >
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `${gold}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <stat.Icon size={18} color={goldWarm} />

@@ -14,7 +14,7 @@ export function useCheckIns(page: number = 1, pageSize: number = 10, enabled: bo
     queryFn: async (): Promise<GetCheckInsResponse> => {
       const response = await getCheckIns(page, pageSize);
       if (!response.success && response.isSuccess === false) {
-        throw new Error(response.message || 'Не удалось загрузить посещения');
+        throw new Error(response.message || 'Не удалось загрузить чекины');
       }
       return response.data;
     },

@@ -292,6 +292,7 @@ export interface BrewMethod {
 export interface Review {
   id: string;
   coffeeShopId: string;
+  shopName?: string;
   userId: string;
   userName?: string;
   userAvatar?: string;
@@ -699,18 +700,30 @@ export async function getReviewsByUserId(
   });
 
   const raw = response.data ?? {};
-  const dtos = Array.isArray(raw.reviewDtos)
-    ? raw.reviewDtos
-    : Array.isArray(raw.reviews)
-      ? raw.reviews
-      : [];
+  const dtos = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw.reviewDtos)
+      ? raw.reviewDtos
+      : Array.isArray(raw.ReviewDtos)
+        ? raw.ReviewDtos
+        : Array.isArray(raw.reviews)
+          ? raw.reviews
+          : Array.isArray(raw.items)
+            ? raw.items
+            : [];
 
   const data: GetReviewsResponse = {
     reviews: dtos.map((dto: any) => normalizeReviewDto(dto)),
-    totalCount: Number(raw.totalItems ?? raw.totalCount ?? dtos.length),
-    totalPages: Number(raw.totalPages ?? 1),
-    page: Number(raw.currentPage ?? page),
-    pageSize: Number(raw.pageSize ?? pageSize),
+    totalCount: Number(
+      response.pagination?.totalItems ?? raw.totalItems ?? raw.totalCount ?? dtos.length
+    ),
+    totalPages: Number(
+      response.pagination?.totalPages ??
+        raw.totalPages ??
+        (pageSize > 0 ? Math.max(1, Math.ceil((raw.totalItems ?? raw.totalCount ?? dtos.length) / pageSize)) : 1)
+    ),
+    page: Number(response.pagination?.page ?? raw.currentPage ?? page),
+    pageSize: Number(response.pagination?.pageSize ?? raw.pageSize ?? pageSize),
   };
 
   return { ...response, data };

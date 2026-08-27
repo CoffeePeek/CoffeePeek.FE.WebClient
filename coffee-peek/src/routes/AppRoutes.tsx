@@ -25,6 +25,7 @@ const ConfirmEmailPage = lazy(() => import('../pages/ConfirmEmailPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('../pages/ResetPasswordPage'));
 const CheckInsPage = lazy(() => import('../pages/CheckInsPage'));
+const ReviewsPage = lazy(() => import('../pages/ReviewsPage'));
 
 const LoadingFallback = () => {
   const { theme } = useTheme();
@@ -151,6 +152,17 @@ export const AppRoutes: React.FC = () => {
             <ProtectedRoute>
               <AuthenticatedLayout>
                 <CheckInsPage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reviews"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <ReviewsPage />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

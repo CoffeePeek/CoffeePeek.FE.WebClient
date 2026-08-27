@@ -170,7 +170,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           className="block font-body text-[13px]"
           style={{ color: colors.textSecondary }}
         >
-          Дата посещения
+          Дата чекина
         </label>
         <input
             id="checkin-date"

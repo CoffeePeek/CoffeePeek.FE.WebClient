@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUser } from '../contexts/UserContext';
 import { COLORS, getThemeColors } from '../constants/colors';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { useCheckIns } from '../hooks/queries/useCheckIns';
+import { useUserReviews } from '../hooks/queries/useReviews';
+import { getPhotoUrl } from '../api/coffeeshop';
 import WobbleRing from '../components/WobbleRing';
-import { AppIcon } from '../components/icons';
+import { AppIcon, StarIcon } from '../components/icons';
 import Mascot from '../components/Mascot';
 import { getErrorMessage } from '../utils/errorHandler';
 
@@ -16,26 +18,30 @@ function formatDate(iso: string): string {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
   });
 }
 
 const PAGE_SIZE = 10;
 
-const CheckInsPage: React.FC = () => {
-  usePageTitle('Мои чекины');
+const ReviewsPage: React.FC = () => {
+  usePageTitle('Мои отзывы');
   const navigate = useNavigate();
+  const { user } = useUser();
   const { theme } = useTheme();
   const colors = getThemeColors(theme);
   const isDark = theme === 'dark';
   const gold = COLORS.primary;
 
   const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching, error, refetch } = useCheckIns(page, PAGE_SIZE);
+  const { data, isLoading, isFetching, error, refetch } = useUserReviews(
+    user?.id ?? null,
+    page,
+    PAGE_SIZE,
+    Boolean(user?.id)
+  );
 
-  const items = data?.items ?? [];
-  const totalItems = data?.totalItems ?? 0;
+  const items = data?.reviews ?? [];
+  const totalItems = data?.totalCount ?? 0;
   const totalPages = Math.max(1, data?.totalPages ?? 1);
 
   return (
@@ -66,7 +72,7 @@ const CheckInsPage: React.FC = () => {
             margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700,
             fontSize: 18, color: colors.textPrimary, letterSpacing: '-0.01em',
           }}>
-            Мои чекины
+            Мои отзывы
           </h1>
           {totalItems > 0 && (
             <span style={{
@@ -108,16 +114,16 @@ const CheckInsPage: React.FC = () => {
             background: colors.surface, textAlign: 'center',
           }}>
             <div style={{ margin: '0 auto 8px', display: 'flex', justifyContent: 'center' }} aria-hidden>
-              <Mascot pose="happy" size={128} />
+              <Mascot pose="book" size={128} />
             </div>
             <h2 style={{
               margin: '0 0 8px', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700,
               fontSize: 18, color: colors.textPrimary,
             }}>
-              Пока нет чекинов
+              Пока нет отзывов
             </h2>
             <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: colors.textSecondary }}>
-              Отметьте чекин на странице кофейни — он появится здесь.
+              Публичный чекин или отзыв на странице кофейни появится здесь.
             </p>
             <button
               type="button"
@@ -133,66 +139,114 @@ const CheckInsPage: React.FC = () => {
         ) : (
           <>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12, opacity: isFetching ? 0.7 : 1, transition: 'opacity .2s' }}>
-              {items.map((item) => (
-                <li
-                  key={item.id}
-                  style={{
-                    padding: '16px 18px', borderRadius: 16, border: `1px solid ${colors.border}`,
-                    background: colors.surface,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/shops/${item.shopId}`)}
-                      style={{
-                        flex: 1, textAlign: 'left', border: 'none', background: 'transparent',
-                        padding: 0, cursor: 'pointer',
-                      }}
-                    >
-                      <p style={{
-                        margin: 0, fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700,
-                        fontSize: 16, color: colors.textPrimary,
-                      }}>
-                        {item.shopName || 'Кофейня'}
-                      </p>
-                      <p style={{
-                        margin: '6px 0 0', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: colors.textSecondary,
-                      }}>
-                        {formatDate(item.createdAt)}
-                      </p>
-                    </button>
+              {items.map((item) => {
+                const avg = (item.ratingCoffee + item.ratingService + item.ratingPlace) / 3;
+                const photos = (item.photos ?? []).filter((photo) => getPhotoUrl(photo));
+                const shopId = item.coffeeShopId;
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                      {item.reviewId ? (
+                return (
+                  <li
+                    key={item.id}
+                    style={{
+                      padding: '16px 18px', borderRadius: 16, border: `1px solid ${colors.border}`,
+                      background: colors.surface,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => shopId && navigate(`/shops/${shopId}`)}
+                        disabled={!shopId}
+                        style={{
+                          flex: 1, textAlign: 'left', border: 'none', background: 'transparent',
+                          padding: 0, cursor: shopId ? 'pointer' : 'default',
+                        }}
+                      >
+                        <p style={{
+                          margin: 0, fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700,
+                          fontSize: 16, color: colors.textPrimary,
+                        }}>
+                          {item.shopName || item.header || 'Отзыв о кофейне'}
+                        </p>
+                        <p style={{
+                          margin: '6px 0 0', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: colors.textSecondary,
+                        }}>
+                          {formatDate(item.visitedAt || item.createdAt)}
+                        </p>
+                        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <StarIcon
+                                key={star}
+                                size={14}
+                                filled={star <= Math.round(avg)}
+                                color={star <= Math.round(avg) ? gold : (isDark ? '#3D2F28' : '#E7E5E4')}
+                              />
+                            ))}
+                          </div>
+                          <span style={{ fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 12, color: colors.textSecondary }}>
+                            Кофе {item.ratingCoffee} · Сервис {item.ratingService} · Атмосф. {item.ratingPlace}
+                          </span>
+                        </div>
+                      </button>
+
+                      {shopId && (
                         <button
                           type="button"
-                          onClick={() => navigate(`/shops/${item.shopId}/reviews/${item.reviewId}/edit`)}
+                          onClick={() => navigate(`/shops/${shopId}/reviews/${item.id}/edit`)}
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: 4,
                             padding: '5px 10px', borderRadius: 8,
                             border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`,
                             background: 'transparent', color: gold,
                             fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                            flexShrink: 0,
                           }}
                         >
                           <AppIcon name="rate_review" size={14} color="currentColor" />
-                          Отзыв
+                          Изменить
                         </button>
-                      ) : null}
+                      )}
                     </div>
-                  </div>
 
-                  {item.note ? (
-                    <p style={{
-                      margin: '12px 0 0', paddingTop: 12, borderTop: `1px solid ${colors.border}`,
-                      fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: colors.textPrimary, lineHeight: 1.5,
-                    }}>
-                      {item.note}
-                    </p>
-                  ) : null}
-                </li>
-              ))}
+                    {item.header && item.shopName && (
+                      <p style={{
+                        margin: '12px 0 0', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600,
+                        fontSize: 14, color: colors.textPrimary,
+                      }}>
+                        {item.header}
+                      </p>
+                    )}
+
+                    {item.comment ? (
+                      <p style={{
+                        margin: item.header && item.shopName ? '6px 0 0' : '12px 0 0',
+                        paddingTop: item.header && item.shopName ? 0 : 12,
+                        borderTop: item.header && item.shopName ? 'none' : `1px solid ${colors.border}`,
+                        fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: colors.textPrimary, lineHeight: 1.5,
+                      }}>
+                        {item.comment}
+                      </p>
+                    ) : null}
+
+                    {photos.length > 0 && (
+                      <div style={{ marginTop: 12, display: 'flex', gap: 8, overflowX: 'auto' }}>
+                        {photos.map((photo) => (
+                          <img
+                            key={photo.storageKey || photo.fullUrl || photo.fileName}
+                            src={getPhotoUrl(photo)}
+                            alt=""
+                            style={{
+                              width: 64, height: 64, objectFit: 'cover', borderRadius: 10,
+                              border: `1px solid ${colors.border}`, flexShrink: 0,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
 
             {totalPages > 1 && (
@@ -244,4 +298,4 @@ const CheckInsPage: React.FC = () => {
   );
 };
 
-export default CheckInsPage;
+export default ReviewsPage;

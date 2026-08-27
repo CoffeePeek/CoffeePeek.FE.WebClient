@@ -4,7 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { Icons } from '../constants';
 import { COLORS } from '../constants/colors';
-import { Gear, SignOut, CaretDown, ShoppingCart } from '@/components/Icon';
+import { Gear, SignOut, CaretDown, MapPin, ChatCircleText } from '@/components/Icon';
 import ThemeToggle from './ThemeToggle';
 import LogoMark, { HEADER_LOGO_SIZE } from './LogoMark';
 
@@ -30,6 +30,8 @@ const Header: React.FC = () => {
   const currentPath = location.pathname + location.search;
   const currentId = allNav.find(n => n.match(currentPath))?.id ?? '';
   const isSettings = currentPath.startsWith('/settings');
+  const isCheckIns = location.pathname.startsWith('/check-ins');
+  const isReviews = location.pathname === '/reviews';
 
   const bg = isDark ? 'rgba(45,36,31,0.88)' : 'rgba(255,255,255,0.88)';
   const borderColor = isDark ? '#3D2F28' : '#E7E5E4';
@@ -125,8 +127,16 @@ const Header: React.FC = () => {
 
                       {/* Menu */}
                       <div style={{ padding: '6px 0' }}>
-                        <DropdownItem icon={<ShoppingCart size={18} color={mutedColor} />} label="Посещения" hoverBg={hoverBg} textColor={textColor} mutedColor={mutedColor}
+                        <DropdownItem icon={<MapPin size={18} color={isCheckIns ? gold : mutedColor} />} label="Чекины" hoverBg={hoverBg}
+                          textColor={isCheckIns ? gold : textColor}
+                          mutedColor={isCheckIns ? gold : mutedColor}
+                          activeBg={isCheckIns ? `${gold}10` : undefined}
                           onClick={() => { navigate('/check-ins'); setProfileOpen(false); }} />
+                        <DropdownItem icon={<ChatCircleText size={18} color={isReviews ? gold : mutedColor} />} label="Отзывы" hoverBg={hoverBg}
+                          textColor={isReviews ? gold : textColor}
+                          mutedColor={isReviews ? gold : mutedColor}
+                          activeBg={isReviews ? `${gold}10` : undefined}
+                          onClick={() => { navigate('/reviews'); setProfileOpen(false); }} />
                         <DropdownItem icon={<Gear size={18} color={isSettings ? gold : mutedColor} />} label="Настройки" hoverBg={hoverBg}
                           textColor={isSettings ? gold : textColor}
                           mutedColor={isSettings ? gold : mutedColor}
@@ -192,9 +202,14 @@ const Header: React.FC = () => {
               {user ? (
                 <>
                   <button onClick={() => { navigate('/check-ins'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <ShoppingCart size={18} color={mutedColor} />
-                    Посещения
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isCheckIns ? `${gold}12` : 'transparent', color: isCheckIns ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    <MapPin size={18} color={isCheckIns ? gold : mutedColor} />
+                    Чекины
+                  </button>
+                  <button onClick={() => { navigate('/reviews'); setIsMobileMenuOpen(false); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isReviews ? `${gold}12` : 'transparent', color: isReviews ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    <ChatCircleText size={18} color={isReviews ? gold : mutedColor} />
+                    Отзывы
                   </button>
                   <button onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>

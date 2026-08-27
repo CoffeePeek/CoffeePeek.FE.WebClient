@@ -4,6 +4,9 @@ import { sendCoffeeShopToModeration } from '../api/moderation';
 import { getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, City, Equipment, CoffeeBean, Roaster, BrewMethod, formatEquipmentName, getEquipmentCategoryLabel } from '../api/coffeeshop';
 import Button from '../components/Button';
 import MaterialSelect from '../components/MaterialSelect';
+import { PriceRangeSlider } from '../components/PriceRangeSlider';
+import { RemovableChip } from '../components/RemovableChip';
+import { AddressMapField } from '../components/AddressMapField';
 import { ShopDetailSkeleton } from '../components/skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
@@ -12,8 +15,8 @@ import { getDefaultSchedules } from '../utils/shopUtils';
 import { usePhotoUpload, useMenuPhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { AppIcon, BeanPriceMarks } from '../components/icons';
-import { PRICE_FILTER_OPTIONS } from '../utils/priceRange';
+import { AppIcon } from '../components/icons';
+import { COLORS } from '../constants/colors';
 import {
   MapPin, Images, Factory, Leaf, Flame, Drop, Lightbulb,
 } from '@/components/Icon';
@@ -79,18 +82,33 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           getBrewMethods(),
         ]);
 
-        // Handle different possible response structures
-        const citiesData = (citiesRes.data as { cities?: City[] } | City[])?.cities || (citiesRes.data as City[]) || [];
-        const equipmentsData = (equipmentsRes.data as { equipments?: Equipment[] } | Equipment[])?.equipments || (equipmentsRes.data as Equipment[]) || [];
-        const beansData = (beansRes.data as { beans?: CoffeeBean[] } | CoffeeBean[])?.beans || (beansRes.data as CoffeeBean[]) || [];
-        const roastersData = (roastersRes.data as { roasters?: Roaster[] } | Roaster[])?.roasters || (roastersRes.data as Roaster[]) || [];
-        const methodsData = (methodsRes.data as { methods?: BrewMethod[] } | BrewMethod[])?.methods || (methodsRes.data as BrewMethod[]) || [];
+        const unwrapList = <T,>(data: unknown, key: string): T[] => {
+          if (Array.isArray(data)) return data as T[];
+          if (data && typeof data === 'object' && key in data) {
+            const nested = (data as Record<string, unknown>)[key];
+            if (Array.isArray(nested)) return nested as T[];
+          }
+          return [];
+        };
 
-        setCities(Array.isArray(citiesData) ? citiesData : []);
-        setEquipments(Array.isArray(equipmentsData) ? equipmentsData : []);
-        setCoffeeBeans(Array.isArray(beansData) ? beansData : []);
-        setRoasters(Array.isArray(roastersData) ? roastersData : []);
-        setBrewMethods(Array.isArray(methodsData) ? methodsData : []);
+        const citiesData = unwrapList<City>(citiesRes.data, 'cities');
+        const equipmentsData = unwrapList<Equipment>(equipmentsRes.data, 'equipments');
+        const beansData = unwrapList<CoffeeBean>(beansRes.data, 'beans');
+        const roastersData = unwrapList<Roaster>(roastersRes.data, 'roasters');
+        const methodsData = unwrapList<BrewMethod>(methodsRes.data, 'methods');
+
+        setCities(citiesData);
+        setEquipments(equipmentsData);
+        setCoffeeBeans(beansData);
+        setRoasters(roastersData);
+        setBrewMethods(methodsData);
+
+        const minsk =
+          citiesData.find((c) => /^мінск$|^минск$|^minsk$/i.test(c.name.trim())) ?? citiesData[0];
+        if (minsk?.id) {
+          setFormData((prev) => (prev.cityId ? prev : { ...prev, cityId: minsk.id }));
+        }
+
         setReferenceDataLoaded(true);
       } catch (err) {
         logger.error('Error loading reference data:', err);
@@ -254,20 +272,12 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
               )}
             </div>
 
-            <div>
-              <label className={`${themeClasses.text.secondary} text-sm mb-2 block font-medium`}>Адрес *</label>
-              <input
-                type="text"
-                required
-                value={formData.notValidatedAddress}
-                onChange={(e) => handleInputChange('notValidatedAddress', e.target.value)}
-                className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-2xl py-3 px-4 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all ${getShopFieldErrorClass(!!fieldErrors.notValidatedAddress)}`}
-                placeholder="Введите адрес"
-              />
-              {fieldErrors.notValidatedAddress && (
-                <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{fieldErrors.notValidatedAddress}</p>
-              )}
-            </div>
+            <AddressMapField
+              value={formData.notValidatedAddress}
+              onChange={(address) => handleInputChange('notValidatedAddress', address)}
+              error={fieldErrors.notValidatedAddress}
+              inputClassName={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-2xl py-3 px-4 ${themeClasses.text.primary} focus:outline-none focus:border-[#EAB308] transition-all ${getShopFieldErrorClass(!!fieldErrors.notValidatedAddress)}`}
+            />
 
             <div>
               <label className={`${themeClasses.text.secondary} text-sm mb-2 block font-medium`}>Описание</label>
@@ -283,32 +293,33 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <MaterialSelect
-                  label="Город"
-                  value={formData.cityId || ''}
-                  onChange={(value) => handleInputChange('cityId', value || undefined)}
-                  options={[
-                    { value: '', label: 'Выберите город' },
-                    ...cities.map(city => ({ value: city.id, label: city.name }))
-                  ]}
-                  icon={<MapPin size={20} />}
-                />
-                {fieldErrors.cityId && (
-                  <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{fieldErrors.cityId}</p>
-                )}
+            <div>
+              <label className={`${themeClasses.text.secondary} text-sm mb-2 block font-medium`}>Город</label>
+              <div
+                className={`w-full ${themeClasses.bg.input} border-2 ${themeClasses.border.default} rounded-2xl py-3 px-4 ${themeClasses.text.secondary} opacity-80 flex items-center gap-2 cursor-not-allowed`}
+                aria-disabled
+              >
+                <MapPin size={20} className="text-[#EAB308] shrink-0" />
+                <span className={themeClasses.text.primary}>
+                  {cities.find((c) => c.id === formData.cityId)?.name || 'Минск'}
+                </span>
               </div>
+              {fieldErrors.cityId && (
+                <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{fieldErrors.cityId}</p>
+              )}
+            </div>
 
-                <MaterialSelect
-                label="Ценовой диапазон"
-                value={formData.priceRange || ''}
-                onChange={(value) => handleInputChange('priceRange', value || undefined)}
-                options={[
-                  { value: '', label: 'Выберите диапазон' },
-                  ...PRICE_FILTER_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
-                ]}
-                icon={<BeanPriceMarks count={1} size={14} />}
+            <div>
+              <label className={`${themeClasses.text.secondary} text-sm mb-2 block font-medium`}>
+                Ценовой диапазон
+              </label>
+              <PriceRangeSlider
+                value={formData.priceRange}
+                onChange={(priceRange) => handleInputChange('priceRange', priceRange)}
+                gold={COLORS.primary}
+                muted={theme === 'dark' ? '#A8A29E' : '#78716C'}
+                track={theme === 'dark' ? '#3D2F28' : '#E7E5E4'}
+                allowClear
               />
             </div>
           </div>
@@ -529,61 +540,45 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
               {formData.equipmentIds?.map(id => {
                 const eq = equipments.find(e => e.id === id);
                 return eq ? (
-                  <span key={id} className={`px-3 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm flex items-center gap-2`}>
-                    {formatEquipmentName(eq)}
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange('equipmentIds', formData.equipmentIds?.filter(i => i !== id))}
-                      className={`text-[#EAB308] ${theme === 'dark' ? 'hover:text-white' : 'hover:text-gray-900'}`}
-                    >
-                      ×
-                    </button>
-                  </span>
+                  <RemovableChip
+                    key={id}
+                    label={formatEquipmentName(eq)}
+                    gold={COLORS.primary}
+                    onRemove={() => handleInputChange('equipmentIds', formData.equipmentIds?.filter(i => i !== id))}
+                  />
                 ) : null;
               })}
               {formData.coffeeBeanIds?.map(id => {
                 const bean = coffeeBeans.find(b => b.id === id);
                 return bean ? (
-                  <span key={id} className={`px-3 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm flex items-center gap-2`}>
-                    {bean.name}
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange('coffeeBeanIds', formData.coffeeBeanIds?.filter(i => i !== id))}
-                      className={`text-[#EAB308] ${theme === 'dark' ? 'hover:text-white' : 'hover:text-gray-900'}`}
-                    >
-                      ×
-                    </button>
-                  </span>
+                  <RemovableChip
+                    key={id}
+                    label={bean.name}
+                    gold={COLORS.primary}
+                    onRemove={() => handleInputChange('coffeeBeanIds', formData.coffeeBeanIds?.filter(i => i !== id))}
+                  />
                 ) : null;
               })}
               {formData.roasterIds?.map(id => {
                 const roaster = roasters.find(r => r.id === id);
                 return roaster ? (
-                  <span key={id} className={`px-3 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm flex items-center gap-2`}>
-                    {roaster.name}
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange('roasterIds', formData.roasterIds?.filter(i => i !== id))}
-                      className={`text-[#EAB308] ${theme === 'dark' ? 'hover:text-white' : 'hover:text-gray-900'}`}
-                    >
-                      ×
-                    </button>
-                  </span>
+                  <RemovableChip
+                    key={id}
+                    label={roaster.name}
+                    gold={COLORS.primary}
+                    onRemove={() => handleInputChange('roasterIds', formData.roasterIds?.filter(i => i !== id))}
+                  />
                 ) : null;
               })}
               {formData.brewMethodIds?.map(id => {
                 const method = brewMethods.find(m => m.id === id);
                 return method ? (
-                  <span key={id} className={`px-3 py-1 ${themeClasses.bg.tertiary} text-[#EAB308] rounded-xl text-sm flex items-center gap-2`}>
-                    {method.name}
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange('brewMethodIds', formData.brewMethodIds?.filter(i => i !== id))}
-                      className={`text-[#EAB308] ${theme === 'dark' ? 'hover:text-white' : 'hover:text-gray-900'}`}
-                    >
-                      ×
-                    </button>
-                  </span>
+                  <RemovableChip
+                    key={id}
+                    label={method.name}
+                    gold={COLORS.primary}
+                    onRemove={() => handleInputChange('brewMethodIds', formData.brewMethodIds?.filter(i => i !== id))}
+                  />
                 ) : null;
               })}
             </div>

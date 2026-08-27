@@ -257,6 +257,9 @@ export function normalizeResponseData<T>(data: any): T {
   if ('reviews' in data && Array.isArray(data.reviews)) {
     return data;
   }
+  if ('reviewDtos' in data && Array.isArray(data.reviewDtos)) {
+    return data;
+  }
 
   if ('coffeeShops' in data && Array.isArray(data.coffeeShops)) {
     // Нормализуем каждый элемент массива

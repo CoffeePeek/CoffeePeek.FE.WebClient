@@ -242,7 +242,7 @@ const UserProfilePage: React.FC = () => {
                 {profile.checkInCount ?? 0}
               </span>
               <span className={`text-xs font-bold ${textMuted} uppercase tracking-[0.2em] mt-2`}>
-                ПОСЕЩЕНИЯ
+                ЧЕКИНЫ
               </span>
             </div>
             <div className={`${bgSurface} p-8 rounded-3xl border ${borderClass} shadow-sm flex flex-col items-center text-center group ${themeClasses.border.activeHover} transition-all`}>
