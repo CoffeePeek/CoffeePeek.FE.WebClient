@@ -8,7 +8,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppIcon } from '../icons';
 import { CaretDown } from '@/components/Icon';
-import { coffeeDetailIcon, createOsmMap, ensureMapPinMascots } from '../../map/osmMap';
+import { coffeeDetailIcon, createOsmMap } from '../../map/osmMap';
 
 interface ShopSidebarProps {
   shop: DetailedCoffeeShop;
@@ -51,15 +51,12 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
     });
     mapInstanceRef.current = map;
 
-    void ensureMapPinMascots().then(() => {
-      if (cancelled || mapInstanceRef.current !== map) return;
-      L.marker([latitude, longitude], {
-        icon: coffeeDetailIcon(shop.type),
-        title: shop.name,
-        interactive: false,
-      }).addTo(map);
-      setIsMapLoaded(true);
-    });
+    L.marker([latitude, longitude], {
+      icon: coffeeDetailIcon(shop.type),
+      title: shop.name,
+      interactive: false,
+    }).addTo(map);
+    setIsMapLoaded(true);
 
     return () => {
       cancelled = true;

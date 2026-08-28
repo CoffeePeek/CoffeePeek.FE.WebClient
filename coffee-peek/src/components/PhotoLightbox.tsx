@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { getPhotoUrl, PhotoMetadataDto, ShortPhotoMetadataDto } from '../api/coffeeshop';
-import { AppIcon } from './icons';
+import { CaretLeft, CaretRight, X } from '@/components/Icon';
 
 type PhotoInput = string | PhotoMetadataDto | ShortPhotoMetadataDto;
 
@@ -70,7 +70,7 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     >
       <button
         type="button"
-        className="absolute inset-0 border-0 cursor-default"
+        className="absolute inset-0 border-0 p-0 cursor-default"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.82)' }}
         onClick={onClose}
         aria-hidden
@@ -80,10 +80,10 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-4 right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25"
+        className="absolute top-4 right-4 z-30 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-0 bg-white/15 p-0 text-white backdrop-blur-md transition hover:bg-white/25"
         aria-label="Закрыть"
       >
-        <AppIcon name="close" size={22} />
+        <X size={24} weight="bold" color="#FFFFFF" aria-hidden />
       </button>
 
       {urls.length > 1 && (
@@ -100,10 +100,10 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               e.stopPropagation();
               goPrev();
             }}
-            className="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25 sm:left-6"
+            className="absolute left-3 top-1/2 z-30 flex h-12 w-12 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border-0 bg-white/15 p-0 text-white backdrop-blur-md transition hover:bg-white/25 sm:left-6"
             aria-label="Предыдущее фото"
           >
-            <AppIcon name="chevron_left" size={28} />
+            <CaretLeft size={28} weight="bold" color="#FFFFFF" aria-hidden />
           </button>
           <button
             type="button"
@@ -111,10 +111,10 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               e.stopPropagation();
               goNext();
             }}
-            className="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25 sm:right-6"
+            className="absolute right-3 top-1/2 z-30 flex h-12 w-12 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border-0 bg-white/15 p-0 text-white backdrop-blur-md transition hover:bg-white/25 sm:right-6"
             aria-label="Следующее фото"
           >
-            <AppIcon name="chevron_right" size={28} />
+            <CaretRight size={28} weight="bold" color="#FFFFFF" aria-hidden />
           </button>
         </>
       )}

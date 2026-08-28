@@ -268,43 +268,61 @@
   color: #facc15 !important;
 }
 
-.leaflet-marker-icon.coffee-map-pin {
+.leaflet-marker-icon.coffee-map-pin,
+.leaflet-marker-icon.coffee-map-cluster {
   outline: none !important;
   background: none !important;
   border: none !important;
   -webkit-tap-highlight-color: transparent;
 }
 .leaflet-marker-icon.coffee-map-pin:focus,
-.leaflet-marker-icon.coffee-map-pin:focus-visible {
+.leaflet-marker-icon.coffee-map-pin:focus-visible,
+.leaflet-marker-icon.coffee-map-cluster:focus,
+.leaflet-marker-icon.coffee-map-cluster:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
 
 .coffee-map-pin .coffee-pin-shell {
   position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform-origin: 50% 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--pin-size, 22px);
+  height: var(--pin-size, 22px);
+  transform-origin: 50% 50%;
   will-change: transform;
 }
 
-.coffee-map-pin .coffee-pin-shell img {
-  display: block;
+.coffee-map-pin .coffee-pin-dot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
+  border-radius: 999px;
+  background: var(--pin-fill, #eab308);
+  color: var(--pin-glyph, #1a1412);
+  border: 2px solid #ffffff;
+  box-shadow:
+    0 1px 2px rgba(26, 20, 18, 0.28),
+    0 0 0 1px rgba(26, 20, 18, 0.12);
   pointer-events: none;
+}
+
+.coffee-map-pin .coffee-pin-dot svg {
+  display: block;
+  width: 58%;
+  height: 58%;
 }
 
 .coffee-map-pin .coffee-pin-pulse {
   position: absolute;
-  left: 50%;
-  bottom: 3px;
-  width: 12px;
-  height: 12px;
-  margin-left: -6px;
+  inset: -4px;
   border-radius: 999px;
-  background: rgba(234, 179, 8, 0.55);
+  border: 2px solid rgba(234, 179, 8, 0.65);
   opacity: 0;
   pointer-events: none;
   z-index: 0;
@@ -315,55 +333,63 @@
 }
 
 .coffee-map-pin--selected .coffee-pin-shell {
-  animation: coffee-pin-selected-pop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) forwards,
-    coffee-pin-selected-float 2.4s ease-in-out 0.4s infinite;
+  animation: coffee-pin-selected-pop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
 }
 
-.coffee-map-pin--specialty.coffee-map-pin--selected .coffee-pin-pulse {
-  background: rgba(234, 179, 8, 0.55);
+.coffee-map-pin--selected .coffee-pin-dot {
+  box-shadow:
+    0 0 0 2px rgba(234, 179, 8, 0.55),
+    0 2px 8px rgba(26, 20, 18, 0.35);
 }
 
-.coffee-map-pin--coffee_bar.coffee-map-pin--selected .coffee-pin-pulse {
-  background: rgba(234, 179, 8, 0.45);
+.coffee-map-cluster .coffee-cluster-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(234, 179, 8, 0.92);
+  color: #1a1412;
+  border: 2px solid #ffffff;
+  box-shadow:
+    0 2px 10px rgba(26, 20, 18, 0.35),
+    0 0 0 1px rgba(26, 20, 18, 0.1);
+  font-family: "RF Dewi Expanded", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  cursor: pointer;
 }
 
-.coffee-map-pin--cafe.coffee-map-pin--selected .coffee-pin-pulse {
-  background: rgba(212, 168, 75, 0.5);
+.coffee-map-cluster .coffee-cluster-count {
+  pointer-events: none;
 }
 
 @keyframes coffee-pin-selected-pop {
   0% {
-    transform: scale(1) translateY(0);
+    transform: scale(1);
   }
-  45% {
-    transform: scale(1.2) translateY(-4px);
+  55% {
+    transform: scale(1.18);
   }
   100% {
-    transform: scale(1.1) translateY(-2px);
-  }
-}
-
-@keyframes coffee-pin-selected-float {
-  0%,
-  100% {
-    transform: scale(1.1) translateY(-2px);
-  }
-  50% {
-    transform: scale(1.1) translateY(-5px);
+    transform: scale(1.1);
   }
 }
 
 @keyframes coffee-pin-pulse {
   0% {
-    transform: scale(0.5);
-    opacity: 0.65;
+    transform: scale(0.85);
+    opacity: 0.7;
   }
   70% {
-    transform: scale(2.6);
+    transform: scale(1.45);
     opacity: 0;
   }
   100% {
-    transform: scale(2.6);
+    transform: scale(1.45);
     opacity: 0;
   }
 }
@@ -375,6 +401,6 @@
   }
 
   .coffee-map-pin--selected .coffee-pin-shell {
-    transform: scale(1.08) translateY(-2px);
+    transform: scale(1.08);
   }
 }

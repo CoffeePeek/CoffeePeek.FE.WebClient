@@ -23,7 +23,6 @@ function tileUrl(dark: boolean): string {
     const style = dark ? 'dark_all' : 'rastertiles/voyager';
     return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(key)}`;
   }
-  // CARTO raster tiles now require a key (watermark otherwise). Fall back to OSM.
   return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 }
 
@@ -90,7 +89,6 @@ export function createOsmMap(
     map.zoomControl.setPosition('topright');
   }
 
-  // Leaflet needs a tick after mount in flex/hidden containers
   requestAnimationFrame(() => map.invalidateSize());
 
   return map;
@@ -115,7 +113,6 @@ export function getMapBoundsBox(map: L.Map): MapBoundsBox {
   };
 }
 
-/** Teardrop map pin: color + mascot by coffee shop type. */
 export type MapCoffeeFocus = 'specialty' | 'coffee_bar' | 'cafe';
 
 export function parseCoffeeFocus(value: unknown): MapCoffeeFocus {
@@ -130,199 +127,69 @@ export function parseCoffeeFocus(value: unknown): MapCoffeeFocus {
 
 const PIN_BY_FOCUS: Record<
   MapCoffeeFocus,
-  { fill: string; stroke: string; selectedGlow: string; mascot: string }
+  { fill: string; glyph: string; ring: string }
 > = {
-  /** Specialty — фирменное золото */
   specialty: {
     fill: brand.primary,
-    stroke: brand.primaryDark,
-    selectedGlow: brand.primaryHover,
-    mascot: '/maskot-props/maskot-with-bean.png',
+    glyph: light.textOnPrimary,
+    ring: brand.primaryDark,
   },
-  /** Coffee bar — тёмный эспрессо (фон сайта) */
   coffee_bar: {
     fill: dark.background,
-    stroke: dark.border,
-    selectedGlow: brand.primary,
-    mascot: '/maskot-props/maskot-wthi-cup.png',
+    glyph: brand.primary,
+    ring: dark.border,
   },
-  /** Cafe — тёплый stone / как вторичный текст */
   cafe: {
     fill: light.textSecondary,
-    stroke: dark.borderHover,
-    selectedGlow: brand.goldWarm,
-    mascot: '/maskot-props/maskot-with-dessert.png',
+    glyph: '#FFFFFF',
+    ring: dark.borderHover,
   },
 };
 
-const PIN_PATH =
-  'M20 1.6C29.2 1.6 36.8 9.3 36.8 18.8C36.8 29.8 20 50.4 20 50.4C20 50.4 3.2 29.8 3.2 18.8C3.2 9.3 10.8 1.6 20 1.6Z';
+const PIN_SIZE = 22;
+const PIN_SIZE_SELECTED = 28;
+const PIN_SIZE_DETAIL = 30;
 
-const PIN_W = 34;
-const PIN_H = 44;
-const PIN_W_SELECTED = 40;
-const PIN_H_SELECTED = 52;
-const PIN_VB_W = 40;
-const PIN_VB_H = 52;
+const GLYPH_BY_FOCUS: Record<MapCoffeeFocus, string> = {
+  specialty: `<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 2.2c-2.9 0-5.2 2.5-5.2 5.6 0 3.6 2.3 5.8 5.2 5.8s5.2-2.2 5.2-5.8c0-3.1-2.3-5.6-5.2-5.6zm0 2c1.7 0 3 1.6 3 3.6S9.7 11.4 8 11.4 5 9.8 5 7.8 6.3 4.2 8 4.2z"/></svg>`,
+  coffee_bar: `<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" d="M3.2 4.2h7.2v5.4a1.4 1.4 0 01-1.4 1.4H4.6a1.4 1.4 0 01-1.4-1.4V4.2zm7.2 1.4h1.5a1.1 1.1 0 110 2.2H10.4M4.8 12.2h4"/></svg>`,
+  cafe: `<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4.5 3.8h7v1.6H4.5V3.8zm.8 2.4h5.4l-.6 5.2a1.2 1.2 0 01-1.2 1h-1.8a1.2 1.2 0 01-1.2-1L5.3 6.2z"/></svg>`,
+};
 
-const mascotCanvases = new Map<string, HTMLCanvasElement>();
-const pinIconCache = new Map<string, L.DivIcon>();
-let mascotsPromise: Promise<void> | null = null;
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.decoding = 'async';
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load ${src}`));
-    img.src = src;
-  });
+function pinDiameter(selected: boolean, detail?: boolean): number {
+  if (detail) return PIN_SIZE_DETAIL;
+  return selected ? PIN_SIZE_SELECTED : PIN_SIZE;
 }
 
-function knockOutBlack(img: HTMLImageElement): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return canvas;
-  ctx.drawImage(img, 0, 0);
-  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const pixels = image.data;
-  const width = canvas.width;
-  const height = canvas.height;
-  const isBg = (i: number) => {
-    const luma = 0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2];
-    return luma < 40 && pixels[i + 3] > 8;
-  };
-  const seen = new Uint8Array(width * height);
-  const stack: number[] = [];
-  const push = (x: number, y: number) => {
-    if (x < 0 || y < 0 || x >= width || y >= height) return;
-    const p = y * width + x;
-    if (seen[p]) return;
-    seen[p] = 1;
-    if (isBg(p * 4)) stack.push(p);
-  };
-  for (let x = 0; x < width; x += 1) {
-    push(x, 0);
-    push(x, height - 1);
-  }
-  for (let y = 0; y < height; y += 1) {
-    push(0, y);
-    push(width - 1, y);
-  }
-  while (stack.length) {
-    const p = stack.pop()!;
-    const i = p * 4;
-    pixels[i + 3] = 0;
-    const x = p % width;
-    const y = (p - x) / width;
-    push(x - 1, y);
-    push(x + 1, y);
-    push(x, y - 1);
-    push(x, y + 1);
-  }
-  ctx.putImageData(image, 0, 0);
-  return canvas;
-}
-
-export function ensureMapPinMascots(): Promise<void> {
-  if (!mascotsPromise) {
-    mascotsPromise = Promise.all(
-      Object.values(PIN_BY_FOCUS).map(async ({ mascot }) => {
-        const img = await loadImage(mascot);
-        mascotCanvases.set(mascot, knockOutBlack(img));
-      }),
-    ).then(() => {
-      pinIconCache.clear();
-    });
-  }
-  return mascotsPromise;
-}
-
-void ensureMapPinMascots();
-
-function renderPinDataUrl(
-  fill: string,
-  stroke: string,
-  selectedGlow: string,
-  mascotSrc: string,
+function buildPinHtml(
+  focus: MapCoffeeFocus,
   selected: boolean,
+  detail?: boolean,
 ): string {
-  const pinW = selected ? PIN_W_SELECTED : PIN_W;
-  const pinH = selected ? PIN_H_SELECTED : PIN_H;
-  const dpr = 2;
-  const canvas = document.createElement('canvas');
-  canvas.width = pinW * dpr;
-  canvas.height = pinH * dpr;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return '';
-  ctx.scale(dpr, dpr);
-  ctx.scale(pinW / PIN_VB_W, pinH / PIN_VB_H);
+  const { fill, glyph, ring } = PIN_BY_FOCUS[focus];
+  const size = pinDiameter(selected, detail);
+  const selectedClass = selected ? ' coffee-map-pin--selected' : '';
+  const detailClass = detail ? ' coffee-map-pin--detail' : '';
 
-  const pin = new Path2D(PIN_PATH);
-
-  if (selected) {
-    ctx.save();
-    ctx.shadowColor = `${selectedGlow}99`;
-    ctx.shadowBlur = 8;
-    ctx.fillStyle = selectedGlow;
-    ctx.globalAlpha = 0.35;
-    ctx.fill(pin);
-    ctx.restore();
-  }
-
-  ctx.save();
-  ctx.shadowColor = 'rgba(26,20,18,0.32)';
-  ctx.shadowBlur = selected ? 3.2 : 2.4;
-  ctx.shadowOffsetY = selected ? 1.6 : 1.2;
-  ctx.fillStyle = fill;
-  ctx.fill(pin);
-  ctx.restore();
-
-  const mascot = mascotCanvases.get(mascotSrc);
-  if (mascot) {
-    ctx.save();
-    ctx.clip(pin);
-    ctx.drawImage(mascot, -2, -5, 44, 48);
-    ctx.restore();
-  }
-
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = selected ? selectedGlow : stroke;
-  ctx.lineWidth = selected ? 2 : 1.15;
-  ctx.stroke(pin);
-
-  if (selected) {
-    ctx.strokeStyle = light.textOnPrimary;
-    ctx.lineWidth = 0.75;
-    ctx.globalAlpha = 0.35;
-    ctx.stroke(pin);
-    ctx.globalAlpha = 1;
-  }
-
-  return canvas.toDataURL('image/png');
+  return `<div class="coffee-pin-shell${selectedClass}${detailClass}" style="--pin-fill:${fill};--pin-glyph:${glyph};--pin-ring:${ring};--pin-size:${size}px" aria-hidden="true"><span class="coffee-pin-pulse"></span><span class="coffee-pin-dot">${GLYPH_BY_FOCUS[focus]}</span></div>`;
 }
+
+const pinIconCache = new Map<string, L.DivIcon>();
 
 export function coffeeMapPinIcon(options: { focus?: unknown; selected?: boolean } = {}): L.DivIcon {
   const focus = parseCoffeeFocus(options.focus);
-  const { fill, stroke, selectedGlow, mascot } = PIN_BY_FOCUS[focus];
   const selected = Boolean(options.selected);
-  const key = `${focus}-${selected}-${mascotCanvases.has(mascot) ? 'm' : 'x'}`;
+  const key = `${focus}-${selected ? 's' : 'n'}`;
   const cached = pinIconCache.get(key);
   if (cached) return cached;
 
-  const pinW = selected ? PIN_W_SELECTED : PIN_W;
-  const pinH = selected ? PIN_H_SELECTED : PIN_H;
-  const iconUrl = renderPinDataUrl(fill, stroke, selectedGlow, mascot, selected);
-  const selectedClass = selected ? ' coffee-map-pin--selected' : '';
-
+  const size = pinDiameter(selected);
   const icon = L.divIcon({
-    className: `coffee-map-pin coffee-map-pin--${focus}${selectedClass}`,
-    html: `<div class="coffee-pin-shell" aria-hidden="true"><span class="coffee-pin-pulse"></span><img src="${iconUrl}" alt="" draggable="false" width="${pinW}" height="${pinH}" /></div>`,
-    iconSize: [pinW, pinH],
-    iconAnchor: [pinW / 2, pinH - 2],
-    popupAnchor: [0, -(pinH - 10)],
+    className: `coffee-map-pin coffee-map-pin--${focus}${selected ? ' coffee-map-pin--selected' : ''}`,
+    html: buildPinHtml(focus, selected),
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2 + 4)],
   });
   pinIconCache.set(key, icon);
   return icon;
@@ -333,7 +200,116 @@ export function coffeeCircleIcon(selected: boolean, focus?: unknown): L.DivIcon 
   return coffeeMapPinIcon({ selected, focus });
 }
 
-/** Pin for shop detail sidebar. */
+/** Pin for shop detail sidebar / address picker (slightly larger). */
 export function coffeeDetailIcon(focus?: unknown): L.DivIcon {
-  return coffeeMapPinIcon({ focus, selected: true });
+  const parsed = parseCoffeeFocus(focus);
+  const size = PIN_SIZE_DETAIL;
+  return L.divIcon({
+    className: `coffee-map-pin coffee-map-pin--${parsed} coffee-map-pin--selected coffee-map-pin--detail`,
+    html: buildPinHtml(parsed, true, true),
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2 + 4)],
+  });
+}
+
+/** @deprecated mascots are no longer used on map pins */
+export function ensureMapPinMascots(): Promise<void> {
+  return Promise.resolve();
+}
+
+export type MapShopLike = {
+  id: string;
+  latitude: number;
+  longitude: number;
+};
+
+export type MapMarkerTarget<T extends MapShopLike = MapShopLike> =
+  | { type: 'shop'; shop: T }
+  | { type: 'cluster'; lat: number; lng: number; shops: T[] };
+
+export type GroupShopsOptions = {
+  /** Zoom level at which clustering stops (default 15). */
+  minClusterZoom?: number;
+  /** Pixel radius to merge nearby pins (default 46). */
+  clusterRadiusPx?: number;
+};
+
+/**
+ * Groups nearby shops into clusters when zoomed out.
+ * At close zoom every shop is returned as a single pin.
+ */
+export function groupShopsForMap<T extends MapShopLike>(
+  shops: T[],
+  map: L.Map,
+  options: GroupShopsOptions = {},
+): MapMarkerTarget<T>[] {
+  const minClusterZoom = options.minClusterZoom ?? 15;
+  const clusterRadiusPx = options.clusterRadiusPx ?? 46;
+
+  const valid = shops.filter((s) => s.latitude && s.longitude);
+  if (valid.length === 0) return [];
+  if (map.getZoom() >= minClusterZoom) {
+    return valid.map((shop) => ({ type: 'shop', shop }));
+  }
+
+  const remaining = [...valid];
+  const result: MapMarkerTarget<T>[] = [];
+
+  while (remaining.length > 0) {
+    const seed = remaining.shift()!;
+    const seedPoint = map.latLngToLayerPoint([seed.latitude, seed.longitude]);
+    const group: T[] = [seed];
+
+    for (let i = remaining.length - 1; i >= 0; i -= 1) {
+      const candidate = remaining[i];
+      const point = map.latLngToLayerPoint([candidate.latitude, candidate.longitude]);
+      if (seedPoint.distanceTo(point) <= clusterRadiusPx) {
+        group.push(candidate);
+        remaining.splice(i, 1);
+      }
+    }
+
+    if (group.length === 1) {
+      result.push({ type: 'shop', shop: group[0] });
+      continue;
+    }
+
+    const lat = group.reduce((sum, shop) => sum + shop.latitude, 0) / group.length;
+    const lng = group.reduce((sum, shop) => sum + shop.longitude, 0) / group.length;
+    result.push({ type: 'cluster', lat, lng, shops: group });
+  }
+
+  return result;
+}
+
+const clusterIconCache = new Map<string, L.DivIcon>();
+
+export function coffeeClusterIcon(count: number): L.DivIcon {
+  const label = count > 99 ? '99+' : String(count);
+  const size = count < 10 ? 34 : count < 100 ? 38 : 42;
+  const key = `${size}-${label}`;
+  const cached = clusterIconCache.get(key);
+  if (cached) return cached;
+
+  const icon = L.divIcon({
+    className: 'coffee-map-cluster',
+    html: `<div class="coffee-cluster-shell" aria-hidden="true"><span class="coffee-cluster-count">${label}</span></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+  clusterIconCache.set(key, icon);
+  return icon;
+}
+
+/** Zoom map to fit cluster shops with padding. */
+export function zoomToClusterShops(map: L.Map, shops: MapShopLike[]): void {
+  if (shops.length === 0) return;
+  const bounds = L.latLngBounds(shops.map((shop) => [shop.latitude, shop.longitude] as L.LatLngTuple));
+  const targetZoom = Math.min(map.getZoom() + 2, 17);
+  map.fitBounds(bounds.pad(0.25), {
+    maxZoom: targetZoom,
+    animate: true,
+    duration: 0.35,
+  });
 }

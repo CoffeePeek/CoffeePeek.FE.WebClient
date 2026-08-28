@@ -10,10 +10,12 @@ import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
 import {
   applyOsmMapTheme,
+  coffeeClusterIcon,
   coffeeMapPinIcon,
   createOsmMap,
-  ensureMapPinMascots,
   getMapBoundsBox,
+  groupShopsForMap,
+  zoomToClusterShops,
 } from '../map/osmMap';
 import { getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
 
@@ -99,27 +101,40 @@ const MapPage: React.FC = () => {
     const paintMarkers = (shopsList: MapShop[]) => {
       const map = mapInstanceRef.current;
       if (!map) return;
-      void ensureMapPinMascots().then(() => {
-        if (mapInstanceRef.current !== map) return;
-        clearMarkers();
-        shopsList.forEach((shop) => {
-          if (!shop.latitude || !shop.longitude) return;
-          const selected = selectedIdRef.current === shop.id;
-          const marker = L.marker([shop.latitude, shop.longitude], {
-            icon: coffeeMapPinIcon({ focus: shop.type, selected }),
-            title: shop.title,
+      clearMarkers();
+      const targets = groupShopsForMap(shopsList, map);
+
+      targets.forEach((target) => {
+        if (target.type === 'cluster') {
+          const marker = L.marker([target.lat, target.lng], {
+            icon: coffeeClusterIcon(target.shops.length),
             keyboard: false,
-            zIndexOffset: selected ? 1000 : 0,
+            zIndexOffset: 400,
           });
           marker.on('click', () => {
-            selectedIdRef.current = shop.id;
-            setSelectedShop(shop);
-            void loadShopDetails(shop.id);
-            paintMarkers(shopsRef.current);
+            zoomToClusterShops(map, target.shops);
           });
           marker.addTo(map);
           markersRef.current.push(marker);
+          return;
+        }
+
+        const shop = target.shop;
+        const selected = selectedIdRef.current === shop.id;
+        const marker = L.marker([shop.latitude, shop.longitude], {
+          icon: coffeeMapPinIcon({ focus: shop.type, selected }),
+          title: shop.title,
+          keyboard: false,
+          zIndexOffset: selected ? 1000 : 0,
         });
+        marker.on('click', () => {
+          selectedIdRef.current = shop.id;
+          setSelectedShop(shop);
+          void loadShopDetails(shop.id);
+          paintMarkers(shopsRef.current);
+        });
+        marker.addTo(map);
+        markersRef.current.push(marker);
       });
     };
     paintMarkersRef.current = paintMarkers;
@@ -142,7 +157,10 @@ const MapPage: React.FC = () => {
 
     updateTimeout = setTimeout(updateCoffeeShops, 400);
     map.on('moveend', updateCoffeeShops);
-    map.on('zoomend', updateCoffeeShops);
+    map.on('zoomend', () => {
+      paintMarkers(shopsRef.current);
+      updateCoffeeShops();
+    });
 
     return () => {
       cancelled = true;

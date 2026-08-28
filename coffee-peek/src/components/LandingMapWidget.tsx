@@ -9,10 +9,12 @@ import { AppIcon, StarIcon } from './icons';
 import WobbleRing from './WobbleRing';
 import {
   MINSK_CENTER,
+  coffeeClusterIcon,
   coffeeMapPinIcon,
   createOsmMap,
-  ensureMapPinMascots,
   getMapBoundsBox,
+  groupShopsForMap,
+  zoomToClusterShops,
 } from '../map/osmMap';
 
 const MAP_ROUTE = '/dashboard?page=map';
@@ -95,29 +97,42 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
     };
 
     const addMarkers = (map: LeafletMap, shopsList: MapShop[]) => {
-      void ensureMapPinMascots().then(() => {
-        if (mapInstanceRef.current !== map) return;
-        clearMarkers();
-        shopsList.forEach((shop) => {
-          if (!shop.latitude || !shop.longitude) return;
-          const selected = previewIdRef.current === shop.id;
-          const marker = L.marker([shop.latitude, shop.longitude], {
-            icon: coffeeMapPinIcon({ focus: shop.type, selected }),
-            title: shop.title,
+      clearMarkers();
+      const targets = groupShopsForMap(shopsList, map);
+
+      targets.forEach((target) => {
+        if (target.type === 'cluster') {
+          const marker = L.marker([target.lat, target.lng], {
+            icon: coffeeClusterIcon(target.shops.length),
             keyboard: false,
-            zIndexOffset: selected ? 1000 : 0,
+            zIndexOffset: 400,
           });
           marker.on('click', () => {
-            void pickPreview(shop, (list) => addMarkers(map, list));
+            zoomToClusterShops(map, target.shops);
           });
           marker.addTo(map);
           markersRef.current.push(marker);
-        });
-
-        if (shopsList.length > 0 && !previewIdRef.current) {
-          void pickPreview(shopsList[0], (list) => addMarkers(map, list));
+          return;
         }
+
+        const shop = target.shop;
+        const selected = previewIdRef.current === shop.id;
+        const marker = L.marker([shop.latitude, shop.longitude], {
+          icon: coffeeMapPinIcon({ focus: shop.type, selected }),
+          title: shop.title,
+          keyboard: false,
+          zIndexOffset: selected ? 1000 : 0,
+        });
+        marker.on('click', () => {
+          void pickPreview(shop, (list) => addMarkers(map, list));
+        });
+        marker.addTo(map);
+        markersRef.current.push(marker);
       });
+
+      if (shopsList.length > 0 && !previewIdRef.current) {
+        void pickPreview(shopsList[0], (list) => addMarkers(map, list));
+      }
     };
 
     const loadShops = async (map: LeafletMap) => {
@@ -153,7 +168,10 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
 
         scheduleUpdate();
         map.on('moveend', scheduleUpdate);
-        map.on('zoomend', scheduleUpdate);
+        map.on('zoomend', () => {
+          addMarkers(map, shopsRef.current);
+          scheduleUpdate();
+        });
       } catch {
         if (!cancelled) {
           setError('Не удалось загрузить карту');
