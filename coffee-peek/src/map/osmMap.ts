@@ -1,5 +1,6 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { brand, dark, light } from '../design-system/tokens';
 
 export const MINSK_CENTER: L.LatLngTuple = [53.9, 27.5667];
 
@@ -127,10 +128,31 @@ export function parseCoffeeFocus(value: unknown): MapCoffeeFocus {
   return 'coffee_bar';
 }
 
-const PIN_BY_FOCUS: Record<MapCoffeeFocus, { color: string; mascot: string }> = {
-  specialty: { color: '#EAB308', mascot: '/maskot-props/maskot-with-bean.png' },
-  coffee_bar: { color: '#D4A84B', mascot: '/maskot-props/maskot-wthi-cup.png' },
-  cafe: { color: '#3D2F28', mascot: '/maskot-props/maskot-with-dessert.png' },
+const PIN_BY_FOCUS: Record<
+  MapCoffeeFocus,
+  { fill: string; stroke: string; selectedGlow: string; mascot: string }
+> = {
+  /** Specialty — фирменное золото */
+  specialty: {
+    fill: brand.primary,
+    stroke: brand.primaryDark,
+    selectedGlow: brand.primaryHover,
+    mascot: '/maskot-props/maskot-with-bean.png',
+  },
+  /** Coffee bar — тёмный эспрессо (фон сайта) */
+  coffee_bar: {
+    fill: dark.background,
+    stroke: dark.border,
+    selectedGlow: brand.primary,
+    mascot: '/maskot-props/maskot-wthi-cup.png',
+  },
+  /** Cafe — тёплый stone / как вторичный текст */
+  cafe: {
+    fill: light.textSecondary,
+    stroke: dark.borderHover,
+    selectedGlow: brand.goldWarm,
+    mascot: '/maskot-props/maskot-with-dessert.png',
+  },
 };
 
 const PIN_PATH =
@@ -138,12 +160,13 @@ const PIN_PATH =
 
 const PIN_W = 34;
 const PIN_H = 44;
+const PIN_W_SELECTED = 40;
+const PIN_H_SELECTED = 52;
 const PIN_VB_W = 40;
 const PIN_VB_H = 52;
-const SELECTED_FILL = '#EAB308';
 
 const mascotCanvases = new Map<string, HTMLCanvasElement>();
-const pinIconCache = new Map<string, L.Icon>();
+const pinIconCache = new Map<string, L.DivIcon>();
 let mascotsPromise: Promise<void> | null = null;
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -219,22 +242,41 @@ export function ensureMapPinMascots(): Promise<void> {
 
 void ensureMapPinMascots();
 
-function renderPinDataUrl(color: string, mascotSrc: string, selected: boolean): string {
+function renderPinDataUrl(
+  fill: string,
+  stroke: string,
+  selectedGlow: string,
+  mascotSrc: string,
+  selected: boolean,
+): string {
+  const pinW = selected ? PIN_W_SELECTED : PIN_W;
+  const pinH = selected ? PIN_H_SELECTED : PIN_H;
   const dpr = 2;
   const canvas = document.createElement('canvas');
-  canvas.width = PIN_W * dpr;
-  canvas.height = PIN_H * dpr;
+  canvas.width = pinW * dpr;
+  canvas.height = pinH * dpr;
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
   ctx.scale(dpr, dpr);
-  ctx.scale(PIN_W / PIN_VB_W, PIN_H / PIN_VB_H);
+  ctx.scale(pinW / PIN_VB_W, pinH / PIN_VB_H);
+
+  const pin = new Path2D(PIN_PATH);
+
+  if (selected) {
+    ctx.save();
+    ctx.shadowColor = `${selectedGlow}99`;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = selectedGlow;
+    ctx.globalAlpha = 0.35;
+    ctx.fill(pin);
+    ctx.restore();
+  }
 
   ctx.save();
   ctx.shadowColor = 'rgba(26,20,18,0.32)';
-  ctx.shadowBlur = 2.4;
-  ctx.shadowOffsetY = 1.2;
-  const pin = new Path2D(PIN_PATH);
-  ctx.fillStyle = selected ? SELECTED_FILL : color;
+  ctx.shadowBlur = selected ? 3.2 : 2.4;
+  ctx.shadowOffsetY = selected ? 1.6 : 1.2;
+  ctx.fillStyle = fill;
   ctx.fill(pin);
   ctx.restore();
 
@@ -247,38 +289,51 @@ function renderPinDataUrl(color: string, mascotSrc: string, selected: boolean): 
   }
 
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = '#1A1412';
-  ctx.lineWidth = selected ? 1.5 : 1.15;
+  ctx.strokeStyle = selected ? selectedGlow : stroke;
+  ctx.lineWidth = selected ? 2 : 1.15;
   ctx.stroke(pin);
+
+  if (selected) {
+    ctx.strokeStyle = light.textOnPrimary;
+    ctx.lineWidth = 0.75;
+    ctx.globalAlpha = 0.35;
+    ctx.stroke(pin);
+    ctx.globalAlpha = 1;
+  }
 
   return canvas.toDataURL('image/png');
 }
 
-export function coffeeMapPinIcon(options: { focus?: unknown; selected?: boolean } = {}): L.Icon {
+export function coffeeMapPinIcon(options: { focus?: unknown; selected?: boolean } = {}): L.DivIcon {
   const focus = parseCoffeeFocus(options.focus);
-  const { color, mascot } = PIN_BY_FOCUS[focus];
+  const { fill, stroke, selectedGlow, mascot } = PIN_BY_FOCUS[focus];
   const selected = Boolean(options.selected);
   const key = `${focus}-${selected}-${mascotCanvases.has(mascot) ? 'm' : 'x'}`;
   const cached = pinIconCache.get(key);
   if (cached) return cached;
 
-  const icon = L.icon({
-    iconUrl: renderPinDataUrl(color, mascot, selected),
-    iconSize: [PIN_W, PIN_H],
-    iconAnchor: [PIN_W / 2, PIN_H - 2],
-    popupAnchor: [0, -(PIN_H - 10)],
-    className: 'coffee-map-pin',
+  const pinW = selected ? PIN_W_SELECTED : PIN_W;
+  const pinH = selected ? PIN_H_SELECTED : PIN_H;
+  const iconUrl = renderPinDataUrl(fill, stroke, selectedGlow, mascot, selected);
+  const selectedClass = selected ? ' coffee-map-pin--selected' : '';
+
+  const icon = L.divIcon({
+    className: `coffee-map-pin coffee-map-pin--${focus}${selectedClass}`,
+    html: `<div class="coffee-pin-shell" aria-hidden="true"><span class="coffee-pin-pulse"></span><img src="${iconUrl}" alt="" draggable="false" width="${pinW}" height="${pinH}" /></div>`,
+    iconSize: [pinW, pinH],
+    iconAnchor: [pinW / 2, pinH - 2],
+    popupAnchor: [0, -(pinH - 10)],
   });
   pinIconCache.set(key, icon);
   return icon;
 }
 
 /** @deprecated use coffeeMapPinIcon */
-export function coffeeCircleIcon(selected: boolean, focus?: unknown): L.Icon {
+export function coffeeCircleIcon(selected: boolean, focus?: unknown): L.DivIcon {
   return coffeeMapPinIcon({ selected, focus });
 }
 
 /** Pin for shop detail sidebar. */
-export function coffeeDetailIcon(focus?: unknown): L.Icon {
+export function coffeeDetailIcon(focus?: unknown): L.DivIcon {
   return coffeeMapPinIcon({ focus, selected: true });
 }

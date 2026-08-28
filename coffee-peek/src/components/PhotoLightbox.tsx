@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { getPhotoUrl, PhotoMetadataDto, ShortPhotoMetadataDto } from '../api/coffeeshop';
 import { AppIcon } from './icons';
 
@@ -60,14 +61,22 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
   const current = urls[index];
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/92 p-3 sm:p-6"
+      className="fixed inset-0 z-[1300] flex items-center justify-center p-3 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-label={`Фото: ${shopName}`}
-      onClick={onClose}
     >
+      <button
+        type="button"
+        className="absolute inset-0 border-0 cursor-default"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.82)' }}
+        onClick={onClose}
+        aria-hidden
+        tabIndex={-1}
+      />
+
       <button
         type="button"
         onClick={onClose}
@@ -110,18 +119,16 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
         </>
       )}
 
-      <div
-        className="flex h-full w-full max-w-6xl items-center justify-center"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative z-10 flex h-full w-full max-w-6xl items-center justify-center pointer-events-none">
         <img
           src={current}
           alt={`${shopName} — фото ${index + 1}`}
-          className="max-h-[min(90vh,900px)] max-w-full object-contain select-none"
+          className="max-h-[min(90vh,900px)] max-w-full object-contain select-none pointer-events-auto"
           draggable={false}
         />
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
