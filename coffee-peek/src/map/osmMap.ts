@@ -146,9 +146,9 @@ const PIN_BY_FOCUS: Record<
   },
 };
 
-const PIN_SIZE = 22;
-const PIN_SIZE_SELECTED = 28;
-const PIN_SIZE_DETAIL = 30;
+const PIN_SIZE = 26;
+const PIN_SIZE_SELECTED = 34;
+const PIN_SIZE_DETAIL = 36;
 
 const mascotCanvases = new Map<string, HTMLCanvasElement>();
 const pinIconCache = new Map<string, L.DivIcon>();
@@ -432,7 +432,7 @@ const clusterIconCache = new Map<string, L.DivIcon>();
 
 export function coffeeClusterIcon(count: number): L.DivIcon {
   const label = count > 99 ? '99+' : String(count);
-  const size = count < 10 ? 34 : count < 100 ? 38 : 42;
+  const size = count < 10 ? 41 : count < 100 ? 46 : 50;
   const key = `${size}-${label}`;
   const cached = clusterIconCache.get(key);
   if (cached) return cached;
