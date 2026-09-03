@@ -41,7 +41,7 @@ export default {
         },
       },
       fontFamily: {
-        display: ['RF Dewi Expanded', 'Sora', 'sans-serif'],
+        display: ['RF Dewi', 'RF Dewi', 'sans-serif'],
         body: ['RF Dewi', 'RF Dewi', 'sans-serif'],
       },
     },
