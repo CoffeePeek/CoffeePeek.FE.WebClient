@@ -36,9 +36,11 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["RF Dewi Expanded", "sans-serif"],
-        display: ["RF Dewi Expanded", "sans-serif"],
-        body: ["RF Dewi Expanded", "sans-serif"],
+        sans: ["RF Dewi", "sans-serif"],
+        body: ["RF Dewi", "sans-serif"],
+        display: ["RF Dewi Extended", "sans-serif"],
+        condensed: ["RF Dewi Condensed", "sans-serif"],
+        accent: ["RF Dewi Expanded", "sans-serif"],
       },
       letterSpacing: {
         wordmark: "-0.045em",

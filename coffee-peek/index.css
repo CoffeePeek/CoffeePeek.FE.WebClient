@@ -5,49 +5,35 @@
 @layer base {
   html,
   body {
-    font-family: "RF Dewi Expanded", sans-serif;
+    font-family: "RF Dewi", sans-serif;
   }
 }
 
-/* ── RF Dewi Expanded — display family (Magazine Stamp) ────────── */
+/* ── RF Dewi family — Regular is the only weight per variant ───── */
 @font-face {
-  font-family: "RF Dewi Expanded";
-  src: url("/fonts/RFDewiExpanded-Ultralight.otf") format("opentype");
-  font-weight: 200; font-style: normal; font-display: swap;
+  font-family: "RF Dewi";
+  src: url("/fonts/RFDewi-Regular.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
-  font-family: "RF Dewi Expanded";
-  src: url("/fonts/RFDewiExpanded-Light.otf") format("opentype");
-  font-weight: 300; font-style: normal; font-display: swap;
+  font-family: "RF Dewi Condensed";
+  src: url("/fonts/RFDewiCondensed-Regular.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
 }
+@font-face {
+  font-family: "RF Dewi Extended";
+  src: url("/fonts/RFDewiExtended-Regular.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+/* Expanded — reserved for large brand accents (wordmark, hero, numerals) */
 @font-face {
   font-family: "RF Dewi Expanded";
   src: url("/fonts/RFDewiExpanded-Regular.otf") format("opentype");
   font-weight: 400; font-style: normal; font-display: swap;
 }
-@font-face {
-  font-family: "RF Dewi Expanded";
-  src: url("/fonts/RFDewiExpanded-Semibold.otf") format("opentype");
-  font-weight: 600; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "RF Dewi Expanded";
-  src: url("/fonts/RFDewiExpanded-Bold.otf") format("opentype");
-  font-weight: 700; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "RF Dewi Expanded";
-  src: url("/fonts/RFDewiExpanded-Ultrabold.otf") format("opentype");
-  font-weight: 800; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "RF Dewi Expanded";
-  src: url("/fonts/RFDewiExpanded-Black.otf") format("opentype");
-  font-weight: 900; font-style: normal; font-display: swap;
-}
 
 :root {
-  font-family: "RF Dewi Expanded", sans-serif;
+  font-family: "RF Dewi", sans-serif;
   line-height: 1.5;
   font-weight: 400;
 

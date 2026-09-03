@@ -75,23 +75,33 @@ src/design-system/
 
 ### Шрифты
 
-| Роль | Семейство | Fallback | Android |
-|------|-----------|----------|---------|
-| Display (заголовки, логотип) | RF Dewi Expanded | Sora | `res/font/rf_dewi_expanded_*.otf` |
-| Body (текст, формы) | Noto Sans | Inter | `res/font/noto_sans_*.ttf` |
-| Icons | Phosphor Icons (`@phosphor-icons/react`) | — | Material Icons Extended |
+| Роль | Семейство | Tailwind | Использование |
+|------|-----------|----------|---------------|
+| Body (простой текст) | RF Dewi | `font-sans`, `font-body` | Параграфы, формы, дефолтный текст |
+| Headline (заголовки) | RF Dewi Extended | `font-display` | H1–H3, заголовки секций |
+| Accent (крупные брендовые акценты) | RF Dewi Expanded | `.wordmark`, `.hero-text`, `.numeral` | Логотип, hero, крупные цифры |
+| Condensed (мало места) | RF Dewi Condensed | `font-condensed` | Бейджи, чипы, плотный UI |
+| Icons | Phosphor Icons (`@phosphor-icons/react`) | — | — |
 
-Файлы шрифтов в вебе: `/public/fonts/RFDewiExpanded-*.otf`
+Все семейства — один вес (400, Regular), их визуальная плотность (condensed/expanded/extended) задаётся самим шрифтом, а не `font-weight`.
+
+Файлы шрифтов в вебе: `/public/fonts/*.otf`
+- `RFDewi-Regular.otf` → `RF Dewi`
+- `RFDewiCondensed-Regular.otf` → `RF Dewi Condensed`
+- `RFDewiExtended-Regular.otf` → `RF Dewi Extended`
+- `RFDewiExpanded-Regular.otf` → `RF Dewi Expanded`
+
+Android-соответствие (плейсхолдер, пока не портировано): `res/font/rf_dewi_*.otf`, body — Noto Sans / Inter.
 
 ### Стили текста
 
 | Стиль | Font | Weight | Size | Letter-spacing | Line-height |
 |-------|------|--------|------|----------------|-------------|
-| Wordmark | Display | 800 | 20px | -0.045em | — |
-| Hero | Display | 900 | 88px | -0.045em | 0.95 |
-| H1 | Display | 700 | 36px | -0.02em | — |
-| H2 | Display | 700 | 24px | -0.025em | 1.15 |
-| H3 | Display | 700 | 20px | — | — |
+| Wordmark | Accent | 800 | 20px | -0.045em | — |
+| Hero | Accent | 900 | 88px | -0.045em | 0.95 |
+| H1 | Headline | 700 | 36px | -0.02em | — |
+| H2 | Headline | 700 | 24px | -0.025em | 1.15 |
+| H3 | Headline | 700 | 20px | — | — |
 | Body | Body | 400 | 16px | — | — |
 | Body Small | Body | 400 | 14px | — | — |
 | Label | Body | 500 | 14px | — | — |
@@ -247,7 +257,7 @@ cp src/design-system/android/dimens.xml       → app/src/main/res/values/dimens
 ### Шаг 2: Шрифты
 
 Скопируйте из веб-проекта (`public/fonts/`):
-- `RFDewiExpanded-*.otf` → `res/font/`
+- `RFDewiExpanded-Regular.otf` → `res/font/`
 - `Noto Sans` → скачайте с Google Fonts → `res/font/`
 
 ### Шаг 3: Compose Theme

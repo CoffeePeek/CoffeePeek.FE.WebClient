@@ -53,7 +53,11 @@
       "Bash(cp /home/arseny/.claude/projects/-home-arseny-RiderProjects-CoffeePeek-FE-WebClient/7efc2438-02d0-4c67-9cda-599c85e89c81/tool-results/webfetch-1779023590171-5d9kav.bin design.tar.gz)",
       "Bash(tar -tzf design.tar.gz)",
       "Bash(gunzip -c design.tar.gz)",
-      "Bash(tar -xzf design.tar.gz app-onboarding/README.md app-onboarding/project/Landing.html app-onboarding/project/landing-desktop.jsx app-onboarding/project/landing-mobile.jsx)"
+      "Bash(tar -xzf design.tar.gz app-onboarding/README.md app-onboarding/project/Landing.html app-onboarding/project/landing-desktop.jsx app-onboarding/project/landing-mobile.jsx)",
+      "Bash(git *)",
+      "Bash(npx vite *)",
+      "Bash(npm -v)",
+      "Bash(node -e \"require\\('./tailwind.config.js'\\)\")"
     ]
   }
 }
