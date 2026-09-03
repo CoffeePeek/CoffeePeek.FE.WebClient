@@ -7,7 +7,7 @@ import { instagramHandle, instagramUrl, toWebsiteHref } from '../../utils/shopUt
 import { AppIcon } from '../icons';
 import { Globe, InstagramLogo } from '@/components/Icon';
 
-RF Dewiface ContactButtonsProps {
+interface ContactButtonsProps {
   shop: DetailedCoffeeShop;
   cardBg: string;
   borderColor: string;

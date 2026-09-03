@@ -3,10 +3,10 @@ import { ModerationStatus } from '../../api/admin';
 
 export type BadgeVariant = 'pending' | 'approved' | 'rejected' | 'info' | 'default';
 
-RF Dewiface BadgeProps {
-  variant ?: BadgeVariant;
+interface BadgeProps {
+  variant?: BadgeVariant;
   children: React.ReactNode;
-  className ?: string;
+  className?: string;
 }
 
 const variantClasses: Record<BadgeVariant, string> = {

@@ -1,6 +1,6 @@
 export type PriceRangeLevel = 'Cheap' | 'Moderate' | 'Expensive' | 'Luxury';
 
-export RF Dewiface PriceRangeOption {
+export interface PriceRangeOption {
   value: 1 | 2 | 3 | 4;
   level: PriceRangeLevel;
   label: string;

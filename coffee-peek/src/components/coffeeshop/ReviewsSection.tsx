@@ -8,14 +8,14 @@ import { AppUser } from '../../contexts/UserContext';
 import { StarIcon } from '../icons';
 import Mascot from '../Mascot';
 
-RF Dewiface ReviewsSectionProps {
+interface ReviewsSectionProps {
   reviews: Review[];
   usersCache: Map<string, PublicUserProfile>;
   isLoading: boolean;
   myReviewId: string | null;
   isCheckingMyReview: boolean;
   onWriteOrEditReview: () => void;
-  onUserSelect ?: (userId: string) => void;
+  onUserSelect?: (userId: string) => void;
   user: AppUser | null;
   textMain: string;
   textMuted: string;

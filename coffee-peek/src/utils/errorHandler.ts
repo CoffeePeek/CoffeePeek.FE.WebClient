@@ -2,7 +2,7 @@
  * Utility functions for error handling
  */
 
-export RF Dewiface ErrorInfo {
+export interface ErrorInfo {
   code: number | string;
   title?: string;
   message?: string;

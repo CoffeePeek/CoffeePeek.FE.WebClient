@@ -1,7 +1,7 @@
 import React from 'react';
 import { COLORS } from '../constants/colors';
 
-RF Dewiface ShopPaginationProps {
+interface ShopPaginationProps {
   currentPage: number;
   totalPages: number;
   totalItems: number;

@@ -5,10 +5,10 @@ import { CaretLeft, CaretRight, X } from '@/components/Icon';
 
 type PhotoInput = string | PhotoMetadataDto | ShortPhotoMetadataDto;
 
-RF Dewiface PhotoLightboxProps {
+interface PhotoLightboxProps {
   images: PhotoInput[];
   shopName: string;
-  initialIndex ?: number;
+  initialIndex?: number;
   onClose: () => void;
 }
 
@@ -119,11 +119,11 @@ const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
         </>
       )}
 
-      <div className="relative z-10 flex h-full w-full max-w-6xl items-center justify-center poRF Dewi-events-none">
+      <div className="relative z-10 flex h-full w-full max-w-6xl items-center justify-center pointer-events-none">
         <img
           src={current}
           alt={`${shopName} — фото ${index + 1}`}
-          className="max-h-[min(90vh,900px)] max-w-full object-contain select-none poRF Dewi-events-auto"
+          className="max-h-[min(90vh,900px)] max-w-full object-contain select-none pointer-events-auto"
           draggable={false}
         />
       </div>

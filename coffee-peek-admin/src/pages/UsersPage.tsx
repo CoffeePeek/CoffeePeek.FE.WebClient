@@ -254,7 +254,7 @@ const EditRoleModal: React.FC<{
 
         <div className="space-y-2 mb-5">
           {ROLES.map((r) => (
-            <label key={r} className="flex items-center gap-3 cursor-poRF Dewi">
+            <label key={r} className="flex items-center gap-3 cursor-pointer">
               <input
                 type="radio"
                 name="role"
@@ -398,10 +398,11 @@ export const UsersPage: React.FC = () => {
             <button
               key={r || 'all'}
               onClick={() => setParam('role', r)}
-              className={`filter-chip ${roleFilter === r
+              className={`filter-chip ${
+                roleFilter === r
                   ? 'bg-primary text-black'
                   : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
-                }`}
+              }`}
             >
               {r || 'Все'}
             </button>

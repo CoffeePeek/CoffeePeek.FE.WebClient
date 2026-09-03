@@ -2,7 +2,7 @@ import React from 'react';
 import { Star } from '@phosphor-icons/react';
 import type { IconProps } from '@phosphor-icons/react';
 
-RF Dewiface StarIconProps extends Omit < IconProps, 'weight' > {
+interface StarIconProps extends Omit<IconProps, 'weight'> {
   filled?: boolean;
 }
 

@@ -30,7 +30,7 @@ type GoogleAccountsId = {
 };
 
 declare global {
-  RF Dewiface Window {
+  interface Window {
     google?: {
       accounts: {
         id: GoogleAccountsId;

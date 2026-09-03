@@ -3,15 +3,15 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Icons } from '../constants';
 import { MASCOT_SRC } from './Mascot';
 
-export RF Dewiface Toast {
+export interface Toast {
   id: string;
   message: string;
-  type ?: 'error' | 'success' | 'info' | 'warning';
-  duration ?: number;
-  imageUrl ?: string;
+  type?: 'error' | 'success' | 'info' | 'warning';
+  duration?: number;
+  imageUrl?: string;
 }
 
-RF Dewiface ToastProps {
+interface ToastProps {
   toast: Toast;
   onClose: (id: string) => void;
 }

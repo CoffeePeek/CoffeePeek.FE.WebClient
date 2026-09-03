@@ -2,21 +2,21 @@ import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import Shimmer from './Shimmer';
 
-RF Dewiface ListSkeletonProps {
-  count ?: number;
-  showAvatar ?: boolean;
+interface ListSkeletonProps {
+  count?: number;
+  showAvatar?: boolean;
 }
 
 /**
  * Универсальный skeleton для списков
  */
-const ListSkeleton: React.FC<ListSkeletonProps> = ({
+const ListSkeleton: React.FC<ListSkeletonProps> = ({ 
   count = 5,
-  showAvatar = true
+  showAvatar = true 
 }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-
+  
   const cardBg = isDark ? 'bg-[#2D241F]' : 'bg-white';
   const borderColor = isDark ? 'border-[#3D2F28]' : 'border-[#E8E4E1]';
 
@@ -31,12 +31,12 @@ const ListSkeleton: React.FC<ListSkeletonProps> = ({
             {showAvatar && (
               <Shimmer width="48px" height="48px" circle />
             )}
-
+            
             <div className="flex-1">
               <Shimmer width="60%" height="20px" className="mb-2" />
               <Shimmer width="40%" height="16px" />
             </div>
-
+            
             <Shimmer width="80px" height="32px" />
           </div>
         </div>

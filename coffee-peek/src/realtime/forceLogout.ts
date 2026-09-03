@@ -9,7 +9,7 @@ export const FORCE_LOGOUT_REASONS = [
 
 export type ForceLogoutReason = (typeof FORCE_LOGOUT_REASONS)[number];
 
-export RF Dewiface ForceLogoutPayload {
+export interface ForceLogoutPayload {
   reason: string;
   occurredAtUtc: string;
 }

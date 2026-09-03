@@ -53,11 +53,11 @@ const AllGridIcon: React.FC<{ color: string; size?: number }> = ({ color, size =
 );
 
 const FIXED_QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
-  { id: 'all', label: 'Все', Icon: SquaresFour },
-  { id: 'open', label: 'Открыто', Icon: Clock },
-  { id: 'new', label: 'Новые', Icon: Sparkle },
-  { id: 'visited', label: 'Уже был', Icon: CheckCircle },
-  { id: 'favorite', label: 'Избранное', Icon: Heart },
+  { id: 'all',      label: 'Все',        Icon: SquaresFour },
+  { id: 'open',     label: 'Открыто',    Icon: Clock        },
+  { id: 'new',      label: 'Новые',      Icon: Sparkle      },
+  { id: 'visited',  label: 'Уже был',    Icon: CheckCircle },
+  { id: 'favorite', label: 'Избранное',  Icon: Heart        },
 ];
 
 const PRICE_OPTIONS = PRICE_FILTER_OPTIONS.map((o) => ({
@@ -73,16 +73,16 @@ const FOCUS_OPTIONS = [
   { value: 'cafe', label: 'Кафе' },
 ];
 
-export RF Dewiface AppliedFilters {
-  priceRange ?: string;
-  coffeeFocus ?: string;
+export interface AppliedFilters {
+  priceRange?: string;
+  coffeeFocus?: string;
   equipments: string[];
   beans: string[];
   roasters: string[];
   brewMethods: string[];
 }
 
-RF Dewiface ShopFilterPanelProps {
+interface ShopFilterPanelProps {
   mode: 'chips' | 'quick' | 'sidebar';
   activeQuick: string[];
   onQuickChange: (id: string) => void;
@@ -106,8 +106,8 @@ RF Dewiface ShopFilterPanelProps {
   colors: { surface: string; border: string; textPrimary: string; background: string };
   dark: boolean;
   onApplyFilters: (applied: AppliedFilters) => void;
-  resultCount ?: number;
-  onClose ?: () => void;
+  resultCount?: number;
+  onClose?: () => void;
 }
 
 function toggle(arr: string[], id: string): string[] {
@@ -132,7 +132,7 @@ const FilterAccordion: React.FC<{
         onClick={() => setOpen((v) => !v)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-          padding: '12px 0', background: 'none', border: 'none', cursor: 'poRF Dewi', textAlign: 'left',
+          padding: '12px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
         }}
       >
         <span style={{
@@ -180,7 +180,7 @@ const OptionRow: React.FC<{
     onClick={onClick}
     style={{
       width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-      padding: '6px 0', background: 'none', border: 'none', cursor: 'poRF Dewi', textAlign: 'left',
+      padding: '6px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
     }}
   >
     <CheckMark checked={checked} gold={gold} borderColor={borderColor} />
@@ -223,7 +223,7 @@ const ExpandableOptions: React.FC<{
           type="button"
           onClick={() => setExpanded((v) => !v)}
           style={{
-            marginTop: 6, background: 'none', border: 'none', cursor: 'poRF Dewi', padding: 0,
+            marginTop: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0,
             fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, color: COLORS.primary,
           }}
         >
@@ -273,7 +273,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     display: 'inline-flex', alignItems: 'center', gap: 5,
     padding: '6px 12px', borderRadius: 99, whiteSpace: 'nowrap',
     fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12,
-    cursor: 'poRF Dewi', transition: 'all .15s', border: '1px solid',
+    cursor: 'pointer', transition: 'all .15s', border: '1px solid',
     flexShrink: 0,
   };
 
@@ -311,7 +311,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
           <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: 12, border: `1px solid ${borderColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 20, minWidth: 160, maxHeight: 280, overflowY: 'auto' as const, background: dark ? '#2D241F' : '#fff' }}>
             {cities.map(city => (
               <button key={city.id} type="button" onClick={() => { onCityChange(city.id); onCityDropdownToggle(); }}
-                style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : textPrimary, border: 'none', cursor: 'poRF Dewi', fontFamily: '"RF Dewi Expanded"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : textPrimary, border: 'none', cursor: 'pointer', fontFamily: '"RF Dewi Expanded"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                 {selectedCity === city.id && <CheckCircle size={14} color={gold} />}
                 <span style={{ marginLeft: selectedCity === city.id ? 0 : 22 }}>{city.name}</span>
               </button>
@@ -458,7 +458,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Закрыть фильтры"
-            style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${borderColor}`, background: 'transparent', cursor: 'poRF Dewi', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textPrimary, padding: 0, flexShrink: 0 }}
+            style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${borderColor}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textPrimary, padding: 0, flexShrink: 0 }}
           >
             <CloseIcon color={textPrimary} size={16} />
           </button>
@@ -550,7 +550,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             onClick={() => onApplyFilters({ priceRange: undefined, coffeeFocus: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] })}
             style={{
               width: '100%', height: 40, borderRadius: 10, border: `1px solid ${borderColor}`,
-              background: 'transparent', color: muted, cursor: 'poRF Dewi',
+              background: 'transparent', color: muted, cursor: 'pointer',
               fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13,
             }}
           >
@@ -563,7 +563,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             onClick={onClose}
             style={{
               width: '100%', height: 44, borderRadius: 10, border: 'none',
-              background: gold, color: '#1A1412', cursor: 'poRF Dewi',
+              background: gold, color: '#1A1412', cursor: 'pointer',
               fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14,
             }}
           >

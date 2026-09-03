@@ -12,7 +12,7 @@ import {
 } from './admin';
 import { uiDayToDotNetName } from '../utils/dayOfWeek';
 
-export RF Dewiface UpdateOwnerShopRequest {
+export interface UpdateOwnerShopRequest {
   name?: string;
   description?: string | null;
   phoneNumber?: string | null;
@@ -39,7 +39,7 @@ function toOwnerApiSchedules(schedules: AdminShopSchedule[]) {
   return schedules.map((schedule) => ({
     dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
     isClosed: Boolean(schedule.isClosed),
-    RF Dewivals:
+    intervals:
       schedule.isClosed || !schedule.openTime || !schedule.closeTime
         ? []
         : [

@@ -7,7 +7,7 @@ export const FORCE_LOGOUT_REASONS = [
   'password_reset',
 ] as const;
 
-export RF Dewiface ForceLogoutPayload {
+export interface ForceLogoutPayload {
   reason: string;
   occurredAtUtc: string;
 }

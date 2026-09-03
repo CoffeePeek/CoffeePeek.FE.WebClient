@@ -3,13 +3,13 @@ import { ImportCandidate } from '../../api/import';
 import { Pagination } from '../ui/Pagination';
 import { displayShopName, instagramHandleFrom } from '../../constants/catalogIngest';
 
-RF Dewiface DossierQueueProps {
+interface DossierQueueProps {
   items: ImportCandidate[];
-  activeId ?: string;
+  activeId?: string;
   page: number;
   totalPages: number;
   totalCount: number;
-  loading ?: boolean;
+  loading?: boolean;
   onSelect: (id: string) => void;
   onPageChange: (page: number) => void;
 }

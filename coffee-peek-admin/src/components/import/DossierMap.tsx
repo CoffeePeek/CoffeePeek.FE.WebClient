@@ -2,8 +2,8 @@ import React from 'react';
 import { ImportCandidate } from '../../api/import';
 import { mapTabSrc } from '../../utils/importDossier';
 
-RF Dewiface DossierMapProps {
-  candidate ?: ImportCandidate | null;
+interface DossierMapProps {
+  candidate?: ImportCandidate | null;
 }
 
 export const DossierMap: React.FC<DossierMapProps> = ({ candidate }) => {

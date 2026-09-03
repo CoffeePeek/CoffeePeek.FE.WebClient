@@ -61,7 +61,7 @@ export const ShopEditPage: React.FC = () => {
     queryKey: ['admin', 'shop', id],
     queryFn: () => getModerationShopById(id!).then((r) => r.data),
     enabled: !!id,
-    refetchRF Dewival: (query) => {
+    refetchInterval: (query) => {
       const status = query.state.data?.menu?.parseStatus;
       return status === 'Pending' || status === 'Running' ? 2500 : false;
     },

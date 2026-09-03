@@ -25,9 +25,9 @@ import {
 type Section = 'profile' | 'security' | 'appearance';
 
 const NAV_ITEMS: { id: Section; label: string; Icon: React.ComponentType<IconProps> }[] = [
-  { id: 'profile', label: 'Профиль', Icon: User },
-  { id: 'security', label: 'Безопасность', Icon: Lock },
-  { id: 'appearance', label: 'Внешний вид', Icon: Palette },
+  { id: 'profile',    label: 'Профиль',      Icon: User    },
+  { id: 'security',   label: 'Безопасность', Icon: Lock    },
+  { id: 'appearance', label: 'Внешний вид',  Icon: Palette },
 ];
 
 // ── Main component ───────────────────────────────────────────────────
@@ -266,7 +266,7 @@ const SettingsPage: React.FC = () => {
                 <button
                   onClick={handleResendConfirmation}
                   disabled={isResending}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'poRF Dewi', opacity: isResending ? 0.6 : 1 }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
                   {isResending
                     ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
                     : <><ArrowClockwise size={14} />Отправить повторно</>
@@ -282,7 +282,7 @@ const SettingsPage: React.FC = () => {
             </div>
             <button
               onClick={() => setPendingEmailConfirmation(null)}
-              style={{ background: 'none', border: 'none', padding: 2, cursor: 'poRF Dewi', color: '#A39E93', flexShrink: 0 }}>
+              style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#A39E93', flexShrink: 0 }}>
               <X size={18} />
             </button>
           </div>
@@ -300,7 +300,7 @@ const SettingsPage: React.FC = () => {
                   background: active ? `${gold}14` : 'transparent',
                   color: active ? gold : textMuted,
                   borderColor: active ? `${gold}50` : border,
-                  fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, cursor: 'poRF Dewi',
+                  fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, cursor: 'pointer',
                 }}>
                   <item.Icon size={15} color={active ? gold : textMuted} />
                   {item.label}
@@ -313,7 +313,7 @@ const SettingsPage: React.FC = () => {
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '8px 14px', borderRadius: 99, border: 'none',
                 background: gold, color: '#1A1412',
-                fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: 'poRF Dewi',
+                fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: 'pointer',
               }}>
               <Storefront size={15} color="#1A1412" />
               Добавить кофейню
@@ -352,7 +352,7 @@ const SettingsPage: React.FC = () => {
                     width: '100%', padding: '11px 14px', textAlign: 'left', border: 'none',
                     borderBottom: i < NAV_ITEMS.length - 1 ? `1px solid ${border}` : 'none',
                     background: active ? `${gold}10` : 'transparent',
-                    cursor: 'poRF Dewi', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s',
                   }}>
                     <item.Icon size={18} color={active ? gold : textMuted} />
                     <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: active ? gold : textPrimary, flex: 1 }}>{item.label}</span>
@@ -364,7 +364,7 @@ const SettingsPage: React.FC = () => {
 
             <button
               onClick={() => navigate('/coffee-shops/new')}
-              style={{ width: '100%', padding: '11px 14px', textAlign: 'left', background: surface, border: `1px solid ${border}`, borderRadius: 16, cursor: 'poRF Dewi', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, transition: 'background .15s' }}
+              style={{ width: '100%', padding: '11px 14px', textAlign: 'left', background: surface, border: `1px solid ${border}`, borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, transition: 'background .15s' }}
               onMouseEnter={e => (e.currentTarget.style.background = `${gold}14`)}
               onMouseLeave={e => (e.currentTarget.style.background = surface)}>
               <Storefront size={18} color={gold} />
@@ -373,7 +373,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Logout */}
             <button onClick={() => { logout(); navigate('/'); }}
-              style={{ width: '100%', padding: '11px 14px', textAlign: 'left', background: surface, border: `1px solid ${border}`, borderRadius: 16, cursor: 'poRF Dewi', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s' }}
+              style={{ width: '100%', padding: '11px 14px', textAlign: 'left', background: surface, border: `1px solid ${border}`, borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
               onMouseLeave={e => (e.currentTarget.style.background = surface)}>
               <SignOut size={18} color="#EF4444" />
@@ -393,7 +393,7 @@ const SettingsPage: React.FC = () => {
 
 // ── Profile section ──────────────────────────────────────────────────
 
-RF Dewiface ProfileSectionProps {
+interface ProfileSectionProps {
   profile: UserProfile;
   isEditing: boolean;
   editValues: Record<string, string>;
@@ -452,7 +452,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
               }
             </div>
             {isEditing && (
-              <label style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 99, background: gold, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'poRF Dewi', border: `2px solid ${surface}` }}>
+              <label style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 99, background: gold, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: `2px solid ${surface}` }}>
                 <input type="file" accept="image/*" onChange={onAvatarSelect} disabled={isSaving} style={{ display: 'none' }} />
                 <Camera size={14} color="#1A1412" />
               </label>
@@ -476,16 +476,16 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
           {/* Edit / Save buttons */}
           <div style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
             {!isEditing ? (
-              <button onClick={onEditStart} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'poRF Dewi', transition: 'all .15s' }}>
+              <button onClick={onEditStart} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
                 <PencilSimple size={16} />
                 Изменить
               </button>
             ) : (
               <>
-                <button onClick={onEditCancel} disabled={isSaving} style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'poRF Dewi' }}>
+                <button onClick={onEditCancel} disabled={isSaving} style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
                   Отмена
                 </button>
-                <button onClick={onSave} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: isSaving ? 'not-allowed' : 'poRF Dewi', opacity: isSaving ? 0.7 : 1 }}>
+                <button onClick={onSave} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}>
                   {isSaving
                     ? <><WobbleRing size={16} color="#1A1412" />Сохранение…</>
                     : <><Check size={15} />Сохранить</>
@@ -511,7 +511,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
               onKeyDown={stat.onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); stat.onClick?.(); } } : undefined}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
-                cursor: stat.onClick ? 'poRF Dewi' : 'default',
+                cursor: stat.onClick ? 'pointer' : 'default',
                 borderRadius: 12, padding: stat.onClick ? '4px 6px' : 0, margin: stat.onClick ? '-4px -6px' : 0,
               }}
               title={stat.onClick ? `Смотреть ${stat.label.toLowerCase()}` : undefined}
@@ -634,7 +634,7 @@ const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: stri
           <button
             type="button"
             onClick={() => { setOpen((v) => !v); setError(''); setSuccess(''); }}
-            style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'poRF Dewi', whiteSpace: 'nowrap' }}
+            style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}
           >
             {open ? 'Отмена' : 'Изменить'}
           </button>
@@ -653,7 +653,7 @@ const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: stri
               style={{
                 alignSelf: 'flex-start', padding: '10px 18px', borderRadius: 10, border: 'none',
                 background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14,
-                cursor: isSaving || !currentPassword || newPassword.length < 8 ? 'not-allowed' : 'poRF Dewi',
+                cursor: isSaving || !currentPassword || newPassword.length < 8 ? 'not-allowed' : 'pointer',
                 opacity: !currentPassword || newPassword.length < 8 ? 0.5 : 1,
               }}
             >
@@ -679,13 +679,13 @@ const AppearanceSection: React.FC<{
     {/* Theme toggle cards */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
       {[
-        { value: 'light' as const, label: 'Светлая', Icon: Sun, preview: 'rgba(250,250,249,1)', accent: '#1C1917' },
-        { value: 'dark' as const, label: 'Тёмная', Icon: Moon, preview: '#2D241F', accent: '#fff' },
+        { value: 'light' as const, label: 'Светлая', Icon: Sun,  preview: 'rgba(250,250,249,1)', accent: '#1C1917' },
+        { value: 'dark' as const,  label: 'Тёмная',  Icon: Moon, preview: '#2D241F',             accent: '#fff'    },
       ].map(opt => {
         const active = theme === opt.value;
         return (
           <button key={opt.value} onClick={() => onSetTheme(opt.value)}
-            style={{ padding: '20px 16px', borderRadius: 16, border: `2px solid ${active ? gold : border}`, background: active ? `${gold}10` : (isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7'), cursor: 'poRF Dewi', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, transition: 'all .2s' }}>
+            style={{ padding: '20px 16px', borderRadius: 16, border: `2px solid ${active ? gold : border}`, background: active ? `${gold}10` : (isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7'), cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, transition: 'all .2s' }}>
             <div style={{ width: 52, height: 36, borderRadius: 10, background: opt.preview, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.08)' }}>
               <opt.Icon size={22} color={opt.accent} />
             </div>

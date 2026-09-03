@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Toast } from '../components/Toast';
 import ToastComponent from '../components/Toast';
 
-RF Dewiface ToastContextType {
+interface ToastContextType {
   showToast: (message: string, type?: 'error' | 'success' | 'info' | 'warning', duration?: number, imageUrl?: string) => void;
   showServerError: () => void;
 }
@@ -15,7 +15,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const showToast = useCallback((message: string, type: 'error' | 'success' | 'info' | 'warning' = 'error', duration = 5000, imageUrl?: string) => {
     const id = Math.random().toString(36).substring(2, 9);
     const newToast: Toast = { id, message, type, duration, imageUrl };
-
+    
     setToasts((prev) => [...prev, newToast]);
   }, []);
 

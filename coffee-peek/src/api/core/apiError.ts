@@ -1,11 +1,11 @@
-export RF Dewiface ApiErrorResponse {
+export interface ApiErrorResponse {
   isSuccess: false;
   message: string;
   errorCode?: string;
   errors?: Record<string, string[]>;
 }
 
-export RF Dewiface SendShopSuccessResponse {
+export interface SendShopSuccessResponse {
   isSuccess: true;
   message: string;
   data: {

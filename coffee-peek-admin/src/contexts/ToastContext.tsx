@@ -2,13 +2,13 @@ import React, { createContext, useContext, useState, ReactNode, useCallback } fr
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
-export RF Dewiface Toast {
+export interface Toast {
   id: string;
   type: ToastType;
   message: string;
 }
 
-RF Dewiface ToastContextType {
+interface ToastContextType {
   toasts: Toast[];
   showToast: (message: string, type?: ToastType) => void;
   removeToast: (id: string) => void;
@@ -60,11 +60,11 @@ const ToastContainer: React.FC<{ toasts: Toast[]; onRemove: (id: string) => void
   if (!toasts.length) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 flex flex-col gap-2 pb-[env(safe-area-inset-bottom)] poRF Dewi-events-none">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 flex flex-col gap-2 pb-[env(safe-area-inset-bottom)] pointer-events-none">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`${toastColors[toast.type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 w-full sm:min-w-[280px] sm:max-w-sm poRF Dewi-events-auto`}
+          className={`${toastColors[toast.type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 w-full sm:min-w-[280px] sm:max-w-sm pointer-events-auto`}
         >
           <span className="flex-1 text-sm font-body">{toast.message}</span>
           <button

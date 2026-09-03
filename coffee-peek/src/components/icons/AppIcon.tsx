@@ -2,9 +2,9 @@ import React from 'react';
 import type { IconProps } from '@phosphor-icons/react';
 import { MATERIAL_ICON_MAP } from './iconMap';
 
-export RF Dewiface AppIconProps extends IconProps {
+export interface AppIconProps extends IconProps {
   name: string;
-  filled ?: boolean;
+  filled?: boolean;
 }
 
 export const AppIcon: React.FC<AppIconProps> = ({

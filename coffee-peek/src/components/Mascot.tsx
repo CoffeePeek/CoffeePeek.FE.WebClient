@@ -14,13 +14,13 @@ export const MASCOT_SRC = {
 
 export type MascotPose = keyof typeof MASCOT_SRC;
 
-RF Dewiface MascotProps {
+interface MascotProps {
   pose: MascotPose;
-  size ?: number;
-  className ?: string;
-  style ?: React.CSSProperties;
-  alt ?: string;
-  eager ?: boolean;
+  size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+  alt?: string;
+  eager?: boolean;
 }
 
 const Mascot: React.FC<MascotProps> = ({
@@ -45,7 +45,7 @@ const Mascot: React.FC<MascotProps> = ({
       height: size,
       objectFit: 'contain',
       display: 'block',
-      poRF DewiEvents: 'none',
+      pointerEvents: 'none',
       userSelect: 'none',
       ...style,
     }}

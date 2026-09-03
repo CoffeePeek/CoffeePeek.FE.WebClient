@@ -1,11 +1,11 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
-RF Dewiface ShopPhotoPlaceholderProps {
+interface ShopPhotoPlaceholderProps {
   /** Matches Android 18sp default; pass 7 or 24 for compact/hero slots. */
-  fontSize ?: number;
-  className ?: string;
-  style ?: React.CSSProperties;
+  fontSize?: number;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 /** Empty-photo fill matching the mobile Compose placeholder. */

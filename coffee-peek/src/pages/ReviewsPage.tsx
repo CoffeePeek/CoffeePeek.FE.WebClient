@@ -63,7 +63,7 @@ const ReviewsPage: React.FC = () => {
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 32, height: 32, padding: 0, flexShrink: 0,
               border: 'none', borderRadius: 8, background: 'transparent',
-              color: colors.textPrimary, cursor: 'poRF Dewi',
+              color: colors.textPrimary, cursor: 'pointer',
             }}
           >
             <AppIcon name="arrow_back" size={20} color="currentColor" />
@@ -102,7 +102,7 @@ const ReviewsPage: React.FC = () => {
               onClick={() => refetch()}
               style={{
                 padding: '10px 18px', borderRadius: 12, border: 'none', background: gold,
-                color: '#1A1412', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'poRF Dewi',
+                color: '#1A1412', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
               }}
             >
               Повторить
@@ -130,7 +130,7 @@ const ReviewsPage: React.FC = () => {
               onClick={() => navigate('/shops')}
               style={{
                 padding: '10px 20px', borderRadius: 12, border: 'none', background: gold,
-                color: '#1A1412', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'poRF Dewi',
+                color: '#1A1412', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
               }}
             >
               Открыть каталог
@@ -159,7 +159,7 @@ const ReviewsPage: React.FC = () => {
                         disabled={!shopId}
                         style={{
                           flex: 1, textAlign: 'left', border: 'none', background: 'transparent',
-                          padding: 0, cursor: shopId ? 'poRF Dewi' : 'default',
+                          padding: 0, cursor: shopId ? 'pointer' : 'default',
                         }}
                       >
                         <p style={{
@@ -199,7 +199,7 @@ const ReviewsPage: React.FC = () => {
                             padding: '5px 10px', borderRadius: 8,
                             border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`,
                             background: 'transparent', color: gold,
-                            fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 12, cursor: 'poRF Dewi',
+                            fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 12, cursor: 'pointer',
                             flexShrink: 0,
                           }}
                         >
@@ -262,7 +262,7 @@ const ReviewsPage: React.FC = () => {
                       background: page <= 1 ? colors.border : colors.surface,
                       color: page <= 1 ? `${colors.textSecondary}80` : colors.textPrimary,
                       fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 14,
-                      cursor: page <= 1 ? 'not-allowed' : 'poRF Dewi',
+                      cursor: page <= 1 ? 'not-allowed' : 'pointer',
                     }}
                   >
                     ← Назад
@@ -280,7 +280,7 @@ const ReviewsPage: React.FC = () => {
                       background: page >= totalPages ? colors.border : colors.surface,
                       color: page >= totalPages ? `${colors.textSecondary}80` : colors.textPrimary,
                       fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 14,
-                      cursor: page >= totalPages ? 'not-allowed' : 'poRF Dewi',
+                      cursor: page >= totalPages ? 'not-allowed' : 'pointer',
                     }}
                   >
                     Вперёд →

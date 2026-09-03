@@ -1,4 +1,4 @@
-export RF Dewiface JWTClaims {
+export interface JWTClaims {
   sub?: string;
   nameid?: string;
   email?: string;

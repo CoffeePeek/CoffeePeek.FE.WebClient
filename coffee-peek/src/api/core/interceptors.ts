@@ -122,7 +122,7 @@ export async function ensureFreshAccessToken(baseURL: string): Promise<boolean> 
   return tryRefreshAccessToken(baseURL);
 }
 
-export function requestRF Dewiceptor(
+export function requestInterceptor(
   url: string,
   options: RequestInit & { skipAuthHeader?: boolean },
   requiresAuth: boolean = true
@@ -158,7 +158,7 @@ export function requestRF Dewiceptor(
   };
 }
 
-export async function responseRF Dewiceptor<T>(
+export async function responseInterceptor<T>(
   response: Response,
   url: string
 ): Promise<T> {
@@ -280,10 +280,10 @@ export function normalizeResponseData<T>(data: any): T {
 /**
  * Интерфейсы для нормализации данных API
  */
-RF Dewiface BackendSchedule {
+interface BackendSchedule {
   dayOfWeek: number | string;
   isClosed?: boolean;
-  RF Dewivals?: Array<{
+  intervals?: Array<{
     openTime: string;
     closeTime: string;
   }>;
@@ -291,7 +291,7 @@ RF Dewiface BackendSchedule {
   closeTime?: string;
 }
 
-RF Dewiface BackendShopContact {
+interface BackendShopContact {
   phoneNumber?: string;
   phone?: string;
   email?: string;
@@ -301,7 +301,7 @@ RF Dewiface BackendShopContact {
   instagram?: string;
 }
 
-RF Dewiface BackendShopData {
+interface BackendShopData {
   id?: string;
   name?: string;
   address?: string;
@@ -365,7 +365,7 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
         // Пропускаем закрытые дни
         if (schedule.isClosed === true) return false;
         // Проверяем наличие интервалов
-        if (schedule.RF Dewivals && Array.isArray(schedule.RF Dewivals) && schedule.RF Dewivals.length > 0) {
+        if (schedule.intervals && Array.isArray(schedule.intervals) && schedule.intervals.length > 0) {
           return true;
         }
         // Поддерживаем старый формат с прямыми полями
@@ -374,12 +374,12 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
       .map((schedule: BackendSchedule) => {
         const dayOfWeek = normalizeDayOfWeek(schedule.dayOfWeek);
         if (dayOfWeek === null) return null;
-        if (schedule.RF Dewivals && Array.isArray(schedule.RF Dewivals) && schedule.RF Dewivals.length > 0) {
-          // Новый формат с RF Dewivals
-          const RF Dewival = schedule.RF Dewivals[0];
+        if (schedule.intervals && Array.isArray(schedule.intervals) && schedule.intervals.length > 0) {
+          // Новый формат с intervals
+          const interval = schedule.intervals[0];
           // Преобразуем "HH:mm:ss" в "HH:mm" для фронтенда
-          const openTime = RF Dewival.openTime ? RF Dewival.openTime.substring(0, 5) : '';
-          const closeTime = RF Dewival.closeTime ? RF Dewival.closeTime.substring(0, 5) : '';
+          const openTime = interval.openTime ? interval.openTime.substring(0, 5) : '';
+          const closeTime = interval.closeTime ? interval.closeTime.substring(0, 5) : '';
           return {
             dayOfWeek,
             openTime,
@@ -422,7 +422,7 @@ function handleServerError(): void {
       showServerErrorNotification();
     })
     .catch((err) => {
-      logger.error('[RF Dewiceptor] Failed to show server error notification:', err);
+      logger.error('[Interceptor] Failed to show server error notification:', err);
     });
 }
 

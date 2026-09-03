@@ -1,16 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { getUserRoles, getUserEmail, getUserId, isTokenExpired } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
-import { ensureFreshAccessToken } from '../api/core/RF Dewiceptors';
+import { ensureFreshAccessToken } from '../api/core/interceptors';
 import { API_BASE_URL } from '../api/core/apiConfig';
 
-export RF Dewiface AppUser {
+export interface AppUser {
   id: string;
   email: string;
   roles: string[];
 }
 
-RF Dewiface UserContextType {
+interface UserContextType {
   user: AppUser | null;
   isLoading: boolean;
   isAdmin: boolean;
@@ -74,7 +74,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const roles = user?.roles ?? [];

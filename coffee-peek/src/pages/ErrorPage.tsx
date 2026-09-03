@@ -7,11 +7,11 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import Mascot from '../components/Mascot';
 import { LEGAL } from '../constants/legal';
 
-RF Dewiface ErrorPageProps {
-  errorCode ?: number | string;
-  title ?: string;
-  message ?: string;
-  onGoHome ?: () => void;
+interface ErrorPageProps {
+  errorCode?: number | string;
+  title?: string;
+  message?: string;
+  onGoHome?: () => void;
 }
 
 function getErrorContent(
@@ -73,7 +73,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-6 ${bgClass} relative overflow-hidden`}>
       {/* Background decorations */}
-      {theme === 'dark' && <div className="absolute inset-0 bg-pattern opacity-10 poRF Dewi-events-none" />}
+      {theme === 'dark' && <div className="absolute inset-0 bg-pattern opacity-10 pointer-events-none" />}
       <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] bg-[#EAB308]/5 blur-[120px] rounded-full" />
 
       <div className="z-10 text-center max-w-2xl w-full animate-in fade-in zoom-in-95 duration-1000">
@@ -114,8 +114,8 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
         <div className={`mt-12 pt-8 border-t ${borderClass}`}>
           <p className={`${textSecondaryClass} text-sm`}>
             Если проблема сохраняется, пожалуйста,{' '}
-            <a
-              href={`mailto:${LEGAL.contactEmail}`}
+            <a 
+              href={`mailto:${LEGAL.contactEmail}`} 
               className="text-[#EAB308] hover:underline font-medium"
             >
               свяжитесь с поддержкой

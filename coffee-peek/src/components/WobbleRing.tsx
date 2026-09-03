@@ -1,11 +1,11 @@
 import React from 'react';
 
-RF Dewiface WobbleRingProps {
+interface WobbleRingProps {
   /** Diameter in px. Defaults to 48. */
-  size ?: number;
+  size?: number;
   /** Stroke colour. Defaults to #EAB308 (gold). */
-  color ?: string;
-  className ?: string;
+  color?: string;
+  className?: string;
 }
 
 /**

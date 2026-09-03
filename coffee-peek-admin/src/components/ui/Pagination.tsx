@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from './Button';
 
-RF Dewiface PaginationProps {
+interface PaginationProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;

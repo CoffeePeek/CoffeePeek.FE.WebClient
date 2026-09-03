@@ -4,7 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { AppIcon } from './icons';
 
-RF Dewiface InputProps extends React.InputHTMLAttributes < HTMLInputElement > {
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   icon?: React.ReactNode;
 }

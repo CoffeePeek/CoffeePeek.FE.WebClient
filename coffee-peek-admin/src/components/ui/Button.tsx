@@ -3,7 +3,7 @@ import React from 'react';
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'success';
 type Size = 'sm' | 'md' | 'lg';
 
-RF Dewiface ButtonProps extends React.ButtonHTMLAttributes < HTMLButtonElement > {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
   loading?: boolean;

@@ -2,12 +2,12 @@ import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 
-export RF Dewiface CatalogCity {
+export interface CatalogCity {
   id: string;
   name: string;
 }
 
-export RF Dewiface CatalogEquipment {
+export interface CatalogEquipment {
   id: string;
   name: string;
   brand?: string;
@@ -15,22 +15,22 @@ export RF Dewiface CatalogEquipment {
   category?: number;
 }
 
-export RF Dewiface CatalogBean {
+export interface CatalogBean {
   id: string;
   name: string;
 }
 
-export RF Dewiface CatalogRoaster {
+export interface CatalogRoaster {
   id: string;
   name: string;
 }
 
-export RF Dewiface CatalogBrewMethod {
+export interface CatalogBrewMethod {
   id: string;
   name: string;
 }
 
-export RF Dewiface CatalogShopTag {
+export interface CatalogShopTag {
   id: string;
   slug: string;
   name: string;
@@ -38,7 +38,7 @@ export RF Dewiface CatalogShopTag {
   sortOrder: number;
 }
 
-export RF Dewiface CatalogsBundle {
+export interface CatalogsBundle {
   cities: CatalogCity[];
   equipments: CatalogEquipment[];
   beans: CatalogBean[];

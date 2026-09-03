@@ -8,13 +8,13 @@ import { ApiResponse } from './core/types';
 
 // ==================== Types ====================
 
-export RF Dewiface UploadUrlRequest {
+export interface UploadUrlRequest {
   fileName: string;
   contentType: string;
   sizeBytes: number;
 }
 
-export RF Dewiface UploadUrlResponse {
+export interface UploadUrlResponse {
   photoId: string; // Guid
   uploadUrl: string;
   storageKey: string;

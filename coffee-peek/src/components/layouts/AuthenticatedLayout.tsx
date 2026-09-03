@@ -5,7 +5,7 @@ import { useUser } from '../../contexts/UserContext';
 import Header from '../Header';
 import { AppIcon } from '../icons';
 
-RF Dewiface AuthenticatedLayoutProps {
+interface AuthenticatedLayoutProps {
   children: React.ReactNode;
 }
 

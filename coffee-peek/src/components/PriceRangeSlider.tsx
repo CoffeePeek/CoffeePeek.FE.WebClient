@@ -12,7 +12,7 @@ const PRICE_SLIDER_STOPS = PRICE_FILTER_OPTIONS.map(({ value, label, labelShort,
 function useCompactPriceCopy() {
   return React.useSyncExternalStore(
     (onStoreChange) => {
-      if (typeof window === 'undefined') return () => { };
+      if (typeof window === 'undefined') return () => {};
       const mq = window.matchMedia('(max-width: 640px)');
       mq.addEventListener('change', onStoreChange);
       return () => mq.removeEventListener('change', onStoreChange);
@@ -22,14 +22,14 @@ function useCompactPriceCopy() {
   );
 }
 
-export RF Dewiface PriceRangeSliderProps {
-  value ?: string;
+export interface PriceRangeSliderProps {
+  value?: string;
   onChange: (value?: string) => void;
-  gold ?: string;
-  muted ?: string;
-  track ?: string;
+  gold?: string;
+  muted?: string;
+  track?: string;
   /** When false, selecting the active stop does not clear (forms). Default true. */
-  allowClear ?: boolean;
+  allowClear?: boolean;
 }
 
 /** Discrete cappuccino price slider: &lt;8 / =8 / &gt;8 (BYN marks). */
@@ -108,7 +108,7 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
               height: 4,
               borderRadius: 99,
               background: track,
-              poRF DewiEvents: 'none',
+              pointerEvents: 'none',
             }}
           />
           <div
@@ -121,7 +121,7 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
               height: 4,
               borderRadius: 99,
               background: gold,
-              poRF DewiEvents: 'none',
+              pointerEvents: 'none',
             }}
           />
 
@@ -150,7 +150,7 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
                   margin: 0,
                   border: 'none',
                   background: 'none',
-                  cursor: 'poRF Dewi',
+                  cursor: 'pointer',
                   outline: 'none',
                   boxShadow: 'none',
                   WebkitTapHighlightColor: 'transparent',

@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
 
-RF Dewiface ImportMetaEnv {
+interface ImportMetaEnv {
   readonly VITE_API_URL: string;
 }
 
-RF Dewiface ImportMeta {
+interface ImportMeta {
   readonly env: ImportMetaEnv;
 }

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { getPhotoUrl, PhotoMetadataDto, ShortPhotoMetadataDto } from '../api/coffeeshop';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 
-RF Dewiface PhotoCarouselProps {
+interface PhotoCarouselProps {
   images: (string | PhotoMetadataDto | ShortPhotoMetadataDto)[];
   shopName: string;
-  isCardView ?: boolean; // Optional prop to indicate if used in card view
+  isCardView?: boolean; // Optional prop to indicate if used in card view
 }
 
 const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardView = false }) => {
@@ -51,7 +51,7 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
       return img ? String(img).trim() : '';
     })
     .filter(url => url && url.length > 0);
-
+  
   if (validImages.length === 0) {
     return (
       <div className={`overflow-hidden rounded-xl ${isCardView ? 'h-full' : 'aspect-video'}`}>
@@ -111,8 +111,9 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
                 e.stopPropagation();
                 goToSlide(index);
               }}
-              className={`w-2 h-2 rounded-full transition-all ${index === currentIndex ? 'bg-white' : 'bg-white/50'
-                }`}
+              className={`w-2 h-2 rounded-full transition-all ${
+                index === currentIndex ? 'bg-white' : 'bg-white/50'
+              }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}

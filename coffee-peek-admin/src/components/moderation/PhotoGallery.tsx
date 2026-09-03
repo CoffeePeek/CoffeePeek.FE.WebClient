@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 
-RF Dewiface Photo {
-  fileName ?: string;
+interface Photo {
+  fileName?: string;
   storageKey: string;
   fullUrl: string;
 }
 
-RF Dewiface PhotoGalleryProps {
+interface PhotoGalleryProps {
   photos: Photo[];
 }
 
@@ -47,10 +47,11 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos }) => {
               key={photo.storageKey}
               type="button"
               onClick={() => setActiveIndex(index)}
-              className={`shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${index === activeIndex
+              className={`shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${
+                index === activeIndex
                   ? 'border-primary'
                   : 'border-transparent hover:border-border-light dark:hover:border-border-dark'
-                }`}
+              }`}
             >
               <img
                 src={photo.fullUrl}

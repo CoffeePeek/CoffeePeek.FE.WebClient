@@ -59,22 +59,22 @@ export function createOsmMap(
     center?: L.LatLngExpression;
     zoom?: number;
     dark?: boolean;
-    RF Dewiactive?: boolean;
+    interactive?: boolean;
     zoomControl?: boolean;
   } = {},
 ): L.Map {
-  const RF Dewiactive = options.RF Dewiactive !== false;
+  const interactive = options.interactive !== false;
   const dark = Boolean(options.dark);
   const map = L.map(container, {
     center: options.center ?? MINSK_CENTER,
     zoom: options.zoom ?? 12,
     zoomControl: options.zoomControl ?? true,
     attributionControl: true,
-    dragging: RF Dewiactive,
-    scrollWheelZoom: RF Dewiactive,
-    doubleClickZoom: RF Dewiactive,
-    boxZoom: RF Dewiactive,
-    keyboard: RF Dewiactive,
+    dragging: interactive,
+    scrollWheelZoom: interactive,
+    doubleClickZoom: interactive,
+    boxZoom: interactive,
+    keyboard: interactive,
   });
 
   const tiles = createTileLayer(dark);

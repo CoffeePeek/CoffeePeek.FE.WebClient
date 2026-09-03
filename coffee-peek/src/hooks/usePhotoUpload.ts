@@ -7,14 +7,14 @@ import { ErrorCodes } from '../utils/errorHandler';
 
 const RATE_LIMIT_MESSAGE = ErrorCodes[429].message;
 
-export RF Dewiface UploadedPhoto {
+export interface UploadedPhoto {
   fileName: string;
   contentType: string;
   storageKey: string;
   size: number;
 }
 
-export RF Dewiface UsePhotoUploadReturn {
+export interface UsePhotoUploadReturn {
   selectedFiles: File[];
   uploadingPhotos: boolean;
   error: string | null;

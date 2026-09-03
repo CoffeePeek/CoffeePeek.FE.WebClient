@@ -32,8 +32,8 @@ import {
   ShopFormField,
 } from '../utils/shopModerationFormErrors';
 
-RF Dewiface CreateCoffeeShopPageProps {
-  onBack ?: () => void;
+interface CreateCoffeeShopPageProps {
+  onBack?: () => void;
 }
 
 const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) => {
@@ -43,7 +43,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
   const { theme } = useTheme();
   const { showToast } = useToast();
   const themeClasses = getThemeClasses(theme);
-
+  
   // Состояние для справочных данных
   const [cities, setCities] = useState<City[]>([]);
   const [equipments, setEquipments] = useState<Equipment[]>([]);
@@ -256,7 +256,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           {/* Основная информация */}
           <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
             <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Основная информация</h3>
-
+            
             <div>
               <label className={`${themeClasses.text.secondary} text-sm mb-2 block font-medium`}>Название *</label>
               <input
@@ -327,7 +327,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           {/* Контакты */}
           <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
             <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Контакты</h3>
-
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className={`${themeClasses.text.secondary} text-sm mb-2 block font-medium`}>Телефон</label>
@@ -378,7 +378,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           {/* Фотографии */}
           <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
             <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Фотографии</h3>
-
+            
             <div>
               <input
                 type="file"
@@ -390,7 +390,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
               />
               <label
                 htmlFor="photo-upload"
-                className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-poRF Dewi hover:border-[#EAB308] transition-all`}
+                className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-pointer hover:border-[#EAB308] transition-all`}
               >
                 <Images size={48} className={`mx-auto mb-2 ${themeClasses.text.secondary}`} />
                 <span className={themeClasses.text.secondary}>Нажмите для выбора фотографий</span>
@@ -433,7 +433,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
               />
               <label
                 htmlFor="menu-photo-upload"
-                className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-poRF Dewi hover:border-[#EAB308] transition-all`}
+                className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-pointer hover:border-[#EAB308] transition-all`}
               >
                 <Images size={48} className={`mx-auto mb-2 ${themeClasses.text.secondary}`} />
                 <span className={themeClasses.text.secondary}>Нажмите для выбора фото меню</span>
@@ -464,7 +464,7 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           {/* Оборудование и ингредиенты */}
           <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
             <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Оборудование и ингредиенты</h3>
-
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <MaterialSelect
                 label="Оборудование"
@@ -587,28 +587,29 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           {/* Расписание работы */}
           <div className={`${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4`}>
             <h3 className={`text-xl sm:text-2xl font-semibold ${themeClasses.text.primary} mb-4 sm:mb-6`}>Расписание работы</h3>
-
+            
             <div className="space-y-3">
               {dayNames.map((dayName, index) => {
                 const schedule = formData.schedules.find(s => s.dayOfWeek === index);
                 const isEnabled = !!schedule;
-
+                
                 return (
                   <div
                     key={index}
-                    className={`flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 rounded-2xl border-2 transition-all min-w-0 ${isEnabled
+                    className={`flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 rounded-2xl border-2 transition-all min-w-0 ${
+                      isEnabled
                         ? `${themeClasses.bg.input} ${themeClasses.border.default}`
                         : `${themeClasses.bg.tertiary} ${themeClasses.border.default} opacity-60`
-                      }`}
+                    }`}
                   >
                     <div className="flex items-center gap-2 shrink-0">
                       <input
                         type="checkbox"
                         checked={isEnabled}
                         onChange={() => toggleScheduleDay(index)}
-                        className="w-5 h-5 rounded border-2 border-[#EAB308] text-[#EAB308] focus:ring-[#EAB308] focus:ring-offset-0 cursor-poRF Dewi"
+                        className="w-5 h-5 rounded border-2 border-[#EAB308] text-[#EAB308] focus:ring-[#EAB308] focus:ring-offset-0 cursor-pointer"
                       />
-                      <label className={`${themeClasses.text.primary} font-medium cursor-poRF Dewi`}>
+                      <label className={`${themeClasses.text.primary} font-medium cursor-pointer`}>
                         {dayName}
                       </label>
                     </div>

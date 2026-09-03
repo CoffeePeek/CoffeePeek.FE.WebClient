@@ -4,17 +4,17 @@ import { useUser } from '../../contexts/UserContext';
 import { logout as apiLogout } from '../../api/auth';
 import LogoMark from '../LogoMark';
 
-RF Dewiface NavItem {
+interface NavItem {
   path: string;
   label: string;
   icon: React.ReactNode;
-  adminOnly ?: boolean;
-  moderatorOnly ?: boolean;
-  ownerOnly ?: boolean;
-  browseOnly ?: boolean;
+  adminOnly?: boolean;
+  moderatorOnly?: boolean;
+  ownerOnly?: boolean;
+  browseOnly?: boolean;
 }
 
-RF Dewiface NavGroup {
+interface NavGroup {
   id: string;
   label: string;
   icon: React.ReactNode;
@@ -117,10 +117,11 @@ function pathActive(pathname: string, path: string) {
 }
 
 const linkClass = (active: boolean, extra = '') =>
-  `flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors text-sm font-body min-h-[44px] ${active ? 'bg-primary/20 text-primary' : 'text-stone-400 hover:text-white hover:bg-white/5'
+  `flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors text-sm font-body min-h-[44px] ${
+    active ? 'bg-primary/20 text-primary' : 'text-stone-400 hover:text-white hover:bg-white/5'
   } ${extra}`;
 
-RF Dewiface SidebarProps {
+interface SidebarProps {
   collapsed: boolean;
   mobileOpen: boolean;
   onNavigate: () => void;

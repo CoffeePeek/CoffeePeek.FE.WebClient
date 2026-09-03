@@ -6,7 +6,7 @@ import { StarIcon } from './icons';
 import { Camera, Check, MapPin, X } from './Icon';
 import WobbleRing from './WobbleRing';
 
-RF Dewiface RatingColumn {
+interface RatingColumn {
   key: 'coffee' | 'service' | 'place';
   label: string;
   pose: MascotPose;
@@ -14,7 +14,7 @@ RF Dewiface RatingColumn {
   onChange: (value: number) => void;
 }
 
-RF Dewiface CheckInFormProps {
+interface CheckInFormProps {
   shopName: string;
   note: string;
   onNoteChange: (value: string) => void;
@@ -31,7 +31,7 @@ RF Dewiface CheckInFormProps {
   selectedFiles: File[];
   onFileSelect: (e: ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: (index: number) => void;
-  uploadingPhotos ?: boolean;
+  uploadingPhotos?: boolean;
   isSubmitting: boolean;
   onSubmit: () => void;
 }
@@ -173,18 +173,18 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           Дата чекина
         </label>
         <input
-          id="checkin-date"
-          type="date"
-          value={visitedDate}
-          onChange={(e) => onVisitedDateChange(e.target.value)}
-          className="w-full rounded-2xl py-3 px-4 font-body text-sm outline-none"
-          style={{
-            backgroundColor: isDark ? colors.input : '#FFFFFF',
-            color: colors.textPrimary,
-            border: fieldBorder,
-            colorScheme: theme,
-          }}
-        />
+            id="checkin-date"
+            type="date"
+            value={visitedDate}
+            onChange={(e) => onVisitedDateChange(e.target.value)}
+            className="w-full rounded-2xl py-3 px-4 font-body text-sm outline-none"
+            style={{
+              backgroundColor: isDark ? colors.input : '#FFFFFF',
+              color: colors.textPrimary,
+              border: fieldBorder,
+              colorScheme: theme,
+            }}
+          />
       </div>
 
       <div className="space-y-1.5">
@@ -194,7 +194,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
         <div className="flex gap-2 overflow-x-auto pb-1">
           <label
             htmlFor="checkin-photos"
-            className="w-16 h-16 shrink-0 rounded-xl border border-dashed flex items-center justify-center cursor-poRF Dewi"
+            className="w-16 h-16 shrink-0 rounded-xl border border-dashed flex items-center justify-center cursor-pointer"
             style={{ borderColor: colors.border, backgroundColor: isDark ? colors.surface : '#FFFFFF', color: colors.textSecondary }}
             aria-label="Добавить фото"
           >

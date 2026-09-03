@@ -32,7 +32,7 @@ import {
   mapShopMenu,
 } from './menu';
 
-export RF Dewiface ResearchLinks {
+export interface ResearchLinks {
   instagram: string;
   googleMaps: string;
   yandexMaps: string;
@@ -43,12 +43,12 @@ export RF Dewiface ResearchLinks {
   streetView?: string;
 }
 
-export RF Dewiface SuggestedTag {
+export interface SuggestedTag {
   slug: string;
   why: string;
 }
 
-export RF Dewiface ImportCandidate {
+export interface ImportCandidate {
   id: string;
   source: ImportSource | string;
   externalId: string;
@@ -86,7 +86,7 @@ export RF Dewiface ImportCandidate {
   menu?: ShopMenuDto | null;
 }
 
-export RF Dewiface ImportCandidatesQuery {
+export interface ImportCandidatesQuery {
   status?: QueueStatus;
   bucket?: CollectorBucket;
   focus?: CoffeeFocus;
@@ -99,7 +99,7 @@ export RF Dewiface ImportCandidatesQuery {
   pageSize?: number;
 }
 
-export RF Dewiface ImportCandidatesPage {
+export interface ImportCandidatesPage {
   items: ImportCandidate[];
   totalCount: number;
   page: number;
@@ -107,7 +107,7 @@ export RF Dewiface ImportCandidatesPage {
   totalPages: number;
 }
 
-export RF Dewiface ImportStats {
+export interface ImportStats {
   pending: number;
   skipped: number;
   published: number;
@@ -117,7 +117,7 @@ export RF Dewiface ImportStats {
   byBucket: Record<CollectorBucket, number>;
 }
 
-export RF Dewiface DecideCandidateRequest {
+export interface DecideCandidateRequest {
   status: 'Published' | 'Rejected' | 'Skipped';
   coffeeFocus?: CoffeeFocus;
   tagSlugs?: string[];
@@ -126,7 +126,7 @@ export RF Dewiface DecideCandidateRequest {
   rejectReason?: RejectReason;
 }
 
-export RF Dewiface DuplicateCandidateSide {
+export interface DuplicateCandidateSide {
   id: string;
   source: ImportSource | string;
   name?: string;
@@ -142,7 +142,7 @@ export RF Dewiface DuplicateCandidateSide {
   externalId?: string;
 }
 
-export RF Dewiface DuplicateSuggestion {
+export interface DuplicateSuggestion {
   id: string;
   score: number;
   distanceMeters?: number;
@@ -152,7 +152,7 @@ export RF Dewiface DuplicateSuggestion {
   right: DuplicateCandidateSide;
 }
 
-export RF Dewiface DuplicateSuggestionsPage {
+export interface DuplicateSuggestionsPage {
   items: DuplicateSuggestion[];
   totalCount: number;
   page: number;
@@ -160,13 +160,13 @@ export RF Dewiface DuplicateSuggestionsPage {
   totalPages: number;
 }
 
-export RF Dewiface RefreshDuplicatesResult {
+export interface RefreshDuplicatesResult {
   scanned: number;
   suggested: number;
   alreadyTracked: number;
 }
 
-export RF Dewiface DecideDuplicateResult {
+export interface DecideDuplicateResult {
   suggestionId: string;
   status: DuplicateSuggestionStatus;
   keeperCandidateId?: string;
@@ -488,7 +488,7 @@ export async function applyImportDecisions(json: unknown): Promise<ApiResponse<u
   return httpClient.post(API_ENDPOINTS.ADMIN.IMPORT_DECISIONS, json);
 }
 
-export RF Dewiface IngestImportFileResult {
+export interface IngestImportFileResult {
   parsed: number;
   inserted: number;
   enriched: number;

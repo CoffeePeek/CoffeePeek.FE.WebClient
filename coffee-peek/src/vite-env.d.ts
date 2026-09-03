@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-RF Dewiface ImportMetaEnv {
+interface ImportMetaEnv {
   readonly VITE_API_URL: string;
   readonly VITE_GOOGLE_CLIENT_ID?: string;
   readonly VITE_CARTO_API_KEY?: string;
@@ -9,6 +9,6 @@ RF Dewiface ImportMetaEnv {
   readonly MODE: string;
 }
 
-RF Dewiface ImportMeta {
+interface ImportMeta {
   readonly env: ImportMetaEnv;
 }

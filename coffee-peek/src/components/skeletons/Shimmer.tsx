@@ -1,12 +1,12 @@
 import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
-RF Dewiface ShimmerProps {
-  width ?: string | number;
-  height ?: string | number;
-  className ?: string;
-  circle ?: boolean;
-  style ?: React.CSSProperties;
+interface ShimmerProps {
+  width?: string | number;
+  height?: string | number;
+  className?: string;
+  circle?: boolean;
+  style?: React.CSSProperties;
 }
 
 const Shimmer: React.FC<ShimmerProps> = ({

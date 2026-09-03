@@ -5,12 +5,12 @@ import {
   type PriceRangeOption,
 } from '../constants/priceRange';
 
-RF Dewiface PriceRangePickerProps {
+interface PriceRangePickerProps {
   value: unknown;
   onChange: (value: 1 | 2 | 3 | 4 | undefined) => void;
-  allowEmpty ?: boolean;
-  error ?: string;
-  disabled ?: boolean;
+  allowEmpty?: boolean;
+  error?: string;
+  disabled?: boolean;
 }
 
 export const PriceRangePicker: React.FC<PriceRangePickerProps> = ({
@@ -54,8 +54,9 @@ export const PriceRangePicker: React.FC<PriceRangePickerProps> = ({
               ].join(' ')}
             >
               <span
-                className={`text-xs font-medium font-body text-center ${active ? 'text-text-main dark:text-white' : 'text-text-muted dark:text-stone-400'
-                  }`}
+                className={`text-xs font-medium font-body text-center ${
+                  active ? 'text-text-main dark:text-white' : 'text-text-muted dark:text-stone-400'
+                }`}
               >
                 <span className="hidden sm:inline">{option.label}</span>
                 <span className="sm:hidden">{option.labelShort}</span>

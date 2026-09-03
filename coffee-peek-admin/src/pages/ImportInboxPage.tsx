@@ -359,43 +359,43 @@ export const ImportInboxPage: React.FC<{
       {!embedded && <ImportTabs />}
       {!embedded && (
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="page-header-title">Парсинг</h2>
-            <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
-              Кандидаты импорта. Пачкой — в ленту или не в ленту. Клик по строке — досье с картой точки.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {(() => {
-              const firstPending = items.find((item) => item.queueStatus === 'Pending');
-              return firstPending ? (
-                <Link to={`/import/${firstPending.id}`} className="text-sm font-medium text-primary hover:underline">
-                  Открыть досье
-                </Link>
-              ) : null;
-            })()}
-            <p className="text-sm font-body text-text-main dark:text-white tabular-nums">
-              В выборке:{' '}
-              <span className="font-semibold">
-                {totalInFilter != null ? totalInFilter : loadedCount}
-              </span>
-              {localSearch.trim()
-                ? hasNextPage && (
+        <div>
+          <h2 className="page-header-title">Парсинг</h2>
+          <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
+            Кандидаты импорта. Пачкой — в ленту или не в ленту. Клик по строке — досье с картой точки.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {(() => {
+            const firstPending = items.find((item) => item.queueStatus === 'Pending');
+            return firstPending ? (
+              <Link to={`/import/${firstPending.id}`} className="text-sm font-medium text-primary hover:underline">
+                Открыть досье
+              </Link>
+            ) : null;
+          })()}
+          <p className="text-sm font-body text-text-main dark:text-white tabular-nums">
+            В выборке:{' '}
+            <span className="font-semibold">
+              {totalInFilter != null ? totalInFilter : loadedCount}
+            </span>
+            {localSearch.trim()
+              ? hasNextPage && (
                   <span className="text-text-muted dark:text-stone-400 font-normal">
                     {' '}
                     · подгрузка…
                   </span>
                 )
-                : totalInFilter != null &&
+              : totalInFilter != null &&
                 loadedCount < totalInFilter && (
                   <span className="text-text-muted dark:text-stone-400 font-normal">
                     {' '}
                     · загружено {loadedCount}
                   </span>
                 )}
-            </p>
-          </div>
+          </p>
         </div>
+      </div>
       )}
       {embedded && (
         <p className="shrink-0 px-4 py-2 text-sm font-body text-text-main dark:text-white tabular-nums">
@@ -424,7 +424,7 @@ export const ImportInboxPage: React.FC<{
                     onChange={toggleAllVisible}
                     disabled={!selectableItems.length}
                     aria-label="Выбрать все на странице"
-                    className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-poRF Dewi disabled:opacity-40"
+                    className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-pointer disabled:opacity-40"
                   />
                 </th>
                 <th className="text-left px-3 py-3">
@@ -598,7 +598,7 @@ export const ImportInboxPage: React.FC<{
                     <tr
                       key={item.id}
                       className={[
-                        'table-row cursor-poRF Dewi',
+                        'table-row cursor-pointer',
                         checked ? 'bg-primary/5 dark:bg-primary/10' : '',
                         selectedId === item.id ? 'bg-primary/10 dark:bg-primary/15' : '',
                       ].join(' ')}
@@ -614,7 +614,7 @@ export const ImportInboxPage: React.FC<{
                           disabled={!selectable}
                           onChange={(e) => toggleOne(item.id, e.target.checked)}
                           aria-label={`Выбрать ${displayShopName(item.name, item.brand)}`}
-                          className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-poRF Dewi disabled:opacity-40"
+                          className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-pointer disabled:opacity-40"
                         />
                       </td>
                       <td className="px-3 py-2">

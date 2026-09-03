@@ -12,7 +12,7 @@ import type { IconProps } from '@phosphor-icons/react';
 
 type CategoryId = 'find' | 'rate' | 'save';
 
-RF Dewiface Category {
+interface Category {
   id: CategoryId;
   title: string;
   chrome: string;
@@ -88,10 +88,11 @@ const Hint: React.FC<{
     {children}
     <span
       role="tooltip"
-      className={`poRF Dewi-events-none absolute z-30 left-1/2 -translate-x-1/2 w-max max-w-[220px] rounded-lg px-2.5 py-1.5 font-body text-[11px] leading-snug opacity-0 group-hover/hint:opacity-100 transition-all duration-150 text-left ${placement === 'top'
+      className={`pointer-events-none absolute z-30 left-1/2 -translate-x-1/2 w-max max-w-[220px] rounded-lg px-2.5 py-1.5 font-body text-[11px] leading-snug opacity-0 group-hover/hint:opacity-100 transition-all duration-150 text-left ${
+        placement === 'top'
           ? 'bottom-[calc(100%+8px)] translate-y-1 group-hover/hint:translate-y-0'
           : 'top-[calc(100%+8px)] -translate-y-1 group-hover/hint:translate-y-0'
-        }`}
+      }`}
       style={{
         background: '#1A1412',
         color: '#F5F0E8',
@@ -126,15 +127,15 @@ function Typewriter({
     let i = 0;
     let tick: number | undefined;
     const start = window.setTimeout(() => {
-      tick = window.setRF Dewival(() => {
+      tick = window.setInterval(() => {
         i += 1;
         setN(i);
-        if (i >= text.length && tick) window.clearRF Dewival(tick);
+        if (i >= text.length && tick) window.clearInterval(tick);
       }, 26);
     }, startDelay);
     return () => {
       window.clearTimeout(start);
-      if (tick) window.clearRF Dewival(tick);
+      if (tick) window.clearInterval(tick);
     };
   }, [text, reduceMotion, startDelay]);
 
@@ -210,7 +211,7 @@ const SceneFind: React.FC<{ reduceMotion: boolean }> = ({ reduceMotion }) => {
           src="/map-minsk.svg"
           alt=""
           draggable={false}
-          className="absolute inset-0 h-full w-full object-cover object-center select-none poRF Dewi-events-none"
+          className="absolute inset-0 h-full w-full object-cover object-center select-none pointer-events-none"
         />
 
         {MAP_PINS.map((p, i) => {
@@ -234,8 +235,9 @@ const SceneFind: React.FC<{ reduceMotion: boolean }> = ({ reduceMotion }) => {
             >
               <span
                 role="tooltip"
-                className={`poRF Dewi-events-none absolute left-1/2 bottom-[calc(100%+6px)] z-10 w-max max-w-[180px] -translate-x-1/2 rounded-lg px-2.5 py-1.5 text-left transition-opacity duration-150 ${isActive ? 'opacity-100' : 'opacity-0 group-hover/pin:opacity-100'
-                  }`}
+                className={`pointer-events-none absolute left-1/2 bottom-[calc(100%+6px)] z-10 w-max max-w-[180px] -translate-x-1/2 rounded-lg px-2.5 py-1.5 text-left transition-opacity duration-150 ${
+                  isActive ? 'opacity-100' : 'opacity-0 group-hover/pin:opacity-100'
+                }`}
                 style={{
                   background: '#FFFFFF',
                   border: '1px solid #E7E5E4',
@@ -259,7 +261,7 @@ const SceneFind: React.FC<{ reduceMotion: boolean }> = ({ reduceMotion }) => {
               {isActive && !reduceMotion && (
                 <span
                   key={`ripple-${tapKey}`}
-                  className="poRF Dewi-events-none absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full"
+                  className="pointer-events-none absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full"
                   style={{
                     background: 'rgba(234,179,8,0.35)',
                     animation: 'lp-pin-ripple 0.55s ease-out both',
@@ -287,7 +289,7 @@ const SceneFind: React.FC<{ reduceMotion: boolean }> = ({ reduceMotion }) => {
 
       <div
         key={pin.id}
-        className="absolute left-4 right-4 bottom-4 z-[4] rounded-[14px] px-3.5 py-3 flex items-center gap-3 poRF Dewi-events-none"
+        className="absolute left-4 right-4 bottom-4 z-[4] rounded-[14px] px-3.5 py-3 flex items-center gap-3 pointer-events-none"
         style={{
           background: 'rgba(255,255,255,0.96)',
           border: '1px solid #E7E5E4',

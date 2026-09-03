@@ -39,7 +39,7 @@ const LandingPage: React.FC = () => {
   const [timer, setTimer] = useState(59);
 
   const [searchParams] = useSearchParams();
-
+  
   useEffect(() => {
     const API_BASE_URL = import.meta.env.VITE_API_URL;
     const token = searchParams.get('token');
@@ -82,13 +82,13 @@ const LandingPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let RF Dewival: ReturnType<typeof setRF Dewival>;
+    let interval: ReturnType<typeof setInterval>;
     if (step === VerificationStep.ENTER_CODE && timer > 0) {
-      RF Dewival = setRF Dewival(() => {
-      setTimer(prev => prev - 1);
-    }, 1000);
+      interval = setInterval(() => {
+        setTimer(prev => prev - 1);
+      }, 1000);
     }
-    return () => clearRF Dewival(RF Dewival);
+    return () => clearInterval(interval);
   }, [step, timer]);
 
   const handleSendCode = (e: React.FormEvent) => {
@@ -127,7 +127,7 @@ const LandingPage: React.FC = () => {
   if (step === VerificationStep.LANDING) {
     const footerCols = [
       { t: 'Продукт', items: ['Кофейни', 'Карта'] },
-      { t: 'Помощь', items: ['Условия', 'Политика'] },
+      { t: 'Помощь',  items: ['Условия', 'Политика'] },
     ];
     const footerLinks: Record<string, string> = {
       Кофейни: '/shops',
@@ -182,10 +182,10 @@ const LandingPage: React.FC = () => {
     return (
       <div className="min-h-screen relative overflow-x-clip" style={{ background: c.background, color: c.textPrimary }}>
         {/* Dotted background */}
-        <div className="absolute inset-0 poRF Dewi-events-none" style={{ backgroundImage: `radial-gradient(${c.surface} 1px, transparent 1px)`, backgroundSize: '40px 40px', opacity: isDark ? 0.55 : 0.9 }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `radial-gradient(${c.surface} 1px, transparent 1px)`, backgroundSize: '40px 40px', opacity: isDark ? 0.55 : 0.9 }} />
         {/* Gold glows — kept inside the box so overflow clip doesn't leave a 1px edge in Firefox */}
-        <div className="absolute poRF Dewi-events-none" style={{ top: -80, left: '50%', transform: 'translateX(-50%)', width: 720, height: 480, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(234,179,8,0.12), transparent 60%)', filter: 'blur(60px)' }} />
-        <div className="absolute poRF Dewi-events-none" style={{ bottom: -40, right: -40, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,140,75,0.10), transparent 60%)', filter: 'blur(60px)' }} />
+        <div className="absolute pointer-events-none" style={{ top: -80, left: '50%', transform: 'translateX(-50%)', width: 720, height: 480, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(234,179,8,0.12), transparent 60%)', filter: 'blur(60px)' }} />
+        <div className="absolute pointer-events-none" style={{ bottom: -40, right: -40, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,140,75,0.10), transparent 60%)', filter: 'blur(60px)' }} />
 
         <div className="relative">
           <Header />
@@ -290,11 +290,11 @@ const LandingPage: React.FC = () => {
           <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-[30px] lg:pt-14 pb-6">
             <div className="relative overflow-hidden rounded-[18px] lg:rounded-[24px] p-5 lg:pl-12 lg:pr-56 lg:py-9 border border-[rgba(180,140,75,.35)] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6"
               style={{ background: isDark ? 'linear-gradient(135deg, #2D241F 0%, rgba(180,140,75,0.18) 100%)' : 'linear-gradient(135deg, #FFFFFF 0%, rgba(212,168,75,0.16) 100%)', boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.05)' : 'inset 0 1px 0 rgba(255,255,255,0.9)' }}>
-              <div className="absolute top-[-80px] right-[-80px] w-[320px] h-[320px] rounded-full poRF Dewi-events-none lg:block hidden"
+              <div className="absolute top-[-80px] right-[-80px] w-[320px] h-[320px] rounded-full pointer-events-none lg:block hidden"
                 style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.18), transparent 60%)', filter: 'blur(40px)' }} />
-              <div className="absolute top-[-50px] right-[-50px] w-[200px] h-[200px] rounded-full poRF Dewi-events-none lg:hidden"
+              <div className="absolute top-[-50px] right-[-50px] w-[200px] h-[200px] rounded-full pointer-events-none lg:hidden"
                 style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.20), transparent 60%)' }} />
-              <div className="hidden lg:block absolute right-2 bottom-[-48px] poRF Dewi-events-none" aria-hidden>
+              <div className="hidden lg:block absolute right-2 bottom-[-48px] pointer-events-none" aria-hidden>
                 <Mascot pose="happy" size={236} />
               </div>
               <div className="relative">
@@ -344,7 +344,7 @@ const LandingPage: React.FC = () => {
                             key={item}
                             type="button"
                             onClick={() => navigate(href)}
-                            className="font-body text-[13px] text-center cursor-poRF Dewi hover:text-[#EAB308] transition-colors p-0"
+                            className="font-body text-[13px] text-center cursor-pointer hover:text-[#EAB308] transition-colors p-0"
                             style={{ color: c.textPrimary }}
                           >
                             {item}
@@ -389,7 +389,7 @@ const LandingPage: React.FC = () => {
                           key={item}
                           type="button"
                           onClick={() => navigate(href)}
-                          className="font-body text-[13px] text-center cursor-poRF Dewi hover:text-[#EAB308] transition-colors p-0"
+                          className="font-body text-[13px] text-center cursor-pointer hover:text-[#EAB308] transition-colors p-0"
                           style={{ color: c.textPrimary }}
                         >
                           {item}
@@ -426,7 +426,7 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-4 lg:p-8 ${bgPrimary} relative overflow-hidden`}>
-      {theme === 'dark' && <div className="absolute inset-0 bg-pattern opacity-20 poRF Dewi-events-none hidden lg:block" />}
+      {theme === 'dark' && <div className="absolute inset-0 bg-pattern opacity-20 pointer-events-none hidden lg:block" />}
       <div className={`absolute top-[-10%] left-[-10%] w-[60%] h-[60%] ${glowBg} blur-[120px] rounded-full hidden lg:block`} />
 
       {/* Кнопка переключения темы */}

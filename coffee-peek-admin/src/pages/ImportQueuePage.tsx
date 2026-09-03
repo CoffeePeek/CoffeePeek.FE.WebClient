@@ -93,7 +93,7 @@ export const ImportQueuePage: React.FC = () => {
     queryKey: ['admin', 'import', 'candidate', id],
     queryFn: () => getImportCandidate(id!).then((r) => r.data),
     enabled: Boolean(id),
-    refetchRF Dewival: (query) => {
+    refetchInterval: (query) => {
       const status = query.state.data?.menu?.parseStatus;
       return status === 'Pending' || status === 'Running' ? 2500 : false;
     },
@@ -327,8 +327,8 @@ export const ImportQueuePage: React.FC = () => {
   const softWarning = candidate ? dossierSoftWarning(candidate) : undefined;
   const suggested = candidate
     ? clientSuggestedTags(candidate).filter(
-      (tag) => catalogSlugs.has(tag.slug) && !tagSlugs.includes(tag.slug)
-    )
+        (tag) => catalogSlugs.has(tag.slug) && !tagSlugs.includes(tag.slug)
+      )
     : [];
   const queuePosition = currentIndex >= 0 ? (queuePage - 1) * IMPORT_QUEUE_PAGE_SIZE + currentIndex + 1 : '—';
 
@@ -504,350 +504,350 @@ export const ImportQueuePage: React.FC = () => {
         </div>
 
         {showCard && candidate && (
-          <section className="w-full lg:w-[420px] shrink-0 flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l border-border-light dark:border-border-dark bg-white dark:bg-surface-dark">
-            <div className="flex-1 overflow-y-auto px-[18px] pt-[18px] pb-3 space-y-4 font-body">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-1.5">
-                  кандидат · {String(candidate.source)}
+        <section className="w-full lg:w-[420px] shrink-0 flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l border-border-light dark:border-border-dark bg-white dark:bg-surface-dark">
+          <div className="flex-1 overflow-y-auto px-[18px] pt-[18px] pb-3 space-y-4 font-body">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-1.5">
+                кандидат · {String(candidate.source)}
+              </p>
+              <h1 className="text-[24px] font-bold font-display text-text-main dark:text-white leading-[1.15] tracking-tight">
+                {title}
+              </h1>
+              {candidate.address && (
+                <p className="text-sm text-text-muted mt-1.5">{candidate.address}</p>
+              )}
+              {candidate.openingHours && (
+                <p className="text-sm mt-2.5 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-700 dark:bg-emerald-400" />
+                  {candidate.openingHours}
                 </p>
-                <h1 className="text-[24px] font-bold font-display text-text-main dark:text-white leading-[1.15] tracking-tight">
-                  {title}
-                </h1>
-                {candidate.address && (
-                  <p className="text-sm text-text-muted mt-1.5">{candidate.address}</p>
-                )}
-                {candidate.openingHours && (
-                  <p className="text-sm mt-2.5 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-700 dark:bg-emerald-400" />
-                    {candidate.openingHours}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {facts.map((fact) => (
-                    <span
-                      key={fact}
-                      className="text-[11px] px-2.5 py-1 rounded-full bg-background-light dark:bg-white/5 border border-border-light dark:border-border-dark"
-                    >
-                      {fact}
+              )}
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {facts.map((fact) => (
+                  <span
+                    key={fact}
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-background-light dark:bg-white/5 border border-border-light dark:border-border-dark"
+                  >
+                    {fact}
+                  </span>
+                ))}
+              </div>
+              {softWarning && (
+                <p className="mt-3 text-sm text-text-main dark:text-amber-100 bg-primary-light dark:bg-primary/10 border border-primary/30 rounded-[10px] px-3 py-2">
+                  {softWarning}
+                </p>
+              )}
+              {(needsOverride || closed) && (
+                <p className="mt-3 text-sm text-red-800 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-[10px] px-3 py-2">
+                  {closed
+                    ? 'Google: закрыто навсегда. Для публикации нужно явное подтверждение.'
+                    : 'Бэкенд предлагает отклонить. Для публикации нужно подтверждение.'}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <h2 className="text-sm font-semibold mb-2">Instagram</h2>
+              {igHandle ? (
+                <div className="rounded-[10px] border border-border-light dark:border-border-dark overflow-hidden">
+                  <div className="flex items-center gap-2.5 px-3 py-2.5">
+                    <span className="w-9 h-9 rounded-full p-[2px] bg-[conic-gradient(#f9ce34,#ee2a7b,#6228d7,#f9ce34)] shrink-0">
+                      <span className="block w-full h-full rounded-full bg-gold-warm-soft dark:bg-surface-dark" />
                     </span>
-                  ))}
-                </div>
-                {softWarning && (
-                  <p className="mt-3 text-sm text-text-main dark:text-amber-100 bg-primary-light dark:bg-primary/10 border border-primary/30 rounded-[10px] px-3 py-2">
-                    {softWarning}
-                  </p>
-                )}
-                {(needsOverride || closed) && (
-                  <p className="mt-3 text-sm text-red-800 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-[10px] px-3 py-2">
-                    {closed
-                      ? 'Google: закрыто навсегда. Для публикации нужно явное подтверждение.'
-                      : 'Бэкенд предлагает отклонить. Для публикации нужно подтверждение.'}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <h2 className="text-sm font-semibold mb-2">Instagram</h2>
-                {igHandle ? (
-                  <div className="rounded-[10px] border border-border-light dark:border-border-dark overflow-hidden">
-                    <div className="flex items-center gap-2.5 px-3 py-2.5">
-                      <span className="w-9 h-9 rounded-full p-[2px] bg-[conic-gradient(#f9ce34,#ee2a7b,#6228d7,#f9ce34)] shrink-0">
-                        <span className="block w-full h-full rounded-full bg-gold-warm-soft dark:bg-surface-dark" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold truncate">@{igHandle}</p>
-                        <p className="text-[11px] text-text-muted">карточка Instagram · не поиск по имени</p>
-                      </div>
-                      <a
-                        href={instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shrink-0 px-3 py-1.5 rounded-[10px] text-[13px] font-medium border border-border-light dark:border-border-dark hover:bg-background-light dark:hover:bg-white/5"
-                      >
-                        Открыть
-                      </a>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate">@{igHandle}</p>
+                      <p className="text-[11px] text-text-muted">карточка Instagram · не поиск по имени</p>
                     </div>
-                  </div>
-                ) : (
-                  <div className="rounded-[10px] border border-dashed border-border-light dark:border-border-dark bg-background-light dark:bg-white/5 p-3 space-y-2">
-                    <p className="text-sm text-text-muted">
-                      В импорте нет Instagram. Не ищем «{title} Минск». Вставь URL с карточки Яндекса или с сайта.
-                    </p>
-                    <div className="flex gap-1.5">
-                      <input
-                        ref={igInputRef}
-                        value={igPaste}
-                        onChange={(e) => setIgPaste(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            void applyInstagram();
-                          }
-                        }}
-                        placeholder="instagram.com/…"
-                        className="flex-1 min-w-0 rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      />
-                      <Button variant="secondary" size="sm" onClick={() => void applyInstagram()}>
-                        Вставить
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <h2 className="text-sm font-semibold mb-1">Ещё найти</h2>
-                <p className="text-[11px] text-text-muted font-medium mb-2">
-                  Кликни строку — откроется, где это обычно лежит
-                </p>
-                <div className="flex flex-col gap-1">
-                  {gaps.map((gap) => (
-                    <button
-                      key={gap.id}
-                      type="button"
-                      onClick={() => runGap(gap.id)}
-                      className={[
-                        'flex items-center gap-2 w-full rounded-md px-2.5 py-2 text-left transition-colors',
-                        'border border-border-light dark:border-border-dark hover:bg-background-light dark:hover:bg-white/5',
-                        gap.ok ? '' : 'border-dashed',
-                      ].join(' ')}
+                    <a
+                      href={instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 px-3 py-1.5 rounded-[10px] text-[13px] font-medium border border-border-light dark:border-border-dark hover:bg-background-light dark:hover:bg-white/5"
                     >
-                      <span
-                        className={[
-                          'w-4 h-4 rounded-[4px] border-[1.5px] shrink-0',
-                          gap.ok
-                            ? 'bg-emerald-700 border-emerald-700 dark:bg-emerald-500 dark:border-emerald-500'
-                            : 'border-border-light dark:border-stone-500 bg-transparent',
-                        ].join(' ')}
-                      />
-                      <span className="text-sm font-semibold shrink-0">{gap.title}</span>
-                      <span className="text-[11px] text-text-muted ml-auto text-right min-w-0 truncate">
-                        {gap.val}
+                      Открыть
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-[10px] border border-dashed border-border-light dark:border-border-dark bg-background-light dark:bg-white/5 p-3 space-y-2">
+                  <p className="text-sm text-text-muted">
+                    В импорте нет Instagram. Не ищем «{title} Минск». Вставь URL с карточки Яндекса или с сайта.
+                  </p>
+                  <div className="flex gap-1.5">
+                    <input
+                      ref={igInputRef}
+                      value={igPaste}
+                      onChange={(e) => setIgPaste(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          void applyInstagram();
+                        }
+                      }}
+                      placeholder="instagram.com/…"
+                      className="flex-1 min-w-0 rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                    <Button variant="secondary" size="sm" onClick={() => void applyInstagram()}>
+                      Вставить
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h2 className="text-sm font-semibold mb-1">Ещё найти</h2>
+              <p className="text-[11px] text-text-muted font-medium mb-2">
+                Кликни строку — откроется, где это обычно лежит
+              </p>
+              <div className="flex flex-col gap-1">
+                {gaps.map((gap) => (
+                  <button
+                    key={gap.id}
+                    type="button"
+                    onClick={() => runGap(gap.id)}
+                    className={[
+                      'flex items-center gap-2 w-full rounded-md px-2.5 py-2 text-left transition-colors',
+                      'border border-border-light dark:border-border-dark hover:bg-background-light dark:hover:bg-white/5',
+                      gap.ok ? '' : 'border-dashed',
+                    ].join(' ')}
+                  >
+                    <span
+                      className={[
+                        'w-4 h-4 rounded-[4px] border-[1.5px] shrink-0',
+                        gap.ok
+                          ? 'bg-emerald-700 border-emerald-700 dark:bg-emerald-500 dark:border-emerald-500'
+                          : 'border-border-light dark:border-stone-500 bg-transparent',
+                      ].join(' ')}
+                    />
+                    <span className="text-sm font-semibold shrink-0">{gap.title}</span>
+                    <span className="text-[11px] text-text-muted ml-auto text-right min-w-0 truncate">
+                      {gap.val}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {(!candidate.phone || !candidate.website) && (
+                <div className="mt-2 grid gap-1.5">
+                  {!candidate.phone && (
+                    <input
+                      value={phoneDraft}
+                      onChange={(e) => setPhoneDraft(e.target.value)}
+                      onBlur={() => phoneDraft.trim() && void tryPatchContacts({ phone: phoneDraft.trim() })}
+                      placeholder="Вписать телефон с карточки Яндекса"
+                      className="w-full rounded-md border border-border-light dark:border-border-dark px-2.5 py-2 text-sm bg-white dark:bg-surface-dark"
+                    />
+                  )}
+                  {!candidate.website && (
+                    <input
+                      value={websiteDraft}
+                      onChange={(e) => setWebsiteDraft(e.target.value)}
+                      onBlur={() =>
+                        websiteDraft.trim() && void tryPatchContacts({ website: websiteDraft.trim() })
+                      }
+                      placeholder="Вписать сайт"
+                      className="w-full rounded-md border border-border-light dark:border-border-dark px-2.5 py-2 text-sm bg-white dark:bg-surface-dark"
+                    />
+                  )}
+                </div>
+              )}
+              <p className="text-[11px] text-text-muted mt-2">
+                На decide уходят фокус и теги. Контакты без PATCH в каталог не попадут.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-sm font-semibold mb-1">Теги с Яндекса</h2>
+              <p className="text-[11px] text-text-muted font-medium mb-2">
+                Категории с карточки org. Не пишем в БД сами — ты подтверждаешь наши slug.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {YANDEX_TO_OURS.map((chip) => {
+                  const check = yandexChipApplies(chip, catalogSlugs);
+                  const taken =
+                    (chip.slug && tagSlugs.includes(chip.slug)) ||
+                    (chip.focus && !chip.slug && focus === chip.focus);
+                  if (taken) return null;
+                  return (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      disabled={!check.enabled || Boolean(decided)}
+                      onClick={() => applyYandexChip(chip)}
+                      className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[13px] font-medium bg-primary/80 hover:bg-primary text-black disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {chip.label}
+                      <span className="text-[10px] opacity-70 ml-1">
+                        {chip.slug
+                          ? `→ ${catalogTagLabel(chip.slug)}`
+                          : chip.focus
+                            ? `→ ${chip.focus === 'specialty' ? 'Specialty' : chip.focus === 'coffee_bar' ? 'Coffee bar' : 'Cafe'}`
+                            : check.reason}
                       </span>
                     </button>
-                  ))}
-                </div>
-                {(!candidate.phone || !candidate.website) && (
-                  <div className="mt-2 grid gap-1.5">
-                    {!candidate.phone && (
-                      <input
-                        value={phoneDraft}
-                        onChange={(e) => setPhoneDraft(e.target.value)}
-                        onBlur={() => phoneDraft.trim() && void tryPatchContacts({ phone: phoneDraft.trim() })}
-                        placeholder="Вписать телефон с карточки Яндекса"
-                        className="w-full rounded-md border border-border-light dark:border-border-dark px-2.5 py-2 text-sm bg-white dark:bg-surface-dark"
-                      />
-                    )}
-                    {!candidate.website && (
-                      <input
-                        value={websiteDraft}
-                        onChange={(e) => setWebsiteDraft(e.target.value)}
-                        onBlur={() =>
-                          websiteDraft.trim() && void tryPatchContacts({ website: websiteDraft.trim() })
-                        }
-                        placeholder="Вписать сайт"
-                        className="w-full rounded-md border border-border-light dark:border-border-dark px-2.5 py-2 text-sm bg-white dark:bg-surface-dark"
-                      />
-                    )}
-                  </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-sm font-semibold mb-1">Предлагаемые теги</h2>
+              <p className="text-[11px] text-text-muted font-medium mb-2">
+                Из OSM / CoffeeMap / имени. Кликни — попадёт в набор.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggested.length === 0 && (
+                  <span className="text-[11px] text-text-muted">Нечего предлагать</span>
                 )}
-                <p className="text-[11px] text-text-muted mt-2">
-                  На decide уходят фокус и теги. Контакты без PATCH в каталог не попадут.
-                </p>
+                {suggested.map((tag) => (
+                  <button
+                    key={tag.slug}
+                    type="button"
+                    disabled={Boolean(decided)}
+                    onClick={() => addTag(tag.slug)}
+                    className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[13px] font-medium bg-sky-50 dark:bg-sky-500/10 text-sky-800 dark:text-sky-200 hover:bg-sky-100 dark:hover:bg-sky-500/20"
+                  >
+                    {catalogTagLabel(tag.slug)}
+                    {tag.why && <span className="text-[10px] opacity-70 ml-1">{tag.why}</span>}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div>
-                <h2 className="text-sm font-semibold mb-1">Теги с Яндекса</h2>
-                <p className="text-[11px] text-text-muted font-medium mb-2">
-                  Категории с карточки org. Не пишем в БД сами — ты подтверждаешь наши slug.
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {YANDEX_TO_OURS.map((chip) => {
-                    const check = yandexChipApplies(chip, catalogSlugs);
-                    const taken =
-                      (chip.slug && tagSlugs.includes(chip.slug)) ||
-                      (chip.focus && !chip.slug && focus === chip.focus);
-                    if (taken) return null;
-                    return (
-                      <button
-                        key={chip.label}
-                        type="button"
-                        disabled={!check.enabled || Boolean(decided)}
-                        onClick={() => applyYandexChip(chip)}
-                        className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[13px] font-medium bg-primary/80 hover:bg-primary text-black disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {chip.label}
-                        <span className="text-[10px] opacity-70 ml-1">
-                          {chip.slug
-                            ? `→ ${catalogTagLabel(chip.slug)}`
-                            : chip.focus
-                              ? `→ ${chip.focus === 'specialty' ? 'Specialty' : chip.focus === 'coffee_bar' ? 'Coffee bar' : 'Cafe'}`
-                              : check.reason}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+            <div>
+              <h2 className="text-sm font-semibold mb-2">Фокус</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {COFFEE_FOCUS_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    disabled={Boolean(decided)}
+                    onClick={() => {
+                      setFocus(option.value);
+                      setTagSlugs((current) => {
+                        const without = current.filter((slug) => slug !== 'specialty');
+                        return option.value === 'specialty' ? [...without, 'specialty'] : without;
+                      });
+                    }}
+                    className={focus === option.value ? pillOn : pillOff}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
+              {!focus && (
+                <p className="text-[11px] text-red-600 mt-2">Для публикации нужен фокус</p>
+              )}
+            </div>
 
-              <div>
-                <h2 className="text-sm font-semibold mb-1">Предлагаемые теги</h2>
-                <p className="text-[11px] text-text-muted font-medium mb-2">
-                  Из OSM / CoffeeMap / имени. Кликни — попадёт в набор.
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {suggested.length === 0 && (
-                    <span className="text-[11px] text-text-muted">Нечего предлагать</span>
-                  )}
-                  {suggested.map((tag) => (
+            <div>
+              <h2 className="text-sm font-semibold mb-2">Теги в каталог</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {tagOptions.map((tag) => {
+                  const active = tagSlugs.includes(tag.slug);
+                  return (
                     <button
                       key={tag.slug}
                       type="button"
                       disabled={Boolean(decided)}
-                      onClick={() => addTag(tag.slug)}
-                      className="inline-flex items-center rounded-full px-2.5 py-1.5 text-[13px] font-medium bg-sky-50 dark:bg-sky-500/10 text-sky-800 dark:text-sky-200 hover:bg-sky-100 dark:hover:bg-sky-500/20"
+                      onClick={() =>
+                        setTagSlugs((current) =>
+                          active ? current.filter((slug) => slug !== tag.slug) : [...current, tag.slug]
+                        )
+                      }
+                      className={active ? pillOn : pillOff}
                     >
-                      {catalogTagLabel(tag.slug)}
-                      {tag.why && <span className="text-[10px] opacity-70 ml-1">{tag.why}</span>}
+                      {tag.label}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
+            </div>
 
-              <div>
-                <h2 className="text-sm font-semibold mb-2">Фокус</h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {COFFEE_FOCUS_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      disabled={Boolean(decided)}
-                      onClick={() => {
-                        setFocus(option.value);
-                        setTagSlugs((current) => {
-                          const without = current.filter((slug) => slug !== 'specialty');
-                          return option.value === 'specialty' ? [...without, 'specialty'] : without;
-                        });
-                      }}
-                      className={focus === option.value ? pillOn : pillOff}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-                {!focus && (
-                  <p className="text-[11px] text-red-600 mt-2">Для публикации нужен фокус</p>
+            {id && (
+              <MenuEditor
+                compact
+                menu={candidate.menu ?? null}
+                onAttach={async (photos) => {
+                  await attachImportCandidateMenuPhotos(id, { photos });
+                  await qc.invalidateQueries({ queryKey: ['admin', 'import', 'candidate', id] });
+                }}
+                onParse={async () => {
+                  await parseImportCandidateMenu(id);
+                  await qc.invalidateQueries({ queryKey: ['admin', 'import', 'candidate', id] });
+                }}
+                onSave={async (body) => {
+                  await updateImportCandidateMenu(id, body);
+                  await qc.invalidateQueries({ queryKey: ['admin', 'import', 'candidate', id] });
+                }}
+              />
+            )}
+
+            <div>
+              <h2 className="text-sm font-semibold mb-2">Исследовать точку</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {candidate.research.yandexMaps && (
+                  <a
+                    href={candidate.research.yandexMaps}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={pillOff}
+                  >
+                    Яндекс · что здесь
+                  </a>
+                )}
+                {candidate.research.googleMaps && (
+                  <a href={candidate.research.googleMaps} target="_blank" rel="noopener noreferrer" className={pillOff}>
+                    Google · пин
+                  </a>
+                )}
+                {candidate.research.osmHistory && (
+                  <a
+                    href={candidate.research.osmHistory}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={pillOff}
+                  >
+                    OSM history
+                  </a>
                 )}
               </div>
-
-              <div>
-                <h2 className="text-sm font-semibold mb-2">Теги в каталог</h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {tagOptions.map((tag) => {
-                    const active = tagSlugs.includes(tag.slug);
-                    return (
-                      <button
-                        key={tag.slug}
-                        type="button"
-                        disabled={Boolean(decided)}
-                        onClick={() =>
-                          setTagSlugs((current) =>
-                            active ? current.filter((slug) => slug !== tag.slug) : [...current, tag.slug]
-                          )
-                        }
-                        className={active ? pillOn : pillOff}
-                      >
-                        {tag.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {id && (
-                <MenuEditor
-                  compact
-                  menu={candidate.menu ?? null}
-                  onAttach={async (photos) => {
-                    await attachImportCandidateMenuPhotos(id, { photos });
-                    await qc.invalidateQueries({ queryKey: ['admin', 'import', 'candidate', id] });
-                  }}
-                  onParse={async () => {
-                    await parseImportCandidateMenu(id);
-                    await qc.invalidateQueries({ queryKey: ['admin', 'import', 'candidate', id] });
-                  }}
-                  onSave={async (body) => {
-                    await updateImportCandidateMenu(id, body);
-                    await qc.invalidateQueries({ queryKey: ['admin', 'import', 'candidate', id] });
-                  }}
-                />
-              )}
-
-              <div>
-                <h2 className="text-sm font-semibold mb-2">Исследовать точку</h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {candidate.research.yandexMaps && (
-                    <a
-                      href={candidate.research.yandexMaps}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={pillOff}
-                    >
-                      Яндекс · что здесь
-                    </a>
-                  )}
-                  {candidate.research.googleMaps && (
-                    <a href={candidate.research.googleMaps} target="_blank" rel="noopener noreferrer" className={pillOff}>
-                      Google · пин
-                    </a>
-                  )}
-                  {candidate.research.osmHistory && (
-                    <a
-                      href={candidate.research.osmHistory}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={pillOff}
-                    >
-                      OSM history
-                    </a>
-                  )}
-                </div>
-              </div>
             </div>
+          </div>
 
-            <div className="shrink-0 p-3 pb-4 border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark grid grid-cols-2 gap-2">
-              <Button
-                variant="primary"
-                disabled={!canPublish || Boolean(decided)}
-                loading={decideMutation.isPending}
-                onClick={() =>
-                  needsOverride
-                    ? setConfirmPublishClosed(true)
-                    : decideMutation.mutate({ status: 'Published' })
-                }
-                className="min-h-[48px] rounded-[10px] text-sm"
-              >
-                В ленту
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={Boolean(decided)}
-                loading={decideMutation.isPending}
-                onClick={() => decideMutation.mutate({ status: 'Skipped' })}
-                className="min-h-[48px] rounded-[10px] text-sm"
-              >
-                Пропуск
-              </Button>
-              <button
-                type="button"
-                disabled={Boolean(decided) || decideMutation.isPending}
-                onClick={() => setRejectPickerOpen(true)}
-                className="col-span-2 min-h-[40px] rounded-[10px] text-sm font-semibold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50"
-              >
-                Отклонить
-              </button>
-            </div>
-          </section>
+          <div className="shrink-0 p-3 pb-4 border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark grid grid-cols-2 gap-2">
+            <Button
+              variant="primary"
+              disabled={!canPublish || Boolean(decided)}
+              loading={decideMutation.isPending}
+              onClick={() =>
+                needsOverride
+                  ? setConfirmPublishClosed(true)
+                  : decideMutation.mutate({ status: 'Published' })
+              }
+              className="min-h-[48px] rounded-[10px] text-sm"
+            >
+              В ленту
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={Boolean(decided)}
+              loading={decideMutation.isPending}
+              onClick={() => decideMutation.mutate({ status: 'Skipped' })}
+              className="min-h-[48px] rounded-[10px] text-sm"
+            >
+              Пропуск
+            </Button>
+            <button
+              type="button"
+              disabled={Boolean(decided) || decideMutation.isPending}
+              onClick={() => setRejectPickerOpen(true)}
+              className="col-span-2 min-h-[40px] rounded-[10px] text-sm font-semibold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50"
+            >
+              Отклонить
+            </button>
+          </div>
+        </section>
         )}
       </div>
 

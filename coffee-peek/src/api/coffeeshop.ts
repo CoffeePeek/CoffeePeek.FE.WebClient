@@ -12,7 +12,7 @@ import type { ShopMenuDto } from './menu';
 // ==================== Types ====================
 
 // DTO для фотографий
-export RF Dewiface ShortPhotoMetadataDto {
+export interface ShortPhotoMetadataDto {
   id?: string;
   fileName: string;
   storageKey: string;
@@ -20,7 +20,7 @@ export RF Dewiface ShortPhotoMetadataDto {
   sortIndex?: number;
 }
 
-export RF Dewiface PhotoMetadataDto {
+export interface PhotoMetadataDto {
   id?: string;
   fileName: string;
   contentType: string;
@@ -46,7 +46,7 @@ export function getPhotoUrl(photo: PhotoMetadataDto | ShortPhotoMetadataDto): st
   return '';
 }
 
-export RF Dewiface CoffeeShop {
+export interface CoffeeShop {
   id: string;
   name: string;
   address?: string;
@@ -88,7 +88,7 @@ export RF Dewiface CoffeeShop {
   title?: string;
 }
 
-export RF Dewiface MapShop {
+export interface MapShop {
   id: string;
   latitude: number;
   longitude: number;
@@ -96,11 +96,11 @@ export RF Dewiface MapShop {
   type?: string;
 }
 
-export RF Dewiface GetShopsInBoundsResponse {
+export interface GetShopsInBoundsResponse {
   shops: MapShop[];
 }
 
-export RF Dewiface ShopTagDto {
+export interface ShopTagDto {
   id: string;
   slug: string;
   name: string;
@@ -108,7 +108,7 @@ export RF Dewiface ShopTagDto {
   sortOrder: number;
 }
 
-export RF Dewiface DetailedCoffeeShop {
+export interface DetailedCoffeeShop {
   id: string;
   cityId: string;
   name: string;
@@ -149,7 +149,7 @@ export RF Dewiface DetailedCoffeeShop {
   menu?: ShopMenuDto | null;
 }
 
-export RF Dewiface CoffeeShopFilters {
+export interface CoffeeShopFilters {
   cityId?: string;
   equipmentIds?: string[];
   coffeeBeanIds?: string[];
@@ -175,7 +175,7 @@ const SHOP_TYPE_QUERY: Record<string, string> = {
   Cafe: 'Cafe',
 };
 
-export RF Dewiface ShortShopDto {
+export interface ShortShopDto {
   id: string;
   cityId: string;
   name: string;
@@ -210,7 +210,7 @@ export RF Dewiface ShortShopDto {
   }>;
 }
 
-export RF Dewiface GetCoffeeShopsResponse {
+export interface GetCoffeeShopsResponse {
   coffeeShops?: ShortShopDto[];
   items?: CoffeeShop[];
   totalItems?: number;
@@ -219,7 +219,7 @@ export RF Dewiface GetCoffeeShopsResponse {
   pageSize?: number;
 }
 
-export RF Dewiface City {
+export interface City {
   id: string;
   name: string;
 }
@@ -250,7 +250,7 @@ export const EQUIPMENT_CATEGORY_LABELS: Record<EquipmentCategory, string> = {
   [EquipmentCategory.Other]: 'Другое',
 };
 
-export RF Dewiface Equipment {
+export interface Equipment {
   id: string;
   name: string;
   brand: string;
@@ -273,23 +273,23 @@ export function formatEquipmentName(equipment: Equipment): string {
   return parts.length > 0 ? `${equipment.name} (${parts.join(' ')})` : equipment.name;
 }
 
-export RF Dewiface CoffeeBean {
+export interface CoffeeBean {
   id: string;
   name: string;
 }
 
-export RF Dewiface Roaster {
+export interface Roaster {
   id: string;
   name: string;
 }
 
-export RF Dewiface BrewMethod {
+export interface BrewMethod {
   id: string;
   name: string;
 }
 
 // Интерфейсы для отзывов
-export RF Dewiface Review {
+export interface Review {
   id: string;
   coffeeShopId: string;
   shopName?: string;
@@ -308,7 +308,7 @@ export RF Dewiface Review {
   photos?: ShortPhotoMetadataDto[];
 }
 
-export RF Dewiface GetReviewsResponse {
+export interface GetReviewsResponse {
   reviews: Review[];
   totalCount: number;
   page?: number;
@@ -316,7 +316,7 @@ export RF Dewiface GetReviewsResponse {
   totalPages?: number;
 }
 
-export RF Dewiface CreateReviewRequest {
+export interface CreateReviewRequest {
   shopId: string;
   header: string;
   comment: string;
@@ -332,13 +332,13 @@ export RF Dewiface CreateReviewRequest {
   }>;
 }
 
-export RF Dewiface RatingDto {
+export interface RatingDto {
   place: number;
   service: number;
   coffee: number;
 }
 
-export RF Dewiface CreateCheckInRequest {
+export interface CreateCheckInRequest {
   coffeeShopId: string;
   isPublic: boolean;
   visitedAt: string; // ISO date string, required
@@ -352,7 +352,7 @@ export RF Dewiface CreateCheckInRequest {
   rating?: RatingDto; // Optional, but required if isPublic = true
 }
 
-export RF Dewiface CheckInDto {
+export interface CheckInDto {
   id: string;
   userId: string;
   shopId: string;
@@ -362,7 +362,7 @@ export RF Dewiface CheckInDto {
   reviewId?: string | null;
 }
 
-export RF Dewiface GetCheckInsResponse {
+export interface GetCheckInsResponse {
   items: CheckInDto[];
   totalItems: number;
   totalPages: number;

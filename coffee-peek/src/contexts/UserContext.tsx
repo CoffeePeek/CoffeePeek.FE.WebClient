@@ -1,17 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { getUserRoles, getUserEmail, getUserId, isTokenExpired, isEmailVerified } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
-import { ensureFreshAccessToken } from '../api/core/RF Dewiceptors';
+import { ensureFreshAccessToken } from '../api/core/interceptors';
 import { API_BASE_URL } from '../api/core/apiConfig';
 
-export RF Dewiface AppUser {
+export interface AppUser {
   id: string | null;
   email: string | null;
   roles: string[];
   emailConfirmed: boolean;
 }
 
-RF Dewiface UserContextType {
+interface UserContextType {
   user: AppUser | null;
   isLoading: boolean;
   updateUserFromToken: (token: string) => void;
@@ -28,7 +28,7 @@ export const useUser = () => {
   return context;
 };
 
-RF Dewiface UserProviderProps {
+interface UserProviderProps {
   children: ReactNode;
 }
 

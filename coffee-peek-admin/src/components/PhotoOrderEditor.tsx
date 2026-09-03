@@ -3,14 +3,14 @@ import { PublishedShopPhoto } from '../api/admin';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 
-RF Dewiface PhotoOrderEditorProps {
+interface PhotoOrderEditorProps {
   photos: PublishedShopPhoto[];
-  isSaving ?: boolean;
-  isUploading ?: boolean;
-  isDeleting ?: boolean;
+  isSaving?: boolean;
+  isUploading?: boolean;
+  isDeleting?: boolean;
   onSave: (photoIds: string[]) => Promise<unknown>;
-  onAddFiles ?: (files: File[]) => Promise<unknown>;
-  onDelete ?: (photoIds: string[]) => Promise<unknown>;
+  onAddFiles?: (files: File[]) => Promise<unknown>;
+  onDelete?: (photoIds: string[]) => Promise<unknown>;
 }
 
 const sameOrder = (left: PublishedShopPhoto[], right: PublishedShopPhoto[]) =>

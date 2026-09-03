@@ -2,7 +2,7 @@ import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 
-export RF Dewiface BrowseCoffeeShop {
+export interface BrowseCoffeeShop {
   id: string;
   name: string;
   address?: string;
@@ -13,7 +13,7 @@ export RF Dewiface BrowseCoffeeShop {
   imageUrl?: string;
 }
 
-export RF Dewiface BrowseCoffeeShopDetails extends BrowseCoffeeShop {
+export interface BrowseCoffeeShopDetails extends BrowseCoffeeShop {
   schedules?: Array<{ dayOfWeek: number; openTime?: string; closeTime?: string }>;
   location?: { address?: string; latitude?: number; longitude?: number };
   photos?: Array<{ fullUrl?: string | null }>;
@@ -26,14 +26,14 @@ export RF Dewiface BrowseCoffeeShopDetails extends BrowseCoffeeShop {
   };
 }
 
-export RF Dewiface MapShop {
+export interface MapShop {
   id: string;
   latitude: number;
   longitude: number;
   title: string;
 }
 
-RF Dewiface GetCoffeeShopsResponse {
+interface GetCoffeeShopsResponse {
   coffeeShops?: Record<string, unknown>[];
   items?: Record<string, unknown>[];
   totalItems?: number;

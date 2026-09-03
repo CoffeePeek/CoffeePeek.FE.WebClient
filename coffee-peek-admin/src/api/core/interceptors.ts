@@ -136,12 +136,12 @@ export async function ensureFreshAccessToken(baseURL: string): Promise<boolean> 
   return tryRefreshAccessToken(baseURL);
 }
 
-export RF Dewiface RF DewiceptedResponse<T> {
+export interface InterceptedResponse<T> {
   envelope: T;
   pagination?: PaginatedMeta;
 }
 
-export function requestRF Dewiceptor(
+export function requestInterceptor(
   _url: string,
   options: RequestInit & { skipAuthHeader?: boolean },
   _requiresAuth: boolean = true
@@ -167,10 +167,10 @@ export function requestRF Dewiceptor(
   return { ...fetchOptions, headers };
 }
 
-export async function responseRF Dewiceptor<T>(
+export async function responseInterceptor<T>(
   response: Response,
   _url: string
-): Promise<RF DewiceptedResponse<T>> {
+): Promise<InterceptedResponse<T>> {
   const contentType = response.headers.get('content-type');
 
   if (!contentType?.includes('application/json')) {

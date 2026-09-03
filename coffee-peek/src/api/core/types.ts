@@ -1,4 +1,4 @@
-export RF Dewiface ApiResponse<T> {
+export interface ApiResponse<T> {
   success?: boolean;
   isSuccess?: boolean;
   message: string;
@@ -12,7 +12,7 @@ export RF Dewiface ApiResponse<T> {
   };
 }
 
-export RF Dewiface ApiConfig {
+export interface ApiConfig {
   headers?: Record<string, string>;
   params?: Record<string, any>;
   requiresAuth?: boolean;
@@ -21,12 +21,12 @@ export RF Dewiface ApiConfig {
   signal?: AbortSignal;
 }
 
-export RF Dewiface PaginationParams {
+export interface PaginationParams {
   page: number;
   pageSize: number;
 }
 
-export RF Dewiface PaginatedResponse<T> {
+export interface PaginatedResponse<T> {
   items: T[];
   totalItems: number;
   totalPages: number;
@@ -34,7 +34,7 @@ export RF Dewiface PaginatedResponse<T> {
   pageSize: number;
 }
 
-export RF Dewiface ApiError {
+export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;
   status?: number;
@@ -43,7 +43,7 @@ export RF Dewiface ApiError {
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
-export RF Dewiface RequestOptions extends RequestInit {
+export interface RequestOptions extends RequestInit {
   params?: Record<string, any>;
   requiresAuth?: boolean;
   skipAuthHeader?: boolean;

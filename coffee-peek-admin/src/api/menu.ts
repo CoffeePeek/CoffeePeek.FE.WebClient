@@ -8,7 +8,7 @@ export type MenuParseStatus = 'None' | 'Pending' | 'Running' | 'Ready' | 'Failed
 export type MenuItemSource = 'Parsed' | 'Manual';
 export type SuggestedPriceRange = 'Cheap' | 'Moderate' | 'Expensive';
 
-export RF Dewiface CoffeeDrinkDefinitionDto {
+export interface CoffeeDrinkDefinitionDto {
   slug: string;
   nameRu: string;
   nameEn: string;
@@ -16,7 +16,7 @@ export RF Dewiface CoffeeDrinkDefinitionDto {
   sortOrder: number;
 }
 
-export RF Dewiface ShopMenuItemDto {
+export interface ShopMenuItemDto {
   slug: string;
   nameRu: string;
   nameEn: string;
@@ -28,7 +28,7 @@ export RF Dewiface ShopMenuItemDto {
   source: MenuItemSource;
 }
 
-export RF Dewiface MenuPhotoDto {
+export interface MenuPhotoDto {
   id?: string;
   fileName: string;
   storageKey: string;
@@ -36,7 +36,7 @@ export RF Dewiface MenuPhotoDto {
   sortIndex?: number;
 }
 
-export RF Dewiface ShopMenuDto {
+export interface ShopMenuDto {
   capturedAtUtc?: string | null;
   updatedAtUtc?: string | null;
   currency: string;
@@ -47,36 +47,36 @@ export RF Dewiface ShopMenuDto {
   photos: MenuPhotoDto[];
 }
 
-export RF Dewiface UnmatchedMenuItem {
+export interface UnmatchedMenuItem {
   rawName: string;
   price?: number | null;
   confidence?: number | null;
 }
 
-export RF Dewiface AdminShopMenuDto {
+export interface AdminShopMenuDto {
   menu: ShopMenuDto | null;
   unmatched: UnmatchedMenuItem[];
 }
 
-export RF Dewiface UploadedPhotoDto {
+export interface UploadedPhotoDto {
   fileName: string;
   contentType: string;
   storageKey: string;
   size: number;
 }
 
-export RF Dewiface AttachMenuPhotosRequest {
+export interface AttachMenuPhotosRequest {
   photos: UploadedPhotoDto[];
 }
 
-export RF Dewiface UpdateShopMenuItemRequest {
+export interface UpdateShopMenuItemRequest {
   slug: string;
   availability: MenuAvailability;
   price?: number | null;
   volumeMl?: number | null;
 }
 
-export RF Dewiface UpdateShopMenuRequest {
+export interface UpdateShopMenuRequest {
   items: UpdateShopMenuItemRequest[];
   applySuggestedPriceRange?: boolean;
 }

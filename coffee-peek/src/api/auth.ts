@@ -5,16 +5,16 @@
 import { httpClient, TokenManager } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
-import { pickAuthTokens } from './core/RF Dewiceptors';
+import { pickAuthTokens } from './core/interceptors';
 
 // ==================== Request/Response Types ====================
 
-export RF Dewiface LoginRequest {
+export interface LoginRequest {
   email: string;
   password: string;
 }
 
-export RF Dewiface RegisterRequest {
+export interface RegisterRequest {
   email: string;
   password: string;
   userName?: string;
@@ -23,34 +23,34 @@ export RF Dewiface RegisterRequest {
 /**
  * Данные авторизации
  */
-export RF Dewiface AuthData {
+export interface AuthData {
   accessToken: string;
   refreshToken?: string;
   expiresIn?: number;
 }
 
-export RF Dewiface AuthResponse extends ApiResponse<AuthData> {}
+export interface AuthResponse extends ApiResponse<AuthData> {}
 
-export RF Dewiface CreateEntityResponse {
+export interface CreateEntityResponse {
   isSuccess: boolean;
   message: string;
   data?: any;
 }
 
-export RF Dewiface CheckExistsData {
+export interface CheckExistsData {
   exists: boolean;
 }
 
-export RF Dewiface CheckExistsResponse extends ApiResponse<CheckExistsData> {}
+export interface CheckExistsResponse extends ApiResponse<CheckExistsData> {}
 
-export RF Dewiface ApiError {
+export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;
   status?: number;
 }
 
-// UserProfile RF Dewifaces
-export RF Dewiface UserProfile {
+// UserProfile interfaces
+export interface UserProfile {
   id?: string;
   userCredentialId: string;
   userName: string;
@@ -64,44 +64,44 @@ export RF Dewiface UserProfile {
   roles?: string[];
 }
 
-export RF Dewiface UpdateAboutRequest {
+export interface UpdateAboutRequest {
   about: string;
 }
 
-export RF Dewiface UpdateEmailRequest {
+export interface UpdateEmailRequest {
   email: string;
 }
 
-export RF Dewiface UpdatePhoneNumberRequest {
+export interface UpdatePhoneNumberRequest {
   phoneNumber: string;
 }
 
-export RF Dewiface UpdateUsernameRequest {
+export interface UpdateUsernameRequest {
   username: string;
 }
 
-export RF Dewiface ChangePasswordRequest {
+export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
 
-export RF Dewiface ForgotPasswordRequest {
+export interface ForgotPasswordRequest {
   email: string;
 }
 
-export RF Dewiface ResetPasswordRequest {
+export interface ResetPasswordRequest {
   token: string;
   newPassword: string;
 }
 
-export RF Dewiface UploadedPhotoDto {
+export interface UploadedPhotoDto {
   fileName: string;
   contentType: string;
   storageKey: string;
   size: number; // long
 }
 
-export RF Dewiface UpdateAvatarRequest {
+export interface UpdateAvatarRequest {
   uploadedPhoto: UploadedPhotoDto;
 }
 

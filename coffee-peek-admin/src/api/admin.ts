@@ -13,7 +13,7 @@ import { apiDayOfWeekToUi, uiDayToDotNetName } from '../utils/dayOfWeek';
 export type ModerationStatus = 'Pending' | 'Approved' | 'Rejected';
 export type UserRole = 'User' | 'Moderator' | 'Admin' | 'Owner' | 'Employee' | 'Roaster';
 
-export RF Dewiface PaginatedResult<T> {
+export interface PaginatedResult<T> {
   items: T[];
   totalCount: number;
   page: number;
@@ -21,31 +21,31 @@ export RF Dewiface PaginatedResult<T> {
   totalPages: number;
 }
 
-RF Dewiface BackendShopContact {
+interface BackendShopContact {
   phoneNumber?: string | null;
   email?: string | null;
   siteLink?: string | null;
   instagramLink?: string | null;
 }
 
-RF Dewiface BackendScheduleRF Dewival {
+interface BackendScheduleInterval {
   openTime: string;
   closeTime: string;
 }
 
-RF Dewiface BackendSchedule {
+interface BackendSchedule {
   dayOfWeek: number | string;
   isClosed?: boolean;
-  RF Dewivals?: BackendScheduleRF Dewival[] | null;
+  intervals?: BackendScheduleInterval[] | null;
 }
 
-RF Dewiface BackendShopPhoto {
+interface BackendShopPhoto {
   fileName: string;
   storageKey: string;
   fullUrl: string;
 }
 
-RF Dewiface BackendModerationShop {
+interface BackendModerationShop {
   id: string;
   name: string;
   address?: string | null;
@@ -65,7 +65,7 @@ RF Dewiface BackendModerationShop {
   menu?: unknown;
 }
 
-RF Dewiface BackendModerationReview {
+interface BackendModerationReview {
   id: string;
   header: string;
   comment: string;
@@ -83,7 +83,7 @@ RF Dewiface BackendModerationReview {
   moderationStatus: ModerationStatus | number;
 }
 
-RF Dewiface GetAllModerationShopsResponse {
+interface GetAllModerationShopsResponse {
   moderationShops: BackendModerationShop[];
   totalItems: number;
   totalPages: number;
@@ -91,7 +91,7 @@ RF Dewiface GetAllModerationShopsResponse {
   pageSize: number;
 }
 
-RF Dewiface GetAllModerationReviewsResponse {
+interface GetAllModerationReviewsResponse {
   reviewDtos: BackendModerationReview[];
   totalItems: number;
   totalPages: number;
@@ -99,7 +99,7 @@ RF Dewiface GetAllModerationReviewsResponse {
   pageSize: number;
 }
 
-RF Dewiface BackendAdminUser {
+interface BackendAdminUser {
   id: string;
   userName: string;
   email: string;
@@ -113,7 +113,7 @@ RF Dewiface BackendAdminUser {
   isBlocked: boolean;
 }
 
-RF Dewiface GetAdminUsersResponse {
+interface GetAdminUsersResponse {
   items: BackendAdminUser[];
   totalItems: number;
   totalPages: number;
@@ -121,14 +121,14 @@ RF Dewiface GetAdminUsersResponse {
   pageSize: number;
 }
 
-export RF Dewiface AdminShopSchedule {
+export interface AdminShopSchedule {
   dayOfWeek: number;
   isClosed?: boolean;
   openTime: string;
   closeTime: string;
 }
 
-export RF Dewiface AdminCoffeeShop {
+export interface AdminCoffeeShop {
   id: string;
   name: string;
   address: string;
@@ -162,7 +162,7 @@ export RF Dewiface AdminCoffeeShop {
   menu?: ShopMenuDto | null;
 }
 
-export RF Dewiface UpdateCoffeeShopRequest {
+export interface UpdateCoffeeShopRequest {
   name?: string;
   address?: string;
   description?: string;
@@ -181,11 +181,11 @@ export RF Dewiface UpdateCoffeeShopRequest {
   brewMethodIds?: string[];
 }
 
-export RF Dewiface ModerationActionRequest {
+export interface ModerationActionRequest {
   comment?: string;
 }
 
-export RF Dewiface AdminReview {
+export interface AdminReview {
   id: string;
   shopId: string;
   shopName: string;
@@ -200,7 +200,7 @@ export RF Dewiface AdminReview {
   createdAtUtc: string;
 }
 
-export RF Dewiface AdminUser {
+export interface AdminUser {
   id: string;
   userName: string;
   email: string;
@@ -214,7 +214,7 @@ export RF Dewiface AdminUser {
   isBlocked: boolean;
 }
 
-export RF Dewiface UserStats {
+export interface UserStats {
   totalUsers: number;
   activeUsers: number;
   blockedUsers: number;
@@ -222,11 +222,11 @@ export RF Dewiface UserStats {
   usersByRole: Record<string, number>;
 }
 
-export RF Dewiface UpdateUserRoleRequest {
+export interface UpdateUserRoleRequest {
   role: UserRole;
 }
 
-export RF Dewiface OverviewStats {
+export interface OverviewStats {
   totalUsers: number;
   usersRegisteredToday: number;
   totalCoffeeShops: number;
@@ -237,7 +237,7 @@ export RF Dewiface OverviewStats {
   newReviewsToday: number;
 }
 
-export RF Dewiface ClearCacheResponse {
+export interface ClearCacheResponse {
   clearedCount: number;
   pattern: string;
 }
@@ -247,21 +247,21 @@ export type { PriceRangeLevel } from '../constants/priceRange';
 export type AuditEntityType = 'Shop' | 'Review' | 'CommunityPost';
 export type AuditAction = 'Approved' | 'Rejected' | 'Pending';
 
-export RF Dewiface PublishedShopLocation {
+export interface PublishedShopLocation {
   cityId?: string;
   address?: string;
   latitude?: number | null;
   longitude?: number | null;
 }
 
-export RF Dewiface PublishedShopContacts {
+export interface PublishedShopContacts {
   phoneNumber?: string | null;
   email?: string | null;
   siteLink?: string | null;
   instagramLink?: string | null;
 }
 
-export RF Dewiface PublishedShop {
+export interface PublishedShop {
   id: string;
   name: string;
   cityId: string;
@@ -288,7 +288,7 @@ export RF Dewiface PublishedShop {
   brewMethodIds?: string[];
 }
 
-export RF Dewiface ShopTagDto {
+export interface ShopTagDto {
   id: string;
   slug: string;
   name: string;
@@ -296,7 +296,7 @@ export RF Dewiface ShopTagDto {
   sortOrder: number;
 }
 
-export RF Dewiface AdminShopTag {
+export interface AdminShopTag {
   id: string;
   slug: string;
   name: string;
@@ -307,21 +307,21 @@ export RF Dewiface AdminShopTag {
   updatedAtUtc: string;
 }
 
-export RF Dewiface CreateShopTagRequest {
+export interface CreateShopTagRequest {
   slug: string;
   name: string;
   description?: string;
   sortOrder: number;
 }
 
-export RF Dewiface UpdateShopTagRequest {
+export interface UpdateShopTagRequest {
   name: string;
   description?: string;
   sortOrder: number;
   isActive: boolean;
 }
 
-export RF Dewiface UserSession {
+export interface UserSession {
   id: string;
   deviceName?: string;
   ipAddress?: string;
@@ -331,7 +331,7 @@ export RF Dewiface UserSession {
   lastSeenAtUtc?: string;
 }
 
-export RF Dewiface PublishedShopPhoto {
+export interface PublishedShopPhoto {
   id: string;
   fileName: string;
   contentType: string;
@@ -341,7 +341,7 @@ export RF Dewiface PublishedShopPhoto {
   sortIndex: number;
 }
 
-export RF Dewiface UpdatePublishedShopRequest {
+export interface UpdatePublishedShopRequest {
   name?: string;
   description?: string | null;
   priceRange?: PriceRangeLevel | number;
@@ -357,7 +357,7 @@ export RF Dewiface UpdatePublishedShopRequest {
   };
 }
 
-export RF Dewiface AttachPublishedShopPhotosRequest {
+export interface AttachPublishedShopPhotosRequest {
   photos: Array<{
     fileName: string;
     contentType: string;
@@ -366,11 +366,11 @@ export RF Dewiface AttachPublishedShopPhotosRequest {
   }>;
 }
 
-export RF Dewiface DeletePublishedShopPhotosRequest {
+export interface DeletePublishedShopPhotosRequest {
   photoIds: string[];
 }
 
-export RF Dewiface ModerationAuditEntry {
+export interface ModerationAuditEntry {
   id: string;
   entityType: AuditEntityType;
   entityId: string;
@@ -381,11 +381,11 @@ export RF Dewiface ModerationAuditEntry {
   createdAtUtc: string;
 }
 
-export RF Dewiface BlockUserRequest {
+export interface BlockUserRequest {
   blocked: boolean;
 }
 
-RF Dewiface ListParams {
+interface ListParams {
   status?: ModerationStatus;
   page?: number;
   pageSize?: number;
@@ -419,12 +419,12 @@ function mapBackendSchedules(schedules?: BackendSchedule[] | null): AdminShopSch
       };
     }
 
-    const RF Dewival = schedule.RF Dewivals?.[0];
+    const interval = schedule.intervals?.[0];
     return {
       dayOfWeek,
       isClosed: false,
-      openTime: formatTimeSpan(RF Dewival?.openTime),
-      closeTime: formatTimeSpan(RF Dewival?.closeTime),
+      openTime: formatTimeSpan(interval?.openTime),
+      closeTime: formatTimeSpan(interval?.closeTime),
     };
   });
 }
@@ -562,12 +562,12 @@ function buildModerationShopFormData(
     if (!schedule.isClosed && schedule.openTime && schedule.closeTime) {
       appendFormValue(
         form,
-        `Schedules[${scheduleIndex}].RF Dewivals[0].OpenTime`,
+        `Schedules[${scheduleIndex}].Intervals[0].OpenTime`,
         toBackendTime(schedule.openTime)
       );
       appendFormValue(
         form,
-        `Schedules[${scheduleIndex}].RF Dewivals[0].CloseTime`,
+        `Schedules[${scheduleIndex}].Intervals[0].CloseTime`,
         toBackendTime(schedule.closeTime)
       );
     }
@@ -767,7 +767,7 @@ export async function getOverviewStats(): Promise<ApiResponse<OverviewStats>> {
 
 // ==================== Moderation audit ====================
 
-RF Dewiface GetModerationAuditLogResponse {
+interface GetModerationAuditLogResponse {
   items: ModerationAuditEntry[];
   totalItems: number;
   totalPages: number;
@@ -828,18 +828,18 @@ function mapPublishedSchedules(raw: unknown): AdminShopSchedule[] {
       (schedule.dayOfWeek ?? schedule.DayOfWeek) as number | string | undefined
     );
     const isClosed = Boolean(schedule.isClosed ?? schedule.IsClosed);
-    const RF Dewivals = (schedule.RF Dewivals ?? schedule.RF Dewivals) as
+    const intervals = (schedule.intervals ?? schedule.Intervals) as
       | Array<Record<string, unknown>>
       | undefined;
-    const RF Dewival = Array.isArray(RF Dewivals) ? RF Dewivals[0] : undefined;
+    const interval = Array.isArray(intervals) ? intervals[0] : undefined;
     return {
       dayOfWeek,
       isClosed,
       openTime: formatTimeSpan(
-        String(RF Dewival?.openTime ?? RF Dewival?.OpenTime ?? schedule.openTime ?? schedule.OpenTime ?? '')
+        String(interval?.openTime ?? interval?.OpenTime ?? schedule.openTime ?? schedule.OpenTime ?? '')
       ),
       closeTime: formatTimeSpan(
-        String(RF Dewival?.closeTime ?? RF Dewival?.CloseTime ?? schedule.closeTime ?? schedule.CloseTime ?? '')
+        String(interval?.closeTime ?? interval?.CloseTime ?? schedule.closeTime ?? schedule.CloseTime ?? '')
       ),
     };
   });
@@ -849,7 +849,7 @@ function toPublishedApiSchedules(schedules: AdminShopSchedule[]) {
   return schedules.map((schedule) => ({
     dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
     isClosed: Boolean(schedule.isClosed),
-    RF Dewivals:
+    intervals:
       schedule.isClosed || !schedule.openTime || !schedule.closeTime
         ? []
         : [
@@ -1054,7 +1054,7 @@ export async function getModerationAuditLog(
 
 // ==================== Published shops (admin) ====================
 
-RF Dewiface GetAdminCoffeeShopsResponse {
+interface GetAdminCoffeeShopsResponse {
   items: Record<string, unknown>[];
   totalItems: number;
   totalPages: number;

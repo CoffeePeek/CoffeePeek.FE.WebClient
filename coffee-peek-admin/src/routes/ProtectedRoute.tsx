@@ -2,11 +2,11 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 
-RF Dewiface ProtectedRouteProps {
+interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireAdmin ?: boolean;
-  requireModerator ?: boolean;
-  requireOwner ?: boolean;
+  requireAdmin?: boolean;
+  requireModerator?: boolean;
+  requireOwner?: boolean;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({

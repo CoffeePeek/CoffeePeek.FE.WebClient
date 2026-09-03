@@ -1,8 +1,8 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 
-RF Dewiface OTPInputProps {
-  length ?: number;
+interface OTPInputProps {
+  length?: number;
   onComplete: (code: string) => void;
 }
 
