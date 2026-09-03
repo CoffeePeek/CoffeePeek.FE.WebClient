@@ -118,8 +118,8 @@ const LandingPage: React.FC = () => {
         <LogoMark size={80} />
       </div>
       <div className="flex items-center gap-2 mb-1">
-        <span className={`text-xl lg:text-2xl font-extrabold tracking-[-0.045em] font-display ${themeClasses.text.primary}`}>Coffee</span>
-        <span className={`text-xl lg:text-2xl font-bold tracking-tight font-display ${themeClasses.primary.text}`}>Peek</span>
+        <span className={`text-xl lg:text-2xl font-extrabold tracking-[-0.045em] font-extended ${themeClasses.text.primary}`}>Coffee</span>
+        <span className={`text-xl lg:text-2xl font-bold tracking-tight font-extended ${themeClasses.primary.text}`}>Peek</span>
       </div>
     </div>
   );
@@ -203,7 +203,7 @@ const LandingPage: React.FC = () => {
                 </span>
 
                 {/* H1 — Dewi Expanded is wider than the viewport at a fixed 54px */}
-                <h1 className="mt-5 lg:mt-6 min-w-0 font-display font-black leading-[0.95] tracking-[-0.035em]" style={{ color: c.textPrimary }}>
+                <h1 className="mt-5 lg:mt-6 min-w-0 font-extended font-black leading-[0.95] tracking-[-0.035em]" style={{ color: c.textPrimary }}>
                   <span className="block font-body font-medium text-[13px] lg:text-[28px] tracking-[0.01em] normal-case mb-2 lg:mb-3" style={{ color: c.textSecondary }}>
                     Добро пожаловать в
                   </span>
@@ -224,13 +224,13 @@ const LandingPage: React.FC = () => {
                 {/* CTAs */}
                 <div className="mt-[26px] lg:mt-8 flex flex-col lg:flex-row lg:inline-flex gap-[10px]">
                   <button onClick={() => navigate('/register')}
-                    className="h-[52px] px-7 rounded-[14px] bg-[#EAB308] text-[#1A1412] border-none font-display font-bold text-[15px] inline-flex items-center justify-center gap-2 hover:bg-[#FACC15] active:scale-[0.98] transition-all"
+                    className="h-[52px] px-7 rounded-[14px] bg-[#EAB308] text-[#1A1412] border-none font-extended font-bold text-[15px] inline-flex items-center justify-center gap-2 hover:bg-[#FACC15] active:scale-[0.98] transition-all"
                     style={{ boxShadow: '0 4px 6px -4px rgba(180,140,75,.3), 0 10px 25px -3px rgba(234,179,8,.25)' }}>
                     <AppIcon name="arrow_forward" size={18} />
                     Создать аккаунт
                   </button>
                   <button onClick={() => navigate('/login')}
-                    className="h-[52px] px-[26px] rounded-[14px] font-display font-semibold text-[15px] inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                    className="h-[52px] px-[26px] rounded-[14px] font-extended font-semibold text-[15px] inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                     style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#fff', border: `1px solid ${c.border}`, color: c.textPrimary }}>
                     <AppIcon name="login" size={18} />
                     Войти
@@ -251,7 +251,7 @@ const LandingPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 lg:hidden">
                 {statsMobile.map(({ value, label, isRating }) => (
                   <div key={label}>
-                    <div className={`font-display font-bold text-[22px] tracking-[-0.02em] leading-none inline-flex items-center gap-1.5 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`} style={{ color: c.textPrimary }}>
+                    <div className={`font-extended font-bold text-[22px] tracking-[-0.02em] leading-none inline-flex items-center gap-1.5 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`} style={{ color: c.textPrimary }}>
                       {isRating && value !== '—' && <StarIcon filled size={18} className="text-[#EAB308]" />}
                       {value}
                     </div>
@@ -264,7 +264,7 @@ const LandingPage: React.FC = () => {
                 {statsDesktop.map(({ value, label, isRating }, i) => (
                   <React.Fragment key={label}>
                     <div className="text-left">
-                      <div className={`font-display font-bold text-[32px] tracking-[-0.02em] leading-none inline-flex items-center gap-2 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`} style={{ color: c.textPrimary }}>
+                      <div className={`font-extended font-bold text-[32px] tracking-[-0.02em] leading-none inline-flex items-center gap-2 ${isStatsLoading ? 'animate-pulse opacity-40' : ''}`} style={{ color: c.textPrimary }}>
                         {isRating && value !== '—' && <StarIcon filled size={22} className="text-[#EAB308]" />}
                         {value}
                       </div>
@@ -281,7 +281,7 @@ const LandingPage: React.FC = () => {
           <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-4 lg:pt-6 pb-4">
             <div className="mb-3 lg:mb-4">
               <span className="font-body font-bold text-[10px] lg:text-[12px] uppercase tracking-[.08em] text-[#EAB308]">Что внутри</span>
-              <h2 className="mt-2 font-display font-bold text-[22px] lg:text-[36px] tracking-[-0.025em]" style={{ color: c.textPrimary }}>Всё для жизни вокруг кофе</h2>
+              <h2 className="mt-2 font-extended font-bold text-[22px] lg:text-[36px] tracking-[-0.025em]" style={{ color: c.textPrimary }}>Всё для жизни вокруг кофе</h2>
             </div>
             <LandingProductDemo />
           </section>
@@ -299,7 +299,7 @@ const LandingPage: React.FC = () => {
               </div>
               <div className="relative">
                 <span className="font-body font-bold text-[10px] lg:text-[11px] uppercase tracking-[.08em] text-[#EAB308]">Присоединяйся к сообществу</span>
-                <h2 className="mt-[6px] font-display font-bold text-[20px] lg:text-[32px] tracking-[-0.02em] leading-[1.15]" style={{ color: c.textPrimary }}>
+                <h2 className="mt-[6px] font-extended font-bold text-[20px] lg:text-[32px] tracking-[-0.02em] leading-[1.15]" style={{ color: c.textPrimary }}>
                   Делись опытом и открывай<br className="hidden lg:block" />новые кофейни рядом с тобой.
                 </h2>
               </div>
@@ -307,7 +307,7 @@ const LandingPage: React.FC = () => {
                 <Mascot pose="happy" size={128} />
               </div>
               <button onClick={() => navigate('/register')}
-                className="relative h-12 lg:h-[56px] px-6 lg:px-8 rounded-xl lg:rounded-[14px] bg-[#EAB308] text-[#1A1412] border-none font-display font-bold text-[14px] lg:text-[15px] inline-flex items-center justify-center gap-[8px] lg:gap-[10px] whitespace-nowrap hover:bg-[#FACC15] active:scale-[0.98] transition-all"
+                className="relative h-12 lg:h-[56px] px-6 lg:px-8 rounded-xl lg:rounded-[14px] bg-[#EAB308] text-[#1A1412] border-none font-extended font-bold text-[14px] lg:text-[15px] inline-flex items-center justify-center gap-[8px] lg:gap-[10px] whitespace-nowrap hover:bg-[#FACC15] active:scale-[0.98] transition-all"
                 style={{ boxShadow: '0 4px 6px -4px rgba(180,140,75,.4), 0 10px 25px -3px rgba(234,179,8,.35)' }}>
                 <AppIcon name="rocket_launch" size={18} />
                 Создать аккаунт
@@ -321,7 +321,7 @@ const LandingPage: React.FC = () => {
               <div className="max-w-[320px]">
                 <div className="flex items-center gap-[10px]">
                   <LogoMark size={32} />
-                  <span className="font-display font-bold text-[17px]" style={{ color: c.textPrimary }}>Coffee<span className="text-[#EAB308]">Peek</span></span>
+                  <span className="font-extended font-bold text-[17px]" style={{ color: c.textPrimary }}>Coffee<span className="text-[#EAB308]">Peek</span></span>
                 </div>
                 <p className="mt-3 font-body text-[13px] leading-[1.55]" style={{ color: c.textSecondary }}>
                   Проводник в мире кофе. Карта, отзывы, инструменты и сообщество — в одном приложении.
@@ -471,7 +471,7 @@ const LandingPage: React.FC = () => {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {renderHeader()}
                 <div className="text-center mb-10">
-                  <h1 className={`text-3xl lg:text-4xl font-bold font-display ${textPrimary} mb-3 tracking-tight`}>Join CoffeePeek</h1>
+                  <h1 className={`text-3xl lg:text-4xl font-bold font-extended ${textPrimary} mb-3 tracking-tight`}>Join CoffeePeek</h1>
                   <p className={`font-body ${textSecondary} lg:text-lg`}>Enter your email to join the exclusive waitlist.</p>
                 </div>
 
@@ -496,7 +496,7 @@ const LandingPage: React.FC = () => {
             {step === VerificationStep.ENTER_CODE && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="text-center mb-10">
-                  <h1 className={`text-3xl lg:text-4xl font-bold font-display ${textPrimary} mb-3 tracking-tight`}>Verify Identity</h1>
+                  <h1 className={`text-3xl lg:text-4xl font-bold font-extended ${textPrimary} mb-3 tracking-tight`}>Verify Identity</h1>
                   <p className={`font-body ${textSecondary} lg:text-lg`}>A 6-digit code was sent to <span className={`${themeClasses.primary.text} font-semibold`}>{userState.email}</span></p>
                 </div>
                 <div className="space-y-10">
@@ -522,7 +522,7 @@ const LandingPage: React.FC = () => {
             {step === VerificationStep.LINK_PROCESSING && (
               <div className="text-center animate-in fade-in duration-500 py-12">
                 <WobbleRing size={56} className="mx-auto mb-8" />
-                <h1 className={`text-3xl font-bold font-display ${textPrimary} mb-3`}>Verifying Secure Link</h1>
+                <h1 className={`text-3xl font-bold font-extended ${textPrimary} mb-3`}>Verifying Secure Link</h1>
                 <p className={`font-body ${textSecondary}`}>Please wait while we confirm your credentials...</p>
                 <p className={`${textTertiary} text-sm mt-4 font-mono truncate px-4`}>UID: {userState.userId}</p>
               </div>
@@ -534,7 +534,7 @@ const LandingPage: React.FC = () => {
                   <div className={`w-24 h-24 lg:w-32 lg:h-32 ${themeClasses.primary.bgLight} rounded-full flex items-center justify-center mb-8 animate-bounce duration-[2000ms] border ${themeClasses.primary.borderLighter} shadow-lg ${themeClasses.primary.shadow}`}>
                     <Icons.Check />
                   </div>
-                  <h1 className={`text-4xl lg:text-5xl font-bold font-display ${textPrimary} mb-4 tracking-tight`}>Verified!</h1>
+                  <h1 className={`text-4xl lg:text-5xl font-bold font-extended ${textPrimary} mb-4 tracking-tight`}>Verified!</h1>
                   <p className={`font-body ${textSecondary} text-lg lg:text-xl max-w-[320px] mx-auto leading-relaxed`}>
                     Account confirmed. You're now on the priority list.
                   </p>

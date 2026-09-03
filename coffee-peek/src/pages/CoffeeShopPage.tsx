@@ -162,7 +162,7 @@ const CoffeeShopPage: React.FC = () => {
                   {shop.tags.map((tag) => (
                     <span
                       key={tag.id}
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-display font-semibold border ${borderColor} ${textMuted}`}
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extended font-semibold border ${borderColor} ${textMuted}`}
                     >
                       {tag.name}
                     </span>
@@ -174,7 +174,7 @@ const CoffeeShopPage: React.FC = () => {
           {/* Описание */}
           {shop.description && (
             <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0`}>
-              <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
+              <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 mb-4`}>
                 <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
                 О кофейне
               </h2>
@@ -202,7 +202,7 @@ const CoffeeShopPage: React.FC = () => {
           {/* Детали кофе */}
           {(shop.equipments?.length > 0 || shop.beans?.length > 0 || shop.roasters?.length > 0 || shop.brewMethods?.length > 0) && (
             <div>
-              <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-6 sm:mb-8`}>
+              <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 mb-6 sm:mb-8`}>
                 <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
                 Детали кофе
               </h2>

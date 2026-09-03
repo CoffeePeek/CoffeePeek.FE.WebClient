@@ -62,7 +62,7 @@ export const ShopMenuSection: React.FC<ShopMenuSectionProps> = ({
   if (!menu) {
     return (
       <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0`}>
-        <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-3`}>
+        <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 mb-3`}>
           <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
           Меню
         </h2>
@@ -82,7 +82,7 @@ export const ShopMenuSection: React.FC<ShopMenuSectionProps> = ({
   return (
     <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0 space-y-5`}>
       <div>
-        <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-2`}>
+        <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 mb-2`}>
           <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
           Меню
         </h2>

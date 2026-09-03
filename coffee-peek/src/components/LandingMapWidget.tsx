@@ -241,7 +241,7 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
             <AppIcon name="local_cafe" filled size={18} color={COLORS.primary} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-display font-semibold text-[14px] leading-tight text-[#1C1917]">
+            <p className="truncate font-extended font-semibold text-[14px] leading-tight text-[#1C1917]">
               {preview.title}
             </p>
             <p className="mt-0.5 font-body text-[12px] inline-flex items-center gap-1 text-[#78716C]">
@@ -297,14 +297,14 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
 
       <div className="relative z-[2] p-[22px] pt-5">
         <h3
-          className="font-display font-bold text-[24px] tracking-[-0.025em] leading-[1.15]"
+          className="font-extended font-bold text-[24px] tracking-[-0.025em] leading-[1.15]"
           style={{ color: c.textPrimary }}
         >
           Здесь ваша следующая чашка
         </h3>
         <button
           onClick={goToMap}
-          className="mt-4 w-full h-[52px] rounded-[14px] font-display font-semibold text-[15px] inline-flex items-center justify-center gap-[10px] hover:border-[#EAB308]/40 transition-colors"
+          className="mt-4 w-full h-[52px] rounded-[14px] font-extended font-semibold text-[15px] inline-flex items-center justify-center gap-[10px] hover:border-[#EAB308]/40 transition-colors"
           style={{ background: c.background, color: c.textPrimary, border: `1px solid ${c.border}` }}
         >
           Открыть карту <AppIcon name="arrow_forward" size={16} />

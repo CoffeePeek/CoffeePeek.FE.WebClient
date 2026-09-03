@@ -17,7 +17,7 @@ export const YANDEX_TO_OURS: { label: string; slug?: string; focus?: CoffeeFocus
   { label: 'кафе', focus: 'cafe' },
   { label: 'Wi-Fi', slug: 'laptop_friendly' },
   { label: 'можно с ноутбуком', slug: 'laptop_friendly' },
-  { label: 'завтраки', slug: 'bakery' },
+  { label: 'завтраки', slug: 'breakfast' },
   { label: 'кондитерская', slug: 'bakery' },
   { label: 'с собой', slug: 'to_go' },
   { label: 'обжарка', slug: 'roastery' },

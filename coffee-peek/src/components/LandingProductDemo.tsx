@@ -245,7 +245,7 @@ const SceneFind: React.FC<{ reduceMotion: boolean }> = ({ reduceMotion }) => {
                   animation: isActive && !reduceMotion ? 'lp-popup 0.28s ease both' : undefined,
                 }}
               >
-                <span className="block font-display font-bold text-[12px] leading-tight text-[#1C1917]">{p.name}</span>
+                <span className="block font-extended font-bold text-[12px] leading-tight text-[#1C1917]">{p.name}</span>
                 <span className="mt-0.5 flex items-center gap-1 font-body text-[11px] text-[#78716C]">
                   <StarIcon filled size={11} className="text-[#EAB308]" />
                   {p.rating}
@@ -307,7 +307,7 @@ const SceneFind: React.FC<{ reduceMotion: boolean }> = ({ reduceMotion }) => {
           </svg>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display font-semibold text-[14px] leading-tight text-[#1C1917]">{pin.name}</p>
+          <p className="truncate font-extended font-semibold text-[14px] leading-tight text-[#1C1917]">{pin.name}</p>
           <p className="mt-0.5 font-body text-[12px] inline-flex items-center gap-1 text-[#78716C]">
             <StarIcon filled size={12} className="text-[#EAB308]" />
             {pin.rating}
@@ -342,11 +342,11 @@ const SceneRate: React.FC<{
           style={{ background: surface, borderColor: border }}
         >
           <div>
-            <div className="font-display font-bold text-[14px]" style={{ color: text }}>Чек-ин · Atlas</div>
+            <div className="font-extended font-bold text-[14px]" style={{ color: text }}>Чек-ин · Atlas</div>
             <div className="font-body text-[11px] mt-0.5" style={{ color: muted }}>только что · Минск</div>
           </div>
           <span
-            className="px-2 py-0.5 rounded-full font-display font-semibold text-[10px] uppercase tracking-wide"
+            className="px-2 py-0.5 rounded-full font-extended font-semibold text-[10px] uppercase tracking-wide"
             style={{ background: `${gold}22`, color: gold }}
           >
             здесь
@@ -435,7 +435,7 @@ const SceneSave: React.FC<{
                 border: `1px solid ${border}`,
               }}
             >
-              <div className="font-display font-bold text-[11px] mb-0.5" style={{ color: gold }}>{m.who}</div>
+              <div className="font-extended font-bold text-[11px] mb-0.5" style={{ color: gold }}>{m.who}</div>
               <div className="font-body text-[13px] leading-snug" style={{ color: text }}>{m.body}</div>
             </div>
           </Hint>
@@ -461,7 +461,7 @@ const SceneSave: React.FC<{
             style={{ animation: fav && !reduceMotion ? 'lp-heart-on 0.45s ease' : undefined }}
           />
           <div className="min-w-0">
-            <div className="font-display font-bold text-[14px]" style={{ color: text }}>Atlas Espresso</div>
+            <div className="font-extended font-bold text-[14px]" style={{ color: text }}>Atlas Espresso</div>
             <div className="font-body text-[11px]" style={{ color: muted }}>
               {fav ? 'В избранном на этом устройстве' : 'Добавить в избранное'}
             </div>
@@ -531,7 +531,7 @@ const LandingProductDemo: React.FC = () => {
             <i className="block w-2 h-2 rounded-full" style={{ background: isDark ? '#5C4A42' : '#D6D3D1' }} />
             <i className="block w-2 h-2 rounded-full" style={{ background: GOLD_WARM, opacity: 0.85 }} />
           </span>
-          <span className="font-display font-semibold text-[12px]" style={{ color: c.textPrimary }}>
+          <span className="font-extended font-semibold text-[12px]" style={{ color: c.textPrimary }}>
             CoffeePeek · {category.chrome}
           </span>
           <span
@@ -589,7 +589,7 @@ const LandingProductDemo: React.FC = () => {
         )}
       </div>
 
-      <h3 className="mt-5 font-display font-bold text-[20px] lg:text-[26px] tracking-[-0.02em]" style={{ color: c.textPrimary }}>
+      <h3 className="mt-5 font-extended font-bold text-[20px] lg:text-[26px] tracking-[-0.02em]" style={{ color: c.textPrimary }}>
         {category.title}
       </h3>
       <p className="mt-2 font-body text-[14px] lg:text-[15px] leading-[1.55] w-full" style={{ color: c.textSecondary }}>
@@ -606,7 +606,7 @@ const LandingProductDemo: React.FC = () => {
               type="button"
               onClick={() => go(i)}
               aria-pressed={active}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-display font-semibold text-[12px] lg:text-[13px] border transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-extended font-semibold text-[12px] lg:text-[13px] border transition-colors"
               style={{
                 background: active ? (isDark ? '#fff' : '#1C1917') : 'transparent',
                 color: active ? (isDark ? '#1C1917' : '#fff') : c.textPrimary,

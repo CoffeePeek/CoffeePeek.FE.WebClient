@@ -157,11 +157,10 @@ html {
 /* Wordmark: RF Dewi Expanded Ultrabold, tight tracking            */
 .wordmark {
   font-family: "RF Dewi Expanded", sans-serif;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 1;
 }
-
 /* Hero / h1: ALL CAPS, Regular 400, dense line-height            */
 .hero-text {
   font-family: "RF Dewi Expanded", sans-serif;
@@ -173,19 +172,18 @@ html {
 
 /* Accent word inside hero: Ultrabold gold                         */
 .accent-word {
-  font-weight: 800;
+  font-weight: 400;
   color: #EAB308;
 }
 
 /* Large numeral (ratings, stats): Ultrabold, tabular              */
 .numeral {
   font-family: "RF Dewi Expanded", sans-serif;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 0.84;
   font-variant-numeric: tabular-nums;
 }
-
 /* Hide scrollbar but keep functionality */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

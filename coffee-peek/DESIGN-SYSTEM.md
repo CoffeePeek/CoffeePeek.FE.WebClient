@@ -77,9 +77,9 @@ src/design-system/
 
 | Роль | Семейство | Tailwind | Использование |
 |------|-----------|----------|---------------|
-| Body (простой текст) | RF Dewi | `font-sans`, `font-body` | Параграфы, формы, дефолтный текст |
-| Headline (заголовки) | RF Dewi Extended | `font-display` | H1–H3, заголовки секций |
-| Accent (крупные брендовые акценты) | RF Dewi Expanded | `.wordmark`, `.hero-text`, `.numeral` | Логотип, hero, крупные цифры |
+| Body (простой текст) | RF Dewi | `font-body` | Параграфы, формы, дефолтный текст |
+| Headline (заголовки) | RF Dewi Extended | `font-extended` | H1–H3, заголовки секций |
+| Accent (крупные брендовые акценты) | RF Dewi Expanded | `font-expanded`, `.wordmark`, `.hero-text`, `.numeral` | Логотип, hero, крупные цифры |
 | Condensed (мало места) | RF Dewi Condensed | `font-condensed` | Бейджи, чипы, плотный UI |
 | Icons | Phosphor Icons (`@phosphor-icons/react`) | — | — |
 

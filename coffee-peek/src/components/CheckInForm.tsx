@@ -129,7 +129,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
     <div className="flex flex-col gap-5">
       <header className="space-y-1.5">
         <h2
-          className="font-display font-bold text-[28px] leading-none tracking-tight"
+          className="font-extended font-bold text-[28px] leading-none tracking-tight"
           style={{ color: colors.textPrimary }}
         >
           Чекин
@@ -137,7 +137,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
         <p className="flex items-center gap-1.5 min-w-0">
           <MapPin size={16} weight="fill" color={gold} className="shrink-0" />
           <span
-            className="font-display font-semibold text-[13px] uppercase tracking-[0.04em] truncate"
+            className="font-extended font-semibold text-[13px] uppercase tracking-[0.04em] truncate"
             style={{ color: gold }}
           >
             {shopName}
@@ -154,7 +154,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           >
             <Mascot pose={col.pose} size={72} eager />
             <span
-              className="font-display font-semibold text-[12px]"
+              className="font-extended font-semibold text-[12px]"
               style={{ color: colors.textPrimary }}
             >
               {col.label}
@@ -246,7 +246,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
 
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-display font-bold text-[15px]" style={{ color: colors.textPrimary }}>
+          <p className="font-extended font-bold text-[15px]" style={{ color: colors.textPrimary }}>
             Сделать публичным
           </p>
           <p className="font-body text-[12px] mt-0.5" style={{ color: colors.textSecondary }}>
@@ -272,7 +272,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
         type="button"
         onClick={onSubmit}
         disabled={isSubmitting}
-        className="w-full rounded-[18px] py-3.5 font-display font-bold text-[16px] flex items-center justify-center gap-2 text-[#1A1412] transition-all active:scale-[0.98] disabled:opacity-50"
+        className="w-full rounded-[18px] py-3.5 font-extended font-bold text-[16px] flex items-center justify-center gap-2 text-[#1A1412] transition-all active:scale-[0.98] disabled:opacity-50"
         style={{ backgroundColor: gold }}
       >
         {isSubmitting ? (

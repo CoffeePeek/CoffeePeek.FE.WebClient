@@ -79,7 +79,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   return (
     <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4 mb-6 min-w-0">
       <div className="min-w-0 w-full sm:flex-1">
-        <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-display font-bold ${textMain} mb-2 tracking-tight break-words`}>
+        <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-extended font-bold ${textMain} mb-2 tracking-tight break-words`}>
           {shop.name}
         </h1>
         <div className="flex items-center gap-2 sm:gap-3 text-sm flex-wrap min-w-0">

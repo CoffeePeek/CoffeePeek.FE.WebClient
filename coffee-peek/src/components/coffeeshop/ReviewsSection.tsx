@@ -48,7 +48,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   return (
     <div className="pt-8 border-t border-[#E8E4E1]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
-        <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 min-w-0`}>
+        <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 min-w-0`}>
           <span className={`w-1.5 h-8 ${themeClasses.primary.bg} rounded-full shrink-0`} />
           Отзывы клиентов
         </h2>

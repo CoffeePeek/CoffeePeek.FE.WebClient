@@ -34,13 +34,17 @@ export default {
           light: "#E7E5E4",
           dark: "#3D2F28",
         },
+        status: {
+          pending: "#F59E0B",
+          approved: "#10B981",
+          rejected: "#EF4444",
+        },
       },
       fontFamily: {
-        sans: ["RF Dewi", "sans-serif"],
         body: ["RF Dewi", "sans-serif"],
-        display: ["RF Dewi Extended", "sans-serif"],
         condensed: ["RF Dewi Condensed", "sans-serif"],
-        accent: ["RF Dewi Expanded", "sans-serif"],
+        extended: ["RF Dewi Extended", "sans-serif"],
+        expanded: ["RF Dewi Expanded", "sans-serif"],
       },
       letterSpacing: {
         wordmark: "-0.045em",
@@ -83,8 +87,3 @@ export default {
   plugins: [],
   darkMode: 'class',
 }
-
-
-
-
-

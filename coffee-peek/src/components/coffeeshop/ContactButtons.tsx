@@ -68,7 +68,7 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
 
   return (
     <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0`}>
-      <h2 className={`text-xl sm:text-2xl font-display font-bold ${textMain} flex items-center gap-3 mb-4`}>
+      <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 mb-4`}>
         <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full shrink-0" />
         Контакты
       </h2>
