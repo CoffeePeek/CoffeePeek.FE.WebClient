@@ -3,10 +3,8 @@ import { useTheme, type Theme } from '../contexts/ThemeContext';
 import { dark as darkTokens, light as lightTokens } from '../design-system/tokens';
 
 /** Transparent mascot mark — background comes from theme. */
-export const LOGO_SRC = '/logo/logo-mark.png';
+export const LOGO_SRC = '/logo/logo.png';
 /** Baked favicon / static assets with theme background. */
-export const LOGO_SRC_LIGHT = '/logo/logo-white.png';
-export const LOGO_SRC_DARK = '/logo/logo-dark.png';
 export const HEADER_LOGO_SIZE = 52;
 
 const LOGO_BG: Record<Theme, string> = {

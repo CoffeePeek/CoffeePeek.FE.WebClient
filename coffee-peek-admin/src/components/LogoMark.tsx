@@ -2,10 +2,8 @@ import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
 /** Transparent mascot mark — background comes from theme. */
-export const LOGO_SRC = '/logo/logo-mark.png';
+export const LOGO_SRC = '/logo/logo.png';
 /** Baked favicon / static assets with theme background. */
-export const LOGO_SRC_LIGHT = '/logo/logo-white.png';
-export const LOGO_SRC_DARK = '/logo/logo-dark.png';
 
 const LOGO_BG = {
   light: '#FAFAF9',

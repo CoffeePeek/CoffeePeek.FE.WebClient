@@ -58,7 +58,9 @@
       "Bash(npx vite *)",
       "Bash(npm -v)",
       "Bash(node -e \"require\\('./tailwind.config.js'\\)\")",
-      "Bash(xxd)"
+      "Bash(xxd)",
+      "Bash(cp coffee-peek-admin/public/logo/logo.png coffee-peek/public/logo/logo.png)",
+      "Bash(cp coffee-peek-admin/public/logo/favicon.svg coffee-peek/public/logo/favicon.svg)"
     ]
   }
 }
