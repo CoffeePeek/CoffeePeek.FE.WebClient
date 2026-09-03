@@ -57,7 +57,8 @@
       "Bash(git *)",
       "Bash(npx vite *)",
       "Bash(npm -v)",
-      "Bash(node -e \"require\\('./tailwind.config.js'\\)\")"
+      "Bash(node -e \"require\\('./tailwind.config.js'\\)\")",
+      "Bash(xxd)"
     ]
   }
 }

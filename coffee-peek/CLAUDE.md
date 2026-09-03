@@ -48,7 +48,7 @@ Three roles: `User`, `Moderator`, `Admin`. Role-checking logic lives in `UserCon
 - **Import alias:** `@/` maps to the project root (configured in `vite.config.ts` and `tsconfig.app.json`)
 - **Query keys:** Feature-specific key factories (e.g., `coffeeShopKeys`, `reviewKeys`) are co-located with their query hooks in `src/hooks/queries/`
 - **Skeletons:** Every data-fetching view has a matching skeleton component in `src/components/skeletons/`; see `src/components/skeletons/README.md` for usage
-- **Tailwind theme:** Coffee-themed custom palette defined in `tailwind.config.js` — primary `#EAB308` (gold), warm-gold `#D4A84B`, fonts Sora (display) + Noto Sans (body); dark mode is class-based
+- **Tailwind theme:** Coffee-themed custom palette defined in `tailwind.config.js` — primary `#EAB308` (gold), warm-gold `#D4A84B`, fonts Sora (display) + RF Dewi (body); dark mode is class-based
 
 ### Notable Files
 
