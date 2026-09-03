@@ -10,9 +10,9 @@ export function useLoadMoreOnScroll(enabled: boolean, onLoadMore: () => void) {
     if (!el || !enabled) return;
 
     const root = el.closest('main');
-    const observer = new IntersectionObserver(
+    const observer = new RF DewisectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) onLoadMoreRef.current();
+        if (entry.isRF Dewisecting) onLoadMoreRef.current();
       },
       { root, rootMargin: '280px' },
     );

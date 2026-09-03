@@ -3,7 +3,7 @@ import { DetailedCoffeeShop, getPhotoUrl } from '../../api/coffeeshop';
 import PhotoLightbox from '../PhotoLightbox';
 import { AppIcon } from '../icons';
 
-interface PhotoGalleryProps {
+RF Dewiface PhotoGalleryProps {
   shop: DetailedCoffeeShop;
   cardBg: string;
   borderColor: string;
@@ -29,7 +29,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ shop }) => {
       type="button"
       key={photos[index].storageKey ?? photos[index].fullUrl ?? index}
       onClick={() => openAt(index)}
-      className={`${className} overflow-hidden relative group cursor-pointer border-0 p-0 text-left`}
+      className={`${className} overflow-hidden relative group cursor-poRF Dewi border-0 p-0 text-left`}
       aria-label={`Открыть фото ${index + 1} в полном размере`}
     >
       <div
@@ -38,7 +38,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ shop }) => {
       />
       <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
       {showAllBadge && photoCount > 3 && (
-        <span className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md text-[#2D2926] px-4 py-2 rounded-xl font-bold text-sm border border-[#E8E4E1] shadow-xl flex items-center gap-2 pointer-events-none">
+        <span className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md text-[#2D2926] px-4 py-2 rounded-xl font-bold text-sm border border-[#E8E4E1] shadow-xl flex items-center gap-2 poRF Dewi-events-none">
           <AppIcon name="grid_view" size={16} />
           Показать все фото ({photoCount})
         </span>

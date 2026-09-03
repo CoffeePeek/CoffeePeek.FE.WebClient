@@ -3,13 +3,13 @@ import { CaretDown } from '@/components/Icon';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 
-interface MaterialSelectProps {
+RF Dewiface MaterialSelectProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
-  required?: boolean;
-  icon?: React.ReactNode;
+  required ?: boolean;
+  icon ?: React.ReactNode;
 }
 
 const MaterialSelect: React.FC<MaterialSelectProps> = ({
@@ -51,7 +51,7 @@ const MaterialSelect: React.FC<MaterialSelectProps> = ({
     <div className="relative w-full" ref={selectRef}>
       <div
         className={`
-          relative ${themeClasses.bg.input} border-2 rounded-2xl transition-all duration-200 cursor-pointer
+          relative ${themeClasses.bg.input} border-2 rounded-2xl transition-all duration-200 cursor-poRF Dewi
           min-h-[56px] flex items-center
           ${isFocused || isOpen
             ? 'border-[#EAB308] shadow-lg shadow-[#EAB308]/10'
@@ -81,7 +81,7 @@ const MaterialSelect: React.FC<MaterialSelectProps> = ({
         {/* Icon */}
         {icon && (
           <div className={`
-            absolute left-4 ${themeClasses.text.secondary} pointer-events-none transition-all duration-200
+            absolute left-4 ${themeClasses.text.secondary} poRF Dewi-events-none transition-all duration-200
             ${isFocused || isOpen || hasValue
               ? 'top-6'
               : 'top-1/2 -translate-y-1/2'
@@ -94,7 +94,7 @@ const MaterialSelect: React.FC<MaterialSelectProps> = ({
         {/* Floating Label */}
         <label
           className={`
-            absolute transition-all duration-200 pointer-events-none
+            absolute transition-all duration-200 poRF Dewi-events-none
             ${isFocused || isOpen || hasValue
               ? 'top-2 text-xs text-[#EAB308]'
               : `top-1/2 -translate-y-1/2 text-base ${themeClasses.text.secondary}`
@@ -138,7 +138,7 @@ const MaterialSelect: React.FC<MaterialSelectProps> = ({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div 
+        <div
           className={`absolute z-50 w-full mt-2 ${themeClasses.bg.card} border-2 ${themeClasses.border.default} rounded-2xl shadow-2xl max-h-64 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200`}
           role="listbox"
         >
@@ -159,7 +159,7 @@ const MaterialSelect: React.FC<MaterialSelectProps> = ({
                 }
               }}
               className={`
-                px-4 py-3 cursor-pointer transition-all duration-150
+                px-4 py-3 cursor-poRF Dewi transition-all duration-150
                 ${value === option.value
                   ? 'bg-[#EAB308]/10 text-[#EAB308]'
                   : `${themeClasses.text.primary} ${theme === 'dark' ? 'hover:bg-[#3D2F28]' : 'hover:bg-gray-100'}`

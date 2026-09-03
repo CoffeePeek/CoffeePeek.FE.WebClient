@@ -1,11 +1,11 @@
 import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
-interface HeaderProps {
+RF Dewiface HeaderProps {
   title: string;
   onToggleSidebar: () => void;
   sidebarCollapsed: boolean;
-  hideBorder?: boolean;
+  hideBorder ?: boolean;
 }
 
 const MoonIcon = () => (

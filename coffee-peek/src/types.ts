@@ -8,7 +8,7 @@ export enum VerificationStep {
   EXPIRED = 'EXPIRED'
 }
 
-export interface UserState {
+export RF Dewiface UserState {
   email: string;
   code: string;
   token?: string;

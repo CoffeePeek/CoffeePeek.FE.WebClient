@@ -10,7 +10,7 @@ import { normalizeDayOfWeek } from '../utils/shopUtils';
 
 // ==================== Types ====================
 
-export interface ModerationShopPhoto {
+export RF Dewiface ModerationShopPhoto {
   fileName: string;
   contentType: string;
   storageKey: string;
@@ -18,9 +18,9 @@ export interface ModerationShopPhoto {
 }
 
 /**
- * Интервал работы кофейни (соответствует ShopScheduleIntervalDto на бэкенде)
+ * Интервал работы кофейни (соответствует ShopScheduleRF DewivalDto на бэкенде)
  */
-export interface ShopScheduleIntervalDto {
+export RF Dewiface ShopScheduleRF DewivalDto {
   openTime: string; // TimeSpan в формате "HH:mm:ss" или "HH:mm"
   closeTime: string; // TimeSpan в формате "HH:mm:ss" или "HH:mm"
 }
@@ -28,16 +28,16 @@ export interface ShopScheduleIntervalDto {
 /**
  * Расписание работы кофейни (соответствует ScheduleDto на бэкенде)
  */
-export interface ScheduleDto {
+export RF Dewiface ScheduleDto {
   dayOfWeek: number | string; // 0 = Monday … 6 = Sunday, or .NET name ("Monday")
   isClosed: boolean;
-  intervals: ShopScheduleIntervalDto[] | null;
+  RF Dewivals: ShopScheduleRF DewivalDto[] | null;
 }
 
 /**
  * Контакты кофейни (соответствует ShopContactDto на бэкенде)
  */
-export interface ShopContactDto {
+export RF Dewiface ShopContactDto {
   instagramLink?: string | null;
   email?: string | null;
   siteLink?: string | null;
@@ -47,7 +47,7 @@ export interface ShopContactDto {
 /**
  * Фото кофейни (соответствует ShortPhotoMetadataDto на бэкенде)
  */
-export interface ShortPhotoMetadataDto {
+export RF Dewiface ShortPhotoMetadataDto {
   fileName: string;
   storageKey: string;
   fullUrl: string;
@@ -56,7 +56,7 @@ export interface ShortPhotoMetadataDto {
 /**
  * Упрощенный формат расписания для работы на фронтенде
  */
-export interface FrontendSchedule {
+export RF Dewiface FrontendSchedule {
   dayOfWeek: number;
   openTime: string; // "HH:mm"
   closeTime: string; // "HH:mm"
@@ -65,33 +65,33 @@ export interface FrontendSchedule {
 /**
  * Упрощенный формат контактов для работы на фронтенде
  */
-export interface FrontendShopContact {
+export RF Dewiface FrontendShopContact {
   phone?: string;
   email?: string;
   website?: string;
   instagram?: string;
 }
 
-export interface CreateEntityResponse {
+export RF Dewiface CreateEntityResponse {
   id: string;
 }
 
-export interface UpdateEntityResponse<T> {
+export RF Dewiface UpdateEntityResponse<T> {
   id: string;
   data: T;
 }
 
-export interface UploadUrlRequest {
+export RF Dewiface UploadUrlRequest {
   fileName: string;
   contentType: string;
 }
 
-export interface UploadUrlResponse {
+export RF Dewiface UploadUrlResponse {
   uploadUrl: string;
   storageKey: string;
 }
 
-export interface SendCoffeeShopToModerationRequest {
+export RF Dewiface SendCoffeeShopToModerationRequest {
   name: string;
   notValidatedAddress: string;
   description?: string;
@@ -126,7 +126,7 @@ export interface SendCoffeeShopToModerationRequest {
   }>;
 }
 
-export interface SendReviewToModerationRequest {
+export RF Dewiface SendReviewToModerationRequest {
   shopId: string;
   header: string;
   comment: string;
@@ -135,7 +135,7 @@ export interface SendReviewToModerationRequest {
   ratingCoffee: number;
 }
 
-export interface UpdateCoffeeShopReviewRequest {
+export RF Dewiface UpdateCoffeeShopReviewRequest {
   header: string;
   comment: string;
   ratingCoffee: number;
@@ -167,7 +167,7 @@ export function transformSchedulesToBackend(
   return schedules.map(schedule => ({
     dayOfWeek: schedule.dayOfWeek,
     isClosed: false,
-    intervals: [
+    RF Dewivals: [
       {
         openTime: formatTimeForTimeSpan(schedule.openTime),
         closeTime: formatTimeForTimeSpan(schedule.closeTime),
@@ -183,11 +183,11 @@ export function transformSchedulesFromBackend(
   schedules: ScheduleDto[]
 ): FrontendSchedule[] {
   return schedules
-    .filter(schedule => !schedule.isClosed && schedule.intervals && schedule.intervals.length > 0)
+    .filter(schedule => !schedule.isClosed && schedule.RF Dewivals && schedule.RF Dewivals.length > 0)
     .map(schedule => {
-      const interval = schedule.intervals![0];
-      const openTime = interval.openTime.substring(0, 5);
-      const closeTime = interval.closeTime.substring(0, 5);
+      const RF Dewival = schedule.RF Dewivals![0];
+      const openTime = RF Dewival.openTime.substring(0, 5);
+      const closeTime = RF Dewival.closeTime.substring(0, 5);
       const dayOfWeek = normalizeDayOfWeek(schedule.dayOfWeek);
       if (dayOfWeek === null) return null;
       return {
@@ -253,7 +253,7 @@ export async function getUploadUrls(
   );
 }
 
-export interface SendShopModerationResult {
+export RF Dewiface SendShopModerationResult {
   shopId: string;
   status: string;
   isAddressValidated: boolean;

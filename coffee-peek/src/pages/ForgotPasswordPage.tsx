@@ -39,8 +39,8 @@ const ForgotPasswordPage: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100dvh', background: '#1A1412', display: 'grid', placeItems: 'center', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: -120, left: -120, width: 480, height: 480, borderRadius: '50%', background: 'radial-gradient(circle, rgba(234,179,8,0.16), transparent 60%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, poRF DewiEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -120, left: -120, width: 480, height: 480, borderRadius: '50%', background: 'radial-gradient(circle, rgba(234,179,8,0.16), transparent 60%)', filter: 'blur(40px)', poRF DewiEvents: 'none' }} />
 
       <div style={{ width: '100%', maxWidth: 460, margin: '0 auto', padding: 16, position: 'relative', zIndex: 2 }}>
         {!sent && (
@@ -111,7 +111,7 @@ const ForgotPasswordPage: React.FC = () => {
                 style={{
                   width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none',
                   fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15,
-                  cursor: isLoading || !email.trim() ? 'not-allowed' : 'pointer',
+                  cursor: isLoading || !email.trim() ? 'not-allowed' : 'poRF Dewi',
                   opacity: !email.trim() ? 0.5 : 1,
                 }}
               >

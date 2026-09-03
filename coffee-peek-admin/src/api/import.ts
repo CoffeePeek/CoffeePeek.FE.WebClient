@@ -32,7 +32,7 @@ import {
   mapShopMenu,
 } from './menu';
 
-export interface ResearchLinks {
+export RF Dewiface ResearchLinks {
   instagram: string;
   googleMaps: string;
   yandexMaps: string;
@@ -43,12 +43,12 @@ export interface ResearchLinks {
   streetView?: string;
 }
 
-export interface SuggestedTag {
+export RF Dewiface SuggestedTag {
   slug: string;
   why: string;
 }
 
-export interface ImportCandidate {
+export RF Dewiface ImportCandidate {
   id: string;
   source: ImportSource | string;
   externalId: string;
@@ -86,7 +86,7 @@ export interface ImportCandidate {
   menu?: ShopMenuDto | null;
 }
 
-export interface ImportCandidatesQuery {
+export RF Dewiface ImportCandidatesQuery {
   status?: QueueStatus;
   bucket?: CollectorBucket;
   focus?: CoffeeFocus;
@@ -99,7 +99,7 @@ export interface ImportCandidatesQuery {
   pageSize?: number;
 }
 
-export interface ImportCandidatesPage {
+export RF Dewiface ImportCandidatesPage {
   items: ImportCandidate[];
   totalCount: number;
   page: number;
@@ -107,7 +107,7 @@ export interface ImportCandidatesPage {
   totalPages: number;
 }
 
-export interface ImportStats {
+export RF Dewiface ImportStats {
   pending: number;
   skipped: number;
   published: number;
@@ -117,7 +117,7 @@ export interface ImportStats {
   byBucket: Record<CollectorBucket, number>;
 }
 
-export interface DecideCandidateRequest {
+export RF Dewiface DecideCandidateRequest {
   status: 'Published' | 'Rejected' | 'Skipped';
   coffeeFocus?: CoffeeFocus;
   tagSlugs?: string[];
@@ -126,7 +126,7 @@ export interface DecideCandidateRequest {
   rejectReason?: RejectReason;
 }
 
-export interface DuplicateCandidateSide {
+export RF Dewiface DuplicateCandidateSide {
   id: string;
   source: ImportSource | string;
   name?: string;
@@ -142,7 +142,7 @@ export interface DuplicateCandidateSide {
   externalId?: string;
 }
 
-export interface DuplicateSuggestion {
+export RF Dewiface DuplicateSuggestion {
   id: string;
   score: number;
   distanceMeters?: number;
@@ -152,7 +152,7 @@ export interface DuplicateSuggestion {
   right: DuplicateCandidateSide;
 }
 
-export interface DuplicateSuggestionsPage {
+export RF Dewiface DuplicateSuggestionsPage {
   items: DuplicateSuggestion[];
   totalCount: number;
   page: number;
@@ -160,13 +160,13 @@ export interface DuplicateSuggestionsPage {
   totalPages: number;
 }
 
-export interface RefreshDuplicatesResult {
+export RF Dewiface RefreshDuplicatesResult {
   scanned: number;
   suggested: number;
   alreadyTracked: number;
 }
 
-export interface DecideDuplicateResult {
+export RF Dewiface DecideDuplicateResult {
   suggestionId: string;
   status: DuplicateSuggestionStatus;
   keeperCandidateId?: string;
@@ -488,7 +488,7 @@ export async function applyImportDecisions(json: unknown): Promise<ApiResponse<u
   return httpClient.post(API_ENDPOINTS.ADMIN.IMPORT_DECISIONS, json);
 }
 
-export interface IngestImportFileResult {
+export RF Dewiface IngestImportFileResult {
   parsed: number;
   inserted: number;
   enriched: number;

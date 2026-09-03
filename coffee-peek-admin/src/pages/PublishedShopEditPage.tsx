@@ -96,7 +96,7 @@ export const PublishedShopEditPage: React.FC = () => {
     queryKey: ['admin', 'published-shop-menu', id],
     queryFn: () => getPublishedShopMenu(id!).then((r) => r.data),
     enabled: !!id,
-    refetchInterval: (query) => {
+    refetchRF Dewival: (query) => {
       const status = query.state.data?.menu?.parseStatus;
       return status === 'Pending' || status === 'Running' ? 2500 : false;
     },

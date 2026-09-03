@@ -2,7 +2,7 @@ import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 
-export interface PublicStats {
+export RF Dewiface PublicStats {
   totalCoffeeShops: number;
   totalReviews: number;
   totalCheckIns: number;

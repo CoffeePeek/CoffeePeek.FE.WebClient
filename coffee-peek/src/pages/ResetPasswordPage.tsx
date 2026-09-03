@@ -72,7 +72,7 @@ const ResetPasswordPage: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100dvh', background: '#1A1412', display: 'grid', placeItems: 'center', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, poRF DewiEvents: 'none' }} />
 
       <div style={{ width: '100%', maxWidth: 460, margin: '0 auto', padding: 16, position: 'relative', zIndex: 2 }}>
         {!done && (
@@ -100,7 +100,7 @@ const ResetPasswordPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
+                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'poRF Dewi' }}
               >
                 Войти
               </button>
@@ -132,7 +132,7 @@ const ResetPasswordPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPwd((v) => !v)}
-                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: textMuted }}
+                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'poRF Dewi', color: textMuted }}
                     aria-label={showPwd ? 'Скрыть' : 'Показать'}
                   >
                     <AppIcon name={showPwd ? 'visibility_off' : 'visibility'} size={20} color="currentColor" />
@@ -165,7 +165,7 @@ const ResetPasswordPage: React.FC = () => {
                 style={{
                   width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none',
                   fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15,
-                  cursor: isLoading || newPassword.length < 8 ? 'not-allowed' : 'pointer',
+                  cursor: isLoading || newPassword.length < 8 ? 'not-allowed' : 'poRF Dewi',
                   opacity: newPassword.length < 8 ? 0.5 : 1,
                 }}
               >

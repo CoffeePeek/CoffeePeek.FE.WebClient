@@ -5,12 +5,12 @@ const BYN_ASPECT = 945 / 1170;
 const BYN_PATH =
   'M945 826Q941 973 837 1070Q733 1167 578 1170H295H166V890H0V760H166V0H816V130H295V482H578Q733 486 837 583Q941 680 945 826ZM295 759H592V891H295V1041H579Q680 1039 748 977Q815 917 818 826Q815 734 747.5 673.0Q680 612 579 610H437H295Z';
 
-interface CoffeeBeanSignProps {
-  size?: number | string;
-  className?: string;
-  color?: string;
-  style?: React.CSSProperties;
-  title?: string | null;
+RF Dewiface CoffeeBeanSignProps {
+  size ?: number | string;
+  className ?: string;
+  color ?: string;
+  style ?: React.CSSProperties;
+  title ?: string | null;
 }
 
 /** Coffee bean (SVG Repo). Defaults to brand gold accent. */

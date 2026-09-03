@@ -9,11 +9,11 @@ import { logger } from '../utils/logger';
 import { X } from './Icon';
 import CheckInForm from './CheckInForm';
 
-interface CheckInModalProps {
+RF Dewiface CheckInModalProps {
   isOpen: boolean;
   onClose: () => void;
   shop: DetailedCoffeeShop | null;
-  onSuccess?: () => void;
+  onSuccess ?: () => void;
 }
 
 function todayInputValue(): string {

@@ -7,7 +7,7 @@ import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { useTheme } from '../contexts/ThemeContext';
 import { getPriceRangeTier } from '../utils/priceRange';
 
-interface ShopCardColors {
+RF Dewiface ShopCardColors {
   surface: string;
   border: string;
   textPrimary: string;
@@ -15,7 +15,7 @@ interface ShopCardColors {
   background: string;
 }
 
-interface ShopCardProps {
+RF Dewiface ShopCardProps {
   shop: CoffeeShop;
   colors: ShopCardColors;
   onSelect: (shopId: string) => void;
@@ -61,7 +61,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
       style={{
         background: colors.surface,
         border: `1px solid ${hovered ? `${COLORS.primary}50` : colors.border}`,
-        borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
+        borderRadius: 16, overflow: 'hidden', cursor: 'poRF Dewi',
         transition: 'all .2s',
         boxShadow: hovered
           ? '0 8px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.04)'
@@ -132,7 +132,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
               background: theme === 'dark' ? '#fff' : 'none',
               border: 'none',
               borderRadius: 99,
-              cursor: 'pointer',
+              cursor: 'poRF Dewi',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               filter: theme === 'dark' ? 'none' : 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
               transform: favHovered ? 'scale(1.18)' : 'scale(1)',

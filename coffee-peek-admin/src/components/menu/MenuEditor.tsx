@@ -79,11 +79,10 @@ function AvailabilityToggle({
             aria-checked={active}
             title={opt.title}
             onClick={() => onChange(opt.value)}
-            className={`min-w-[2.25rem] px-2.5 py-1 rounded-full text-[12px] font-medium font-body leading-none transition-colors ${
-              active
+            className={`min-w-[2.25rem] px-2.5 py-1 rounded-full text-[12px] font-medium font-body leading-none transition-colors ${active
                 ? 'bg-text-main text-white dark:bg-white dark:text-black'
                 : 'text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white'
-            }`}
+              }`}
           >
             {opt.label}
           </button>
@@ -93,13 +92,13 @@ function AvailabilityToggle({
   );
 }
 
-interface MenuEditorProps {
+RF Dewiface MenuEditorProps {
   menu: ShopMenuDto | null;
-  unmatched?: UnmatchedMenuItem[];
+  unmatched ?: UnmatchedMenuItem[];
   onAttach: (photos: UploadedPhotoDto[]) => Promise<void>;
   onParse: () => Promise<void>;
   onSave: (body: UpdateShopMenuRequest) => Promise<void>;
-  compact?: boolean;
+  compact ?: boolean;
 }
 
 function cloneItems(items: ShopMenuItemDto[]): ShopMenuItemDto[] {
@@ -268,11 +267,10 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
       )}
 
       <div
-        className={`rounded-[10px] border border-dashed px-3 py-3 transition-colors ${
-          pasteHint
+        className={`rounded-[10px] border border-dashed px-3 py-3 transition-colors ${pasteHint
             ? 'border-primary bg-primary/5'
             : 'border-border-light dark:border-border-dark'
-        }`}
+          }`}
         onPaste={(e) => {
           if (uploading || parsingNow) return;
           const pasted = filesFromClipboardData(e.clipboardData);
@@ -346,11 +344,10 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
                           onChange={(availability) => patchItem(item.slug, { availability })}
                         />
                         <label
-                          className={`inline-flex items-center gap-1 h-8 w-[5.75rem] shrink-0 rounded-md border px-2 ${
-                            present
+                          className={`inline-flex items-center gap-1 h-8 w-[5.75rem] shrink-0 rounded-md border px-2 ${present
                               ? 'border-border-light dark:border-border-dark bg-white dark:bg-surface-dark'
-                              : 'border-transparent opacity-0 pointer-events-none'
-                          }`}
+                              : 'border-transparent opacity-0 poRF Dewi-events-none'
+                            }`}
                         >
                           <input
                             type="text"

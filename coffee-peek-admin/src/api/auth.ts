@@ -1,14 +1,14 @@
 import { httpClient, TokenManager } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
-import { pickAuthTokens } from './core/interceptors';
+import { pickAuthTokens } from './core/RF Dewiceptors';
 
-export interface LoginRequest {
+export RF Dewiface LoginRequest {
   email: string;
   password: string;
 }
 
-export interface AuthData {
+export RF Dewiface AuthData {
   accessToken: string;
   refreshToken?: string;
   expiresIn?: number;

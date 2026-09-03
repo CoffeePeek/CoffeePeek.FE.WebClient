@@ -26,7 +26,7 @@ import {
   ShopFormField,
 } from '../utils/shopModerationFormErrors';
 
-interface AddCoffeeShopModalProps {
+RF Dewiface AddCoffeeShopModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -202,7 +202,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
             {/* Основная информация */}
             <div className="space-y-4">
               <h3 className={`text-xl font-semibold ${themeClasses.text.primary} mb-4`}>Основная информация</h3>
-              
+
               <div>
                 <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Название *</label>
                 <input
@@ -280,7 +280,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
             {/* Контакты */}
             <div className="space-y-4">
               <h3 className={`text-xl font-semibold ${themeClasses.text.primary} mb-4`}>Контакты</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={`${themeClasses.text.secondary} text-sm mb-2 block`}>Телефон</label>
@@ -331,7 +331,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
             {/* Фотографии */}
             <div className="space-y-4">
               <h3 className={`text-xl font-semibold ${themeClasses.text.primary} mb-4`}>Фотографии</h3>
-              
+
               <div>
                 <input
                   type="file"
@@ -343,7 +343,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                 />
                 <label
                   htmlFor="photo-upload"
-                  className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-pointer hover:border-[#EAB308] transition-all`}
+                  className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-poRF Dewi hover:border-[#EAB308] transition-all`}
                 >
                   <Images size={48} className={`mx-auto mb-2 ${themeClasses.text.secondary}`} />
                   <span className={themeClasses.text.secondary}>Нажмите для выбора фотографий</span>
@@ -386,7 +386,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                 />
                 <label
                   htmlFor="menu-photo-upload-modal"
-                  className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-pointer hover:border-[#EAB308] transition-all`}
+                  className={`block w-full ${themeClasses.bg.input} border-2 border-dashed ${themeClasses.border.default} rounded-2xl py-8 px-4 text-center cursor-poRF Dewi hover:border-[#EAB308] transition-all`}
                 >
                   <Images size={48} className={`mx-auto mb-2 ${themeClasses.text.secondary}`} />
                   <span className={themeClasses.text.secondary}>Нажмите для выбора фото меню</span>
@@ -417,7 +417,7 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
             {/* Оборудование и ингредиенты */}
             <div className="space-y-4">
               <h3 className={`text-xl font-semibold ${themeClasses.text.primary} mb-4`}>Оборудование и ингредиенты</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <MaterialSelect
                   label="Оборудование"
@@ -556,20 +556,19 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
             {/* Расписание работы */}
             <div className="space-y-4">
               <h3 className={`text-xl font-semibold ${themeClasses.text.primary} mb-4`}>Расписание работы</h3>
-              
+
               <div className="space-y-3">
                 {dayNames.map((dayName, index) => {
                   const schedule = formData.schedules.find(s => s.dayOfWeek === index);
                   const isEnabled = !!schedule;
-                  
+
                   return (
                     <div
                       key={index}
-                      className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
-                        isEnabled
+                      className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${isEnabled
                           ? `${themeClasses.bg.input} ${themeClasses.border.default}`
                           : `${themeClasses.bg.tertiary} ${themeClasses.border.default} opacity-60`
-                      }`}
+                        }`}
                     >
                       {/* Чекбокс для включения/выключения дня */}
                       <div className="flex items-center gap-2 min-w-[140px]">
@@ -577,9 +576,9 @@ const AddCoffeeShopModal: React.FC<AddCoffeeShopModalProps> = ({
                           type="checkbox"
                           checked={isEnabled}
                           onChange={() => toggleScheduleDay(index)}
-                          className="w-5 h-5 rounded border-2 border-[#EAB308] text-[#EAB308] focus:ring-[#EAB308] focus:ring-offset-0 cursor-pointer"
+                          className="w-5 h-5 rounded border-2 border-[#EAB308] text-[#EAB308] focus:ring-[#EAB308] focus:ring-offset-0 cursor-poRF Dewi"
                         />
-                        <label className={`${themeClasses.text.primary} font-medium cursor-pointer`}>
+                        <label className={`${themeClasses.text.primary} font-medium cursor-poRF Dewi`}>
                           {dayName}
                         </label>
                       </div>

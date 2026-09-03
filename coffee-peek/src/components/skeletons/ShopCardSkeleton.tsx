@@ -2,9 +2,9 @@ import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import Shimmer from './Shimmer';
 
-interface ShopCardSkeletonProps {
-  count?: number;
-  variant?: 'card' | 'row';
+RF Dewiface ShopCardSkeletonProps {
+  count ?: number;
+  variant ?: 'card' | 'row';
 }
 
 const ShopCardSkeleton: React.FC<ShopCardSkeletonProps> = ({ count = 6, variant = 'card' }) => {

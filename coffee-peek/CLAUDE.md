@@ -25,12 +25,12 @@ Three layers:
 
 ### API Layer (`src/api/`)
 
-All HTTP communication goes through `src/api/core/httpClient.ts` — a centralized client with interceptors for:
+All HTTP communication goes through `src/api/core/httpClient.ts` — a centralized client with RF Dewiceptors for:
 - Auto-injecting JWT access tokens
 - Transparent token refresh on 401 responses
 - Normalizing responses to `{ success, data, message }`
 
-Token management is handled by `TokenManager` in `src/api/core/interceptors.ts` (tokens stored in localStorage). API modules (`auth.ts`, `coffeeshop.ts`, `user.ts`, etc.) call the shared client — never `fetch` directly.
+Token management is handled by `TokenManager` in `src/api/core/RF Dewiceptors.ts` (tokens stored in localStorage). API modules (`auth.ts`, `coffeeshop.ts`, `user.ts`, etc.) call the shared client — never `fetch` directly.
 
 ### Routing (`src/routes/`)
 
@@ -48,7 +48,7 @@ Three roles: `User`, `Moderator`, `Admin`. Role-checking logic lives in `UserCon
 - **Import alias:** `@/` maps to the project root (configured in `vite.config.ts` and `tsconfig.app.json`)
 - **Query keys:** Feature-specific key factories (e.g., `coffeeShopKeys`, `reviewKeys`) are co-located with their query hooks in `src/hooks/queries/`
 - **Skeletons:** Every data-fetching view has a matching skeleton component in `src/components/skeletons/`; see `src/components/skeletons/README.md` for usage
-- **Tailwind theme:** Coffee-themed custom palette defined in `tailwind.config.js` — primary `#EAB308` (gold), warm-gold `#D4A84B`, fonts Sora (display) + Noto Sans (body); dark mode is class-based
+- **Tailwind theme:** Coffee-themed custom palette defined in `tailwind.config.js` — primary `#EAB308` (gold), warm-gold `#D4A84B`, fonts Sora (display) + RF Dewi (body); dark mode is class-based
 
 ### Notable Files
 
@@ -56,6 +56,6 @@ Three roles: `User`, `Moderator`, `Admin`. Role-checking logic lives in `UserCon
 |------|---------|
 | `src/App.tsx` | Root component — wraps providers (Query, User, Theme, Toast) |
 | `src/api/core/httpClient.ts` | The single HTTP client; all API calls go through here |
-| `src/api/core/interceptors.ts` | Token refresh logic and `TokenManager` |
+| `src/api/core/RF Dewiceptors.ts` | Token refresh logic and `TokenManager` |
 | `src/contexts/UserContext.tsx` | Auth state, roles, and permission helpers |
 | `src/lib/queryClient.ts` | React Query global configuration |

@@ -13,23 +13,23 @@ import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon, StarIcon } from '../components/icons';
 
-interface ShopBasicInfo {
+RF Dewiface ShopBasicInfo {
   name: string;
   address: string;
   photo: string;
-  averageRating?: number;
+  averageRating ?: number;
 }
 
 const CreateReviewPage: React.FC = () => {
   const { shopId, reviewId } = useParams<{ shopId: string; reviewId?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   if (!shopId) {
     navigate('/shops');
     return null;
   }
-  
+
   const isEditMode = !!reviewId;
   usePageTitle(isEditMode ? 'Редактирование отзыва' : 'Создание отзыва');
   const { theme } = useTheme();
@@ -39,7 +39,7 @@ const CreateReviewPage: React.FC = () => {
 
   // Получаем данные о кофейне из navigation state
   const shopFromState = (location.state as { shop?: ShopBasicInfo })?.shop;
-  
+
   // Если данных нет в state (прямой переход по URL), редиректим на страницу кофейни
   useEffect(() => {
     if (!shopFromState && !isEditMode) {
@@ -62,7 +62,7 @@ const CreateReviewPage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingExistingReview, setIsLoadingExistingReview] = useState(false);
-  
+
   // Photo states
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
@@ -178,7 +178,7 @@ const CreateReviewPage: React.FC = () => {
 
     const uploadPromises = selectedFiles.map(async (file, index) => {
       const { uploadUrl, storageKey } = uploadUrlsResponse.data[index];
-      
+
       const uploadResponse = await fetch(uploadUrl, {
         method: 'PUT',
         body: file,
@@ -216,11 +216,11 @@ const CreateReviewPage: React.FC = () => {
     try {
       setIsSubmitting(true);
       setUploadingPhotos(true);
-      
+
       // Загружаем новые фотографии
       const uploadedPhotos = await uploadPhotos();
       setUploadingPhotos(false);
-      
+
       // Формируем список фотографий: существующие (не удаленные) + новые
       const existingPhotos = reviewPhotos
         .filter(photo => !removedPhotoKeys.includes(photo.storageKey))
@@ -235,7 +235,7 @@ const CreateReviewPage: React.FC = () => {
             'webp': 'image/webp',
           };
           const contentType = extension ? (contentTypeMap[extension] || 'image/jpeg') : 'image/jpeg';
-          
+
           return {
             fileName: photo.fileName,
             contentType: contentType,
@@ -243,13 +243,13 @@ const CreateReviewPage: React.FC = () => {
             size: 0, // размер не критичен для существующих фото
           };
         });
-      
+
       const allPhotos = [...existingPhotos, ...uploadedPhotos];
-      
+
       // Преобразуем дату в ISO строку (используем начало дня 00:00:00)
       const dateTimeString = `${visitedDate}T00:00:00`;
       const visitedAtISO = new Date(dateTimeString).toISOString();
-      
+
       const request: CreateReviewRequest = {
         shopId,
         header: header.trim(),
@@ -379,7 +379,7 @@ const CreateReviewPage: React.FC = () => {
                     Дата посещения
                   </label>
                   <div className="relative">
-                    <AppIcon name="calendar_today" size={18} color={colors.textMuted} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <AppIcon name="calendar_today" size={18} color={colors.textMuted} className="absolute left-4 top-1/2 -translate-y-1/2 poRF Dewi-events-none" />
                     <input
                       type="date"
                       id="visitedDate"
@@ -521,7 +521,7 @@ const CreateReviewPage: React.FC = () => {
                       }}
                       placeholder="Поделитесь подробностями о вашем визите..."
                     />
-                    <div className="absolute bottom-4 right-4 pointer-events-none" style={{ color: `${colors.textMuted}33` }}>
+                    <div className="absolute bottom-4 right-4 poRF Dewi-events-none" style={{ color: `${colors.textMuted}33` }}>
                       <AppIcon name="edit_note" size={24} />
                     </div>
                   </div>
@@ -555,7 +555,7 @@ const CreateReviewPage: React.FC = () => {
                 />
                 <label
                   htmlFor="photo-upload"
-                  className={`block w-full border-2 border-dashed rounded-2xl py-8 px-4 text-center cursor-pointer ${themeClasses.primary.borderHover} transition-all`}
+                  className={`block w-full border-2 border-dashed rounded-2xl py-8 px-4 text-center cursor-poRF Dewi ${themeClasses.primary.borderHover} transition-all`}
                   style={{
                     backgroundColor: colors.surface,
                     borderColor: colors.borderSubtle,

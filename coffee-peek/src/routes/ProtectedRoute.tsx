@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import WobbleRing from '../components/WobbleRing';
 
-interface ProtectedRouteProps {
+RF Dewiface ProtectedRouteProps {
   children: React.ReactNode;
 }
 

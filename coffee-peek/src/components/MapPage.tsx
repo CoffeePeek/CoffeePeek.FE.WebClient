@@ -220,7 +220,7 @@ const MapPage: React.FC = () => {
 
           {shopsLoaded && shops.length === 0 && !isLoading && (
             <div
-              className="absolute top-4 left-4 right-4 z-[500] px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5 pointer-events-none"
+              className="absolute top-4 left-4 right-4 z-[500] px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5 poRF Dewi-events-none"
               style={{
                 backgroundColor: theme === 'dark' ? 'rgba(45,36,31,0.94)' : 'rgba(255,255,255,0.96)',
                 borderColor: theme === 'dark' ? '#3D2F28' : '#E7E5E4',
@@ -273,11 +273,11 @@ const MapPage: React.FC = () => {
                         src={(() => {
                           const imageUrls =
                             selectedShopDetails?.photos &&
-                            Array.isArray(selectedShopDetails.photos) &&
-                            selectedShopDetails.photos.length > 0
+                              Array.isArray(selectedShopDetails.photos) &&
+                              selectedShopDetails.photos.length > 0
                               ? selectedShopDetails.photos.map((p: { fullUrl?: string } | string) =>
-                                  typeof p === 'string' ? p : p.fullUrl || '',
-                                )
+                                typeof p === 'string' ? p : p.fullUrl || '',
+                              )
                               : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
                                 ? selectedShopDetails.imageUrls
                                 : [];

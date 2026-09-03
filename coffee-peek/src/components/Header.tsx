@@ -9,8 +9,8 @@ import ThemeToggle from './ThemeToggle';
 import LogoMark, { HEADER_LOGO_SIZE } from './LogoMark';
 
 const PUBLIC_NAV = [
-  { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
-  { id: 'map',         label: 'Карта',   route: '/dashboard?page=map',  match: (p: string) => p.includes('map')        },
+  { id: 'coffeeshops', label: 'Кофейни', route: '/shops', match: (p: string) => p.startsWith('/shops') },
+  { id: 'map', label: 'Карта', route: '/dashboard?page=map', match: (p: string) => p.includes('map') },
 ] as const;
 
 const Header: React.FC = () => {
@@ -50,7 +50,7 @@ const Header: React.FC = () => {
     background: active ? (isDark ? '#1A1412' : '#fff') : 'transparent',
     color: active ? gold : mutedColor,
     fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14,
-    cursor: 'pointer', transition: 'all .15s',
+    cursor: 'poRF Dewi', transition: 'all .15s',
   });
 
   return (
@@ -64,7 +64,7 @@ const Header: React.FC = () => {
               type="button"
               className="logo-btn"
               onClick={() => navigate(user ? '/shops' : '/')}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'poRF Dewi' }}
             >
               <LogoMark size={HEADER_LOGO_SIZE} />
               <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 20, letterSpacing: '-0.045em', color: textColor }}>
@@ -94,7 +94,7 @@ const Header: React.FC = () => {
                     padding: '5px 10px 5px 5px', borderRadius: 99,
                     border: `1px solid ${profileOpen ? gold : borderColor}`,
                     background: profileOpen ? `${gold}12` : (isDark ? 'rgba(255,255,255,0.04)' : '#fff'),
-                    cursor: 'pointer', transition: 'all .15s',
+                    cursor: 'poRF Dewi', transition: 'all .15s',
                   }}
                 >
                   {/* Avatar */}
@@ -157,11 +157,11 @@ const Header: React.FC = () => {
               /* ── Login / Register ── */
               <div className="hidden lg:flex" style={{ gap: 8, alignItems: 'center' }}>
                 <button onClick={() => navigate('/login')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'poRF Dewi', transition: 'all .15s' }}>
                   Войти
                 </button>
                 <button onClick={() => navigate('/register')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: 'poRF Dewi', transition: 'all .15s' }}>
                   Регистрация
                 </button>
               </div>
@@ -173,7 +173,7 @@ const Header: React.FC = () => {
             <div className="lg:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(o => !o)}
-                style={{ padding: 8, borderRadius: 8, border: 'none', background: 'transparent', color: mutedColor, cursor: 'pointer' }}
+                style={{ padding: 8, borderRadius: 8, border: 'none', background: 'transparent', color: mutedColor, cursor: 'poRF Dewi' }}
                 aria-label={isMobileMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-nav"
@@ -202,22 +202,22 @@ const Header: React.FC = () => {
               {user ? (
                 <>
                   <button onClick={() => { navigate('/check-ins'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isCheckIns ? `${gold}12` : 'transparent', color: isCheckIns ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isCheckIns ? `${gold}12` : 'transparent', color: isCheckIns ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'poRF Dewi', width: '100%', textAlign: 'left' }}>
                     <MapPin size={18} color={isCheckIns ? gold : mutedColor} />
                     Чекины
                   </button>
                   <button onClick={() => { navigate('/reviews'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isReviews ? `${gold}12` : 'transparent', color: isReviews ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isReviews ? `${gold}12` : 'transparent', color: isReviews ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'poRF Dewi', width: '100%', textAlign: 'left' }}>
                     <ChatCircleText size={18} color={isReviews ? gold : mutedColor} />
                     Отзывы
                   </button>
                   <button onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'poRF Dewi', width: '100%', textAlign: 'left' }}>
                     <Gear size={18} color={isSettings ? gold : mutedColor} />
                     Настройки
                   </button>
                   <button onClick={() => { logout(); navigate('/'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'poRF Dewi', width: '100%', textAlign: 'left' }}>
                     <SignOut size={18} color="#EF4444" />
                     Выйти
                   </button>
@@ -225,11 +225,11 @@ const Header: React.FC = () => {
               ) : (
                 <>
                   <button onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'poRF Dewi', width: '100%', textAlign: 'left' }}>
                     Войти
                   </button>
                   <button onClick={() => { navigate('/register'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: `${gold}15`, color: gold, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: `${gold}15`, color: gold, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, cursor: 'poRF Dewi', width: '100%', textAlign: 'left' }}>
                     Регистрация
                   </button>
                 </>
@@ -242,20 +242,20 @@ const Header: React.FC = () => {
   );
 };
 
-interface DropdownItemProps {
+RF Dewiface DropdownItemProps {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   textColor: string;
   mutedColor: string;
   hoverBg: string;
-  activeBg?: string;
+  activeBg ?: string;
 }
 
 const DropdownItem: React.FC<DropdownItemProps> = ({ icon, label, onClick, textColor, hoverBg, activeBg }) => (
   <button
     onClick={onClick}
-    style={{ width: '100%', padding: '9px 16px', textAlign: 'left', background: activeBg ?? 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textColor, transition: 'background .1s' }}
+    style={{ width: '100%', padding: '9px 16px', textAlign: 'left', background: activeBg ?? 'none', border: 'none', cursor: 'poRF Dewi', display: 'flex', alignItems: 'center', gap: 10, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textColor, transition: 'background .1s' }}
     onMouseEnter={e => !activeBg && (e.currentTarget.style.background = hoverBg)}
     onMouseLeave={e => !activeBg && (e.currentTarget.style.background = 'none')}
   >

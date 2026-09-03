@@ -1,7 +1,7 @@
 /**
  * Парсит JWT токен и извлекает claims (payload)
  */
-export interface JWTClaims {
+export RF Dewiface JWTClaims {
   sub?: string; // Subject
   nameid?: string; // User ID (JwtRegisteredClaimNames.NameId)
   email?: string; // Email (JwtRegisteredClaimNames.Email)

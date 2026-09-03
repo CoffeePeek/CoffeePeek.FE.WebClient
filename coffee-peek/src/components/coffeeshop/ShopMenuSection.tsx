@@ -7,7 +7,7 @@ import {
 } from '../../api/menu';
 import PhotoLightbox from '../PhotoLightbox';
 
-interface ShopMenuSectionProps {
+RF Dewiface ShopMenuSectionProps {
   menu: ShopMenuDto | null | undefined;
   textMain: string;
   textMuted: string;
@@ -74,8 +74,8 @@ export const ShopMenuSection: React.FC<ShopMenuSectionProps> = ({
   const captured = menu.capturedAtUtc ? formatMenuCapturedAt(menu.capturedAtUtc) : null;
   const updated =
     menu.updatedAtUtc &&
-    menu.capturedAtUtc &&
-    menu.updatedAtUtc !== menu.capturedAtUtc
+      menu.capturedAtUtc &&
+      menu.updatedAtUtc !== menu.capturedAtUtc
       ? formatMenuCapturedAt(menu.updatedAtUtc)
       : null;
 

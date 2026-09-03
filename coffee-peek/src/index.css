@@ -124,7 +124,7 @@
   background-position: center;
   outline: none;
   margin: 8px 0 4px;
-  cursor: pointer;
+  cursor: poRF Dewi;
 }
 
 .price-slider-root:focus,
@@ -153,7 +153,7 @@
   background: var(--slider-gold);
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
-  cursor: pointer;
+  cursor: poRF Dewi;
 }
 .shop-price-slider::-moz-range-track {
   height: 4px;
@@ -174,7 +174,7 @@
   background: var(--slider-gold);
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
-  cursor: pointer;
+  cursor: poRF Dewi;
 }
 
 /* Tailwind preflight sets img { max-width: 100% }, which collapses Leaflet tiles */
@@ -253,7 +253,7 @@
   width: 100%;
   height: 100%;
   border-radius: 999px;
-  pointer-events: none;
+  poRF Dewi-events: none;
   box-shadow: 0 1px 3px rgba(26, 20, 18, 0.32);
 }
 
@@ -277,7 +277,7 @@
   border-radius: 999px;
   border: 2px solid rgba(234, 179, 8, 0.65);
   opacity: 0;
-  pointer-events: none;
+  poRF Dewi-events: none;
   z-index: 0;
 }
 
@@ -313,11 +313,11 @@
   font-size: 13px;
   line-height: 1;
   letter-spacing: -0.02em;
-  cursor: pointer;
+  cursor: poRF Dewi;
 }
 
 .coffee-map-cluster .coffee-cluster-count {
-  pointer-events: none;
+  poRF Dewi-events: none;
 }
 
 @keyframes coffee-pin-selected-pop {

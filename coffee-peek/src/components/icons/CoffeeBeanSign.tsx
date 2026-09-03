@@ -1,14 +1,14 @@
 import React from 'react';
 import { brand } from '../../design-system/tokens';
 
-interface CoffeeBeanSignProps {
-  size?: number | string;
-  className?: string;
+RF Dewiface CoffeeBeanSignProps {
+  size ?: number | string;
+  className ?: string;
   /** Defaults to brand gold accent */
-  color?: string;
-  style?: React.CSSProperties;
+  color ?: string;
+  style ?: React.CSSProperties;
   /** Decorative repeats should pass title={null} */
-  title?: string | null;
+  title ?: string | null;
 }
 
 /**
@@ -63,12 +63,12 @@ export const BynSign: React.FC<{
   );
 };
 
-interface BeanPriceMarksProps {
+RF Dewiface BeanPriceMarksProps {
   count: number;
-  size?: number;
-  className?: string;
-  color?: string;
-  gap?: number;
+  size ?: number;
+  className ?: string;
+  color ?: string;
+  gap ?: number;
 }
 
 /** Repeat official BYN signs for price-range tiers. */

@@ -19,11 +19,11 @@ import ThemeToggle from '../components/ThemeToggle';
 type RegisterStep = 'email' | 'registration' | 'success';
 
 // ── Auth field ─────────────────────────────────────────────────────
-interface AuthFieldProps {
-  icon?: React.ReactNode; type?: string; placeholder?: string;
+RF Dewiface AuthFieldProps {
+  icon ?: React.ReactNode; type ?: string; placeholder ?: string;
   value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  label?: string; trailing?: React.ReactNode; autoFocus?: boolean;
-  error?: string; dark: boolean;
+  label ?: string; trailing ?: React.ReactNode; autoFocus ?: boolean;
+  error ?: string; dark: boolean;
 }
 
 const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder, value, onChange, label, trailing, autoFocus, error, dark }) => {
@@ -89,7 +89,7 @@ const StrengthBar: React.FC<{ password: string; dark: boolean }> = ({ password, 
   const labels = ['слабый', 'средний', 'надёжный'];
   return (
     <div style={{ display: 'flex', gap: 4, marginTop: 8, alignItems: 'center' }}>
-      {[0,1,2].map(i => (
+      {[0, 1, 2].map(i => (
         <div key={i} style={{ flex: 1, height: 4, borderRadius: 99, background: i < score ? colors[score - 1] : dark ? '#3D2F28' : '#E7E5E4' }} />
       ))}
       <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: dark ? '#A39E93' : '#78716C', marginLeft: 8 }}>{labels[score - 1] || ''}</span>
@@ -168,7 +168,7 @@ const RegisterPage: React.FC = () => {
 
   const PwdToggle = (
     <button type="button" onClick={() => setShowPwd(s => !s)} aria-label={showPwd ? 'Скрыть пароль' : 'Показать пароль'}
-      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'poRF Dewi', padding: 4 }}>
       {showPwd ? <EyeSlash size={20} color={textMuted} /> : <Eye size={20} color={textMuted} />}
     </button>
   );
@@ -176,10 +176,10 @@ const RegisterPage: React.FC = () => {
   return (
     <div style={{ minHeight: '100dvh', background: bg, display: 'grid', placeItems: 'center', position: 'relative', overflow: 'hidden', transition: 'background .3s' }}>
       {/* Dotted pattern */}
-      {dark && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, pointerEvents: 'none' }} />}
+      {dark && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, poRF DewiEvents: 'none' }} />}
       {/* Glows */}
-      <div style={{ position: 'absolute', top: -120, left: -120, width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle, rgba(234,179,8,${dark ? '0.16' : '0.08'}), transparent 60%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: -160, right: -160, width: 520, height: 520, borderRadius: '50%', background: `radial-gradient(circle, rgba(180,140,75,${dark ? '0.10' : '0.06'}), transparent 60%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -120, left: -120, width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle, rgba(234,179,8,${dark ? '0.16' : '0.08'}), transparent 60%)`, filter: 'blur(40px)', poRF DewiEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: -160, right: -160, width: 520, height: 520, borderRadius: '50%', background: `radial-gradient(circle, rgba(180,140,75,${dark ? '0.10' : '0.06'}), transparent 60%)`, filter: 'blur(40px)', poRF DewiEvents: 'none' }} />
 
       <ThemeToggle style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }} />
 
@@ -191,7 +191,7 @@ const RegisterPage: React.FC = () => {
               type="button"
               className="logo-btn"
               onClick={() => navigate('/')}
-              style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: 4, cursor: 'pointer', position: 'relative', zIndex: 4 }}
+              style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: 4, cursor: 'poRF Dewi', position: 'relative', zIndex: 4 }}
             >
               <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, letterSpacing: '-0.035em', fontSize: 22, color: textPrimary }}>
                 Coffee<span style={{ color: '#EAB308' }}>Peek</span>
@@ -219,7 +219,7 @@ const RegisterPage: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate('/login')}
-                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: 'poRF Dewi', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                 <SignIn size={18} />
                 На страницу входа
               </button>
@@ -255,7 +255,7 @@ const RegisterPage: React.FC = () => {
                       onError={setError}
                     />
                     <button type="submit" disabled={!emailValid || isLoading}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: !emailValid || isLoading ? 'not-allowed' : 'pointer', opacity: !emailValid ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: !emailValid || isLoading ? 'not-allowed' : 'poRF Dewi', opacity: !emailValid ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Проверяем…</> : 'Продолжить'}
                     </button>
                   </form>
@@ -269,7 +269,7 @@ const RegisterPage: React.FC = () => {
                   <div style={{ margin: '8px 0 22px', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 12, background: dark ? 'rgba(255,255,255,0.03)' : '#F9F8F6', border: `1px solid ${cardBorder}` }}>
                     <Envelope size={16} color="#D4A84B" />
                     <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: textPrimary, flex: 1 }}>{email}</span>
-                    <button type="button" onClick={() => setStep('email')} style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Изменить</button>
+                    <button type="button" onClick={() => setStep('email')} style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'poRF Dewi' }}>Изменить</button>
                   </div>
                   <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <AuthField icon={<User size={20} color={gold} />} placeholder="Как вас зовут?" label="Имя" autoFocus value={userName} onChange={e => setUserName(e.target.value)} dark={dark} />
@@ -286,12 +286,12 @@ const RegisterPage: React.FC = () => {
                         onChange={e => setAgreeToPrivacy(e.target.checked)}
                         style={{ marginTop: 2, width: 18, height: 18, accentColor: gold, flexShrink: 0 }}
                       />
-                      <label htmlFor="register-agree" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted, lineHeight: 1.45, cursor: 'pointer' }}>
+                      <label htmlFor="register-agree" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted, lineHeight: 1.45, cursor: 'poRF Dewi' }}>
                         Я принимаю{' '}
                         <button
                           type="button"
                           onClick={(e) => { e.preventDefault(); navigate(LEGAL_ROUTES.terms); }}
-                          style={{ background: 'none', border: 'none', padding: 0, color: gold, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+                          style={{ background: 'none', border: 'none', padding: 0, color: gold, fontWeight: 600, cursor: 'poRF Dewi', fontFamily: 'inherit', fontSize: 'inherit' }}
                         >
                           Условия использования
                         </button>
@@ -299,7 +299,7 @@ const RegisterPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={(e) => { e.preventDefault(); navigate(LEGAL_ROUTES.privacy); }}
-                          style={{ background: 'none', border: 'none', padding: 0, color: gold, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+                          style={{ background: 'none', border: 'none', padding: 0, color: gold, fontWeight: 600, cursor: 'poRF Dewi', fontFamily: 'inherit', fontSize: 'inherit' }}
                         >
                           обработку персональных данных
                         </button>
@@ -307,7 +307,7 @@ const RegisterPage: React.FC = () => {
                       </label>
                     </div>
                     <button type="submit" disabled={isLoading || !canRegister}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading || !canRegister ? 'not-allowed' : 'pointer', opacity: !canRegister ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading || !canRegister ? 'not-allowed' : 'poRF Dewi', opacity: !canRegister ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Создаём…</> : 'Создать аккаунт'}
                     </button>
                   </form>
@@ -316,11 +316,11 @@ const RegisterPage: React.FC = () => {
 
               <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <button type="button" onClick={() => step === 'registration' ? setStep('email') : navigate('/')}
-                  style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontSize: 13, cursor: 'poRF Dewi', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <ArrowLeft size={14} /> Назад
                 </button>
                 <button type="button" onClick={() => navigate('/login')}
-                  style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 13, fontWeight: 600, cursor: 'poRF Dewi' }}>
                   Уже есть аккаунт
                 </button>
               </div>

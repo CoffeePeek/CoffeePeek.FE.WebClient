@@ -160,7 +160,7 @@ export const BrowseMapPage: React.FC = () => {
         )}
 
         {shopsLoaded && shops.length === 0 && !isLoading && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500] px-4 py-2 rounded-full bg-[#2D241F]/90 border border-border-dark text-stone-300 text-sm pointer-events-none">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500] px-4 py-2 rounded-full bg-[#2D241F]/90 border border-border-dark text-stone-300 text-sm poRF Dewi-events-none">
             Кофейни в этой области не найдены
           </div>
         )}

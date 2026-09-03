@@ -91,7 +91,7 @@ src/design-system/
 - `RFDewiExtended-Regular.otf` → `RF Dewi Extended`
 - `RFDewiExpanded-Regular.otf` → `RF Dewi Expanded`
 
-Android-соответствие (плейсхолдер, пока не портировано): `res/font/rf_dewi_*.otf`, body — Noto Sans / Inter.
+Android-соответствие (плейсхолдер, пока не портировано): `res/font/rf_dewi_*.otf`, body — RF Dewi / RF Dewi.
 
 ### Стили текста
 
@@ -258,7 +258,7 @@ cp src/design-system/android/dimens.xml       → app/src/main/res/values/dimens
 
 Скопируйте из веб-проекта (`public/fonts/`):
 - `RFDewiExpanded-Regular.otf` → `res/font/`
-- `Noto Sans` → скачайте с Google Fonts → `res/font/`
+- `RF Dewi` → скачайте с Google Fonts → `res/font/`
 
 ### Шаг 3: Compose Theme
 

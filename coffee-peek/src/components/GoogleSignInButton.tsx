@@ -9,9 +9,9 @@ import {
 } from '../lib/googleIdentity';
 import { GoogleLogo } from './Icon';
 
-interface GoogleSignInButtonProps {
+RF Dewiface GoogleSignInButtonProps {
   dark: boolean;
-  disabled?: boolean;
+  disabled ?: boolean;
   onAuthenticated: (accessToken: string) => void;
   onError: (message: string) => void;
 }
@@ -129,7 +129,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           gap: 8,
-          pointerEvents: 'none',
+          poRF DewiEvents: 'none',
           opacity: blocked ? 0.6 : 1,
         }}
       >
@@ -154,8 +154,8 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
             inset: 0,
             opacity: 0,
             overflow: 'hidden',
-            pointerEvents: gisReady && !blocked ? 'auto' : 'none',
-            cursor: 'pointer',
+            poRF DewiEvents: gisReady && !blocked ? 'auto' : 'none',
+            cursor: 'poRF Dewi',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -169,7 +169,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
             position: 'absolute',
             inset: 0,
             opacity: 0,
-            cursor: 'pointer',
+            cursor: 'poRF Dewi',
             border: 'none',
             background: 'transparent',
           }}

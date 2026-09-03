@@ -8,12 +8,12 @@ import { MapPin, Compass, MapTrifold } from '@/components/Icon';
 
 export type LatLng = { lat: number; lng: number };
 
-interface AddressMapFieldProps {
+RF Dewiface AddressMapFieldProps {
   value: string;
   onChange: (address: string) => void;
-  onCoordsChange?: (coords: LatLng | null) => void;
-  error?: string;
-  inputClassName?: string;
+  onCoordsChange ?: (coords: LatLng | null) => void;
+  error ?: string;
+  inputClassName ?: string;
 }
 
 async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
@@ -145,7 +145,7 @@ export const AddressMapField: React.FC<AddressMapFieldProps> = ({
       center,
       zoom: 15,
       dark: isDark,
-      interactive: true,
+      RF Dewiactive: true,
       zoomControl: true,
     });
     mapInstanceRef.current = map;
@@ -231,9 +231,8 @@ export const AddressMapField: React.FC<AddressMapFieldProps> = ({
               return next;
             });
           }}
-          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border ${
-            mapOpen ? 'border-[#EAB308] bg-[#EAB308]/10' : themeClasses.border.default
-          } ${themeClasses.bg.input} ${primary} hover:border-[#EAB308] transition-colors`}
+          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border ${mapOpen ? 'border-[#EAB308] bg-[#EAB308]/10' : themeClasses.border.default
+            } ${themeClasses.bg.input} ${primary} hover:border-[#EAB308] transition-colors`}
         >
           <MapTrifold size={16} className="text-[#EAB308]" />
           {mapOpen ? 'Скрыть карту' : 'Выбрать на карте'}

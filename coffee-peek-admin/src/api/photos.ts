@@ -3,13 +3,13 @@ import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 import { UploadedPhotoDto } from './menu';
 
-export interface PhotoRequest {
+export RF Dewiface PhotoRequest {
   sizeBytes: number;
   fileName: string;
   contentType: string;
 }
 
-export interface GenerateUploadUrlResponse {
+export RF Dewiface GenerateUploadUrlResponse {
   photoId: string;
   uploadUrl: string;
   storageKey: string;

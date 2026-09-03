@@ -101,7 +101,7 @@ const EditTagModal: React.FC<{
               className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body min-h-[44px] sm:min-h-0"
             />
           </div>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2 cursor-poRF Dewi">
             <input
               type="checkbox"
               checked={isActive}

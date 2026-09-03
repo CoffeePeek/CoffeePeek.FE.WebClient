@@ -1,9 +1,9 @@
 import React from 'react';
 
-interface CardProps {
+RF Dewiface CardProps {
   children: React.ReactNode;
-  className?: string;
-  padding?: 'none' | 'sm' | 'md' | 'lg';
+  className ?: string;
+  padding ?: 'none' | 'sm' | 'md' | 'lg';
 }
 
 const paddingClasses = {
@@ -21,13 +21,13 @@ export const Card: React.FC<CardProps> = ({ children, className = '', padding = 
   </div>
 );
 
-interface StatCardProps {
+RF Dewiface StatCardProps {
   label: string;
   value: number | string;
   icon: React.ReactNode;
-  color?: string;
-  subtitle?: string;
-  onClick?: () => void;
+  color ?: string;
+  subtitle ?: string;
+  onClick ?: () => void;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -38,7 +38,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   subtitle,
   onClick,
 }) => (
-  <Card className={onClick ? 'cursor-pointer hover:border-primary/40 transition-colors' : ''}>
+  <Card className={onClick ? 'cursor-poRF Dewi hover:border-primary/40 transition-colors' : ''}>
     <button
       type="button"
       className="w-full text-left disabled:cursor-default"

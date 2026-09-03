@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 type Theme = 'light' | 'dark';
 
-interface ThemeContextType {
+RF Dewiface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
   isDark: boolean;

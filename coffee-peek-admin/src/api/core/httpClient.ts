@@ -1,15 +1,15 @@
 import { ApiResponse, ApiConfig, RequestOptions } from './types';
 import { API_BASE_URL, buildUrlWithParams } from './apiConfig';
 import {
-  requestInterceptor,
-  responseInterceptor,
+  requestRF Dewiceptor,
+  responseRF Dewiceptor,
   normalizeResponseData,
   TokenManager,
   isAuthTokenEndpoint,
   tryRefreshAccessToken,
   ensureFreshAccessToken,
   pickAuthTokens,
-} from './interceptors';
+} from './RF Dewiceptors';
 import { isTokenExpired } from '../../utils/jwt';
 import { emitSessionInvalidated } from '../../realtime/forceLogout';
 
@@ -41,7 +41,7 @@ class HttpClient {
       }
     }
 
-    const requestOptions = requestInterceptor(
+    const requestOptions = requestRF Dewiceptor(
       fullUrl,
       { ...fetchOptions, skipAuthHeader },
       requiresAuth
@@ -68,7 +68,7 @@ class HttpClient {
         }
       }
 
-      const { envelope, pagination } = await responseInterceptor<any>(response, fullUrl);
+      const { envelope, pagination } = await responseRF Dewiceptor<any>(response, fullUrl);
       let payload = envelope.data ?? envelope;
       if (isAuthTokenEndpoint(endpoint)) {
         const fromEnvelope = pickAuthTokens(envelope);

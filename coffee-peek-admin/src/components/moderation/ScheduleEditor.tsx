@@ -3,7 +3,7 @@ import { AdminShopSchedule } from '../../api/admin';
 
 const DAY_NAMES = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 
-interface ScheduleEditorProps {
+RF Dewiface ScheduleEditorProps {
   value: AdminShopSchedule[];
   onChange: (schedules: AdminShopSchedule[]) => void;
 }

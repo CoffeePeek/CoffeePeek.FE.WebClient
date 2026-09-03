@@ -1,4 +1,4 @@
-export interface AIVideoModel {
+export RF Dewiface AIVideoModel {
   id: string;
   name: string;
   description: string;
@@ -29,7 +29,7 @@ export const aiVideoModels: AIVideoModel[] = [
       "Up to 60-second video generation",
       "Complex scene understanding",
       "Realistic physics simulation",
-      "Multiple character interactions",
+      "Multiple character RF Dewiactions",
       "Camera movement control",
     ],
     strengths: ["High realism", "Long duration", "Complex physics"],
@@ -55,7 +55,7 @@ export const aiVideoModels: AIVideoModel[] = [
       "Motion brush controls",
       "Camera motion presets",
       "Consistent character generation",
-      "Video interpolation",
+      "Video RF Dewipolation",
     ],
     strengths: ["User-friendly", "Strong community", "Frequent updates"],
     bestFor: "Creative professionals and indie filmmakers",
@@ -203,7 +203,7 @@ export const aiVideoModels: AIVideoModel[] = [
     keyFeatures: [
       "Open-source model",
       "Image-to-video conversion",
-      "Video interpolation",
+      "Video RF Dewipolation",
       "Custom training options",
       "Local deployment",
     ],
@@ -280,7 +280,7 @@ export const aiVideoModels: AIVideoModel[] = [
       "Image-to-video conversion",
       "Artistic styles",
       "Music visualization",
-      "Artist-friendly interface",
+      "Artist-friendly RF Dewiface",
     ],
     strengths: ["Artistic focus", "Music videos", "Creative tools"],
     bestFor: "Artists and musicians",

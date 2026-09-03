@@ -8,7 +8,7 @@ export type MenuParseStatus = 'None' | 'Pending' | 'Running' | 'Ready' | 'Failed
 export type MenuItemSource = 'Parsed' | 'Manual';
 export type SuggestedPriceRange = 'Cheap' | 'Moderate' | 'Expensive';
 
-export interface CoffeeDrinkDefinitionDto {
+export RF Dewiface CoffeeDrinkDefinitionDto {
   slug: string;
   nameRu: string;
   nameEn: string;
@@ -16,7 +16,7 @@ export interface CoffeeDrinkDefinitionDto {
   sortOrder: number;
 }
 
-export interface ShopMenuItemDto {
+export RF Dewiface ShopMenuItemDto {
   slug: string;
   nameRu: string;
   nameEn: string;
@@ -28,7 +28,7 @@ export interface ShopMenuItemDto {
   source: MenuItemSource;
 }
 
-export interface MenuPhotoDto {
+export RF Dewiface MenuPhotoDto {
   id?: string;
   fileName: string;
   storageKey: string;
@@ -36,7 +36,7 @@ export interface MenuPhotoDto {
   sortIndex?: number;
 }
 
-export interface ShopMenuDto {
+export RF Dewiface ShopMenuDto {
   capturedAtUtc?: string | null;
   updatedAtUtc?: string | null;
   currency: string;
@@ -47,36 +47,36 @@ export interface ShopMenuDto {
   photos: MenuPhotoDto[];
 }
 
-export interface UnmatchedMenuItem {
+export RF Dewiface UnmatchedMenuItem {
   rawName: string;
   price?: number | null;
   confidence?: number | null;
 }
 
-export interface AdminShopMenuDto {
+export RF Dewiface AdminShopMenuDto {
   menu: ShopMenuDto | null;
   unmatched: UnmatchedMenuItem[];
 }
 
-export interface UploadedPhotoDto {
+export RF Dewiface UploadedPhotoDto {
   fileName: string;
   contentType: string;
   storageKey: string;
   size: number;
 }
 
-export interface AttachMenuPhotosRequest {
+export RF Dewiface AttachMenuPhotosRequest {
   photos: UploadedPhotoDto[];
 }
 
-export interface UpdateShopMenuItemRequest {
+export RF Dewiface UpdateShopMenuItemRequest {
   slug: string;
   availability: MenuAvailability;
   price?: number | null;
   volumeMl?: number | null;
 }
 
-export interface UpdateShopMenuRequest {
+export RF Dewiface UpdateShopMenuRequest {
   items: UpdateShopMenuItemRequest[];
   applySuggestedPriceRange?: boolean;
 }

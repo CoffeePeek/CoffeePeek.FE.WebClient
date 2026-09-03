@@ -3,9 +3,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import { AppIcon } from './icons';
 import { COLORS } from '../constants/colors';
 
-interface ThemeToggleProps {
-  style?: React.CSSProperties;
-  size?: number;
+RF Dewiface ThemeToggleProps {
+  style ?: React.CSSProperties;
+  size ?: number;
 }
 
 const ThemeToggle: React.FC<ThemeToggleProps> = ({ style, size = 40 }) => {
@@ -30,7 +30,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ style, size = 40 }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        cursor: 'pointer',
+        cursor: 'poRF Dewi',
         flexShrink: 0,
         backdropFilter: isDark ? 'blur(12px)' : 'none',
         transition: 'all .2s',

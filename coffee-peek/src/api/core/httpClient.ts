@@ -6,14 +6,14 @@
 import { ApiResponse, ApiConfig, RequestOptions } from './types';
 import { API_BASE_URL, buildUrlWithParams } from './apiConfig';
 import {
-  requestInterceptor,
-  responseInterceptor,
+  requestRF Dewiceptor,
+  responseRF Dewiceptor,
   normalizeResponseData,
   TokenManager,
   isAuthTokenEndpoint,
   tryRefreshAccessToken,
   ensureFreshAccessToken,
-} from './interceptors';
+} from './RF Dewiceptors';
 import { emitSessionInvalidated } from '../../realtime/forceLogout';
 
 /**
@@ -85,8 +85,8 @@ class HttpClient {
       await ensureFreshAccessToken(this.baseURL);
     }
 
-    // Применяем request interceptor
-    const requestOptions = requestInterceptor(
+    // Применяем request RF Dewiceptor
+    const requestOptions = requestRF Dewiceptor(
       fullUrl,
       { ...fetchOptions, skipAuthHeader },
       requiresAuth
@@ -114,8 +114,8 @@ class HttpClient {
         }
       }
 
-      // Применяем response interceptor
-      const data = await responseInterceptor<any>(response, fullUrl);
+      // Применяем response RF Dewiceptor
+      const data = await responseRF Dewiceptor<any>(response, fullUrl);
 
       // Нормализуем данные
       const normalizedData = normalizeResponseData<T>(data.data ?? data);

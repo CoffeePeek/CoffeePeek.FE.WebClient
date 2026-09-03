@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Button } from './Button';
 
-interface ConfirmModalProps {
+RF Dewiface ConfirmModalProps {
   isOpen: boolean;
   title: string;
   message: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  variant?: 'danger' | 'success' | 'primary';
-  withComment?: boolean;
-  commentLabel?: string;
+  confirmLabel ?: string;
+  cancelLabel ?: string;
+  variant ?: 'danger' | 'success' | 'primary';
+  withComment ?: boolean;
+  commentLabel ?: string;
   onConfirm: (comment?: string) => Promise<void> | void;
   onCancel: () => void;
 }

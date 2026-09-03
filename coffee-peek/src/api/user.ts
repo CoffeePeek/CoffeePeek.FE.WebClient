@@ -9,7 +9,7 @@ import { logger } from '../utils/logger';
 
 // ==================== Types ====================
 
-export interface PublicUserProfile {
+export RF Dewiface PublicUserProfile {
   id: string;
   userName: string;
   nickname?: string;

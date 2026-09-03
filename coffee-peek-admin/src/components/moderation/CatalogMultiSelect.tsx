@@ -1,17 +1,17 @@
 import React, { useMemo, useState } from 'react';
 
-interface CatalogItem {
+RF Dewiface CatalogItem {
   id: string;
   name: string;
-  subtitle?: string;
+  subtitle ?: string;
 }
 
-interface CatalogMultiSelectProps {
+RF Dewiface CatalogMultiSelectProps {
   label: string;
   items: CatalogItem[];
   selectedIds: string[];
   onChange: (ids: string[]) => void;
-  emptyLabel?: string;
+  emptyLabel ?: string;
 }
 
 export const CatalogMultiSelect: React.FC<CatalogMultiSelectProps> = ({
@@ -89,9 +89,8 @@ export const CatalogMultiSelect: React.FC<CatalogMultiSelectProps> = ({
             return (
               <label
                 key={item.id}
-                className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 ${
-                  checked ? 'bg-primary/5' : ''
-                }`}
+                className={`flex items-start gap-2 px-3 py-2 cursor-poRF Dewi hover:bg-gray-50 dark:hover:bg-white/5 ${checked ? 'bg-primary/5' : ''
+                  }`}
               >
                 <input
                   type="checkbox"

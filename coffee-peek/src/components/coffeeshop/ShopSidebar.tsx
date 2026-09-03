@@ -10,7 +10,7 @@ import { AppIcon } from '../icons';
 import { CaretDown } from '@/components/Icon';
 import { coffeeDetailIcon, createOsmMap, ensureMapPinMascots } from '../../map/osmMap';
 
-interface ShopSidebarProps {
+RF Dewiface ShopSidebarProps {
   shop: DetailedCoffeeShop;
   textMain: string;
   textMuted: string;
@@ -46,7 +46,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
       center: [latitude, longitude],
       zoom: 15,
       dark: isDark,
-      interactive: false,
+      RF Dewiactive: false,
       zoomControl: false,
     });
     mapInstanceRef.current = map;
@@ -56,7 +56,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
       L.marker([latitude, longitude], {
         icon: coffeeDetailIcon(shop.type),
         title: shop.name,
-        interactive: false,
+        RF Dewiactive: false,
       }).addTo(map);
       setIsMapLoaded(true);
     });
@@ -102,7 +102,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
             <div className="min-w-0 flex-1">
               <button
                 type="button"
-                className={`flex w-full items-center justify-between gap-2 min-h-12 ${textMain} font-bold text-left lg:pointer-events-none`}
+                className={`flex w-full items-center justify-between gap-2 min-h-12 ${textMain} font-bold text-left lg:poRF Dewi-events-none`}
                 style={{ padding: 0, margin: 0, border: 'none', background: 'transparent', borderRadius: 0 }}
                 onClick={() => setHoursOpen((open) => !open)}
                 aria-expanded={hoursOpen}
@@ -117,20 +117,20 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
                 {[...shop.schedules]
                   .sort((a, b) => Number(a.dayOfWeek) - Number(b.dayOfWeek))
                   .map((schedule) => {
-                  const dayLabel = formatDayOfWeekShort(schedule.dayOfWeek);
-                  const isToday = Number(schedule.dayOfWeek) === currentDay;
-                  const rowClass = isToday ? `font-bold ${themeClasses.primary.text}` : textMuted;
-                  return (
-                    <Fragment key={String(schedule.dayOfWeek)}>
-                      <span className={rowClass}>{dayLabel || '—'}</span>
-                      <span className={`${rowClass} tabular-nums`}>
-                        {schedule.openTime && schedule.closeTime
-                          ? `${schedule.openTime} - ${schedule.closeTime}`
-                          : 'Закрыто'}
-                      </span>
-                    </Fragment>
-                  );
-                })}
+                    const dayLabel = formatDayOfWeekShort(schedule.dayOfWeek);
+                    const isToday = Number(schedule.dayOfWeek) === currentDay;
+                    const rowClass = isToday ? `font-bold ${themeClasses.primary.text}` : textMuted;
+                    return (
+                      <Fragment key={String(schedule.dayOfWeek)}>
+                        <span className={rowClass}>{dayLabel || '—'}</span>
+                        <span className={`${rowClass} tabular-nums`}>
+                          {schedule.openTime && schedule.closeTime
+                            ? `${schedule.openTime} - ${schedule.closeTime}`
+                            : 'Закрыто'}
+                        </span>
+                      </Fragment>
+                    );
+                  })}
               </div>
             </div>
           </div>

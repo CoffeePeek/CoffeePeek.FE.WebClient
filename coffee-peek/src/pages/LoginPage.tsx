@@ -15,16 +15,16 @@ import ThemeToggle from '../components/ThemeToggle';
 import Mascot from '../components/Mascot';
 import { forceLogoutMessage } from '../realtime/forceLogout';
 
-interface AuthFieldProps {
-  icon?: React.ReactNode;
-  type?: string;
-  placeholder?: string;
+RF Dewiface AuthFieldProps {
+  icon ?: React.ReactNode;
+  type ?: string;
+  placeholder ?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  label?: string;
-  trailing?: React.ReactNode;
-  autoFocus?: boolean;
-  error?: string;
+  label ?: string;
+  trailing ?: React.ReactNode;
+  autoFocus ?: boolean;
+  error ?: string;
   dark: boolean;
 }
 
@@ -182,7 +182,7 @@ const LoginPage: React.FC = () => {
 
   const PwdToggle = (
     <button type="button" onClick={() => setShowPwd(s => !s)} aria-label={showPwd ? 'Скрыть пароль' : 'Показать пароль'}
-      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'poRF Dewi', padding: 4 }}>
       {showPwd ? <EyeSlash size={20} color={textMuted} /> : <Eye size={20} color={textMuted} />}
     </button>
   );
@@ -190,10 +190,10 @@ const LoginPage: React.FC = () => {
   return (
     <div style={{ minHeight: '100dvh', background: bg, display: 'grid', placeItems: 'center', position: 'relative', overflow: 'hidden', transition: 'background .3s' }}>
       {/* Dotted pattern (dark only) */}
-      {dark && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, pointerEvents: 'none' }} />}
+      {dark && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, poRF DewiEvents: 'none' }} />}
       {/* Gold glows */}
-      <div style={{ position: 'absolute', top: -120, left: -120, width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle, rgba(234,179,8,${dark ? '0.16' : '0.08'}), transparent 60%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: -160, right: -160, width: 520, height: 520, borderRadius: '50%', background: `radial-gradient(circle, rgba(180,140,75,${dark ? '0.10' : '0.06'}), transparent 60%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -120, left: -120, width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle, rgba(234,179,8,${dark ? '0.16' : '0.08'}), transparent 60%)`, filter: 'blur(40px)', poRF DewiEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: -160, right: -160, width: 520, height: 520, borderRadius: '50%', background: `radial-gradient(circle, rgba(180,140,75,${dark ? '0.10' : '0.06'}), transparent 60%)`, filter: 'blur(40px)', poRF DewiEvents: 'none' }} />
 
       <ThemeToggle style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }} />
 
@@ -209,12 +209,12 @@ const LoginPage: React.FC = () => {
             zIndex: 40,
             display: 'flex',
             justifyContent: 'flex-end',
-            pointerEvents: 'none',
+            poRF DewiEvents: 'none',
           }}
         >
           <div
             style={{
-              pointerEvents: 'auto',
+              poRF DewiEvents: 'auto',
               width: 'min(100%, 380px)',
               padding: '14px 16px',
               borderRadius: 16,
@@ -256,7 +256,7 @@ const LoginPage: React.FC = () => {
                     fontFamily: '"RF Dewi Expanded"',
                     fontWeight: 600,
                     fontSize: 12,
-                    cursor: resendState === 'sending' || resendCooldown > 0 ? 'not-allowed' : 'pointer',
+                    cursor: resendState === 'sending' || resendCooldown > 0 ? 'not-allowed' : 'poRF Dewi',
                     opacity: resendState === 'sending' || resendCooldown > 0 ? 0.6 : 1,
                   }}
                 >
@@ -272,7 +272,7 @@ const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => setEmailNotConfirmed(false)}
                 aria-label="Закрыть уведомление"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: textMuted, flexShrink: 0 }}
+                style={{ background: 'none', border: 'none', cursor: 'poRF Dewi', padding: 2, color: textMuted, flexShrink: 0 }}
               >
                 <X size={16} />
               </button>
@@ -287,7 +287,7 @@ const LoginPage: React.FC = () => {
           type="button"
           className="logo-btn"
           onClick={() => navigate('/')}
-          style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: 4, cursor: 'pointer', position: 'relative', zIndex: 4 }}
+          style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: 4, cursor: 'poRF Dewi', position: 'relative', zIndex: 4 }}
         >
           <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, letterSpacing: '-0.035em', fontSize: 22, color: textPrimary }}>
             Coffee<span style={{ color: '#EAB308' }}>Peek</span>
@@ -367,7 +367,7 @@ const LoginPage: React.FC = () => {
               onChange={e => { setEmail(e.target.value); setError(null); setEmailNotConfirmed(false); setResendState('idle'); setResendCooldown(0); }}
               dark={dark}
               trailing={emailValidDebounced ? (
-                <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex' }}>
+                <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', poRF DewiEvents: 'none', display: 'flex' }}>
                   <CheckCircle size={18} weight="fill" color="#22C55E" />
                 </span>
               ) : undefined}
@@ -377,11 +377,11 @@ const LoginPage: React.FC = () => {
               value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
 
             <div style={{ textAlign: 'right', marginTop: -6 }}>
-              <Link to="/forgot-password" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>Забыли пароль?</Link>
+              <Link to="/forgot-password" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'poRF Dewi', textDecoration: 'none' }}>Забыли пароль?</Link>
             </div>
 
             <button type="submit" disabled={isLoading || !password}
-              style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'pointer', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>
+              style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'poRF Dewi', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>
               {isLoading ? (
                 <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Входим…</>
               ) : 'Войти'}
@@ -390,11 +390,11 @@ const LoginPage: React.FC = () => {
 
           <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <button type="button" onClick={() => navigate(passedEmail ? '/register' : '/')}
-              style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontSize: 13, cursor: 'poRF Dewi', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <ArrowLeft size={14} /> Назад
             </button>
             <button type="button" onClick={() => navigate('/register')}
-              style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 13, fontWeight: 600, cursor: 'poRF Dewi' }}>
               Создать аккаунт
             </button>
           </div>

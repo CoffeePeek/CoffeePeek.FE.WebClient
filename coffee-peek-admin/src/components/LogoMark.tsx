@@ -12,12 +12,12 @@ const LOGO_BG = {
   dark: '#1A1412',
 } as const;
 
-interface LogoMarkProps {
-  size?: number;
-  className?: string;
-  alt?: string;
+RF Dewiface LogoMarkProps {
+  size ?: number;
+  className ?: string;
+  alt ?: string;
   /** Override app theme when the surface is always dark (login, sidebar). */
-  variant?: 'light' | 'dark';
+  variant ?: 'light' | 'dark';
 }
 
 const LogoMark: React.FC<LogoMarkProps> = ({

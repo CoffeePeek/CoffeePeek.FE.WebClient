@@ -11,7 +11,7 @@ import {
   Coffee, Gear, Leaf, Flame, Drop, Clock, Circle, PriceRangeLabel,
 } from '@/components/Icon';
 
-interface CoffeeShopModalProps {
+RF Dewiface CoffeeShopModalProps {
   shop: DetailedCoffeeShop | null;
   isOpen: boolean;
   onClose: () => void;
@@ -101,11 +101,10 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
                   <PriceRangeLabel level={priceLevel} />
                 </div>
               )}
-              <span className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${
-                shop.isOpen
+              <span className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${shop.isOpen
                   ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                   : 'bg-red-500/20 text-red-400 border border-red-500/30'
-              }`}>
+                }`}>
                 <Circle size={8} weight="fill" color={shop.isOpen ? '#22C55E' : '#EF4444'} />
                 {shop.isOpen ? 'Открыто' : 'Закрыто'}
               </span>
@@ -284,9 +283,8 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
                   return (
                     <div
                       key={String(schedule.dayOfWeek)}
-                      className={`flex justify-between items-center py-2 px-3 rounded-lg ${
-                        isToday ? `${themeClasses.bg.primary} border ${themeClasses.border.default}` : ''
-                      }`}
+                      className={`flex justify-between items-center py-2 px-3 rounded-lg ${isToday ? `${themeClasses.bg.primary} border ${themeClasses.border.default}` : ''
+                        }`}
                     >
                       <span className={`${isToday ? themeClasses.text.primary : themeClasses.text.secondary} font-medium`}>
                         {formatDayOfWeek(schedule.dayOfWeek)}

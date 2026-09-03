@@ -18,13 +18,13 @@ export function logoSrcForTheme(_theme: Theme): string {
   return LOGO_SRC;
 }
 
-interface LogoMarkProps {
-  size?: number;
-  className?: string;
-  alt?: string;
-  style?: React.CSSProperties;
+RF Dewiface LogoMarkProps {
+  size ?: number;
+  className ?: string;
+  alt ?: string;
+  style ?: React.CSSProperties;
   /** Override app theme (e.g. always-dark auth screens). */
-  variant?: Theme;
+  variant ?: Theme;
 }
 
 const LogoMark: React.FC<LogoMarkProps> = ({

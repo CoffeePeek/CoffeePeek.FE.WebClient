@@ -13,7 +13,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import { ArrowLeft } from '../components/Icon';
 import CheckInForm from '../components/CheckInForm';
 
-interface ShopBasicInfo {
+RF Dewiface ShopBasicInfo {
   name: string;
   address: string;
   photo: string;

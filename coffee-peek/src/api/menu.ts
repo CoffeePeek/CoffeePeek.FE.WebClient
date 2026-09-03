@@ -8,7 +8,7 @@ export type MenuParseStatus = 'None' | 'Pending' | 'Running' | 'Ready' | 'Failed
 export type MenuItemSource = 'Parsed' | 'Manual';
 export type SuggestedPriceRange = 'Cheap' | 'Moderate' | 'Expensive';
 
-export interface CoffeeDrinkDefinitionDto {
+export RF Dewiface CoffeeDrinkDefinitionDto {
   slug: string;
   nameRu: string;
   nameEn: string;
@@ -16,7 +16,7 @@ export interface CoffeeDrinkDefinitionDto {
   sortOrder: number;
 }
 
-export interface ShopMenuItemDto {
+export RF Dewiface ShopMenuItemDto {
   slug: string;
   nameRu: string;
   nameEn: string;
@@ -28,7 +28,7 @@ export interface ShopMenuItemDto {
   source: MenuItemSource;
 }
 
-export interface MenuPhotoDto {
+export RF Dewiface MenuPhotoDto {
   id?: string;
   fileName: string;
   storageKey: string;
@@ -36,7 +36,7 @@ export interface MenuPhotoDto {
   sortIndex?: number;
 }
 
-export interface ShopMenuDto {
+export RF Dewiface ShopMenuDto {
   capturedAtUtc?: string | null;
   updatedAtUtc?: string | null;
   currency: string;

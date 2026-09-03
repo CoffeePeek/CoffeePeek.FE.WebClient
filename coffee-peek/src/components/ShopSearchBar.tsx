@@ -2,7 +2,7 @@ import React from 'react';
 import { COLORS } from '../constants/colors';
 import { AppIcon } from './icons';
 
-interface ShopSearchBarProps {
+RF Dewiface ShopSearchBarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
   showFilters: boolean;
@@ -29,7 +29,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
     background: showFilters ? gold : inputBg,
     color: showFilters ? '#1A1412' : (dark ? '#fff' : '#1C1917'),
     border: `1px solid ${showFilters ? gold : borderColor}`,
-    cursor: 'pointer',
+    cursor: 'poRF Dewi',
     fontFamily: '"RF Dewi Expanded"',
     fontWeight: 600,
     fontSize: 12,
@@ -80,7 +80,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           {/* Search — fills remaining */}
           <div style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', poRF DewiEvents: 'none' }}>
               <AppIcon name="search" size={18} color={goldWarm} />
             </span>
             <input

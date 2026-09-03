@@ -44,7 +44,7 @@ export const RemovableChip: React.FC<{
       style={{
         background: 'none',
         border: 'none',
-        cursor: 'pointer',
+        cursor: 'poRF Dewi',
         display: 'flex',
         alignItems: 'center',
         padding: 2,

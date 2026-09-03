@@ -32,7 +32,7 @@ const ERROR_CODE_MESSAGES: Record<string, string> = {
 const FALLBACK_MESSAGE = 'Что-то пошло не так. Попробуйте ещё раз.';
 const NETWORK_MESSAGE = 'Сеть недоступна. Проверьте подключение.';
 
-export interface ShopModerationFormErrors {
+export RF Dewiface ShopModerationFormErrors {
   globalError: string | null;
   fieldErrors: Partial<Record<ShopFormField, string>>;
 }
