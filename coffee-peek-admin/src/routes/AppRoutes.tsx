@@ -12,6 +12,7 @@ const UsersPage = lazy(() => import('../pages/UsersPage').then((m) => ({ default
 const CachePage = lazy(() => import('../pages/CachePage').then((m) => ({ default: m.CachePage })));
 const AuditModerationPage = lazy(() => import('../pages/AuditModerationPage').then((m) => ({ default: m.AuditModerationPage })));
 const ShopTagsPage = lazy(() => import('../pages/ShopTagsPage').then((m) => ({ default: m.ShopTagsPage })));
+const CatalogManagementPage = lazy(() => import('../pages/CatalogManagementPage').then((m) => ({ default: m.CatalogManagementPage })));
 const PublishedShopsPage = lazy(() => import('../pages/PublishedShopsPage').then((m) => ({ default: m.PublishedShopsPage })));
 const PublishedShopEditPage = lazy(() => import('../pages/PublishedShopEditPage').then((m) => ({ default: m.PublishedShopEditPage })));
 const OwnerShopsPage = lazy(() => import('../pages/OwnerShopsPage').then((m) => ({ default: m.OwnerShopsPage })));
@@ -112,6 +113,15 @@ export const AppRoutes: React.FC = () => (
           element={
             <ProtectedRoute requireAdmin>
               <PublishedShopEditPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/catalogs"
+          element={
+            <ProtectedRoute requireAdmin>
+              <CatalogManagementPage />
             </ProtectedRoute>
           }
         />

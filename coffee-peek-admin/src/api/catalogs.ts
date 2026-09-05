@@ -1,6 +1,6 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
-import { ApiResponse } from './core/types';
+import type { ApiResponse } from './core/types';
 
 export interface CatalogCity {
   id: string;
@@ -28,6 +28,7 @@ export interface CatalogRoaster {
 export interface CatalogBrewMethod {
   id: string;
   name: string;
+  category?: number;
 }
 
 export interface CatalogShopTag {
@@ -76,7 +77,66 @@ export async function getCatalogBeans(): Promise<ApiResponse<CatalogBean[]>> {
   const response = await httpClient.get<unknown>(API_ENDPOINTS.CATALOGS.BEANS, {
     requiresAuth: false,
   });
-  return { ...response, data: unwrapList<CatalogBean>(response.data, 'coffeeBeans') };
+  return { ...response, data: unwrapList<CatalogBean>(response.data, 'beans', 'coffeeBeans') };
+}
+
+export type CatalogKind = 'cities' | 'beans' | 'equipments' | 'roasters' | 'brewMethods';
+export type CatalogItem = CatalogCity | CatalogBean | CatalogEquipment | CatalogRoaster | CatalogBrewMethod;
+
+export interface NamedCatalogRequest {
+  name: string;
+}
+
+export interface EquipmentCatalogRequest {
+  brand: string;
+  modelName: string;
+  category: number;
+}
+
+export interface BrewMethodCatalogRequest {
+  name: string;
+  category: number;
+}
+
+export type CatalogMutationRequest = NamedCatalogRequest | EquipmentCatalogRequest | BrewMethodCatalogRequest;
+
+const adminCatalogEndpoints: Record<CatalogKind, { base: string; byId: (id: string) => string }> = {
+  cities: { base: API_ENDPOINTS.ADMIN.CATALOG_CITIES, byId: API_ENDPOINTS.ADMIN.CATALOG_CITY_BY_ID },
+  beans: { base: API_ENDPOINTS.ADMIN.CATALOG_BEANS, byId: API_ENDPOINTS.ADMIN.CATALOG_BEAN_BY_ID },
+  equipments: { base: API_ENDPOINTS.ADMIN.CATALOG_EQUIPMENTS, byId: API_ENDPOINTS.ADMIN.CATALOG_EQUIPMENT_BY_ID },
+  roasters: { base: API_ENDPOINTS.ADMIN.CATALOG_ROASTERS, byId: API_ENDPOINTS.ADMIN.CATALOG_ROASTER_BY_ID },
+  brewMethods: { base: API_ENDPOINTS.ADMIN.CATALOG_BREW_METHODS, byId: API_ENDPOINTS.ADMIN.CATALOG_BREW_METHOD_BY_ID },
+};
+
+const catalogLoaders: Record<CatalogKind, () => Promise<ApiResponse<CatalogItem[]>>> = {
+  cities: getCatalogCities,
+  beans: getCatalogBeans,
+  equipments: getCatalogEquipments,
+  roasters: getCatalogRoasters,
+  brewMethods: getCatalogBrewMethods,
+};
+
+export function getAdminCatalog(kind: CatalogKind): Promise<ApiResponse<CatalogItem[]>> {
+  return catalogLoaders[kind]();
+}
+
+export function createAdminCatalogItem(
+  kind: CatalogKind,
+  body: CatalogMutationRequest
+): Promise<ApiResponse<CatalogItem>> {
+  return httpClient.post<CatalogItem>(adminCatalogEndpoints[kind].base, body);
+}
+
+export function updateAdminCatalogItem(
+  kind: CatalogKind,
+  id: string,
+  body: CatalogMutationRequest
+): Promise<ApiResponse<CatalogItem>> {
+  return httpClient.patch<CatalogItem>(adminCatalogEndpoints[kind].byId(id), body);
+}
+
+export function deleteAdminCatalogItem(kind: CatalogKind, id: string): Promise<ApiResponse<void>> {
+  return httpClient.delete<void>(adminCatalogEndpoints[kind].byId(id));
 }
 
 export async function getCatalogRoasters(): Promise<ApiResponse<CatalogRoaster[]>> {

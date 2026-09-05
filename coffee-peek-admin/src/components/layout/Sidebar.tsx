@@ -58,6 +58,11 @@ const IconTags = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
   </svg>
 );
+const IconCatalog = () => (
+  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6.5A2.5 2.5 0 016.5 4H10a2 2 0 012 2v14a2 2 0 00-2-2H6.5A2.5 2.5 0 014 15.5v-9zM20 6.5A2.5 2.5 0 0017.5 4H14a2 2 0 00-2 2v14a2 2 0 012-2h3.5a2.5 2.5 0 002.5-2.5v-9z" />
+  </svg>
+);
 const IconMap = () => (
   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -97,6 +102,7 @@ const NAV: NavEntry[] = [
     },
   },
   { type: 'link', item: { path: '/reviews', label: 'Отзывы', icon: <IconReview />, moderatorOnly: true } },
+  { type: 'link', item: { path: '/catalogs', label: 'Каталог', icon: <IconCatalog />, adminOnly: true } },
   { type: 'link', item: { path: '/shop-tags', label: 'Теги', icon: <IconTags />, adminOnly: true } },
   { type: 'link', item: { path: '/audit', label: 'Audit log', icon: <IconAudit />, adminOnly: true } },
   { type: 'link', item: { path: '/my-shops', label: 'Мои кофейни', icon: <IconShop />, ownerOnly: true } },
