@@ -5,6 +5,7 @@ import Mascot, { type MascotPose } from './Mascot';
 import { StarIcon } from './icons';
 import { Camera, Check, MapPin, X } from './Icon';
 import WobbleRing from './WobbleRing';
+import { CHECK_IN_LIMITS, todayInputValue } from '../utils/checkInForm';
 
 interface RatingColumn {
   key: 'coffee' | 'service' | 'place';
@@ -16,6 +17,8 @@ interface RatingColumn {
 
 interface CheckInFormProps {
   shopName: string;
+  header: string;
+  onHeaderChange: (value: string) => void;
   note: string;
   onNoteChange: (value: string) => void;
   isPublic: boolean;
@@ -92,6 +95,8 @@ const PhotoThumb: React.FC<{ file: File; onRemove: () => void }> = ({ file, onRe
 
 const CheckInForm: React.FC<CheckInFormProps> = ({
   shopName,
+  header,
+  onHeaderChange,
   note,
   onNoteChange,
   isPublic,
@@ -126,7 +131,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
   ];
 
   return (
-    <div className="flex flex-col gap-5">
+    <fieldset disabled={isSubmitting} className="flex flex-col gap-5 border-0 p-0 m-0 min-w-0">
       <header className="space-y-1.5">
         <h2
           className="font-extended font-bold text-[28px] leading-none tracking-tight"
@@ -175,6 +180,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
         <input
             id="checkin-date"
             type="date"
+            max={todayInputValue()}
             value={visitedDate}
             onChange={(e) => onVisitedDateChange(e.target.value)}
             className="w-full rounded-2xl py-3 px-4 font-body text-sm outline-none"
@@ -220,20 +226,42 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
         )}
       </div>
 
+      {isPublic && (
+        <div className="space-y-1.5">
+          <label htmlFor="checkin-header" className="block font-body text-[13px]" style={{ color: colors.textSecondary }}>
+            Заголовок отзыва (обязательно)
+          </label>
+          <input
+            id="checkin-header"
+            value={header}
+            onChange={(e) => onHeaderChange(e.target.value)}
+            required
+            minLength={CHECK_IN_LIMITS.headerMin}
+            maxLength={CHECK_IN_LIMITS.headerMax}
+            placeholder="Коротко о впечатлении"
+            className="w-full rounded-2xl px-4 py-3 font-body text-sm outline-none"
+            style={{ backgroundColor: isDark ? colors.input : '#FFFFFF', color: colors.textPrimary, border: fieldBorder }}
+          />
+        </div>
+      )}
+
       <div className="space-y-1.5">
         <label
           htmlFor="checkin-note"
           className="block font-body text-[13px]"
           style={{ color: colors.textSecondary }}
         >
-          Заметка (необязательно)
+          {isPublic ? 'Описание отзыва (обязательно)' : 'Заметка (необязательно)'}
         </label>
         <textarea
           id="checkin-note"
           value={note}
           onChange={(e) => onNoteChange(e.target.value)}
           placeholder="Расскажите о вашем визите..."
-          maxLength={500}
+          required={isPublic}
+          minLength={isPublic ? CHECK_IN_LIMITS.noteMin : undefined}
+          maxLength={CHECK_IN_LIMITS.noteMax}
+          aria-describedby={isPublic ? 'checkin-note-hint' : undefined}
           rows={3}
           className="w-full rounded-2xl px-4 py-3 font-body text-sm resize-none outline-none placeholder:opacity-50"
           style={{
@@ -242,6 +270,11 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
             border: fieldBorder,
           }}
         />
+        {isPublic && (
+          <p id="checkin-note-hint" className="font-body text-xs" style={{ color: colors.textSecondary }}>
+            От 10 до 500 символов
+          </p>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-4">
@@ -256,6 +289,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
         <button
           type="button"
           role="switch"
+          aria-label="Сделать чекин публичным"
           aria-checked={isPublic}
           onClick={() => onPublicChange(!isPublic)}
           className="inline-flex h-7 w-12 shrink-0 items-center rounded-full border-0 p-[2px] appearance-none"
@@ -287,7 +321,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           </>
         )}
       </button>
-    </div>
+    </fieldset>
   );
 };
 

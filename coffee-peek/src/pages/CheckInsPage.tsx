@@ -8,18 +8,8 @@ import WobbleRing from '../components/WobbleRing';
 import { AppIcon } from '../components/icons';
 import Mascot from '../components/Mascot';
 import { getErrorMessage } from '../utils/errorHandler';
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime()) || d.getFullYear() < 1990) return 'Дата не указана';
-  return d.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+import { formatCheckInDate } from '../utils/checkInForm';
+import PhotoLightbox from '../components/PhotoLightbox';
 
 const PAGE_SIZE = 10;
 
@@ -32,6 +22,7 @@ const CheckInsPage: React.FC = () => {
   const gold = COLORS.primary;
 
   const [page, setPage] = useState(1);
+  const [gallery, setGallery] = useState<{ images: string[]; shopName: string; initialIndex: number } | null>(null);
   const { data, isLoading, isFetching, error, refetch } = useCheckIns(page, PAGE_SIZE);
 
   const items = data?.items ?? [];
@@ -159,7 +150,7 @@ const CheckInsPage: React.FC = () => {
                       <p style={{
                         margin: '6px 0 0', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: colors.textSecondary,
                       }}>
-                        {formatDate(item.createdAt)}
+                        {formatCheckInDate(item)}
                       </p>
                     </button>
 
@@ -191,6 +182,24 @@ const CheckInsPage: React.FC = () => {
                       {item.note}
                     </p>
                   ) : null}
+                  {(item.photos?.length ?? 0) > 0 && (
+                    <div className="flex gap-2 overflow-x-auto mt-3 pb-1">
+                      {[...(item.photos ?? [])]
+                        .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
+                        .filter((photo) => photo.fullUrl)
+                        .map((photo, index, photos) => (
+                          <button
+                            key={photo.id ?? photo.storageKey}
+                            type="button"
+                            aria-label={`Открыть фото ${index + 1} из чекина`}
+                            onClick={() => setGallery({ images: photos.map((p) => p.fullUrl!), shopName: item.shopName || 'Кофейня', initialIndex: index })}
+                            className="w-24 h-24 shrink-0 rounded-xl overflow-hidden p-0 border-0"
+                          >
+                            <img src={photo.fullUrl!} alt={`Фото посещения: ${item.shopName || 'Кофейня'}`} loading="lazy" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -240,6 +249,7 @@ const CheckInsPage: React.FC = () => {
           </>
         )}
       </div>
+      {gallery && <PhotoLightbox {...gallery} onClose={() => setGallery(null)} />}
     </div>
   );
 };

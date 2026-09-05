@@ -342,23 +342,31 @@ export interface CreateCheckInRequest {
   coffeeShopId: string;
   isPublic: boolean;
   visitedAt: string; // ISO date string, required
-  note?: string; // Optional, but required if isPublic = true
-  photos?: Array<{
+  note: string | null; // Required for public check-ins only.
+  header: string | null; // Required for public check-ins only.
+  photos: Array<{
     fileName: string;
     contentType: string;
     storageKey: string;
     size: number;
   }>;
-  rating?: RatingDto; // Optional, but required if isPublic = true
+  rating: RatingDto;
+}
+
+export interface CreateCheckInResponse {
+  checkInId: string;
+  reviewId?: string | null;
 }
 
 export interface CheckInDto {
   id: string;
   userId: string;
   shopId: string;
-  shopName: string;
-  note?: string;
+  shopName: string | null;
+  note?: string | null;
   createdAt: string;
+  visitedAt?: string | null;
+  photos?: ShortPhotoMetadataDto[] | null;
   reviewId?: string | null;
 }
 
@@ -767,8 +775,8 @@ export async function updateReview(
  */
 export async function createCheckIn(
   request: CreateCheckInRequest
-): Promise<ApiResponse<any>> {
-  return httpClient.post<any>(
+): Promise<ApiResponse<CreateCheckInResponse>> {
+  return httpClient.post<CreateCheckInResponse>(
     API_ENDPOINTS.CHECK_IN.BASE,
     request,
     { requiresAuth: true }
