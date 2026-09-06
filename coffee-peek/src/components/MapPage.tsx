@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getCoffeeShopsByMapBounds, getCoffeeShopById, MapShop, DetailedCoffeeShop } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
-import { Star, BookmarkSimple } from '@/components/Icon';
+import { ArrowRight, Star } from '@/components/Icon';
+import Button from './Button';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
 import {
@@ -21,6 +23,7 @@ import {
 import { getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
 
 const MapPage: React.FC = () => {
+  const navigate = useNavigate();
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -303,13 +306,17 @@ const MapPage: React.FC = () => {
                       </p>
                     </div>
 
-                    <button type="button" className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
-                      <BookmarkSimple
-                        size={24}
-                        className={`${themeClasses.text.secondary} hover:${themeClasses.text.primary} transition-colors`}
-                      />
-                    </button>
                   </div>
+
+                  <Button
+                    type="button"
+                    onClick={() => navigate(`/shops/${selectedShop.id}`)}
+                    className="w-full min-h-11 mt-4"
+                    aria-label={`Открыть кофейню ${selectedShop.title}`}
+                  >
+                    Открыть кофейню
+                    <ArrowRight size={18} aria-hidden="true" />
+                  </Button>
                 </div>
               )}
             </div>
