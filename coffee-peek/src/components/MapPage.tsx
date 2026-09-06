@@ -254,9 +254,9 @@ const MapPage: React.FC = () => {
               if (!map) return;
               void loadCoffeeShops(map).then((loaded) => paintMarkersRef.current(loaded));
             }}
-            className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 z-[500] px-6 py-3 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-full shadow-lg hover:bg-opacity-90 transition-all`}
+            className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] w-[calc(100%-2rem)] max-w-xs sm:w-auto sm:min-w-[280px] min-h-12 px-8 py-3 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-full shadow-lg hover:bg-opacity-90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EAB308]/50 focus-visible:ring-offset-2`}
           >
-            <span className={`${themeClasses.text.primary} font-medium`}>Поиск в этой области</span>
+            <span className={`${themeClasses.text.primary} font-medium whitespace-nowrap`}>Поиск в этой области</span>
           </button>
 
           {selectedShop && (
