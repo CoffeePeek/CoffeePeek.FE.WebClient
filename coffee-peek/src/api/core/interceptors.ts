@@ -15,32 +15,32 @@ import { normalizeDayOfWeek } from '../../utils/shopUtils';
  * Token Manager для работы с токенами аутентификации
  */
 export class TokenManager {
-  private static ACCESS_TOKEN_KEY = 'accessToken';
-  private static REFRESH_TOKEN_KEY = 'refreshToken';
+  private static accessToken: string | null = null;
 
   static getAccessToken(): string | null {
-    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+    return this.accessToken;
   }
 
-  static getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
-  }
-
-  static setTokens(accessToken: string, refreshToken?: string): void {
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
-    if (refreshToken) {
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
-    }
+  static setAccessToken(accessToken: string): void {
+    this.accessToken = accessToken;
   }
 
   static clearTokens(): void {
-    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    this.accessToken = null;
   }
 
   static isAuthenticated(): boolean {
     return !!this.getAccessToken();
   }
+}
+
+// Remove credentials persisted by older builds. Browser auth now keeps the
+// short-lived access token in memory and the refresh token in an HttpOnly cookie.
+try {
+  globalThis.localStorage?.removeItem('accessToken');
+  globalThis.localStorage?.removeItem('refreshToken');
+} catch {
+  // Storage can be unavailable in private/restricted browser contexts.
 }
 
 const TOKEN_PATH = '/api/tokens';
@@ -65,33 +65,12 @@ export function pickAuthTokens(payload: unknown): { accessToken?: string; refres
   return { accessToken, refreshToken };
 }
 
-async function putRefresh(baseURL: string, refreshToken: string, withAccess: boolean): Promise<Response> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  };
-  const access = TokenManager.getAccessToken();
-  if (withAccess && access) {
-    headers.Authorization = `Bearer ${access}`;
-  }
+async function performRefresh(baseURL: string): Promise<boolean> {
   return fetch(`${baseURL}${TOKEN_PATH}`, {
     method: 'PUT',
-    headers,
+    headers: { Accept: 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ refreshToken }),
-  });
-}
-
-async function performRefresh(baseURL: string): Promise<boolean> {
-  const refreshToken = TokenManager.getRefreshToken();
-  if (!refreshToken) return false;
-
-  try {
-    // Expired JWT is rejected at the gateway, so try without Bearer first.
-    let response = await putRefresh(baseURL, refreshToken, false);
-    if (!response.ok && response.status === 401) {
-      response = await putRefresh(baseURL, refreshToken, true);
-    }
+  }).then(async response => {
     if (!response.ok) return false;
 
     const json = await response.json();
@@ -99,12 +78,12 @@ async function performRefresh(baseURL: string): Promise<boolean> {
     const tokens = pickAuthTokens(payload);
     if (!tokens.accessToken) return false;
 
-    TokenManager.setTokens(tokens.accessToken, tokens.refreshToken ?? refreshToken);
+    TokenManager.setAccessToken(tokens.accessToken);
     return true;
-  } catch (err) {
+  }).catch(err => {
     logger.error('[Auth] Refresh failed', err);
     return false;
-  }
+  });
 }
 
 export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
@@ -118,7 +97,6 @@ export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
 export async function ensureFreshAccessToken(baseURL: string): Promise<boolean> {
   const access = TokenManager.getAccessToken();
   if (access && !isTokenExpired(access)) return true;
-  if (!TokenManager.getRefreshToken()) return false;
   return tryRefreshAccessToken(baseURL);
 }
 
@@ -154,6 +132,7 @@ export function requestInterceptor(
   const { skipAuthHeader: _skipAuthHeader, ...fetchOptions } = options;
   return {
     ...fetchOptions,
+    credentials: fetchOptions.credentials ?? 'include',
     headers,
   };
 }

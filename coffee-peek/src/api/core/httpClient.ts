@@ -103,7 +103,7 @@ class HttpClient {
         !isAuthTokenEndpoint(endpoint);
 
       if (canRefresh) {
-        const hadSession = !!TokenManager.getAccessToken() || !!TokenManager.getRefreshToken();
+        const hadSession = !!TokenManager.getAccessToken();
         const refreshed = await tryRefreshAccessToken(this.baseURL);
         if (refreshed) {
           return this.request<T>(endpoint, { ...options, _retry: true });

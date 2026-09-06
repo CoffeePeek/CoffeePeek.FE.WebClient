@@ -10,8 +10,7 @@ export interface LoginRequest {
 
 export interface AuthData {
   accessToken: string;
-  refreshToken?: string;
-  expiresIn?: number;
+  accessTokenExpiresAt?: string;
 }
 
 export async function login(credentials: LoginRequest): Promise<ApiResponse<AuthData>> {
@@ -24,9 +23,8 @@ export async function login(credentials: LoginRequest): Promise<ApiResponse<Auth
   if (response.success && response.data) {
     const tokens = pickAuthTokens(response.data);
     if (tokens.accessToken) {
-      TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+      TokenManager.setAccessToken(tokens.accessToken);
       response.data.accessToken = tokens.accessToken;
-      response.data.refreshToken = tokens.refreshToken;
     }
   }
 
@@ -41,19 +39,18 @@ export async function logout(): Promise<void> {
   }
 }
 
-export async function refreshAccessToken(refreshToken: string): Promise<ApiResponse<AuthData>> {
+export async function refreshAccessToken(): Promise<ApiResponse<AuthData>> {
   const response = await httpClient.put<AuthData>(
     API_ENDPOINTS.AUTH.REFRESH,
-    { refreshToken },
+    undefined,
     { requiresAuth: false, skipAuthHeader: true }
   );
 
   if (response.success && response.data) {
     const tokens = pickAuthTokens(response.data);
     if (tokens.accessToken) {
-      TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+      TokenManager.setAccessToken(tokens.accessToken);
       response.data.accessToken = tokens.accessToken;
-      response.data.refreshToken = tokens.refreshToken;
     }
   }
 

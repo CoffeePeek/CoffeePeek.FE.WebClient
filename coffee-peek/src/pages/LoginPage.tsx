@@ -14,6 +14,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 import Mascot from '../components/Mascot';
 import { forceLogoutMessage } from '../realtime/forceLogout';
+import { TokenManager } from '../api/core/interceptors';
 
 interface AuthFieldProps {
   icon?: React.ReactNode;
@@ -145,12 +146,11 @@ const LoginPage: React.FC = () => {
     try {
       const response = await login({ email, password });
       if (!response.data?.accessToken) throw new Error('Токен не получен от сервера');
-      const { accessToken, refreshToken } = response.data;
+      const { accessToken } = response.data;
       if (isTokenExpired(accessToken)) throw new Error('Токен истёк');
       parseJWT(accessToken);
       getUserRoles(accessToken);
-      localStorage.setItem('accessToken', accessToken);
-      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      TokenManager.setAccessToken(accessToken);
       updateUserFromToken(accessToken);
       navigate(from, { replace: true });
     } catch (err: unknown) {

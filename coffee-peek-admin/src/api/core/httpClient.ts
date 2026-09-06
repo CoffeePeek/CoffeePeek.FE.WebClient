@@ -33,7 +33,7 @@ class HttpClient {
       const fresh = await ensureFreshAccessToken(this.baseURL);
       const access = TokenManager.getAccessToken();
       if (!fresh && (!access || isTokenExpired(access))) {
-        if (access || TokenManager.getRefreshToken()) {
+        if (access) {
           TokenManager.clearTokens();
           emitSessionInvalidated('session_revoked');
         }
@@ -57,7 +57,7 @@ class HttpClient {
         !isAuthTokenEndpoint(endpoint);
 
       if (canRefresh) {
-        const hadSession = !!TokenManager.getAccessToken() || !!TokenManager.getRefreshToken();
+        const hadSession = !!TokenManager.getAccessToken();
         const refreshed = await tryRefreshAccessToken(this.baseURL);
         if (refreshed) {
           return this.request<T>(endpoint, { ...options, _retry: true });

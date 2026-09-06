@@ -25,8 +25,7 @@ export interface RegisterRequest {
  */
 export interface AuthData {
   accessToken: string;
-  refreshToken?: string;
-  expiresIn?: number;
+  accessTokenExpiresAt?: string;
 }
 
 export interface AuthResponse extends ApiResponse<AuthData> {}
@@ -151,10 +150,9 @@ export async function login(credentials: LoginRequest): Promise<AuthResponse> {
 
   const tokens = pickAuthTokens(response.data);
   if (response.success && tokens.accessToken) {
-    TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+    TokenManager.setAccessToken(tokens.accessToken);
     if (response.data) {
       response.data.accessToken = tokens.accessToken;
-      response.data.refreshToken = tokens.refreshToken;
     }
   }
 
@@ -192,9 +190,8 @@ export async function googleLogin(idToken: string): Promise<AuthResponse> {
   if (response.success && response.data) {
     const tokens = pickAuthTokens(response.data);
     if (tokens.accessToken) {
-      TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+      TokenManager.setAccessToken(tokens.accessToken);
       response.data.accessToken = tokens.accessToken;
-      response.data.refreshToken = tokens.refreshToken;
     }
   }
 
@@ -202,12 +199,12 @@ export async function googleLogin(idToken: string): Promise<AuthResponse> {
 }
 
 /**
- * Обновление tokens с помощью refresh token
+ * Обновление access token через HttpOnly refresh cookie.
  */
-export async function refreshAccessToken(refreshToken: string): Promise<AuthResponse> {
+export async function refreshAccessToken(): Promise<AuthResponse> {
   const response = await httpClient.put<AuthData>(
     API_ENDPOINTS.AUTH.REFRESH,
-    { refreshToken },
+    undefined,
     {
       requiresAuth: false,
       skipAuthHeader: true,
@@ -217,9 +214,8 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthResp
   if (response.success && response.data) {
     const tokens = pickAuthTokens(response.data);
     if (tokens.accessToken) {
-      TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+      TokenManager.setAccessToken(tokens.accessToken);
       response.data.accessToken = tokens.accessToken;
-      response.data.refreshToken = tokens.refreshToken;
     }
   }
 
