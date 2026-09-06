@@ -67,21 +67,20 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
 const Stepper: React.FC<{ dark: boolean }> = ({ dark }) => {
   const steps = ['Email', 'Вход', 'Готово'];
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
+    <div className="mb-4 flex min-w-0 items-center justify-center gap-0.5 min-[360px]:gap-1 sm:mb-5 sm:gap-2">
       {steps.map((s, i) => (
         <React.Fragment key={s}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99,
+          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-1.5 py-1 text-[10px] font-semibold min-[360px]:px-2 sm:px-2.5 sm:text-[11px]" style={{
             background: i <= 1 ? 'rgba(234,179,8,0.12)' : dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
             color: i <= 1 ? '#EAB308' : dark ? '#A39E93' : '#78716C',
-            fontFamily: '"RF Dewi Expanded"', fontSize: 11, fontWeight: 600,
+            fontFamily: '"RF Dewi Expanded"',
           }}>
             <span style={{ width: 16, height: 16, borderRadius: 99, background: i <= 1 ? '#EAB308' : 'transparent', border: i <= 1 ? 'none' : `1px solid ${dark ? '#3D2F28' : '#E7E5E4'}`, color: '#1A1412', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
               {i < 1 ? <Check size={10} weight="bold" /> : i + 1}
             </span>
             {s}
           </span>
-          {i < steps.length - 1 && <span style={{ width: 16, height: 1, background: dark ? '#3D2F28' : '#E7E5E4' }} />}
+          {i < steps.length - 1 && <span className="h-px w-1.5 shrink-0 min-[360px]:w-2 sm:w-4" style={{ background: dark ? '#3D2F28' : '#E7E5E4' }} />}
         </React.Fragment>
       ))}
     </div>
@@ -188,7 +187,7 @@ const LoginPage: React.FC = () => {
   );
 
   return (
-    <div style={{ minHeight: '100dvh', background: bg, display: 'grid', placeItems: 'center', position: 'relative', overflow: 'hidden', transition: 'background .3s' }}>
+    <div className="min-h-[100dvh] flex items-start justify-center overflow-x-hidden overflow-y-auto py-3 sm:items-center sm:py-6" style={{ background: bg, position: 'relative', transition: 'background .3s' }}>
       {/* Dotted pattern (dark only) */}
       {dark && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#2D241F 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.6, pointerEvents: 'none' }} />}
       {/* Gold glows */}
@@ -282,7 +281,7 @@ const LoginPage: React.FC = () => {
       )}
 
       {/* Card */}
-      <div style={{ width: 'min(100%, 460px)', padding: '16px', position: 'relative', zIndex: 2, boxSizing: 'border-box' }}>
+      <div className="relative z-[2] box-border w-full max-w-[460px] px-3 pt-14 sm:p-4">
         <button
           type="button"
           className="logo-btn"
@@ -296,7 +295,7 @@ const LoginPage: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: -40, position: 'relative', zIndex: 3 }} aria-hidden>
           <Mascot pose="laptop" size={128} eager />
         </div>
-        <div style={{ padding: 40, paddingTop: 48, borderRadius: 24, background: cardBg, backdropFilter: dark ? 'blur(24px)' : 'none', border: `1px solid ${cardBorder}`, boxShadow: dark ? '0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 32px rgba(0,0,0,0.08)', transition: 'all .3s' }}>
+        <div className="rounded-3xl px-5 pb-5 pt-12 sm:p-10 sm:pt-12" style={{ background: cardBg, backdropFilter: dark ? 'blur(24px)' : 'none', border: `1px solid ${cardBorder}`, boxShadow: dark ? '0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 32px rgba(0,0,0,0.08)', transition: 'all .3s' }}>
 
           {passedEmail && <Stepper dark={dark} />}
 
@@ -388,13 +387,15 @@ const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          <div style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="mt-[18px] flex items-center justify-between gap-2">
             <button type="button" onClick={() => navigate(passedEmail ? '/register' : '/')}
-              style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              className="whitespace-nowrap text-[11px] min-[360px]:text-xs sm:text-[13px]"
+              style={{ padding: 0, background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <ArrowLeft size={14} /> Назад
             </button>
             <button type="button" onClick={() => navigate('/register')}
-              style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              className="whitespace-nowrap text-[11px] min-[360px]:text-xs sm:text-[13px]"
+              style={{ padding: 0, background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, cursor: 'pointer' }}>
               Создать аккаунт
             </button>
           </div>

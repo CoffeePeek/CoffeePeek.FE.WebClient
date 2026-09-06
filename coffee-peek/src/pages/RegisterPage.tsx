@@ -381,13 +381,15 @@ const RegisterPage: React.FC = () => {
                 </>
               )}
 
-              <div className="mt-[18px] flex flex-wrap items-center justify-between gap-2">
+              <div className="mt-[18px] flex items-center justify-between gap-2">
                 <button type="button" onClick={() => step === 'registration' ? setStep('email') : navigate('/')}
-                  style={{ background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  className="whitespace-nowrap text-[11px] min-[360px]:text-xs sm:text-[13px]"
+                  style={{ padding: 0, background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <ArrowLeft size={14} /> Назад
                 </button>
                 <button type="button" onClick={() => navigate('/login')}
-                  style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  className="whitespace-nowrap text-[11px] min-[360px]:text-xs sm:text-[13px]"
+                  style={{ padding: 0, background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, cursor: 'pointer' }}>
                   Уже есть аккаунт
                 </button>
               </div>
