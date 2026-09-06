@@ -4,7 +4,7 @@
 
 import { httpClient, TokenManager } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
-import { ApiResponse } from './core/types';
+import type { ApiResponse } from './core/types';
 import { pickAuthTokens } from './core/interceptors';
 
 // ==================== Request/Response Types ====================
@@ -42,12 +42,6 @@ export interface CheckExistsData {
 }
 
 export interface CheckExistsResponse extends ApiResponse<CheckExistsData> {}
-
-export interface ApiError {
-  message: string;
-  errors?: Record<string, string[]>;
-  status?: number;
-}
 
 // UserProfile interfaces
 export interface UserProfile {
@@ -172,26 +166,17 @@ export async function login(credentials: LoginRequest): Promise<AuthResponse> {
  * Возвращает CreateEntityResponse с isSuccess и message
  */
 export async function register(userData: RegisterRequest): Promise<CreateEntityResponse> {
-  try {
-    const response = await httpClient.post<any>(
-      API_ENDPOINTS.AUTH.REGISTER,
-      userData,
-      { requiresAuth: false }
-    );
+  const response = await httpClient.post<any>(
+    API_ENDPOINTS.AUTH.REGISTER,
+    userData,
+    { requiresAuth: false, skipAuthHeader: true }
+  );
 
-    return {
-      isSuccess: response.data?.isSuccess !== false,
-      message: response.message || 'Регистрация успешна',
-      data: response.data,
-    };
-  } catch (error: any) {
-    // Специальная обработка ошибок регистрации
-    throw {
-      message: error.message || 'Ошибка регистрации',
-      errors: error.errors,
-      status: error.status,
-    } as ApiError;
-  }
+  return {
+    isSuccess: response.data?.isSuccess !== false,
+    message: response.message || 'Регистрация успешна',
+    data: response.data,
+  };
 }
 
 /**

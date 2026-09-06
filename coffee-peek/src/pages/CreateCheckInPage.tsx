@@ -8,8 +8,9 @@ import { useRequireAuth } from '../hooks/useRequireAuth';
 import { useToast } from '../contexts/ToastContext';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
-import { buildCheckInRequest, CheckInValidationError, todayInputValue } from '../utils/checkInForm';
+import { buildCheckInRequest, CheckInValidationError } from '../utils/checkInForm';
 import { useCreateCheckIn } from '../hooks/queries/useCheckIns';
+import { useCheckInDraft } from '../hooks/useCheckInDraft';
 import { getErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { ArrowLeft } from '../components/Icon';
@@ -44,26 +45,43 @@ const CreateCheckInPage: React.FC = () => {
     }
   }, [shopFromState, shopId, navigate]);
 
-  const [header, setHeader] = useState('');
-  const [note, setNote] = useState('');
   const { mutateAsync: submitCheckIn } = useCreateCheckIn();
-  const [isPublic, setIsPublic] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [visitedDate, setVisitedDate] = useState(todayInputValue);
-  const [ratingCoffee, setRatingCoffee] = useState(5);
-  const [ratingService, setRatingService] = useState(5);
-  const [ratingPlace, setRatingPlace] = useState(5);
-  const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos } = usePhotoUpload();
+  const { draft, updateDraft, clearDraft } = useCheckInDraft(shopId);
+  const { selectedFiles, uploadingPhotos, setSelectedFiles, uploadPhotos, clearFiles } = usePhotoUpload();
+
+  useEffect(() => {
+    if (!draft) return;
+    setSelectedFiles(draft.selectedFiles);
+  }, [draft?.coffeeShopId, setSelectedFiles]);
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    const nextFiles = [...selectedFiles, ...Array.from(event.target.files)];
+    setSelectedFiles(nextFiles);
+    updateDraft({ selectedFiles: nextFiles });
+    event.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    const nextFiles = selectedFiles.filter((_, fileIndex) => fileIndex !== index);
+    setSelectedFiles(nextFiles);
+    updateDraft({ selectedFiles: nextFiles });
+  };
 
   const handleSubmit = async () => {
     if (isSubmitting || !requireAuth()) return;
-    if (!shopId) return;
+    if (!shopId || !draft) return;
 
     let request: CreateCheckInRequest;
     try {
       request = buildCheckInRequest({
-        coffeeShopId: shopId, isPublic, header, note, visitedDate,
-        rating: { coffee: ratingCoffee, service: ratingService, place: ratingPlace },
+        coffeeShopId: shopId,
+        isPublic: draft.isPublic,
+        header: draft.header,
+        note: draft.note,
+        visitedDate: draft.visitedDate,
+        rating: draft.rating,
       });
     } catch (err) {
       showToast(err instanceof CheckInValidationError ? err.message : 'Проверьте данные чекина', 'error');
@@ -76,7 +94,9 @@ const CreateCheckInPage: React.FC = () => {
       const response = await submitCheckIn(request);
       if (!response.success || response.isSuccess === false) throw new Error('Не удалось создать чекин');
       if (response.success) {
-        showToast(isPublic ? 'Чекин создан! Отзыв отправлен на модерацию.' : 'Чекин успешно создан!', 'success');
+        showToast(draft.isPublic ? 'Чекин создан! Отзыв отправлен на модерацию.' : 'Чекин успешно создан!', 'success');
+        clearDraft();
+        clearFiles();
         navigate(`/shops/${shopId}`);
       }
     } catch (err) {
@@ -87,7 +107,7 @@ const CreateCheckInPage: React.FC = () => {
     }
   };
 
-  if (!shopFromState) {
+  if (!shopFromState || !draft) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.background }}>
         <WobbleRing size={48} />
@@ -120,20 +140,20 @@ const CreateCheckInPage: React.FC = () => {
           >
             <CheckInForm
               shopName={shopFromState.name}
-              header={header}
-              onHeaderChange={setHeader}
-              note={note}
-              onNoteChange={setNote}
-              isPublic={isPublic}
-              onPublicChange={setIsPublic}
-              visitedDate={visitedDate}
-              onVisitedDateChange={setVisitedDate}
-              ratingCoffee={ratingCoffee}
-              ratingService={ratingService}
-              ratingPlace={ratingPlace}
-              onRatingCoffee={setRatingCoffee}
-              onRatingService={setRatingService}
-              onRatingPlace={setRatingPlace}
+              header={draft.header}
+              onHeaderChange={(header) => updateDraft({ header })}
+              note={draft.note}
+              onNoteChange={(note) => updateDraft({ note })}
+              isPublic={draft.isPublic}
+              onPublicChange={(isPublic) => updateDraft({ isPublic })}
+              visitedDate={draft.visitedDate}
+              onVisitedDateChange={(visitedDate) => updateDraft({ visitedDate })}
+              ratingCoffee={draft.rating.coffee}
+              ratingService={draft.rating.service}
+              ratingPlace={draft.rating.place}
+              onRatingCoffee={(coffee) => updateDraft({ rating: { ...draft.rating, coffee } })}
+              onRatingService={(service) => updateDraft({ rating: { ...draft.rating, service } })}
+              onRatingPlace={(place) => updateDraft({ rating: { ...draft.rating, place } })}
               selectedFiles={selectedFiles}
               onFileSelect={handleFileSelect}
               onRemoveFile={removeFile}

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { register, checkEmailExists } from '../api/auth';
-import { getErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { LEGAL_ROUTES } from '../constants/legalRoutes';
 import { logger } from '../utils/logger';
@@ -15,21 +14,33 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import Mascot from '../components/Mascot';
 import ThemeToggle from '../components/ThemeToggle';
+import {
+  parseRegistrationApiError,
+  validateRegistrationEmail,
+  validateRegistrationForm,
+  validateRegistrationPassword,
+  validateRegistrationUserName,
+  type RegistrationField,
+  type RegistrationFieldErrors,
+} from '../utils/registrationValidation';
 
 type RegisterStep = 'email' | 'registration' | 'success';
 
 // ── Auth field ─────────────────────────────────────────────────────
 interface AuthFieldProps {
+  id: string;
   icon?: React.ReactNode; type?: string; placeholder?: string;
   value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   label?: string; trailing?: React.ReactNode; autoFocus?: boolean;
-  error?: string; dark: boolean;
+  error?: string; hint?: string; dark: boolean;
+  onBlur?: () => void; autoComplete?: string; maxLength?: number;
 }
 
-const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder, value, onChange, label, trailing, autoFocus, error, dark }) => {
+const AuthField: React.FC<AuthFieldProps> = ({ id, icon, type = 'text', placeholder, value, onChange, label, trailing, autoFocus, error, hint, dark, onBlur, autoComplete, maxLength }) => {
   const [focused, setFocused] = useState(false);
+  const descriptionId = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   return (
-    <label style={{ display: 'block', textAlign: 'left' }}>
+    <label htmlFor={id} style={{ display: 'block', textAlign: 'left' }}>
       {label && <div style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
       <div style={{ position: 'relative' }}>
         {icon && (
@@ -37,8 +48,9 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
             {icon}
           </span>
         )}
-        <input type={type} placeholder={placeholder} value={value} onChange={onChange} autoFocus={autoFocus}
-          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+        <input id={id} type={type} placeholder={placeholder} value={value} onChange={onChange} autoFocus={autoFocus}
+          autoComplete={autoComplete} maxLength={maxLength} aria-invalid={Boolean(error)} aria-describedby={descriptionId}
+          onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); onBlur?.(); }}
           style={{
             width: '100%', height: 50, borderRadius: 12,
             border: `1px solid ${error ? '#EF4444' : focused ? '#D4A84B' : dark ? '#3D2F28' : 'rgba(158,123,54,.4)'}`,
@@ -52,8 +64,13 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
         {trailing}
       </div>
       {error && (
-        <div style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div id={`${id}-error`} role="alert" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
           <WarningCircle size={14} weight="fill" />{error}
+        </div>
+      )}
+      {!error && hint && (
+        <div id={`${id}-hint`} style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: dark ? '#A39E93' : '#78716C', marginTop: 6, lineHeight: 1.4 }}>
+          {hint}
         </div>
       )}
     </label>
@@ -110,18 +127,36 @@ const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<RegistrationFieldErrors>({});
   const [agreeToPrivacy, setAgreeToPrivacy] = useState(false);
   const { theme } = useTheme();
   const dark = theme === 'dark';
 
-  const emailValid = /\S+@\S+\.\S+/.test(email.trim());
-  const canRegister = userName.trim().length >= 2 && password.length >= 8 && agreeToPrivacy;
+  const clearFieldError = (field: RegistrationField) => {
+    setFieldErrors(current => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const showApiError = (error: unknown, context: 'register' | 'emailCheck' = 'register') => {
+    const parsed = parseRegistrationApiError(error, context);
+    setFieldErrors(parsed.fieldErrors);
+    setGlobalError(parsed.globalError);
+  };
 
   const handleEmailCheck = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    if (!emailValid) { setError('Введите корректный email'); return; }
+    setGlobalError(null);
+    const emailError = validateRegistrationEmail(email);
+    if (emailError) {
+      setFieldErrors({ email: emailError });
+      return;
+    }
+    setFieldErrors({});
     setIsLoading(true);
     try {
       const response = await checkEmailExists(email.trim());
@@ -131,7 +166,7 @@ const RegisterPage: React.FC = () => {
         setStep('registration');
       }
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'register'));
+      showApiError(err, 'emailCheck');
       logger.error('Email check error:', err);
     } finally {
       setIsLoading(false);
@@ -140,18 +175,20 @@ const RegisterPage: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    if (!agreeToPrivacy) { setError('Необходимо согласиться с условиями'); return; }
-    if (password.length < 8) { setError('Пароль должен содержать минимум 8 символов'); return; }
+    setGlobalError(null);
+    const validationErrors = validateRegistrationForm({ email, userName, password, agreeToPrivacy });
+    setFieldErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
+
     setIsLoading(true);
     try {
+      const response = await register({ email: email.trim(), password, userName: userName.trim() });
+      if (!response.isSuccess) throw new Error(response.message || 'Ошибка при регистрации');
       localStorage.setItem('privacyConsent', 'accepted');
       localStorage.setItem('privacyConsentDate', new Date().toISOString());
-      const response = await register({ email, password, userName: userName || undefined });
-      if (!response.isSuccess) throw new Error(response.message || 'Ошибка при регистрации');
       setStep('success');
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'register'));
+      showApiError(err);
       logger.error('Registration error:', err);
     } finally {
       setIsLoading(false);
@@ -235,7 +272,10 @@ const RegisterPage: React.FC = () => {
                     Мы проверим, есть ли у вас уже аккаунт CoffeePeek.
                   </p>
                   <form onSubmit={handleEmailCheck} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <AuthField icon={<Envelope size={20} color={gold} />} type="email" placeholder="name@example.com" autoFocus value={email} onChange={e => setEmail(e.target.value)} error={error || undefined} dark={dark} />
+                    <AuthField id="register-email" icon={<Envelope size={20} color={gold} />} type="email" placeholder="name@example.com" autoFocus autoComplete="email"
+                      value={email} onChange={e => { setEmail(e.target.value); clearFieldError('email'); setGlobalError(null); }}
+                      onBlur={() => { if (email.trim()) { const message = validateRegistrationEmail(email); if (message) setFieldErrors(current => ({ ...current, email: message })); } }}
+                      error={fieldErrors.email} dark={dark} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"RF Dewi Expanded"', margin: '2px 0' }}>
                       <div style={{ flex: 1, height: 1, background: cardBorder }} />ИЛИ<div style={{ flex: 1, height: 1, background: cardBorder }} />
                     </div>
@@ -244,7 +284,7 @@ const RegisterPage: React.FC = () => {
                       disabled={isLoading}
                       onAuthenticated={(accessToken) => {
                         if (isTokenExpired(accessToken)) {
-                          setError('Токен истёк');
+                          setGlobalError('Сессия Google истекла. Попробуйте войти ещё раз.');
                           return;
                         }
                         parseJWT(accessToken);
@@ -252,10 +292,15 @@ const RegisterPage: React.FC = () => {
                         updateUserFromToken(accessToken);
                         navigate(from, { replace: true });
                       }}
-                      onError={setError}
+                      onError={setGlobalError}
                     />
-                    <button type="submit" disabled={!emailValid || isLoading}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: !emailValid || isLoading ? 'not-allowed' : 'pointer', opacity: !emailValid ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                    {globalError && (
+                      <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, color: '#B91C1C', background: dark ? 'rgba(239,68,68,.12)' : '#FEF2F2', border: '1px solid rgba(239,68,68,.3)', fontFamily: '"RF Dewi Expanded"', fontSize: 12, lineHeight: 1.45 }}>
+                        <WarningCircle size={16} weight="fill" style={{ flexShrink: 0, marginTop: 1 }} />{globalError}
+                      </div>
+                    )}
+                    <button type="submit" disabled={isLoading}
+                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.65 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Проверяем…</> : 'Продолжить'}
                     </button>
                   </form>
@@ -269,24 +314,32 @@ const RegisterPage: React.FC = () => {
                   <div style={{ margin: '8px 0 22px', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 12, background: dark ? 'rgba(255,255,255,0.03)' : '#F9F8F6', border: `1px solid ${cardBorder}` }}>
                     <Envelope size={16} color="#D4A84B" />
                     <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: textPrimary, flex: 1 }}>{email}</span>
-                    <button type="button" onClick={() => setStep('email')} style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Изменить</button>
+                    <button type="button" onClick={() => { setStep('email'); setFieldErrors({}); setGlobalError(null); }} style={{ background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Изменить</button>
                   </div>
                   <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <AuthField icon={<User size={20} color={gold} />} placeholder="Как вас зовут?" label="Имя" autoFocus value={userName} onChange={e => setUserName(e.target.value)} dark={dark} />
+                    <AuthField id="register-username" icon={<User size={20} color={gold} />} placeholder="например, coffee_fan" label="Имя пользователя" autoFocus autoComplete="username" maxLength={30}
+                      value={userName} onChange={e => { setUserName(e.target.value); clearFieldError('userName'); setGlobalError(null); }}
+                      onBlur={() => { if (userName.trim()) { const message = validateRegistrationUserName(userName); if (message) setFieldErrors(current => ({ ...current, userName: message })); } }}
+                      error={fieldErrors.userName} hint="От 3 до 30 символов: буквы, цифры, точка или _" dark={dark} />
                     <div>
-                      <AuthField icon={<Lock size={20} color={gold} />} type={showPwd ? 'text' : 'password'} placeholder="Не менее 8 символов" label="Пароль"
-                        value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
+                      <AuthField id="register-password" icon={<Lock size={20} color={gold} />} type={showPwd ? 'text' : 'password'} placeholder="Не менее 8 символов" label="Пароль" autoComplete="new-password"
+                        value={password} onChange={e => { setPassword(e.target.value); clearFieldError('password'); setGlobalError(null); }}
+                        onBlur={() => { if (password) { const message = validateRegistrationPassword(password); if (message) setFieldErrors(current => ({ ...current, password: message })); } }}
+                        trailing={PwdToggle} error={fieldErrors.password} hint="Минимум 8 символов" dark={dark} />
                       <StrengthBar password={password} dark={dark} />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                      <input
-                        id="register-agree"
-                        type="checkbox"
-                        checked={agreeToPrivacy}
-                        onChange={e => setAgreeToPrivacy(e.target.checked)}
-                        style={{ marginTop: 2, width: 18, height: 18, accentColor: gold, flexShrink: 0 }}
-                      />
-                      <label htmlFor="register-agree" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted, lineHeight: 1.45, cursor: 'pointer' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                        <input
+                          id="register-agree"
+                          type="checkbox"
+                          checked={agreeToPrivacy}
+                          aria-invalid={Boolean(fieldErrors.privacy)}
+                          aria-describedby={fieldErrors.privacy ? 'register-agree-error' : undefined}
+                          onChange={e => { setAgreeToPrivacy(e.target.checked); if (e.target.checked) clearFieldError('privacy'); setGlobalError(null); }}
+                          style={{ marginTop: 2, width: 18, height: 18, accentColor: gold, flexShrink: 0 }}
+                        />
+                        <label htmlFor="register-agree" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted, lineHeight: 1.45, cursor: 'pointer' }}>
                         Я принимаю{' '}
                         <button
                           type="button"
@@ -304,10 +357,21 @@ const RegisterPage: React.FC = () => {
                           обработку персональных данных
                         </button>
                         .
-                      </label>
+                        </label>
+                      </div>
+                      {fieldErrors.privacy && (
+                        <div id="register-agree-error" role="alert" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <WarningCircle size={14} weight="fill" />{fieldErrors.privacy}
+                        </div>
+                      )}
                     </div>
-                    <button type="submit" disabled={isLoading || !canRegister}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading || !canRegister ? 'not-allowed' : 'pointer', opacity: !canRegister ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                    {globalError && (
+                      <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, color: '#B91C1C', background: dark ? 'rgba(239,68,68,.12)' : '#FEF2F2', border: '1px solid rgba(239,68,68,.3)', fontFamily: '"RF Dewi Expanded"', fontSize: 12, lineHeight: 1.45 }}>
+                        <WarningCircle size={16} weight="fill" style={{ flexShrink: 0, marginTop: 1 }} />{globalError}
+                      </div>
+                    )}
+                    <button type="submit" disabled={isLoading}
+                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.65 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Создаём…</> : 'Создать аккаунт'}
                     </button>
                   </form>
