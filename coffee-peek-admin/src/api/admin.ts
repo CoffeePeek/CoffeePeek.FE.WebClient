@@ -1103,14 +1103,31 @@ export async function getPublishedShops(
 }
 
 export async function getPublishedShopById(id: string): Promise<ApiResponse<PublishedShop>> {
-  const response = await httpClient.get<Record<string, unknown>>(API_ENDPOINTS.ADMIN.SHOP_BY_ID(id));
+  const [response, publicResult] = await Promise.all([
+    httpClient.get<Record<string, unknown>>(API_ENDPOINTS.ADMIN.SHOP_BY_ID(id)),
+    httpClient
+      .get<Record<string, unknown>>(API_ENDPOINTS.COFFEE_SHOP.BY_ID(id), { requiresAuth: false })
+      .catch(() => undefined),
+  ]);
   const raw = response.data ?? {};
   const nested = ['shop', 'Shop', 'coffeeShop', 'CoffeeShop']
     .map((key) => raw[key])
     .find((value) => value && typeof value === 'object' && !Array.isArray(value));
+  const adminShop = (nested as Record<string, unknown> | undefined) ?? raw;
+  const publicRaw = publicResult?.data ?? {};
+  const publicNested = ['shopDto', 'ShopDto', 'shop', 'Shop', 'coffeeShop', 'CoffeeShop']
+    .map((key) => publicRaw[key])
+    .find((value) => value && typeof value === 'object' && !Array.isArray(value));
+  const publicShop = (publicNested as Record<string, unknown> | undefined) ?? publicRaw;
+  const mergedShop = {
+    ...adminShop,
+    type: adminShop.type ?? adminShop.Type ?? publicShop.type ?? publicShop.Type,
+    tags: adminShop.tags ?? adminShop.Tags ?? publicShop.tags ?? publicShop.Tags,
+    tagSlugs: adminShop.tagSlugs ?? adminShop.TagSlugs ?? publicShop.tagSlugs ?? publicShop.TagSlugs,
+  };
   return {
     ...response,
-    data: mapPublishedShop((nested as Record<string, unknown> | undefined) ?? raw),
+    data: mapPublishedShop(mergedShop),
   };
 }
 
@@ -1177,9 +1194,10 @@ export async function patchPublishedShopFocus(
   id: string,
   coffeeFocus: CoffeeFocus
 ): Promise<ApiResponse<PublishedShop>> {
+  const focusValue = COFFEE_FOCUS_TO_API[coffeeFocus];
   const response = await httpClient.patch<Record<string, unknown>>(
     API_ENDPOINTS.ADMIN.SHOP_FOCUS(id),
-    { coffeeFocus: COFFEE_FOCUS_TO_API[coffeeFocus] }
+    { coffeeFocus: focusValue, type: focusValue }
   );
   return { ...response, data: mapPublishedShop(response.data) };
 }
