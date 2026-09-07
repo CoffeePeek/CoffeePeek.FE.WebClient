@@ -88,6 +88,17 @@ const Toggle: React.FC<{
   </label>
 );
 
+const Field: React.FC<{
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}> = ({ label, children, className = '' }) => (
+  <label className={`block min-w-0 space-y-1.5 ${className}`}>
+    <span className="block text-xs font-medium text-text-muted dark:text-stone-400">{label}</span>
+    {children}
+  </label>
+);
+
 const StoreSettingsCard: React.FC<{
   title: string;
   form: StoreFormState;
@@ -100,8 +111,7 @@ const StoreSettingsCard: React.FC<{
       <h3 className="font-display text-base font-semibold text-text-main dark:text-white">{title}</h3>
       <p className="mt-1 text-xs text-text-muted dark:text-stone-400">URL и доступность канала</p>
     </div>
-    <div className="space-y-2">
-      <label className="block text-xs font-medium text-text-muted dark:text-stone-400">URL</label>
+    <Field label="Ссылка магазина">
       <input
         type="url"
         value={form.url}
@@ -109,14 +119,14 @@ const StoreSettingsCard: React.FC<{
         placeholder="https://..."
         className="search-input w-full"
       />
-    </div>
+    </Field>
     <Toggle
       checked={form.enabled}
       onChange={(enabled) => onFormChange({ ...form, enabled })}
-      label="Enabled"
+      label="Канал включён"
     />
     <Button type="button" onClick={onSave} loading={loading} className="w-full sm:w-auto min-h-[44px]">
-      Save
+      Сохранить
     </Button>
   </Card>
 );
@@ -230,9 +240,9 @@ export const AppDistributionPage: React.FC = () => {
   return (
     <div className="page-container">
       <div>
-        <h2 className="page-header-title">Мобильное приложение</h2>
+        <h2 className="page-header-title">Приложения</h2>
         <p className="mt-0.5 text-sm text-text-muted dark:text-stone-400 font-body">
-          Каналы скачивания и production APK для CoffeePeek.
+          Каналы скачивания и production APK для CoffeePeek
         </p>
       </div>
 
@@ -254,13 +264,13 @@ export const AppDistributionPage: React.FC = () => {
             {production?.version ?? '—'}
           </p>
           <p className="mt-1 text-sm text-text-muted dark:text-stone-400">
-            APK enabled: {production?.available ? 'Yes' : 'No'}
+            APK {production?.available ? 'включён' : 'выключен'}
           </p>
         </Card>
         <Card>
           <p className="text-xs uppercase tracking-wide text-text-muted dark:text-stone-400">Google Play</p>
           <p className="mt-2 text-lg font-bold text-text-main dark:text-white font-display">
-            {configQuery.data?.android.googlePlay.available ? 'Enabled' : 'Disabled'}
+            {configQuery.data?.android.googlePlay.available ? 'Включён' : 'Выключен'}
           </p>
           <p className="mt-1 truncate text-sm text-text-muted dark:text-stone-400">
             {configQuery.data?.android.googlePlay.url ?? 'URL не задан'}
@@ -269,7 +279,7 @@ export const AppDistributionPage: React.FC = () => {
         <Card>
           <p className="text-xs uppercase tracking-wide text-text-muted dark:text-stone-400">App Store</p>
           <p className="mt-2 text-lg font-bold text-text-main dark:text-white font-display">
-            {configQuery.data?.ios.appStore.available ? 'Enabled' : 'Disabled'}
+            {configQuery.data?.ios.appStore.available ? 'Включён' : 'Выключен'}
           </p>
           <p className="mt-1 truncate text-sm text-text-muted dark:text-stone-400">
             {configQuery.data?.ios.appStore.url ?? 'URL не задан'}
@@ -296,28 +306,42 @@ export const AppDistributionPage: React.FC = () => {
 
       <Card className="space-y-4">
         <div>
-          <h3 className="font-display text-base font-semibold text-text-main dark:text-white">Создать APK release</h3>
+          <h3 className="font-display text-base font-semibold text-text-main dark:text-white">Создать APK-релиз</h3>
           <p className="mt-1 text-xs text-text-muted dark:text-stone-400">
-            Создание не публикует release автоматически.
+            Создание не публикует релиз автоматически
           </p>
         </div>
         <form
-          className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6"
           onSubmit={(e) => {
             e.preventDefault();
             createReleaseMutation.mutate();
           }}
         >
-          <input className="search-input" placeholder="Version" value={releaseForm.version} onChange={(e) => setReleaseForm({ ...releaseForm, version: e.target.value })} required />
-          <input className="search-input" placeholder="VersionCode" type="number" min={1} value={releaseForm.versionCode || ''} onChange={(e) => setReleaseForm({ ...releaseForm, versionCode: Number(e.target.value) })} required />
-          <input className="search-input md:col-span-2" placeholder="FileUrl" type="url" value={releaseForm.fileUrl} onChange={(e) => setReleaseForm({ ...releaseForm, fileUrl: e.target.value })} required />
-          <input className="search-input" placeholder="FileName" value={releaseForm.fileName} onChange={(e) => setReleaseForm({ ...releaseForm, fileName: e.target.value })} required />
-          <input className="search-input" placeholder="FileSize bytes" type="number" min={1} value={releaseForm.fileSize || ''} onChange={(e) => setReleaseForm({ ...releaseForm, fileSize: Number(e.target.value) })} required />
-          <input className="search-input" placeholder="SHA-256" value={releaseForm.sha256 ?? ''} onChange={(e) => setReleaseForm({ ...releaseForm, sha256: e.target.value })} />
-          <input className="search-input" type="datetime-local" value={toLocalDateTimeInput(releaseForm.releasedAt)} onChange={(e) => setReleaseForm({ ...releaseForm, releasedAt: new Date(e.target.value).toISOString() })} required />
-          <div className="md:col-span-2 xl:col-span-4">
+          <Field label="Версия" className="xl:col-span-2">
+            <input className="search-input w-full" placeholder="0.1.0" value={releaseForm.version} onChange={(e) => setReleaseForm({ ...releaseForm, version: e.target.value })} required />
+          </Field>
+          <Field label="Код версии" className="xl:col-span-2">
+            <input className="search-input w-full" placeholder="128" type="number" min={1} value={releaseForm.versionCode || ''} onChange={(e) => setReleaseForm({ ...releaseForm, versionCode: Number(e.target.value) })} required />
+          </Field>
+          <Field label="Размер файла, байты" className="xl:col-span-2">
+            <input className="search-input w-full" placeholder="48234496" type="number" min={1} value={releaseForm.fileSize || ''} onChange={(e) => setReleaseForm({ ...releaseForm, fileSize: Number(e.target.value) })} required />
+          </Field>
+          <Field label="Ссылка на файл" className="md:col-span-2 xl:col-span-4">
+            <input className="search-input w-full" placeholder="https://..." type="url" value={releaseForm.fileUrl} onChange={(e) => setReleaseForm({ ...releaseForm, fileUrl: e.target.value })} required />
+          </Field>
+          <Field label="Имя файла" className="md:col-span-2 xl:col-span-2">
+            <input className="search-input w-full" placeholder="coffeepeek.apk" value={releaseForm.fileName} onChange={(e) => setReleaseForm({ ...releaseForm, fileName: e.target.value })} required />
+          </Field>
+          <Field label="SHA-256" className="md:col-span-2 xl:col-span-4">
+            <input className="search-input w-full font-mono" placeholder="Опционально" value={releaseForm.sha256 ?? ''} onChange={(e) => setReleaseForm({ ...releaseForm, sha256: e.target.value })} />
+          </Field>
+          <Field label="Дата релиза" className="md:col-span-2 xl:col-span-2">
+            <input className="search-input w-full" type="datetime-local" value={toLocalDateTimeInput(releaseForm.releasedAt)} onChange={(e) => setReleaseForm({ ...releaseForm, releasedAt: new Date(e.target.value).toISOString() })} required />
+          </Field>
+          <div className="md:col-span-2 xl:col-span-6">
             <Button type="submit" loading={createReleaseMutation.isPending} className="w-full sm:w-auto min-h-[44px]">
-              Создать release
+              Создать релиз
             </Button>
           </div>
         </form>
@@ -325,19 +349,19 @@ export const AppDistributionPage: React.FC = () => {
 
       <Card padding="none">
         <div className="border-b border-border-light p-4 dark:border-border-dark">
-          <h3 className="font-display text-base font-semibold text-text-main dark:text-white">Android releases</h3>
+          <h3 className="font-display text-base font-semibold text-text-main dark:text-white">Android-релизы</h3>
         </div>
         <div className="table-scroll">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase text-text-muted dark:bg-white/5 dark:text-stone-400">
               <tr>
-                <th className="px-4 py-3">Version</th>
-                <th className="px-4 py-3">VersionCode</th>
-                <th className="px-4 py-3">FileName</th>
-                <th className="px-4 py-3">FileSize</th>
-                <th className="px-4 py-3">ReleasedAt</th>
-                <th className="px-4 py-3">IsActive</th>
-                <th className="px-4 py-3 text-right">Action</th>
+                <th className="px-4 py-3">Версия</th>
+                <th className="px-4 py-3">Код</th>
+                <th className="px-4 py-3">Файл</th>
+                <th className="px-4 py-3">Размер</th>
+                <th className="px-4 py-3">Дата релиза</th>
+                <th className="px-4 py-3">Статус</th>
+                <th className="px-4 py-3 text-right">Действие</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-light dark:divide-border-dark">
@@ -365,7 +389,7 @@ export const AppDistributionPage: React.FC = () => {
                   <td className="px-4 py-3 text-text-muted dark:text-stone-300">{formatDate(release.releasedAt)}</td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${release.isActive ? 'bg-primary text-black' : 'bg-gray-100 text-text-muted dark:bg-white/10 dark:text-stone-300'}`}>
-                      {release.isActive ? 'Production' : 'No'}
+                      {release.isActive ? 'Production' : 'Не активен'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -388,8 +412,8 @@ export const AppDistributionPage: React.FC = () => {
 
       <ConfirmModal
         isOpen={!!releaseToPublish}
-        title="Сделать release production?"
-        message={releaseToPublish ? `Будет опубликована версия ${releaseToPublish.version}. Для старых версий это выполнит rollback.` : ''}
+        title="Сделать релиз production?"
+        message={releaseToPublish ? `Будет опубликована версия ${releaseToPublish.version}. Для старых версий это выполнит откат.` : ''}
         confirmLabel="Сделать production"
         onConfirm={async () => {
           if (releaseToPublish) {

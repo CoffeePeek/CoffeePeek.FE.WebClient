@@ -112,7 +112,7 @@ const NAV: NavEntry[] = [
   { type: 'link', item: { path: '/audit', label: 'Audit log', icon: <IconAudit />, adminOnly: true } },
   { type: 'link', item: { path: '/my-shops', label: 'Мои кофейни', icon: <IconShop />, ownerOnly: true } },
   { type: 'link', item: { path: '/users', label: 'Пользователи', icon: <IconUsers />, adminOnly: true } },
-  { type: 'link', item: { path: '/app-distribution', label: 'Мобильное приложение', icon: <IconMobile />, adminOnly: true } },
+  { type: 'link', item: { path: '/app-distribution', label: 'Приложения', icon: <IconMobile />, adminOnly: true } },
   { type: 'link', item: { path: '/cache', label: 'Кеши', icon: <IconCache />, adminOnly: true } },
 ];
 

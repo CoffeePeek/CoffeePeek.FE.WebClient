@@ -18,10 +18,34 @@ import { MobileAppDownload } from '../components/mobile-app';
 import {
   Coffee, SignOut, Camera, PencilSimple, Check,
   ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
-  ArrowClockwise, X, MapPin,
+  ArrowClockwise, X, MapPin, Lock,
 } from '@/components/Icon';
 
-// ── Main component ───────────────────────────────────────────────────
+const styles = `
+  .settings-page { --settings-max: 820px; }
+  .settings-wrap { width: min(var(--settings-max), calc(100vw - 32px)); margin: 0 auto; }
+  .settings-card { border-radius: 14px; overflow: hidden; }
+  .settings-profile-head { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: start; padding: 22px; }
+  .settings-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 14px 28px 22px 130px; }
+  .settings-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 18px 28px; }
+  .settings-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 20px; padding: 20px 28px; }
+  .settings-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 16px 0; }
+  .settings-release-card { margin-top: 28px; padding: 22px; }
+  @media (max-width: 720px) {
+    .settings-wrap { width: min(100%, calc(100vw - 24px)); }
+    .settings-profile-head { grid-template-columns: auto 1fr; gap: 14px; padding: 18px; }
+    .settings-edit-action { grid-column: 1 / -1; width: 100%; justify-content: stretch !important; }
+    .settings-edit-action > button { flex: 1; }
+    .settings-info-grid { grid-template-columns: 1fr; padding: 0 18px 18px; }
+    .settings-stats { grid-template-columns: 1fr; padding: 14px 18px; }
+    .settings-row { grid-template-columns: 1fr; padding: 18px; }
+    .settings-row-action { width: 100%; justify-content: center; }
+    .settings-actions { flex-direction: column; padding: 18px 0 0; }
+    .settings-actions button { width: 100%; }
+    .settings-release-card { margin-top: 20px; padding: 18px; }
+  }
+`;
+
 const SettingsPage: React.FC = () => {
   usePageTitle('Настройки');
   const { user, isLoading: userLoading, updateUserProfile, logout } = useUser();
@@ -44,16 +68,15 @@ const SettingsPage: React.FC = () => {
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
-  // Colors
   const gold = COLORS.primary;
   const goldWarm = '#D4A84B';
   const bg = isDark ? '#1A1412' : '#F5F4F2';
   const surface = isDark ? '#2D241F' : '#fff';
+  const softSurface = isDark ? 'rgba(255,255,255,0.04)' : '#F9F8F7';
   const border = isDark ? '#3D2F28' : '#E7E5E4';
   const textPrimary = isDark ? '#fff' : '#1C1917';
   const textMuted = isDark ? '#A39E93' : '#78716C';
 
-  // ── Data loading ──────────────────────────────────────────────────
   const loadProfile = useCallback(async () => {
     if (userId === undefined) return;
     try {
@@ -74,7 +97,6 @@ const SettingsPage: React.FC = () => {
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
-  // ── Edit handlers ─────────────────────────────────────────────────
   const handleEditStart = useCallback(() => {
     if (!profile) return;
     const original = { userName: profile.userName || '', email: profile.email || '', about: profile.about || '' };
@@ -140,9 +162,7 @@ const SettingsPage: React.FC = () => {
         setProfile(refreshed.data);
         updateUserProfile(refreshed.data);
       }
-      if (emailChanged) {
-        setPendingEmailConfirmation(editValues.email);
-      }
+      if (emailChanged) setPendingEmailConfirmation(editValues.email);
       setIsEditing(false);
       setEditValues({});
       setOriginalValues({});
@@ -172,7 +192,6 @@ const SettingsPage: React.FC = () => {
     }
   }, []);
 
-  // ── Loading state ─────────────────────────────────────────────────
   if (userLoading || isLoading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg }}>
@@ -181,17 +200,13 @@ const SettingsPage: React.FC = () => {
     );
   }
 
-  const displayAvatar = avatarPreview || profile?.avatarUrl;
-  const displayName = profile?.userName || user?.email?.split('@')[0] || 'Пользователь';
-
   return (
-    <div style={{ minHeight: '100vh', background: bg }}>
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    <div className="settings-page" style={{ minHeight: '100vh', background: bg }}>
+      <style>{styles}</style>
 
-      {/* ── Page title bar ──────────────────────────────────────── */}
       <div style={{ borderBottom: `1px solid ${border}`, background: isDark ? 'rgba(45,36,31,0.7)' : surface, backdropFilter: 'blur(12px)' }}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8" style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 18, color: textPrimary, letterSpacing: '-0.01em' }}>Настройки</h1>
+        <div className="settings-wrap" style={{ height: 48, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <h1 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 18, color: textPrimary }}>Настройки</h1>
           {saveSuccess && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: '#15803D', fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 700 }}>
               <CheckCircle size={14} />
@@ -201,135 +216,106 @@ const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-        {/* Error banner */}
+      <main className="settings-wrap" style={{ padding: '14px 0 44px' }}>
         {error && (
-          <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: '#EF4444' }}>{error}</p>
-          </div>
+          <Notice tone="error" border={border} onClose={() => setError(null)}>
+            {error}
+          </Notice>
         )}
 
-        {/* Pending email confirmation banner */}
         {pendingEmailConfirmation && !isEditing && (
-          <div style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 12, background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.28)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <Envelope size={18} color="#EAB308" style={{ flexShrink: 0, marginTop: 2 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: '#EAB308', lineHeight: 1.6 }}>
-                Письмо отправлено на{' '}
-                <strong>{pendingEmailConfirmation}</strong>.<br />
-                Старый email активен до подтверждения.
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <button
-                  onClick={handleResendConfirmation}
-                  disabled={isResending}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
-                  {isResending
-                    ? <><span style={{ width: 12, height: 12, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Отправляем…</>
-                    : <><ArrowClockwise size={14} />Отправить повторно</>
-                  }
-                </button>
-                {resendSuccess && (
-                  <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <CheckCircle size={14} />
-                    Письмо отправлено
-                  </span>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => setPendingEmailConfirmation(null)}
-              style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#A39E93', flexShrink: 0 }}>
-              <X size={18} />
-            </button>
-          </div>
+          <EmailNotice
+            email={pendingEmailConfirmation}
+            isResending={isResending}
+            resendSuccess={resendSuccess}
+            onResend={handleResendConfirmation}
+            onClose={() => setPendingEmailConfirmation(null)}
+            border={border}
+          />
         )}
 
-        {/* ── Account bar: mini profile + quick actions ──────────── */}
-        <div style={{ padding: '14px', borderRadius: 16, border: `1px solid ${border}`, background: surface, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ width: 42, height: 42, borderRadius: 99, flexShrink: 0, overflow: 'hidden', background: displayAvatar ? 'transparent' : `${gold}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {displayAvatar
-              ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 17, color: goldWarm }}>{displayName[0]?.toUpperCase()}</span>
-            }
-          </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
-            {profile?.createdAtUtc && (
-              <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted }}>с {new Date(profile.createdAtUtc).getFullYear()}</p>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => navigate('/coffee-shops/new')}
-              style={{ padding: '9px 14px', borderRadius: 10, background: surface, border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'background .15s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = `${gold}14`)}
-              onMouseLeave={e => (e.currentTarget.style.background = surface)}>
-              <Storefront size={16} color={gold} />
-              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, color: gold, whiteSpace: 'nowrap' }}>Добавить кофейню</span>
-            </button>
-            <button onClick={() => { logout(); navigate('/'); }}
-              style={{ padding: '9px 14px', borderRadius: 10, background: surface, border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'background .15s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
-              onMouseLeave={e => (e.currentTarget.style.background = surface)}>
-              <SignOut size={16} color="#EF4444" />
-              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, color: '#EF4444', whiteSpace: 'nowrap' }}>Выйти</span>
-            </button>
-          </div>
-        </div>
+        {profile && (
+          <ProfileCard
+            profile={profile}
+            isEditing={isEditing}
+            editValues={editValues}
+            isSaving={isSaving}
+            selectedAvatarFile={selectedAvatarFile}
+            avatarPreview={avatarPreview}
+            surface={surface}
+            softSurface={softSurface}
+            border={border}
+            textPrimary={textPrimary}
+            textMuted={textMuted}
+            gold={gold}
+            goldWarm={goldWarm}
+            theme={theme}
+            onSetTheme={setTheme}
+            onEditStart={handleEditStart}
+            onEditCancel={handleEditCancel}
+            onSave={handleSave}
+            onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
+            onAvatarSelect={handleAvatarSelect}
+            onOpenCheckIns={() => navigate('/check-ins')}
+            onOpenReviews={() => navigate('/reviews')}
+          />
+        )}
 
-        {/* ── Everything on one screen ───────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {profile && (
-            <ProfileSection
-              profile={profile}
-              isEditing={isEditing}
-              editValues={editValues}
-              isSaving={isSaving}
-              selectedAvatarFile={selectedAvatarFile}
-              avatarPreview={avatarPreview}
-              isDark={isDark}
-              surface={surface}
-              border={border}
-              textPrimary={textPrimary}
-              textMuted={textMuted}
-              gold={gold}
-              goldWarm={goldWarm}
-              onEditStart={handleEditStart}
-              onEditCancel={handleEditCancel}
-              onSave={handleSave}
-              onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
-              onAvatarSelect={handleAvatarSelect}
-              onOpenCheckIns={() => navigate('/check-ins')}
-              onOpenReviews={() => navigate('/reviews')}
-            />
-          )}
-          <SecuritySection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
-          <AppearanceSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} theme={theme} onSetTheme={setTheme} />
-          <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
+        <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
+
+        <div className="settings-actions">
+          <ActionButton onClick={() => navigate('/coffee-shops/new')} border={border} background={surface} color={gold} icon={<Storefront size={15} color={gold} />}>
+            Добавить кофейню
+          </ActionButton>
+          <ActionButton onClick={() => { logout(); navigate('/'); }} border={border} background={surface} color="#EF4444" icon={<SignOut size={15} color="#EF4444" />}>
+            Выйти
+          </ActionButton>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
 
-// ── Profile section ──────────────────────────────────────────────────
+const Notice: React.FC<{ children: React.ReactNode; tone: 'error' | 'warning'; border: string; onClose: () => void }> = ({ children, tone, border, onClose }) => (
+  <div style={{ marginBottom: 12, padding: '12px 14px', borderRadius: 12, background: tone === 'error' ? 'rgba(239,68,68,0.08)' : 'rgba(234,179,8,0.08)', border: `1px solid ${tone === 'error' ? 'rgba(239,68,68,0.2)' : border}`, display: 'flex', gap: 10, alignItems: 'center' }}>
+    <p style={{ flex: 1, margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: tone === 'error' ? '#EF4444' : '#EAB308' }}>{children}</p>
+    <button type="button" onClick={onClose} style={{ border: 'none', background: 'transparent', padding: 2, cursor: 'pointer', color: '#A39E93' }}><X size={16} /></button>
+  </div>
+);
 
-interface ProfileSectionProps {
+const EmailNotice: React.FC<{ email: string; isResending: boolean; resendSuccess: boolean; border: string; onResend: () => void; onClose: () => void }> = ({ email, isResending, resendSuccess, border, onResend, onClose }) => (
+  <div style={{ marginBottom: 12, padding: '13px 14px', borderRadius: 12, background: 'rgba(234,179,8,0.08)', border: `1px solid ${border}`, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+    <Envelope size={17} color="#EAB308" style={{ flexShrink: 0, marginTop: 2 }} />
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <p style={{ margin: '0 0 8px', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#EAB308', lineHeight: 1.55 }}>Письмо отправлено на <strong>{email}</strong>. Старый email активен до подтверждения.</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <button onClick={onResend} disabled={isResending} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
+          <ArrowClockwise size={14} />
+          {isResending ? 'Отправляем...' : 'Отправить повторно'}
+        </button>
+        {resendSuccess && <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle size={14} />Письмо отправлено</span>}
+      </div>
+    </div>
+    <button onClick={onClose} style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#A39E93', flexShrink: 0 }}><X size={18} /></button>
+  </div>
+);
+
+interface ProfileCardProps {
   profile: UserProfile;
   isEditing: boolean;
   editValues: Record<string, string>;
   isSaving: boolean;
   selectedAvatarFile: File | null;
   avatarPreview: string | null;
-  isDark: boolean;
   surface: string;
+  softSurface: string;
   border: string;
   textPrimary: string;
   textMuted: string;
   gold: string;
   goldWarm: string;
+  theme: string;
+  onSetTheme: (theme: 'dark' | 'light') => void;
   onEditStart: () => void;
   onEditCancel: () => void;
   onSave: () => void;
@@ -339,166 +325,106 @@ interface ProfileSectionProps {
   onOpenReviews: () => void;
 }
 
-const ProfileSection: React.FC<ProfileSectionProps> = ({
+const ProfileCard: React.FC<ProfileCardProps> = ({
   profile, isEditing, editValues, isSaving, selectedAvatarFile, avatarPreview,
-  isDark, surface, border, textPrimary, textMuted, gold, goldWarm,
-  onEditStart, onEditCancel, onSave, onInputChange, onAvatarSelect, onOpenCheckIns, onOpenReviews,
+  surface, softSurface, border, textPrimary, textMuted, gold, goldWarm,
+  theme, onSetTheme, onEditStart, onEditCancel, onSave, onInputChange, onAvatarSelect, onOpenCheckIns, onOpenReviews,
 }) => {
   const displayAvatar = avatarPreview || profile.avatarUrl;
   const memberSince = profile.createdAtUtc ? new Date(profile.createdAtUtc).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%', height: 40, borderRadius: 10, border: `1px solid ${border}`,
-    background: isDark ? 'rgba(255,255,255,0.05)' : '#F9F8F7',
-    color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontSize: 14,
-    padding: '0 14px', outline: 'none', boxSizing: 'border-box',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block', fontFamily: '"RF Dewi Expanded"', fontSize: 11, fontWeight: 700,
-    color: textMuted, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 6,
-  };
+  const roleLabel = (profile.roles ?? []).includes('Admin') ? 'Администратор' : 'Ценитель кофе';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-      {/* Avatar + name card */}
-      <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
-
-          {/* Avatar */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{ width: 88, height: 88, borderRadius: 99, border: `3px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, overflow: 'hidden', background: displayAvatar ? 'transparent' : `${gold}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {displayAvatar
-                ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 32, color: goldWarm }}>{profile.userName?.[0]?.toUpperCase() ?? 'U'}</span>
-              }
-            </div>
-            {isEditing && (
-              <label style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 99, background: gold, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: `2px solid ${surface}` }}>
-                <input type="file" accept="image/*" onChange={onAvatarSelect} disabled={isSaving} style={{ display: 'none' }} />
-                <Camera size={14} color="#1A1412" />
-              </label>
-            )}
+    <section className="settings-card" style={{ border: `1px solid ${border}`, background: surface }}>
+      <div className="settings-profile-head">
+        <div style={{ position: 'relative', width: 74, height: 74, flexShrink: 0 }}>
+          <div style={{ width: 74, height: 74, borderRadius: 99, border: `2px solid ${border}`, overflow: 'hidden', background: displayAvatar ? 'transparent' : `${gold}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {displayAvatar ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 26, color: goldWarm }}>{profile.userName?.[0]?.toUpperCase() ?? 'U'}</span>}
           </div>
-
-          {/* Name + badge */}
-          <div style={{ flex: 1, minWidth: 160 }}>
-            <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 22, color: textPrimary, letterSpacing: '-0.01em' }}>{profile.userName}</h2>
-            <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: `${gold}15`, border: `1px solid ${gold}30` }}>
-                <Coffee size={13} color={goldWarm} />
-                <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 11, color: goldWarm, letterSpacing: '.05em', textTransform: 'uppercase' }}>Ценитель кофе</span>
-              </span>
-              {memberSince && (
-                <span style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>С {memberSince}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Edit / Save buttons */}
-          <div style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
-            {!isEditing ? (
-              <button onClick={onEditStart} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
-                <PencilSimple size={16} />
-                Изменить
-              </button>
-            ) : (
-              <>
-                <button onClick={onEditCancel} disabled={isSaving} style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-                  Отмена
-                </button>
-                <button onClick={onSave} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}>
-                  {isSaving
-                    ? <><WobbleRing size={16} color="#1A1412" />Сохранение…</>
-                    : <><Check size={15} />Сохранить</>
-                  }
-                </button>
-              </>
-            )}
-          </div>
+          {isEditing && (
+            <label style={{ position: 'absolute', bottom: -2, right: -2, width: 28, height: 28, borderRadius: 99, background: gold, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: `2px solid ${surface}` }}>
+              <input type="file" accept="image/*" onChange={onAvatarSelect} disabled={isSaving} style={{ display: 'none' }} />
+              <Camera size={14} color="#1A1412" />
+            </label>
+          )}
         </div>
 
-        {/* Stats row */}
-        <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${border}`, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-          {[
-            { Icon: MapPin, value: profile.checkInCount ?? 0, label: 'Чекинов', onClick: onOpenCheckIns as (() => void) | undefined },
-            { Icon: ChatCircleText, value: profile.reviewCount ?? 0, label: 'Отзывов', onClick: onOpenReviews as (() => void) | undefined },
-            { Icon: Storefront, value: profile.addedShopsCount ?? 0, label: 'Добавлено' },
-          ].map(stat => (
-            <div
-              key={stat.label}
-              role={stat.onClick ? 'button' : undefined}
-              tabIndex={stat.onClick ? 0 : undefined}
-              onClick={stat.onClick}
-              onKeyDown={stat.onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); stat.onClick?.(); } } : undefined}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                cursor: stat.onClick ? 'pointer' : 'default',
-                borderRadius: 12, padding: stat.onClick ? '4px 6px' : 0, margin: stat.onClick ? '-4px -6px' : 0,
-              }}
-              title={stat.onClick ? `Смотреть ${stat.label.toLowerCase()}` : undefined}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${gold}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <stat.Icon size={18} color={goldWarm} />
-              </div>
-              <div>
-                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 18, color: textPrimary, lineHeight: 1 }}>{stat.value}</p>
-                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted, marginTop: 2 }}>
-                  {stat.label}{stat.onClick ? ' →' : ''}
-                </p>
-              </div>
-            </div>
-          ))}
+        <div style={{ minWidth: 0 }}>
+          {isEditing ? (
+            <input value={editValues.userName ?? ''} onChange={e => onInputChange('userName', e.target.value)} disabled={isSaving} style={inputStyle(border, textPrimary, softSurface)} />
+          ) : (
+            <h2 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 22, color: textPrimary, letterSpacing: '-0.01em', overflowWrap: 'anywhere' }}>{profile.userName}</h2>
+          )}
+          <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 99, background: `${gold}12`, border: `1px solid ${gold}26` }}>
+              <Coffee size={12} color={goldWarm} />
+              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 10, color: goldWarm, letterSpacing: '.05em', textTransform: 'uppercase' }}>{roleLabel}</span>
+            </span>
+          </div>
+          {memberSince && <p style={{ margin: '8px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>С {memberSince}</p>}
+          {isEditing && selectedAvatarFile && <p style={{ margin: '8px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted, overflowWrap: 'anywhere' }}>Выбран файл: {selectedAvatarFile.name}</p>}
+        </div>
+
+        <div className="settings-edit-action" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          {!isEditing ? (
+            <ButtonLike onClick={onEditStart} border={border} color={textPrimary} background="transparent" icon={<PencilSimple size={15} />}>Изменить</ButtonLike>
+          ) : (
+            <>
+              <ButtonLike onClick={onEditCancel} border={border} color={textPrimary} background="transparent" disabled={isSaving}>Отмена</ButtonLike>
+              <ButtonLike onClick={onSave} border={gold} color="#1A1412" background={gold} disabled={isSaving} icon={isSaving ? <WobbleRing size={14} color="#1A1412" /> : <Check size={14} />}>{isSaving ? 'Сохранение' : 'Сохранить'}</ButtonLike>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Editable fields */}
-      <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-        <h3 style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Личная информация</h3>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 16 }} className="sm:!grid-cols-2">
-          {/* Username */}
-          <div>
-            <label style={labelStyle}>Имя пользователя</label>
-            {isEditing
-              ? <input value={editValues.userName ?? ''} onChange={e => onInputChange('userName', e.target.value)} disabled={isSaving} style={inputStyle} />
-              : <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textPrimary }}>{profile.userName || '—'}</p>
-            }
-          </div>
-
-          {/* Email */}
-          <div>
-            <label style={labelStyle}>Email</label>
-            {isEditing
-              ? <input type="email" value={editValues.email ?? ''} onChange={e => onInputChange('email', e.target.value)} disabled={isSaving} style={inputStyle} />
-              : <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textPrimary }}>{profile.email || '—'}</p>
-            }
-          </div>
-        </div>
-
-        {/* About */}
-        <div style={{ marginTop: 16 }}>
-          <label style={labelStyle}>О себе</label>
-          {isEditing
-            ? <textarea value={editValues.about ?? ''} onChange={e => onInputChange('about', e.target.value)} disabled={isSaving} placeholder="Расскажите немного о себе…" style={{ ...inputStyle, height: 'auto', minHeight: 90, padding: '10px 14px', resize: 'vertical' }} />
-            : <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: profile.about ? textPrimary : textMuted }}>{profile.about || 'Не указано'}</p>
-          }
-        </div>
-
-        {isEditing && selectedAvatarFile && (
-          <p style={{ margin: '12px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>Выбран файл: {selectedAvatarFile.name}</p>
-        )}
+      <div className="settings-info-grid">
+        <InfoField label="Email" value={profile.email || '—'} isEditing={isEditing} input={<input type="email" value={editValues.email ?? ''} onChange={e => onInputChange('email', e.target.value)} disabled={isSaving} style={inputStyle(border, textPrimary, softSurface)} />} textPrimary={textPrimary} textMuted={textMuted} />
+        <InfoField label="О себе" value={profile.about || 'Не указано'} isEditing={isEditing} input={<textarea value={editValues.about ?? ''} onChange={e => onInputChange('about', e.target.value)} disabled={isSaving} placeholder="Расскажите немного о себе..." style={{ ...inputStyle(border, textPrimary, softSurface), height: 72, paddingTop: 10, resize: 'vertical' }} />} textPrimary={profile.about ? textPrimary : textMuted} textMuted={textMuted} />
       </div>
-    </div>
+
+      <Divider border={border} />
+      <div className="settings-stats">
+        <StatItem icon={<MapPin size={17} color={goldWarm} />} value={profile.checkInCount ?? 0} label="Чекинов" onClick={onOpenCheckIns} gold={gold} textPrimary={textPrimary} textMuted={textMuted} />
+        <StatItem icon={<ChatCircleText size={17} color={goldWarm} />} value={profile.reviewCount ?? 0} label="Отзывов" onClick={onOpenReviews} gold={gold} textPrimary={textPrimary} textMuted={textMuted} />
+        <StatItem icon={<Storefront size={17} color={goldWarm} />} value={profile.addedShopsCount ?? 0} label="Добавлено" gold={gold} textPrimary={textPrimary} textMuted={textMuted} />
+      </div>
+
+      <Divider border={border} />
+      <SecurityRow border={border} textPrimary={textPrimary} textMuted={textMuted} softSurface={softSurface} />
+      <Divider border={border} />
+      <AppearanceRow border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} theme={theme} onSetTheme={onSetTheme} />
+    </section>
   );
 };
 
-// ── Security section ─────────────────────────────────────────────────
+function inputStyle(border: string, textPrimary: string, background: string): React.CSSProperties {
+  return {
+    width: '100%', minHeight: 38, borderRadius: 9, border: `1px solid ${border}`,
+    background, color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontSize: 13,
+    padding: '0 12px', outline: 'none', boxSizing: 'border-box',
+  };
+}
 
-const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: string; textPrimary: string; textMuted: string }> = ({
-  isDark, surface, border, textPrimary, textMuted,
-}) => {
+const InfoField: React.FC<{ label: string; value: string; isEditing: boolean; input: React.ReactNode; textPrimary: string; textMuted: string }> = ({ label, value, isEditing, input, textPrimary, textMuted }) => (
+  <div style={{ minWidth: 0 }}>
+    <p style={{ margin: '0 0 6px', fontFamily: '"RF Dewi Expanded"', fontSize: 10, fontWeight: 700, color: textMuted, letterSpacing: '.06em', textTransform: 'uppercase' }}>{label}</p>
+    {isEditing ? input : <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: textPrimary, overflowWrap: 'anywhere', lineHeight: 1.45 }}>{value}</p>}
+  </div>
+);
+
+const Divider: React.FC<{ border: string }> = ({ border }) => <div style={{ height: 1, background: border, margin: '0 22px' }} />;
+
+const StatItem: React.FC<{ icon: React.ReactNode; value: number; label: string; gold: string; textPrimary: string; textMuted: string; onClick?: () => void }> = ({ icon, value, label, gold, textPrimary, textMuted, onClick }) => (
+  <button type="button" onClick={onClick} disabled={!onClick} style={{ border: 'none', background: 'transparent', padding: 0, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', cursor: onClick ? 'pointer' : 'default', minWidth: 0 }}>
+    <span style={{ width: 30, height: 30, borderRadius: 9, background: `${gold}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</span>
+    <span style={{ minWidth: 0 }}>
+      <span style={{ display: 'block', fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 16, color: textPrimary, lineHeight: 1 }}>{value}</span>
+      <span style={{ display: 'block', marginTop: 2, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted }}>{label}{onClick ? ' →' : ''}</span>
+    </span>
+  </button>
+);
+
+const SecurityRow: React.FC<{ border: string; textPrimary: string; textMuted: string; softSurface: string }> = ({ border, textPrimary, textMuted, softSurface }) => {
   const [open, setOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -508,24 +434,11 @@ const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: stri
   const [success, setSuccess] = useState('');
   const gold = '#EAB308';
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', height: 44, borderRadius: 10, padding: '0 14px', boxSizing: 'border-box',
-    border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`,
-    background: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
-    color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontSize: 14, outline: 'none',
-  };
-
   const handleSave = async () => {
     setError('');
     setSuccess('');
-    if (newPassword.length < 8) {
-      setError('Новый пароль должен содержать минимум 8 символов');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Пароли не совпадают');
-      return;
-    }
+    if (newPassword.length < 8) { setError('Новый пароль должен содержать минимум 8 символов'); return; }
+    if (newPassword !== confirmPassword) { setError('Пароли не совпадают'); return; }
     setIsSaving(true);
     try {
       await changePassword({ currentPassword, newPassword });
@@ -542,78 +455,43 @@ const SecuritySection: React.FC<{ isDark: boolean; surface: string; border: stri
   };
 
   return (
-    <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-      <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Безопасность</h3>
-      <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Управляйте паролем и настройками входа</p>
-
-      <div style={{ padding: '16px', borderRadius: 14, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div>
-            <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: textPrimary }}>Пароль</p>
-            <p style={{ margin: '3px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>
-              {success || 'Смена пароля не разлогинивает текущую сессию'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => { setOpen((v) => !v); setError(''); setSuccess(''); }}
-            style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`, background: 'transparent', color: textPrimary, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
-            {open ? 'Отмена' : 'Изменить'}
-          </button>
+    <div>
+      <div className="settings-row">
+        <div style={{ minWidth: 0 }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 15, color: textPrimary }}><Lock size={15} />Пароль</h3>
+          <p style={{ margin: '5px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: success ? '#22C55E' : textMuted, lineHeight: 1.45 }}>{success || 'Смена пароля не разлогинивает текущую сессию'}</p>
         </div>
-
-        {open && (
-          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <input type="password" placeholder="Текущий пароль" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle} />
-            <input type="password" placeholder="Не менее 8 символов" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
-            <input type="password" placeholder="Повторите новый пароль" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={inputStyle} />
-            {error && <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: '#EF4444' }}>{error}</p>}
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving || !currentPassword || newPassword.length < 8}
-              style={{
-                alignSelf: 'flex-start', padding: '10px 18px', borderRadius: 10, border: 'none',
-                background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14,
-                cursor: isSaving || !currentPassword || newPassword.length < 8 ? 'not-allowed' : 'pointer',
-                opacity: !currentPassword || newPassword.length < 8 ? 0.5 : 1,
-              }}
-            >
-              {isSaving ? 'Сохраняем…' : 'Сохранить пароль'}
-            </button>
-          </div>
-        )}
+        <ButtonLike className="settings-row-action" onClick={() => { setOpen((v) => !v); setError(''); setSuccess(''); }} border={border} color={textPrimary} background="transparent">{open ? 'Отмена' : 'Изменить'}</ButtonLike>
       </div>
+
+      {open && (
+        <div style={{ padding: '0 28px 20px', display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+          <input type="password" placeholder="Текущий пароль" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle(border, textPrimary, softSurface)} />
+          <input type="password" placeholder="Новый пароль" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle(border, textPrimary, softSurface)} />
+          <input type="password" placeholder="Повторите новый пароль" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={inputStyle(border, textPrimary, softSurface)} />
+          {error && <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#EF4444' }}>{error}</p>}
+          <ButtonLike onClick={handleSave} disabled={isSaving || !currentPassword || newPassword.length < 8} border={gold} color="#1A1412" background={gold}>{isSaving ? 'Сохраняем...' : 'Сохранить пароль'}</ButtonLike>
+        </div>
+      )}
     </div>
   );
 };
 
-// ── Appearance section ───────────────────────────────────────────────
-
-const AppearanceSection: React.FC<{
-  isDark: boolean; surface: string; border: string; textPrimary: string; textMuted: string;
-  gold: string; theme: string; onSetTheme: (theme: 'dark' | 'light') => void;
-}> = ({ isDark, surface, border, textPrimary, textMuted, gold, theme, onSetTheme }) => (
-  <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-    <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Внешний вид</h3>
-    <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Выберите тему оформления</p>
-
-    {/* Theme toggle cards */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+const AppearanceRow: React.FC<{ border: string; textPrimary: string; textMuted: string; gold: string; theme: string; onSetTheme: (theme: 'dark' | 'light') => void }> = ({ border, textPrimary, textMuted, gold, theme, onSetTheme }) => (
+  <div className="settings-row">
+    <div style={{ minWidth: 0 }}>
+      <h3 style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Внешний вид</h3>
+      <p style={{ margin: '5px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: textMuted }}>Выберите тему оформления</p>
+    </div>
+    <div className="settings-row-action" style={{ display: 'flex', gap: 10 }}>
       {[
-        { value: 'light' as const, label: 'Светлая', Icon: Sun, preview: 'rgba(250,250,249,1)', accent: '#1C1917' },
-        { value: 'dark' as const, label: 'Тёмная', Icon: Moon, preview: '#2D241F', accent: '#fff' },
+        { value: 'light' as const, label: 'Светлая тема', Icon: Sun, bg: '#FFFFFF', color: '#1C1917' },
+        { value: 'dark' as const, label: 'Тёмная тема', Icon: Moon, bg: '#2D241F', color: '#FFFFFF' },
       ].map(opt => {
         const active = theme === opt.value;
         return (
-          <button key={opt.value} onClick={() => onSetTheme(opt.value)}
-            style={{ padding: '20px 16px', borderRadius: 16, border: `2px solid ${active ? gold : border}`, background: active ? `${gold}10` : (isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7'), cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, transition: 'all .2s' }}>
-            <div style={{ width: 52, height: 36, borderRadius: 10, background: opt.preview, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.08)' }}>
-              <opt.Icon size={22} color={opt.accent} />
-            </div>
-            <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, color: active ? gold : textPrimary }}>{opt.label}</span>
-            {active && <CheckCircle size={16} color={gold} style={{ marginTop: -4 }} />}
+          <button key={opt.value} type="button" aria-label={opt.label} onClick={() => onSetTheme(opt.value)} style={{ width: 48, height: 38, borderRadius: 9, border: `1px solid ${active ? gold : border}`, background: active ? `${gold}12` : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <span style={{ width: 32, height: 28, borderRadius: 8, background: opt.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${border}` }}><opt.Icon size={16} color={opt.color} /></span>
           </button>
         );
       })}
@@ -621,16 +499,26 @@ const AppearanceSection: React.FC<{
   </div>
 );
 
-// ── Mobile app download section ──────────────────────────────────────
-
-const AppDownloadSection: React.FC<{
-  surface: string; border: string; textPrimary: string; textMuted: string;
-}> = ({ surface, border, textPrimary, textMuted }) => (
-  <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
+const AppDownloadSection: React.FC<{ surface: string; border: string; textPrimary: string; textMuted: string }> = ({ surface, border, textPrimary, textMuted }) => (
+  <section className="settings-release-card" style={{ borderRadius: 14, border: `1px solid ${border}`, background: surface }}>
     <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Мобильное приложение</h3>
-    <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Android доступен для тестирования, iOS уже в разработке</p>
+    <p style={{ margin: '0 0 16px', fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: textMuted, lineHeight: 1.45 }}>Android доступен для тестирования, iOS уже в разработке</p>
     <MobileAppDownload variant="compact" />
-  </div>
+  </section>
+);
+
+const ButtonLike: React.FC<{ children: React.ReactNode; border: string; color: string; background: string; icon?: React.ReactNode; disabled?: boolean; className?: string; onClick: () => void }> = ({ children, border, color, background, icon, disabled, className = '', onClick }) => (
+  <button type="button" className={className} onClick={onClick} disabled={disabled} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 36, padding: '8px 14px', borderRadius: 9, border: `1px solid ${border}`, background, color, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+    {icon}
+    {children}
+  </button>
+);
+
+const ActionButton: React.FC<{ children: React.ReactNode; border: string; background: string; color: string; icon: React.ReactNode; onClick: () => void }> = ({ children, border, background, color, icon, onClick }) => (
+  <button type="button" onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 38, padding: '9px 14px', borderRadius: 9, border: `1px solid ${border}`, background, color, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+    {icon}
+    {children}
+  </button>
 );
 
 export default SettingsPage;
