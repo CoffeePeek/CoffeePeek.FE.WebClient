@@ -428,6 +428,7 @@ const CoffeeShopPage: React.FC = () => {
               textMuted={textMuted}
               cardBg={cardBg}
               borderColor={borderColor}
+              coffeeShopName={shop.name}
             />
           </div>
 
