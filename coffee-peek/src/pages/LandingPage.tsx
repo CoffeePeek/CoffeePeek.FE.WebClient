@@ -19,6 +19,7 @@ import {
   formatStatRating,
 } from '../hooks/queries/usePublicStats';
 import { AppIcon, StarIcon } from '../components/icons';
+import { MobileAppDownload } from '../components/mobile-app';
 import LandingMapWidget from '../components/LandingMapWidget';
 import Header from '../components/Header';
 import LandingProductDemo from '../components/LandingProductDemo';
@@ -286,29 +287,9 @@ const LandingPage: React.FC = () => {
             <LandingProductDemo />
           </section>
 
-          {/* ── Android app download ────────────────────────────── */}
+          {/* ── Mobile app download ──────────────────────────────── */}
           <section className="max-w-[1280px] mx-auto px-5 lg:px-8 pt-4 lg:pt-6 pb-4">
-            <div className="rounded-[18px] lg:rounded-[24px] p-5 lg:p-10 border flex flex-col lg:flex-row items-center gap-6 lg:gap-10"
-              style={{ borderColor: c.border, background: isDark ? 'rgba(45,36,31,0.55)' : 'rgba(255,255,255,0.72)' }}>
-              {/* QR placeholder — real code goes here once the app ships */}
-              <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-2xl border-2 border-dashed flex items-center justify-center shrink-0"
-                style={{ borderColor: c.border, background: isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7' }}>
-                <AppIcon name="qr_code" size={44} color={c.textTertiary} />
-              </div>
-              <div className="text-center lg:text-left flex-1 min-w-0">
-                <span className="font-body font-bold text-[10px] lg:text-[11px] uppercase tracking-[.08em] text-[#EAB308]">Скоро</span>
-                <h2 className="mt-1 font-extended font-bold text-[20px] lg:text-[28px] tracking-[-0.02em]" style={{ color: c.textPrimary }}>CoffeePeek для Android</h2>
-                <p className="mt-2 font-body text-[14px] lg:text-[15px] leading-[1.5]" style={{ color: c.textSecondary }}>
-                  Приложение готовится к публикации в Google Play. Отсканируйте QR-код, когда оно станет доступно.
-                </p>
-              </div>
-              <a href="#" onClick={(e) => e.preventDefault()} aria-disabled
-                className="shrink-0 h-12 px-6 rounded-xl border inline-flex items-center justify-center gap-2 font-extended font-bold text-[14px] cursor-not-allowed"
-                style={{ borderColor: c.border, color: c.textSecondary }}>
-                <AppIcon name="google_play" size={18} />
-                Скоро в Google Play
-              </a>
-            </div>
+            <MobileAppDownload variant="full" />
           </section>
 
           {/* ── CTA Banner ───────────────────────────────────────── */}

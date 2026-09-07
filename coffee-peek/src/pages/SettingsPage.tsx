@@ -14,10 +14,11 @@ import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import WobbleRing from '../components/WobbleRing';
+import { MobileAppDownload } from '../components/mobile-app';
 import {
   Coffee, SignOut, Camera, PencilSimple, Check,
   ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
-  ArrowClockwise, X, MapPin, QrCode, GooglePlayLogo,
+  ArrowClockwise, X, MapPin,
 } from '@/components/Icon';
 
 // ── Main component ───────────────────────────────────────────────────
@@ -306,7 +307,7 @@ const SettingsPage: React.FC = () => {
           )}
           <SecuritySection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
           <AppearanceSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} theme={theme} onSetTheme={setTheme} />
-          <AppDownloadSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
+          <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
         </div>
       </div>
     </div>
@@ -601,8 +602,8 @@ const AppearanceSection: React.FC<{
     {/* Theme toggle cards */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
       {[
-        { value: 'light' as const, label: 'Светлая', Icon: Sun,  preview: 'rgba(250,250,249,1)', accent: '#1C1917' },
-        { value: 'dark' as const,  label: 'Тёмная',  Icon: Moon, preview: '#2D241F',             accent: '#fff'    },
+        { value: 'light' as const, label: 'Светлая', Icon: Sun, preview: 'rgba(250,250,249,1)', accent: '#1C1917' },
+        { value: 'dark' as const, label: 'Тёмная', Icon: Moon, preview: '#2D241F', accent: '#fff' },
       ].map(opt => {
         const active = theme === opt.value;
         return (
@@ -620,31 +621,15 @@ const AppearanceSection: React.FC<{
   </div>
 );
 
-// ── Android app download section ─────────────────────────────────────
+// ── Mobile app download section ──────────────────────────────────────
 
 const AppDownloadSection: React.FC<{
-  isDark: boolean; surface: string; border: string; textPrimary: string; textMuted: string;
-}> = ({ isDark, surface, border, textPrimary, textMuted }) => (
+  surface: string; border: string; textPrimary: string; textMuted: string;
+}> = ({ surface, border, textPrimary, textMuted }) => (
   <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
-    <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Приложение для Android</h3>
-    <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Скоро в Google Play — отсканируйте QR-код, когда приложение выйдет</p>
-
-    <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-      {/* QR placeholder — real code goes here once the app ships */}
-      <div style={{ width: 112, height: 112, borderRadius: 14, border: `2px dashed ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7' }}>
-        <QrCode size={44} color={textMuted} />
-      </div>
-
-      <a
-        href="#"
-        onClick={(e) => e.preventDefault()}
-        aria-disabled
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'not-allowed' }}
-      >
-        <GooglePlayLogo size={18} />
-        Скоро в Google Play
-      </a>
-    </div>
+    <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Мобильное приложение</h3>
+    <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Android доступен для тестирования, iOS уже в разработке</p>
+    <MobileAppDownload variant="compact" />
   </div>
 );
 

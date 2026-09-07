@@ -60,7 +60,16 @@
       "Bash(node -e \"require\\('./tailwind.config.js'\\)\")",
       "Bash(xxd)",
       "Bash(cp coffee-peek-admin/public/logo/logo.png coffee-peek/public/logo/logo.png)",
-      "Bash(cp coffee-peek-admin/public/logo/favicon.svg coffee-peek/public/logo/favicon.svg)"
+      "Bash(cp coffee-peek-admin/public/logo/favicon.svg coffee-peek/public/logo/favicon.svg)",
+      "Bash(awk 'NR>=355 && NR<=385')",
+      "Bash(git show *)",
+      "Bash(cp /tmp/merge_head_checkinmodal.tsx src/components/CheckInModal.tsx)",
+      "Bash(cp /tmp/merge_head_createcheckin.tsx src/pages/CreateCheckInPage.tsx)",
+      "Bash(npm view *)",
+      "Skill(run)",
+      "Bash(chromium-cli --help)",
+      "Bash(node _verify_shot.mjs)",
+      "Bash(npx playwright *)"
     ]
   }
 }
