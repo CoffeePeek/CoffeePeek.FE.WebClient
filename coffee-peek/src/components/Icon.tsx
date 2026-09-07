@@ -79,6 +79,8 @@ import {
   DeviceMobile,
   BookmarkSimple,
   Calendar,
+  QrCode,
+  GooglePlayLogo,
 } from '@phosphor-icons/react';
 
 export type { IconProps };
@@ -162,6 +164,8 @@ export {
   DeviceMobile,
   BookmarkSimple,
   Calendar,
+  QrCode,
+  GooglePlayLogo,
 };
 
 /** Backward-compatible aliases used across the app */

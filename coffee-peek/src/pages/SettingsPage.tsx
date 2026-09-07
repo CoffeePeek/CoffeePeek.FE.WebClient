@@ -14,21 +14,11 @@ import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import WobbleRing from '../components/WobbleRing';
-import type { IconProps } from '@phosphor-icons/react';
 import {
-  User, Lock, Palette, Coffee, CaretRight, SignOut, Camera, PencilSimple, Check,
+  Coffee, SignOut, Camera, PencilSimple, Check,
   ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
-  ArrowClockwise, X, MapPin,
+  ArrowClockwise, X, MapPin, QrCode, GooglePlayLogo,
 } from '@/components/Icon';
-
-// ── Section types ────────────────────────────────────────────────────
-type Section = 'profile' | 'security' | 'appearance';
-
-const NAV_ITEMS: { id: Section; label: string; Icon: React.ComponentType<IconProps> }[] = [
-  { id: 'profile',    label: 'Профиль',      Icon: User    },
-  { id: 'security',   label: 'Безопасность', Icon: Lock    },
-  { id: 'appearance', label: 'Внешний вид',  Icon: Palette },
-];
 
 // ── Main component ───────────────────────────────────────────────────
 const SettingsPage: React.FC = () => {
@@ -39,7 +29,6 @@ const SettingsPage: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const isDark = theme === 'dark';
 
-  const [activeSection, setActiveSection] = useState<Section>('profile');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -194,41 +183,6 @@ const SettingsPage: React.FC = () => {
   const displayAvatar = avatarPreview || profile?.avatarUrl;
   const displayName = profile?.userName || user?.email?.split('@')[0] || 'Пользователь';
 
-  // ── Section content renderer ──────────────────────────────────────
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'profile':
-        return profile ? (
-          <ProfileSection
-            profile={profile}
-            isEditing={isEditing}
-            editValues={editValues}
-            isSaving={isSaving}
-            selectedAvatarFile={selectedAvatarFile}
-            avatarPreview={avatarPreview}
-            isDark={isDark}
-            surface={surface}
-            border={border}
-            textPrimary={textPrimary}
-            textMuted={textMuted}
-            gold={gold}
-            goldWarm={goldWarm}
-            onEditStart={handleEditStart}
-            onEditCancel={handleEditCancel}
-            onSave={handleSave}
-            onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
-            onAvatarSelect={handleAvatarSelect}
-            onOpenCheckIns={() => navigate('/check-ins')}
-            onOpenReviews={() => navigate('/reviews')}
-          />
-        ) : null;
-      case 'security':
-        return <SecuritySection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />;
-      case 'appearance':
-        return <AppearanceSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} theme={theme} onSetTheme={setTheme} />;
-    }
-  };
-
   return (
     <div style={{ minHeight: '100vh', background: bg }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
@@ -291,103 +245,68 @@ const SettingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Mobile: horizontal tabs ──────────────────────────── */}
-        <div className="lg:hidden overflow-x-auto no-scrollbar" style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', gap: 8, minWidth: 'max-content' }}>
-            {NAV_ITEMS.map(item => {
-              const active = activeSection === item.id;
-              return (
-                <button key={item.id} onClick={() => setActiveSection(item.id)} style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 14px', borderRadius: 99, border: '1px solid',
-                  background: active ? `${gold}14` : 'transparent',
-                  color: active ? gold : textMuted,
-                  borderColor: active ? `${gold}50` : border,
-                  fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                }}>
-                  <item.Icon size={15} color={active ? gold : textMuted} />
-                  {item.label}
-                </button>
-              );
-            })}
+        {/* ── Account bar: mini profile + quick actions ──────────── */}
+        <div style={{ padding: '14px', borderRadius: 16, border: `1px solid ${border}`, background: surface, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ width: 42, height: 42, borderRadius: 99, flexShrink: 0, overflow: 'hidden', background: displayAvatar ? 'transparent' : `${gold}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {displayAvatar
+              ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 17, color: goldWarm }}>{displayName[0]?.toUpperCase()}</span>
+            }
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
+            {profile?.createdAtUtc && (
+              <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted }}>с {new Date(profile.createdAtUtc).getFullYear()}</p>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={() => navigate('/coffee-shops/new')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '8px 14px', borderRadius: 99, border: 'none',
-                background: gold, color: '#1A1412',
-                fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-              }}>
-              <Storefront size={15} color="#1A1412" />
-              Добавить кофейню
+              style={{ padding: '9px 14px', borderRadius: 10, background: surface, border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'background .15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = `${gold}14`)}
+              onMouseLeave={e => (e.currentTarget.style.background = surface)}>
+              <Storefront size={16} color={gold} />
+              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, color: gold, whiteSpace: 'nowrap' }}>Добавить кофейню</span>
+            </button>
+            <button onClick={() => { logout(); navigate('/'); }}
+              style={{ padding: '9px 14px', borderRadius: 10, background: surface, border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'background .15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
+              onMouseLeave={e => (e.currentTarget.style.background = surface)}>
+              <SignOut size={16} color="#EF4444" />
+              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, color: '#EF4444', whiteSpace: 'nowrap' }}>Выйти</span>
             </button>
           </div>
         </div>
 
-        {/* ── Layout ──────────────────────────────────────────────── */}
-        <div className="flex flex-col lg:flex-row lg:items-start gap-5 lg:gap-6">
-
-          {/* Sidebar (desktop only) */}
-          <aside className="hidden lg:block" style={{ width: 220, flexShrink: 0 }}>
-
-            {/* Profile mini card */}
-            <div style={{ padding: '14px', borderRadius: 16, border: `1px solid ${border}`, background: surface, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 42, height: 42, borderRadius: 99, flexShrink: 0, overflow: 'hidden', background: displayAvatar ? 'transparent' : `${gold}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {displayAvatar
-                  ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 17, color: goldWarm }}>{displayName[0]?.toUpperCase()}</span>
-                }
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
-                {profile?.createdAtUtc && (
-                  <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontSize: 11, color: textMuted }}>с {new Date(profile.createdAtUtc).getFullYear()}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Nav */}
-            <nav style={{ borderRadius: 16, border: `1px solid ${border}`, background: surface, overflow: 'hidden', marginBottom: 12 }}>
-              {NAV_ITEMS.map((item, i) => {
-                const active = activeSection === item.id;
-                return (
-                  <button key={item.id} onClick={() => setActiveSection(item.id)} style={{
-                    width: '100%', padding: '11px 14px', textAlign: 'left', border: 'none',
-                    borderBottom: i < NAV_ITEMS.length - 1 ? `1px solid ${border}` : 'none',
-                    background: active ? `${gold}10` : 'transparent',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s',
-                  }}>
-                    <item.Icon size={18} color={active ? gold : textMuted} />
-                    <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: active ? gold : textPrimary, flex: 1 }}>{item.label}</span>
-                    {active && <CaretRight size={16} color={gold} />}
-                  </button>
-                );
-              })}
-            </nav>
-
-            <button
-              onClick={() => navigate('/coffee-shops/new')}
-              style={{ width: '100%', padding: '11px 14px', textAlign: 'left', background: surface, border: `1px solid ${border}`, borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, transition: 'background .15s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = `${gold}14`)}
-              onMouseLeave={e => (e.currentTarget.style.background = surface)}>
-              <Storefront size={18} color={gold} />
-              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: gold }}>Добавить кофейню</span>
-            </button>
-
-            {/* Logout */}
-            <button onClick={() => { logout(); navigate('/'); }}
-              style={{ width: '100%', padding: '11px 14px', textAlign: 'left', background: surface, border: `1px solid ${border}`, borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background .15s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
-              onMouseLeave={e => (e.currentTarget.style.background = surface)}>
-              <SignOut size={18} color="#EF4444" />
-              <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, color: '#EF4444' }}>Выйти</span>
-            </button>
-          </aside>
-
-          {/* Content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {renderContent()}
-          </div>
+        {/* ── Everything on one screen ───────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {profile && (
+            <ProfileSection
+              profile={profile}
+              isEditing={isEditing}
+              editValues={editValues}
+              isSaving={isSaving}
+              selectedAvatarFile={selectedAvatarFile}
+              avatarPreview={avatarPreview}
+              isDark={isDark}
+              surface={surface}
+              border={border}
+              textPrimary={textPrimary}
+              textMuted={textMuted}
+              gold={gold}
+              goldWarm={goldWarm}
+              onEditStart={handleEditStart}
+              onEditCancel={handleEditCancel}
+              onSave={handleSave}
+              onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
+              onAvatarSelect={handleAvatarSelect}
+              onOpenCheckIns={() => navigate('/check-ins')}
+              onOpenReviews={() => navigate('/reviews')}
+            />
+          )}
+          <SecuritySection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
+          <AppearanceSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} theme={theme} onSetTheme={setTheme} />
+          <AppDownloadSection isDark={isDark} surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
         </div>
       </div>
     </div>
@@ -697,6 +616,34 @@ const AppearanceSection: React.FC<{
           </button>
         );
       })}
+    </div>
+  </div>
+);
+
+// ── Android app download section ─────────────────────────────────────
+
+const AppDownloadSection: React.FC<{
+  isDark: boolean; surface: string; border: string; textPrimary: string; textMuted: string;
+}> = ({ isDark, surface, border, textPrimary, textMuted }) => (
+  <div style={{ padding: '24px', borderRadius: 20, border: `1px solid ${border}`, background: surface }}>
+    <h3 style={{ margin: '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Приложение для Android</h3>
+    <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted }}>Скоро в Google Play — отсканируйте QR-код, когда приложение выйдет</p>
+
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+      {/* QR placeholder — real code goes here once the app ships */}
+      <div style={{ width: 112, height: 112, borderRadius: 14, border: `2px dashed ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: isDark ? 'rgba(255,255,255,0.03)' : '#F9F8F7' }}>
+        <QrCode size={44} color={textMuted} />
+      </div>
+
+      <a
+        href="#"
+        onClick={(e) => e.preventDefault()}
+        aria-disabled
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: textMuted, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 14, cursor: 'not-allowed' }}
+      >
+        <GooglePlayLogo size={18} />
+        Скоро в Google Play
+      </a>
     </div>
   </div>
 );
