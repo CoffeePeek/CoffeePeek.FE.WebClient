@@ -128,7 +128,7 @@ export interface SendCoffeeShopToModerationRequest {
 
 export interface SendReviewToModerationRequest {
   shopId: string;
-  header: string;
+  header?: string | null;
   comment: string;
   ratingService: number;
   ratingPlace: number;
@@ -136,7 +136,7 @@ export interface SendReviewToModerationRequest {
 }
 
 export interface UpdateCoffeeShopReviewRequest {
-  header: string;
+  header?: string | null;
   comment: string;
   ratingCoffee: number;
   ratingService: number;

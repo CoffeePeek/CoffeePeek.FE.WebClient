@@ -7,6 +7,7 @@ import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 import { logger } from '../utils/logger';
 import { normalizeReviewDto } from './core/reviewNormalize';
+import { normalizeCheckInDto } from './core/checkInNormalize';
 import type { ShopMenuDto } from './menu';
 
 // ==================== Types ====================
@@ -118,6 +119,7 @@ export interface DetailedCoffeeShop {
   rating: number;
   reviewCount: number;
   reviews?: Review[];
+  userCheckIns?: CheckInDto[];
   isOpen: boolean;
   isVisited?: boolean;
   canCreateReview?: boolean | null;
@@ -296,7 +298,7 @@ export interface Review {
   userId: string;
   userName?: string;
   userAvatar?: string;
-  header: string;
+  header?: string | null;
   comment: string;
   ratingCoffee: number;
   ratingService: number;
@@ -318,7 +320,7 @@ export interface GetReviewsResponse {
 
 export interface CreateReviewRequest {
   shopId: string;
-  header: string;
+  header?: string | null;
   comment: string;
   ratingCoffee: number;
   ratingService: number;
@@ -339,7 +341,8 @@ export interface RatingDto {
 }
 
 export interface CreateCheckInRequest {
-  coffeeShopId: string;
+  coffeeShopId?: string;
+  shopId?: string;
   isPublic: boolean;
   visitedAt: string; // ISO date string, required
   note?: string; // Optional, but required if isPublic = true
@@ -356,10 +359,14 @@ export interface CheckInDto {
   id: string;
   userId: string;
   shopId: string;
-  shopName: string;
+  shopName?: string;
   note?: string;
   createdAt: string;
+  visitedAt?: string;
+  isPublic?: boolean;
   reviewId?: string | null;
+  photos?: ShortPhotoMetadataDto[];
+  rating?: RatingDto;
 }
 
 export interface GetCheckInsResponse {
@@ -802,11 +809,11 @@ export async function getCheckIns(
   let bodyPageSize: number | undefined;
 
   if (Array.isArray(raw)) {
-    items = raw;
+    items = raw.map(normalizeCheckInDto);
   } else if (raw && typeof raw === 'object') {
     const obj = raw as Record<string, unknown>;
-    if (Array.isArray(obj.items)) items = obj.items as CheckInDto[];
-    else if (Array.isArray(obj.checkIns)) items = obj.checkIns as CheckInDto[];
+    if (Array.isArray(obj.items)) items = obj.items.map(normalizeCheckInDto);
+    else if (Array.isArray(obj.checkIns)) items = obj.checkIns.map(normalizeCheckInDto);
     bodyTotalItems = (obj.totalItems ?? obj.TotalItems ?? obj.totalCount) as number | undefined;
     bodyTotalPages = (obj.totalPages ?? obj.TotalPages) as number | undefined;
     bodyPage = (obj.currentPage ?? obj.page) as number | undefined;

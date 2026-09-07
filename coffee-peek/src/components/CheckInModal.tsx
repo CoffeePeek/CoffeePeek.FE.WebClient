@@ -16,6 +16,14 @@ interface CheckInModalProps {
   onSuccess?: () => void;
 }
 
+function getCheckInErrorMessage(error: unknown): string {
+  const err = error as { status?: number; message?: string };
+  if ((err?.status === 409 || err?.status === 429) && err.message) {
+    return err.message;
+  }
+  return 'Не удалось создать чекин';
+}
+
 function todayInputValue(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -94,7 +102,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
           : undefined;
 
       const request: CreateCheckInRequest = {
-        coffeeShopId: shop.id,
+        shopId: shop.id,
         isPublic,
         visitedAt: visitedAtISO,
         note: note.trim() || undefined,
@@ -111,7 +119,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
       }
     } catch (err) {
       logger.error('Error submitting check-in:', err);
-      showToast('Не удалось создать чекин', 'error');
+      showToast(getCheckInErrorMessage(err), 'error');
     } finally {
       setIsSubmitting(false);
     }

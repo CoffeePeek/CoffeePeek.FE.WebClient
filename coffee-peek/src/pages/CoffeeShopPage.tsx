@@ -20,6 +20,101 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon } from '../components/icons';
 import ShopPhotoPlaceholder from '../components/ShopPhotoPlaceholder';
 import Mascot from '../components/Mascot';
+import type { CheckInDto } from '../api/coffeeshop';
+
+function formatCheckInDate(iso?: string): string {
+  if (!iso) return 'Дата не указана';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime()) || d.getFullYear() < 1990) return 'Дата не указана';
+  return d.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+interface UserCheckInsSectionProps {
+  checkIns: CheckInDto[];
+  onCheckIn: () => void;
+  onEditReview: (reviewId: string) => void;
+  textMain: string;
+  textMuted: string;
+  cardBg: string;
+  borderColor: string;
+}
+
+const UserCheckInsSection: React.FC<UserCheckInsSectionProps> = ({
+  checkIns,
+  onCheckIn,
+  onEditReview,
+  textMain,
+  textMuted,
+  cardBg,
+  borderColor,
+}) => {
+  const { theme } = useTheme();
+  const themeClasses = getThemeClasses(theme);
+
+  return (
+    <section className={`pt-8 border-t ${borderColor}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 min-w-0`}>
+          <span className={`w-1.5 h-8 ${themeClasses.primary.bg} rounded-full shrink-0`} />
+          Мои чекины
+        </h2>
+        <button
+          type="button"
+          onClick={onCheckIn}
+          className={`shrink-0 ${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-4 sm:px-6 py-2.5 rounded-xl ${themeClasses.primary.bg.replace('bg-', 'hover:bg-')} ${themeClasses.text.inverse.replace('text-', 'hover:text-')} transition-all`}
+        >
+          Отметиться
+        </button>
+      </div>
+
+      {checkIns.length > 0 ? (
+        <div className="space-y-3">
+          {checkIns.map((checkIn) => (
+            <article key={checkIn.id} className={`${cardBg} p-4 sm:p-5 rounded-2xl border ${borderColor}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className={`font-extended font-bold text-sm ${textMain}`}>
+                    {formatCheckInDate(checkIn.visitedAt || checkIn.createdAt)}
+                  </p>
+                  <p className={`mt-1 text-xs font-medium uppercase tracking-widest ${textMuted}`}>
+                    {checkIn.reviewId ? 'Публичный чекин с отзывом' : 'Личный чекин'}
+                  </p>
+                </div>
+                {checkIn.reviewId ? (
+                  <button
+                    type="button"
+                    onClick={() => onEditReview(checkIn.reviewId!)}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border ${borderColor} px-3 py-1.5 text-xs font-extended font-semibold ${themeClasses.primary.text} hover:opacity-80 transition-opacity`}
+                  >
+                    <AppIcon name="rate_review" size={14} color="currentColor" />
+                    Отзыв
+                  </button>
+                ) : null}
+              </div>
+              {checkIn.note ? (
+                <p className={`mt-3 pt-3 border-t ${borderColor} ${textMuted} leading-relaxed`}>
+                  {checkIn.note}
+                </p>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className={`${cardBg} p-5 rounded-2xl border ${borderColor} flex items-center justify-between gap-4`}>
+          <p className={`${textMuted} leading-relaxed`}>
+            Вы ещё не отмечались в этой кофейне.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+};
 
 const CoffeeShopPage: React.FC = () => {
   const { shopId } = useParams<{ shopId: string }>();
@@ -65,6 +160,7 @@ const CoffeeShopPage: React.FC = () => {
   // Получаем отзывы из shop (приходят с бэкенда в CoffeeShopDetailsDto)
   const reviews = shop?.reviews || [];
   const reviewsTotalCount = shop?.reviewCount || 0;
+  const userCheckIns = shop?.userCheckIns || [];
   const usersCache = useUsersCache(reviews);
 
 
@@ -95,6 +191,19 @@ const CoffeeShopPage: React.FC = () => {
   const handleCheckInSuccess = async () => {
     // Обновляем данные кофейни после успешного чекина
     await reloadShop();
+  };
+
+  const handleEditCheckInReview = (reviewId: string) => {
+    if (!shopId || !shop) return;
+
+    const shopBasicInfo = {
+      name: shop.name,
+      address: shop.location?.address || 'Адрес не указан',
+      photo: shop.photos && shop.photos.length > 0 ? shop.photos[0].fullUrl || '' : '',
+      averageRating: shop.rating
+    };
+
+    navigate(`/shops/${shopId}/reviews/${reviewId}/edit`, { state: { shop: shopBasicInfo } });
   };
 
 
@@ -198,6 +307,18 @@ const CoffeeShopPage: React.FC = () => {
             cardBg={cardBg}
             borderColor={borderColor}
           />
+
+          {user && (
+            <UserCheckInsSection
+              checkIns={userCheckIns}
+              onCheckIn={handleCheckIn}
+              onEditReview={handleEditCheckInReview}
+              textMain={textMain}
+              textMuted={textMuted}
+              cardBg={cardBg}
+              borderColor={borderColor}
+            />
+          )}
 
           {/* Детали кофе */}
           {(shop.equipments?.length > 0 || shop.beans?.length > 0 || shop.roasters?.length > 0 || shop.brewMethods?.length > 0) && (
@@ -335,4 +456,3 @@ const CoffeeShopPage: React.FC = () => {
 };
 
 export default CoffeeShopPage;
-

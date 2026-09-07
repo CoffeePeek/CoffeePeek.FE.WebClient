@@ -205,8 +205,8 @@ const CreateReviewPage: React.FC = () => {
   const handleSubmit = async () => {
     if (!requireAuth()) return;
 
-    if (!header.trim() || !description.trim()) {
-      showToast('Заполните заголовок и описание', 'error');
+    if (!description.trim()) {
+      showToast('Заполните описание', 'error');
       return;
     }
 
@@ -252,7 +252,7 @@ const CreateReviewPage: React.FC = () => {
       
       const request: CreateReviewRequest = {
         shopId,
-        header: header.trim(),
+        header: header.trim() || null,
         comment: description.trim(),
         ratingCoffee,
         ratingService,
@@ -486,7 +486,7 @@ const CreateReviewPage: React.FC = () => {
               <div className="space-y-6 pt-6 border-t" style={{ borderColor: `${colors.borderSubtle}80` }}>
                 <div className="space-y-2">
                   <label className="block text-sm font-bold" htmlFor="header" style={{ color: colors.textMain }}>
-                    Заголовок
+                    Заголовок (необязательно)
                   </label>
                   <input
                     id="header"

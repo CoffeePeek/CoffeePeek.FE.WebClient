@@ -9,6 +9,7 @@ import { getErrorMessageByStatus } from '../../utils/errorHandler';
 import { logger } from '../../utils/logger';
 import { isTokenExpired } from '../../utils/jwt';
 import { normalizeReviewDto } from './reviewNormalize';
+import { normalizeCheckInDto } from './checkInNormalize';
 import { normalizeDayOfWeek } from '../../utils/shopUtils';
 
 /**
@@ -402,6 +403,11 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
   // Нормализуем reviews если они есть (ReviewDto: rating — объект, дата — createdAtUtc)
   if ('reviews' in shop && Array.isArray(shop.reviews)) {
     normalized.reviews = shop.reviews.map((review: any) => normalizeReviewDto(review));
+  }
+
+  const userCheckIns = shop.userCheckIns ?? shop.UserCheckIns;
+  if (Array.isArray(userCheckIns)) {
+    normalized.userCheckIns = userCheckIns.map((checkIn: any) => normalizeCheckInDto(checkIn));
   }
 
   // Нормализуем photos

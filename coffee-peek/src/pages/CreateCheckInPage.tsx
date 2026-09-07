@@ -19,6 +19,14 @@ interface ShopBasicInfo {
   photo: string;
 }
 
+function getCheckInErrorMessage(error: unknown): string {
+  const err = error as { status?: number; message?: string };
+  if ((err?.status === 409 || err?.status === 429) && err.message) {
+    return err.message;
+  }
+  return 'Не удалось создать чекин';
+}
+
 function todayInputValue(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -86,7 +94,7 @@ const CreateCheckInPage: React.FC = () => {
           : undefined;
 
       const request: CreateCheckInRequest = {
-        coffeeShopId: shopId,
+        shopId,
         isPublic,
         visitedAt: visitedAtISO,
         note: note.trim() || undefined,
@@ -101,14 +109,7 @@ const CreateCheckInPage: React.FC = () => {
       }
     } catch (err) {
       logger.error('Error submitting check-in:', err);
-      const status = (err as { status?: number })?.status;
-      const msg = err instanceof Error ? err.message : '';
-      showToast(
-        status === 429 || msg.includes('Слишком много запросов')
-          ? 'Слишком много запросов. Подождите минуту и попробуйте снова.'
-          : 'Не удалось создать чекин',
-        'error'
-      );
+      showToast(getCheckInErrorMessage(err), 'error');
     } finally {
       setIsSubmitting(false);
     }

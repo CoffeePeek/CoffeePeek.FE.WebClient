@@ -16,7 +16,7 @@ export function normalizeReviewDto(dto: any): Review {
   return {
     ...dto,
     userName: dto.userName ?? dto.username ?? undefined,
-    header: dto.header ?? '',
+    header: dto.header ?? null,
     comment: dto.comment ?? '',
     coffeeShopId: String(dto.coffeeShopId ?? dto.shopId ?? ''),
     shopName: dto.shopName ?? dto.coffeeShopName ?? undefined,
