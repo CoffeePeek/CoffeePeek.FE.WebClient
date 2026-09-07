@@ -37,7 +37,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   textMuted,
   cardBg,
   borderColor,
-  сoffeeShopName,
+  coffeeShopName,
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
@@ -127,7 +127,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
       ) : (
         <div className="text-center py-8 flex flex-col items-center">
           <Mascot pose="book" size={120} />
-          <p className={`${textMuted} mt-3`}>Станьте первым, кто оценит и оставит отзыв о своём посещении {сoffeeShopName}</p>
+          <p className={`${textMuted} mt-3`}>Станьте первым, кто оценит и оставит отзыв о своём посещении {coffeeShopName}</p>
         </div>
       )}
     </div>
