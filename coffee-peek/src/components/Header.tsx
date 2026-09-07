@@ -40,9 +40,10 @@ const Header: React.FC = () => {
   const surfaceBg = isDark ? '#2D241F' : '#fff';
   const hoverBg = isDark ? 'rgba(61,47,40,0.5)' : '#F5F4F2';
 
-  const initial = (user?.email?.[0] ?? '?').toUpperCase();
+  const displayName = user?.userName || user?.email?.split('@')[0] || '';
+  const initial = (displayName[0] ?? '?').toUpperCase();
   const displayEmail = user?.email ?? '';
-  const displayName = user?.email?.split('@')[0] ?? '';
+  const avatarUrl = user?.avatarUrl;
 
   const navBtn = (active: boolean): React.CSSProperties => ({
     padding: '7px 12px', borderRadius: 8,
@@ -98,8 +99,17 @@ const Header: React.FC = () => {
                   }}
                 >
                   {/* Avatar */}
-                  <div style={{ width: 30, height: 30, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
                     <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 13, color: goldWarm }}>{initial}</span>
+                    {avatarUrl && (
+                      <img
+                        key={avatarUrl}
+                        src={avatarUrl}
+                        alt={displayName}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={event => { event.currentTarget.style.display = 'none'; }}
+                      />
+                    )}
                   </div>
                   <span className="hidden lg:block" style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 13, color: textColor, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {displayName}
@@ -115,8 +125,17 @@ const Header: React.FC = () => {
                       {/* User info header */}
                       <div style={{ padding: '14px 16px', borderBottom: `1px solid ${borderColor}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 38, height: 38, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 38, height: 38, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
                             <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, fontSize: 16, color: goldWarm }}>{initial}</span>
+                            {avatarUrl && (
+                              <img
+                                key={avatarUrl}
+                                src={avatarUrl}
+                                alt={displayName}
+                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                onError={event => { event.currentTarget.style.display = 'none'; }}
+                              />
+                            )}
                           </div>
                           <div style={{ minWidth: 0 }}>
                             <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 14, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>

@@ -2,32 +2,30 @@ import { ApiError, PaginatedMeta } from './types';
 import { isTokenExpired } from '../../utils/jwt';
 
 export class TokenManager {
-  private static ACCESS_TOKEN_KEY = 'admin_accessToken';
-  private static REFRESH_TOKEN_KEY = 'admin_refreshToken';
+  private static accessToken: string | null = null;
 
   static getAccessToken(): string | null {
-    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+    return this.accessToken;
   }
 
-  static getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
-  }
-
-  static setTokens(accessToken: string, refreshToken?: string): void {
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
-    if (refreshToken) {
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
-    }
+  static setAccessToken(accessToken: string): void {
+    this.accessToken = accessToken;
   }
 
   static clearTokens(): void {
-    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    this.accessToken = null;
   }
 
   static isAuthenticated(): boolean {
     return !!this.getAccessToken();
   }
+}
+
+try {
+  globalThis.localStorage?.removeItem('admin_accessToken');
+  globalThis.localStorage?.removeItem('admin_refreshToken');
+} catch {
+  // Storage can be unavailable in private/restricted browser contexts.
 }
 
 const TOKEN_PATH = '/api/tokens';
@@ -79,46 +77,23 @@ export function pickAuthTokens(payload: unknown, depth = 0): { accessToken?: str
   return {};
 }
 
-async function putRefresh(baseURL: string, refreshToken: string, withAccess: boolean): Promise<Response> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  };
-  const access = TokenManager.getAccessToken();
-  if (withAccess && access && !isTokenExpired(access)) {
-    headers.Authorization = `Bearer ${access}`;
-  }
+async function performRefresh(baseURL: string): Promise<boolean> {
   return fetch(`${baseURL}${TOKEN_PATH}`, {
     method: 'PUT',
-    headers,
+    headers: { Accept: 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ refreshToken }),
-  });
-}
-
-async function performRefresh(baseURL: string): Promise<boolean> {
-  const refreshToken = TokenManager.getRefreshToken();
-  if (!refreshToken) return false;
-
-  try {
-    let response = await putRefresh(baseURL, refreshToken, false);
-    if (!response.ok && response.status === 401) {
-      const access = TokenManager.getAccessToken();
-      if (access && !isTokenExpired(access)) {
-        response = await putRefresh(baseURL, refreshToken, true);
-      }
-    }
+  }).then(async response => {
     if (!response.ok) return false;
 
     const json = await response.json();
     const tokens = pickAuthTokens(json);
     if (!tokens.accessToken) return false;
 
-    TokenManager.setTokens(tokens.accessToken, tokens.refreshToken ?? refreshToken);
+    TokenManager.setAccessToken(tokens.accessToken);
     return true;
-  } catch {
+  }).catch(() => {
     return false;
-  }
+  });
 }
 
 export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
@@ -132,7 +107,6 @@ export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
 export async function ensureFreshAccessToken(baseURL: string): Promise<boolean> {
   const access = TokenManager.getAccessToken();
   if (access && !isTokenExpired(access)) return true;
-  if (!TokenManager.getRefreshToken()) return false;
   return tryRefreshAccessToken(baseURL);
 }
 
@@ -164,7 +138,7 @@ export function requestInterceptor(
   }
 
   const { skipAuthHeader: _skipAuthHeader, ...fetchOptions } = options;
-  return { ...fetchOptions, headers };
+  return { ...fetchOptions, credentials: fetchOptions.credentials ?? 'include', headers };
 }
 
 export async function responseInterceptor<T>(

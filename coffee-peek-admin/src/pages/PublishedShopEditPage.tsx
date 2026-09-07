@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -85,6 +85,7 @@ export const PublishedShopEditPage: React.FC = () => {
   const [beanIds, setBeanIds] = useState<string[]>([]);
   const [roasterIds, setRoasterIds] = useState<string[]>([]);
   const [brewMethodIds, setBrewMethodIds] = useState<string[]>([]);
+  const initializedMetadataShopId = useRef<string | null>(null);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['admin', 'published-shop', id],
@@ -146,15 +147,20 @@ export const PublishedShopEditPage: React.FC = () => {
       instagramLink: shop.contacts?.instagramLink ?? '',
     });
     setOwnerInput(shop.ownerUserId ?? '');
-    setFocus(shop.coffeeFocus);
-    const fromTags = (shop.tags ?? []).map((t) => t.slug).filter(Boolean);
-    setSelectedTagSlugs(fromTags.length ? fromTags : shop.tagSlugs ?? []);
     setSchedules(shop.schedules?.length ? shop.schedules : getDefaultSchedules());
     setEquipmentIds(shop.equipmentIds ?? []);
     setBeanIds(shop.beanIds ?? []);
     setRoasterIds(shop.roasterIds ?? []);
     setBrewMethodIds(shop.brewMethodIds ?? []);
   }, [shop, reset]);
+
+  useEffect(() => {
+    if (!shop || initializedMetadataShopId.current === shop.id) return;
+    initializedMetadataShopId.current = shop.id;
+    setFocus(shop.coffeeFocus);
+    const fromTags = (shop.tags ?? []).map((tag) => tag.slug).filter(Boolean);
+    setSelectedTagSlugs(fromTags.length ? fromTags : shop.tagSlugs ?? []);
+  }, [shop]);
 
   const saveMutation = useMutation({
     mutationFn: (data: FormData) =>

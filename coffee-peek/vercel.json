@@ -1,7 +1,11 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/", "destination": "/api/public-page?page=home" },
+    { "source": "/shops", "destination": "/api/public-page?page=shops" },
+    { "source": "/shops/:shopId", "destination": "/api/public-page?page=shop&shopId=:shopId" },
     { "source": "/:path*", "destination": "/index.html" }
   ],
   "headers": [

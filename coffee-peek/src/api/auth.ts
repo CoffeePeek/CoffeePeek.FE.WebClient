@@ -4,7 +4,7 @@
 
 import { httpClient, TokenManager } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
-import { ApiResponse } from './core/types';
+import type { ApiResponse } from './core/types';
 import { pickAuthTokens } from './core/interceptors';
 
 // ==================== Request/Response Types ====================
@@ -25,8 +25,7 @@ export interface RegisterRequest {
  */
 export interface AuthData {
   accessToken: string;
-  refreshToken?: string;
-  expiresIn?: number;
+  accessTokenExpiresAt?: string;
 }
 
 export interface AuthResponse extends ApiResponse<AuthData> {}
@@ -42,12 +41,6 @@ export interface CheckExistsData {
 }
 
 export interface CheckExistsResponse extends ApiResponse<CheckExistsData> {}
-
-export interface ApiError {
-  message: string;
-  errors?: Record<string, string[]>;
-  status?: number;
-}
 
 // UserProfile interfaces
 export interface UserProfile {
@@ -157,10 +150,9 @@ export async function login(credentials: LoginRequest): Promise<AuthResponse> {
 
   const tokens = pickAuthTokens(response.data);
   if (response.success && tokens.accessToken) {
-    TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+    TokenManager.setAccessToken(tokens.accessToken);
     if (response.data) {
       response.data.accessToken = tokens.accessToken;
-      response.data.refreshToken = tokens.refreshToken;
     }
   }
 
@@ -172,26 +164,17 @@ export async function login(credentials: LoginRequest): Promise<AuthResponse> {
  * Возвращает CreateEntityResponse с isSuccess и message
  */
 export async function register(userData: RegisterRequest): Promise<CreateEntityResponse> {
-  try {
-    const response = await httpClient.post<any>(
-      API_ENDPOINTS.AUTH.REGISTER,
-      userData,
-      { requiresAuth: false }
-    );
+  const response = await httpClient.post<any>(
+    API_ENDPOINTS.AUTH.REGISTER,
+    userData,
+    { requiresAuth: false, skipAuthHeader: true }
+  );
 
-    return {
-      isSuccess: response.data?.isSuccess !== false,
-      message: response.message || 'Регистрация успешна',
-      data: response.data,
-    };
-  } catch (error: any) {
-    // Специальная обработка ошибок регистрации
-    throw {
-      message: error.message || 'Ошибка регистрации',
-      errors: error.errors,
-      status: error.status,
-    } as ApiError;
-  }
+  return {
+    isSuccess: response.data?.isSuccess !== false,
+    message: response.message || 'Регистрация успешна',
+    data: response.data,
+  };
 }
 
 /**
@@ -207,9 +190,8 @@ export async function googleLogin(idToken: string): Promise<AuthResponse> {
   if (response.success && response.data) {
     const tokens = pickAuthTokens(response.data);
     if (tokens.accessToken) {
-      TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+      TokenManager.setAccessToken(tokens.accessToken);
       response.data.accessToken = tokens.accessToken;
-      response.data.refreshToken = tokens.refreshToken;
     }
   }
 
@@ -217,12 +199,12 @@ export async function googleLogin(idToken: string): Promise<AuthResponse> {
 }
 
 /**
- * Обновление tokens с помощью refresh token
+ * Обновление access token через HttpOnly refresh cookie.
  */
-export async function refreshAccessToken(refreshToken: string): Promise<AuthResponse> {
+export async function refreshAccessToken(): Promise<AuthResponse> {
   const response = await httpClient.put<AuthData>(
     API_ENDPOINTS.AUTH.REFRESH,
-    { refreshToken },
+    undefined,
     {
       requiresAuth: false,
       skipAuthHeader: true,
@@ -232,9 +214,8 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthResp
   if (response.success && response.data) {
     const tokens = pickAuthTokens(response.data);
     if (tokens.accessToken) {
-      TokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
+      TokenManager.setAccessToken(tokens.accessToken);
       response.data.accessToken = tokens.accessToken;
-      response.data.refreshToken = tokens.refreshToken;
     }
   }
 

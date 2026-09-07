@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { createCheckIn, CreateCheckInRequest, DetailedCoffeeShop } from '../api/coffeeshop';
+import type { CreateCheckInRequest, DetailedCoffeeShop } from '../api/coffeeshop';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeColors } from '../constants/colors';
 import { useRequireAuth } from '../hooks/useRequireAuth';
 import { useToast } from '../contexts/ToastContext';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { logger } from '../utils/logger';
+import { buildCheckInRequest, CheckInValidationError } from '../utils/checkInForm';
+import { useCreateCheckIn } from '../hooks/queries/useCheckIns';
+import { useCheckInDraft } from '../hooks/useCheckInDraft';
+import { getErrorMessage } from '../utils/errorHandler';
 import { X } from './Icon';
 import CheckInForm from './CheckInForm';
 
@@ -16,21 +20,6 @@ interface CheckInModalProps {
   onSuccess?: () => void;
 }
 
-function getCheckInErrorMessage(error: unknown): string {
-  const err = error as { status?: number; message?: string };
-  if ((err?.status === 409 || err?.status === 429) && err.message) {
-    return err.message;
-  }
-  return 'Не удалось создать чекин';
-}
-
-function todayInputValue(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 const CheckInModal: React.FC<CheckInModalProps> = ({
   isOpen,
@@ -43,14 +32,16 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   const { requireAuth } = useRequireAuth();
   const { showToast } = useToast();
 
-  const [note, setNote] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
+  const { mutateAsync: submitCheckIn } = useCreateCheckIn();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [visitedDate, setVisitedDate] = useState(todayInputValue);
-  const [ratingCoffee, setRatingCoffee] = useState(5);
-  const [ratingService, setRatingService] = useState(5);
-  const [ratingPlace, setRatingPlace] = useState(5);
-  const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos, clearFiles } = usePhotoUpload();
+  const { draft, updateDraft, clearDraft } = useCheckInDraft(shop?.id, isOpen);
+  const {
+    selectedFiles,
+    uploadingPhotos,
+    setSelectedFiles,
+    uploadPhotos,
+    clearFiles,
+  } = usePhotoUpload();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -61,65 +52,65 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
     };
   }, [isOpen]);
 
-  if (!isOpen || !shop) return null;
+  useEffect(() => {
+    if (!draft) return;
+    setSelectedFiles(draft.selectedFiles);
+  }, [draft?.coffeeShopId, setSelectedFiles]);
 
-  const resetForm = () => {
-    setNote('');
-    setIsPublic(false);
-    setVisitedDate(todayInputValue());
-    setRatingCoffee(5);
-    setRatingService(5);
-    setRatingPlace(5);
-    clearFiles();
-  };
+  if (!isOpen || !shop || !draft) return null;
 
   const handleClose = () => {
-    resetForm();
+    if (isSubmitting) return;
     onClose();
   };
 
-  const handleSubmit = async () => {
-    if (!requireAuth()) return;
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    const nextFiles = [...selectedFiles, ...Array.from(event.target.files)];
+    setSelectedFiles(nextFiles);
+    updateDraft({ selectedFiles: nextFiles });
+    event.target.value = '';
+  };
 
-    if (isPublic) {
-      if (!ratingCoffee || !ratingService || !ratingPlace) {
-        showToast('Для публичного чекина необходимо указать все рейтинги', 'error');
-        return;
-      }
-      if (!note.trim()) {
-        showToast('Для публичного чекина необходимо указать заметку', 'error');
-        return;
-      }
+  const removeFile = (index: number) => {
+    const nextFiles = selectedFiles.filter((_, fileIndex) => fileIndex !== index);
+    setSelectedFiles(nextFiles);
+    updateDraft({ selectedFiles: nextFiles });
+  };
+
+  const handleSubmit = async () => {
+    if (isSubmitting || !requireAuth()) return;
+
+    let request: CreateCheckInRequest;
+    try {
+      request = buildCheckInRequest({
+        coffeeShopId: shop.id,
+        isPublic: draft.isPublic,
+        header: draft.header,
+        note: draft.note,
+        visitedDate: draft.visitedDate,
+        rating: draft.rating,
+      });
+    } catch (err) {
+      showToast(err instanceof CheckInValidationError ? err.message : 'Проверьте данные чекина', 'error');
+      return;
     }
 
     try {
       setIsSubmitting(true);
-      const uploadedPhotos = await uploadPhotos();
-      const visitedAtISO = new Date(`${visitedDate}T00:00:00`).toISOString();
-      const rating =
-        ratingCoffee && ratingService && ratingPlace
-          ? { coffee: ratingCoffee, service: ratingService, place: ratingPlace }
-          : undefined;
-
-      const request: CreateCheckInRequest = {
-        shopId: shop.id,
-        isPublic,
-        visitedAt: visitedAtISO,
-        note: note.trim() || undefined,
-        photos: uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
-        rating,
-      };
-
-      const response = await createCheckIn(request);
+      request.photos = await uploadPhotos();
+      const response = await submitCheckIn(request);
+      if (!response.success || response.isSuccess === false) throw new Error('Не удалось создать чекин');
       if (response.success) {
-        showToast(isPublic ? 'Чекин успешно создан! Отзыв опубликован.' : 'Чекин успешно создан!', 'success');
-        resetForm();
+        showToast(draft.isPublic ? 'Чекин создан! Отзыв отправлен на модерацию.' : 'Чекин успешно создан!', 'success');
+        clearDraft();
+        clearFiles();
         onClose();
         onSuccess?.();
       }
     } catch (err) {
       logger.error('Error submitting check-in:', err);
-      showToast(getCheckInErrorMessage(err), 'error');
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -159,18 +150,20 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
         >
           <CheckInForm
             shopName={shop.name}
-            note={note}
-            onNoteChange={setNote}
-            isPublic={isPublic}
-            onPublicChange={setIsPublic}
-            visitedDate={visitedDate}
-            onVisitedDateChange={setVisitedDate}
-            ratingCoffee={ratingCoffee}
-            ratingService={ratingService}
-            ratingPlace={ratingPlace}
-            onRatingCoffee={setRatingCoffee}
-            onRatingService={setRatingService}
-            onRatingPlace={setRatingPlace}
+            header={draft.header}
+            onHeaderChange={(header) => updateDraft({ header })}
+            note={draft.note}
+            onNoteChange={(note) => updateDraft({ note })}
+            isPublic={draft.isPublic}
+            onPublicChange={(isPublic) => updateDraft({ isPublic })}
+            visitedDate={draft.visitedDate}
+            onVisitedDateChange={(visitedDate) => updateDraft({ visitedDate })}
+            ratingCoffee={draft.rating.coffee}
+            ratingService={draft.rating.service}
+            ratingPlace={draft.rating.place}
+            onRatingCoffee={(coffee) => updateDraft({ rating: { ...draft.rating, coffee } })}
+            onRatingService={(service) => updateDraft({ rating: { ...draft.rating, service } })}
+            onRatingPlace={(place) => updateDraft({ rating: { ...draft.rating, place } })}
             selectedFiles={selectedFiles}
             onFileSelect={handleFileSelect}
             onRemoveFile={removeFile}

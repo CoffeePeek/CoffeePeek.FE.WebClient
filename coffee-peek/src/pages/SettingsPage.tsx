@@ -33,7 +33,8 @@ const NAV_ITEMS: { id: Section; label: string; Icon: React.ComponentType<IconPro
 // ── Main component ───────────────────────────────────────────────────
 const SettingsPage: React.FC = () => {
   usePageTitle('Настройки');
-  const { user, isLoading: userLoading, logout } = useUser();
+  const { user, isLoading: userLoading, updateUserProfile, logout } = useUser();
+  const userId = user?.id;
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const isDark = theme === 'dark';
@@ -64,13 +65,14 @@ const SettingsPage: React.FC = () => {
 
   // ── Data loading ──────────────────────────────────────────────────
   const loadProfile = useCallback(async () => {
-    if (!user) return;
+    if (userId === undefined) return;
     try {
       setIsLoading(true);
       const token = TokenManager.getAccessToken();
       if (!token) throw new Error('Токен доступа отсутствует');
       const response = await getProfile();
       setProfile(response.data);
+      updateUserProfile(response.data);
       setError(null);
     } catch (err: unknown) {
       setError(getErrorMessage(err));
@@ -78,7 +80,7 @@ const SettingsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [userId, updateUserProfile]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
@@ -146,6 +148,7 @@ const SettingsPage: React.FC = () => {
         await Promise.all(updates);
         const refreshed = await getProfile();
         setProfile(refreshed.data);
+        updateUserProfile(refreshed.data);
       }
       if (emailChanged) {
         setPendingEmailConfirmation(editValues.email);
@@ -163,7 +166,7 @@ const SettingsPage: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [profile, editValues, originalValues, selectedAvatarFile]);
+  }, [profile, editValues, originalValues, selectedAvatarFile, updateUserProfile]);
 
   const handleResendConfirmation = useCallback(async () => {
     setIsResending(true);

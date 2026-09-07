@@ -3,10 +3,13 @@ import { getUserRoles, getUserEmail, getUserId, isTokenExpired, isEmailVerified 
 import { TokenManager } from '../api/core/httpClient';
 import { ensureFreshAccessToken } from '../api/core/interceptors';
 import { API_BASE_URL } from '../api/core/apiConfig';
+import { getProfile, type UserProfile } from '../api/auth';
 
 export interface AppUser {
   id: string | null;
   email: string | null;
+  userName?: string;
+  avatarUrl?: string;
   roles: string[];
   emailConfirmed: boolean;
 }
@@ -15,6 +18,7 @@ interface UserContextType {
   user: AppUser | null;
   isLoading: boolean;
   updateUserFromToken: (token: string) => void;
+  updateUserProfile: (profile: UserProfile) => void;
   logout: () => void;
 }
 
@@ -35,6 +39,7 @@ interface UserProviderProps {
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserContextType['user']>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const userId = user?.id;
 
   const updateUserFromToken = useCallback((token: string) => {
     if (!token || isTokenExpired(token)) {
@@ -54,6 +59,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       roles,
       emailConfirmed,
     });
+  }, []);
+
+  const updateUserProfile = useCallback((profile: UserProfile) => {
+    setUser(currentUser => currentUser ? {
+      ...currentUser,
+      email: profile.email || currentUser.email,
+      userName: profile.userName,
+      avatarUrl: profile.avatarUrl,
+    } : currentUser);
   }, []);
 
   const logout = useCallback(() => {
@@ -87,8 +101,27 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (userId === undefined) return;
+
+    let cancelled = false;
+    const loadProfile = async () => {
+      try {
+        const response = await getProfile();
+        if (!cancelled) updateUserProfile(response.data);
+      } catch {
+        // The token data is enough to keep the session usable if profile loading fails.
+      }
+    };
+
+    void loadProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, updateUserProfile]);
+
   return (
-    <UserContext.Provider value={{ user, isLoading, updateUserFromToken, logout }}>
+    <UserContext.Provider value={{ user, isLoading, updateUserFromToken, updateUserProfile, logout }}>
       {children}
     </UserContext.Provider>
   );

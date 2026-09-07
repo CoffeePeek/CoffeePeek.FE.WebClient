@@ -1,14 +1,17 @@
 import WobbleRing from '../components/WobbleRing';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { createCheckIn, CreateCheckInRequest } from '../api/coffeeshop';
+import type { CreateCheckInRequest } from '../api/coffeeshop';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeColors } from '../constants/colors';
 import { useRequireAuth } from '../hooks/useRequireAuth';
 import { useToast } from '../contexts/ToastContext';
 import { usePhotoUpload } from '../hooks/usePhotoUpload';
-import { TokenManager } from '../api/core/httpClient';
 import { logger } from '../utils/logger';
+import { buildCheckInRequest, CheckInValidationError } from '../utils/checkInForm';
+import { useCreateCheckIn } from '../hooks/queries/useCheckIns';
+import { useCheckInDraft } from '../hooks/useCheckInDraft';
+import { getErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { ArrowLeft } from '../components/Icon';
 import CheckInForm from '../components/CheckInForm';
@@ -19,21 +22,6 @@ interface ShopBasicInfo {
   photo: string;
 }
 
-function getCheckInErrorMessage(error: unknown): string {
-  const err = error as { status?: number; message?: string };
-  if ((err?.status === 409 || err?.status === 429) && err.message) {
-    return err.message;
-  }
-  return 'Не удалось создать чекин';
-}
-
-function todayInputValue(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 const CreateCheckInPage: React.FC = () => {
   const { shopId } = useParams<{ shopId: string }>();
@@ -57,65 +45,69 @@ const CreateCheckInPage: React.FC = () => {
     }
   }, [shopFromState, shopId, navigate]);
 
-  const [note, setNote] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
+  const { mutateAsync: submitCheckIn } = useCreateCheckIn();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [visitedDate, setVisitedDate] = useState(todayInputValue);
-  const [ratingCoffee, setRatingCoffee] = useState(5);
-  const [ratingService, setRatingService] = useState(5);
-  const [ratingPlace, setRatingPlace] = useState(5);
-  const { selectedFiles, uploadingPhotos, handleFileSelect, removeFile, uploadPhotos } = usePhotoUpload();
+  const { draft, updateDraft, clearDraft } = useCheckInDraft(shopId);
+  const { selectedFiles, uploadingPhotos, setSelectedFiles, uploadPhotos, clearFiles } = usePhotoUpload();
+
+  useEffect(() => {
+    if (!draft) return;
+    setSelectedFiles(draft.selectedFiles);
+  }, [draft?.coffeeShopId, setSelectedFiles]);
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    const nextFiles = [...selectedFiles, ...Array.from(event.target.files)];
+    setSelectedFiles(nextFiles);
+    updateDraft({ selectedFiles: nextFiles });
+    event.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    const nextFiles = selectedFiles.filter((_, fileIndex) => fileIndex !== index);
+    setSelectedFiles(nextFiles);
+    updateDraft({ selectedFiles: nextFiles });
+  };
 
   const handleSubmit = async () => {
-    if (!requireAuth()) return;
-    if (!shopId) return;
+    if (isSubmitting || !requireAuth()) return;
+    if (!shopId || !draft) return;
 
-    if (isPublic) {
-      if (!ratingCoffee || !ratingService || !ratingPlace) {
-        showToast('Для публичного чекина необходимо указать все рейтинги', 'error');
-        return;
-      }
-      if (!note.trim()) {
-        showToast('Для публичного чекина необходимо указать заметку', 'error');
-        return;
-      }
+    let request: CreateCheckInRequest;
+    try {
+      request = buildCheckInRequest({
+        coffeeShopId: shopId,
+        isPublic: draft.isPublic,
+        header: draft.header,
+        note: draft.note,
+        visitedDate: draft.visitedDate,
+        rating: draft.rating,
+      });
+    } catch (err) {
+      showToast(err instanceof CheckInValidationError ? err.message : 'Проверьте данные чекина', 'error');
+      return;
     }
-
-    const token = TokenManager.getAccessToken();
-    if (!token) return;
 
     try {
       setIsSubmitting(true);
-      const uploadedPhotos = await uploadPhotos();
-      const visitedAtISO = new Date(`${visitedDate}T00:00:00`).toISOString();
-      const rating =
-        ratingCoffee && ratingService && ratingPlace
-          ? { coffee: ratingCoffee, service: ratingService, place: ratingPlace }
-          : undefined;
-
-      const request: CreateCheckInRequest = {
-        shopId,
-        isPublic,
-        visitedAt: visitedAtISO,
-        note: note.trim() || undefined,
-        photos: uploadedPhotos.length > 0 ? uploadedPhotos : undefined,
-        rating,
-      };
-
-      const response = await createCheckIn(request);
+      request.photos = await uploadPhotos();
+      const response = await submitCheckIn(request);
+      if (!response.success || response.isSuccess === false) throw new Error('Не удалось создать чекин');
       if (response.success) {
-        showToast(isPublic ? 'Чекин успешно создан! Отзыв опубликован.' : 'Чекин успешно создан!', 'success');
+        showToast(draft.isPublic ? 'Чекин создан! Отзыв отправлен на модерацию.' : 'Чекин успешно создан!', 'success');
+        clearDraft();
+        clearFiles();
         navigate(`/shops/${shopId}`);
       }
     } catch (err) {
       logger.error('Error submitting check-in:', err);
-      showToast(getCheckInErrorMessage(err), 'error');
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!shopFromState) {
+  if (!shopFromState || !draft) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.background }}>
         <WobbleRing size={48} />
@@ -148,18 +140,20 @@ const CreateCheckInPage: React.FC = () => {
           >
             <CheckInForm
               shopName={shopFromState.name}
-              note={note}
-              onNoteChange={setNote}
-              isPublic={isPublic}
-              onPublicChange={setIsPublic}
-              visitedDate={visitedDate}
-              onVisitedDateChange={setVisitedDate}
-              ratingCoffee={ratingCoffee}
-              ratingService={ratingService}
-              ratingPlace={ratingPlace}
-              onRatingCoffee={setRatingCoffee}
-              onRatingService={setRatingService}
-              onRatingPlace={setRatingPlace}
+              header={draft.header}
+              onHeaderChange={(header) => updateDraft({ header })}
+              note={draft.note}
+              onNoteChange={(note) => updateDraft({ note })}
+              isPublic={draft.isPublic}
+              onPublicChange={(isPublic) => updateDraft({ isPublic })}
+              visitedDate={draft.visitedDate}
+              onVisitedDateChange={(visitedDate) => updateDraft({ visitedDate })}
+              ratingCoffee={draft.rating.coffee}
+              ratingService={draft.rating.service}
+              ratingPlace={draft.rating.place}
+              onRatingCoffee={(coffee) => updateDraft({ rating: { ...draft.rating, coffee } })}
+              onRatingService={(service) => updateDraft({ rating: { ...draft.rating, service } })}
+              onRatingPlace={(place) => updateDraft({ rating: { ...draft.rating, place } })}
               selectedFiles={selectedFiles}
               onFileSelect={handleFileSelect}
               onRemoveFile={removeFile}
