@@ -26,6 +26,7 @@ const ForgotPasswordPage = lazyWithRetry(() => import('../pages/ForgotPasswordPa
 const ResetPasswordPage = lazyWithRetry(() => import('../pages/ResetPasswordPage'));
 const CheckInsPage = lazyWithRetry(() => import('../pages/CheckInsPage'));
 const ReviewsPage = lazyWithRetry(() => import('../pages/ReviewsPage'));
+const DownloadPage = lazyWithRetry(() => import('../pages/DownloadPage'));
 
 const LoadingFallback = () => {
   const { theme } = useTheme();
@@ -50,6 +51,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/confirm-email" element={<ConfirmEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/download" element={<DownloadPage />} />
 
         {/* Protected routes */}
         <Route

@@ -80,6 +80,7 @@ export const API_ENDPOINTS = {
 
   PUBLIC: {
     STATS: "/api/public/stats",
+    APP_DOWNLOADS: "/api/v1/app-downloads",
   },
 
   REALTIME: {

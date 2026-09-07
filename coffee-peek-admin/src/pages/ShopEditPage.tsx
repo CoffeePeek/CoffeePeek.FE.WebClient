@@ -422,7 +422,9 @@ export const ShopEditPage: React.FC = () => {
         variant="success"
         withComment
         commentLabel="Комментарий (необязательно)"
-        onConfirm={async (comment) => approveMutation.mutateAsync(comment)}
+        onConfirm={async (comment) => {
+          await approveMutation.mutateAsync(comment);
+        }}
         onCancel={() => setPendingAction(null)}
       />
 
@@ -434,7 +436,9 @@ export const ShopEditPage: React.FC = () => {
         variant="danger"
         withComment
         commentLabel="Причина отклонения"
-        onConfirm={async (comment) => rejectMutation.mutateAsync(comment)}
+        onConfirm={async (comment) => {
+          await rejectMutation.mutateAsync(comment);
+        }}
         onCancel={() => setPendingAction(null)}
       />
     </div>

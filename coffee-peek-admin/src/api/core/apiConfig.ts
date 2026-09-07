@@ -60,6 +60,15 @@ export const API_ENDPOINTS = {
     CACHE_KEYS: '/api/admin/cache/keys',
     CACHE_CLEAR: '/api/admin/cache/clear',
     CACHE_CLEAR_KEY: (key: string) => `/api/admin/cache/clear/${encodeURIComponent(key)}`,
+    CACHE: {
+      CLEAR: '/api/admin/cache/clear',
+    },
+    APP_DOWNLOADS: '/api/admin/v1/app-downloads',
+    APP_DOWNLOADS_ANDROID_GOOGLE_PLAY: '/api/admin/v1/app-downloads/android/google-play',
+    APP_DOWNLOADS_IOS_APP_STORE: '/api/admin/v1/app-downloads/ios/app-store',
+    APP_DOWNLOADS_ANDROID_RELEASES: '/api/admin/v1/app-downloads/android/releases',
+    APP_DOWNLOADS_ANDROID_RELEASE_PUBLISH: (id: string) =>
+      `/api/admin/v1/app-downloads/android/releases/${id}/publish`,
   },
 
   PHOTOS: {

@@ -24,6 +24,9 @@ const ImportQueuePage = lazy(() => import('../pages/ImportQueuePage').then((m) =
 const ImportDuplicatesPage = lazy(() =>
   import('../pages/ImportDuplicatesPage').then((m) => ({ default: m.ImportDuplicatesPage }))
 );
+const AppDistributionPage = lazy(() =>
+  import('../pages/AppDistributionPage').then((m) => ({ default: m.AppDistributionPage }))
+);
 
 const Loader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -158,6 +161,15 @@ export const AppRoutes: React.FC = () => (
           element={
             <ProtectedRoute requireAdmin>
               <CachePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/app-distribution"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AppDistributionPage />
             </ProtectedRoute>
           }
         />
