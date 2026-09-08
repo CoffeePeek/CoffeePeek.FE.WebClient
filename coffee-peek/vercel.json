@@ -2,6 +2,13 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/downloads/:path*",
+      "destination": "https://api.coffeepeek.by/downloads/:path*",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/api/public-page?page=home" },
     { "source": "/shops", "destination": "/api/public-page?page=shops" },

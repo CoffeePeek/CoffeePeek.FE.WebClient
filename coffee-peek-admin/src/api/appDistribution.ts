@@ -45,16 +45,6 @@ export interface StoreChannelUpdateRequest {
   enabled: boolean;
 }
 
-export interface CreateAndroidReleaseRequest {
-  version: string;
-  versionCode: number;
-  fileUrl: string;
-  fileName: string;
-  fileSize: number;
-  sha256?: string | null;
-  releasedAt: string;
-}
-
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? value as Record<string, unknown> : {};
 }
@@ -162,13 +152,6 @@ export async function getAndroidAppReleases(): Promise<ApiResponse<AndroidAppRel
     ...response,
     data: unwrapList(response.data).map(normalizeRelease),
   };
-}
-
-export async function createAndroidAppRelease(
-  body: CreateAndroidReleaseRequest
-): Promise<ApiResponse<AndroidAppRelease>> {
-  const response = await httpClient.post<unknown>(API_ENDPOINTS.ADMIN.APP_DOWNLOADS_ANDROID_RELEASES, body);
-  return { ...response, data: normalizeRelease(response.data) };
 }
 
 export async function publishAndroidAppRelease(id: string): Promise<ApiResponse<void>> {

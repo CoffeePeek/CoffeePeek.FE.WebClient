@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AndroidAppRelease,
-  CreateAndroidReleaseRequest,
-  createAndroidAppRelease,
   getAndroidAppReleases,
   getAppDownloadsConfig,
   publishAndroidAppRelease,
@@ -48,14 +46,6 @@ function formatDate(value?: string | null): string {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-function toLocalDateTimeInput(value?: string): string {
-  const date = value ? new Date(value) : new Date();
-  if (Number.isNaN(date.getTime())) return '';
-  const offset = date.getTimezoneOffset();
-  const local = new Date(date.getTime() - offset * 60_000);
-  return local.toISOString().slice(0, 16);
 }
 
 function validationMessage(error: unknown, fallback: string): string {
@@ -131,22 +121,11 @@ const StoreSettingsCard: React.FC<{
   </Card>
 );
 
-const initialReleaseForm = (): CreateAndroidReleaseRequest => ({
-  version: '',
-  versionCode: 0,
-  fileUrl: '',
-  fileName: '',
-  fileSize: 0,
-  sha256: '',
-  releasedAt: new Date().toISOString(),
-});
-
 export const AppDistributionPage: React.FC = () => {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [googlePlayForm, setGooglePlayForm] = useState<StoreFormState>({ url: '', enabled: false });
   const [appStoreForm, setAppStoreForm] = useState<StoreFormState>({ url: '', enabled: false });
-  const [releaseForm, setReleaseForm] = useState<CreateAndroidReleaseRequest>(initialReleaseForm);
   const [releaseToPublish, setReleaseToPublish] = useState<AndroidAppRelease | null>(null);
 
   const configQuery = useQuery({
@@ -157,6 +136,7 @@ export const AppDistributionPage: React.FC = () => {
   const releasesQuery = useQuery({
     queryKey: distributionKeys.releases,
     queryFn: () => getAndroidAppReleases().then((r) => r.data),
+    refetchInterval: 30_000,
   });
 
   useEffect(() => {
@@ -200,25 +180,6 @@ export const AppDistributionPage: React.FC = () => {
       await queryClient.invalidateQueries({ queryKey: distributionKeys.config });
     },
     onError: (err) => showToast(validationMessage(err, 'Не удалось сохранить App Store'), 'error'),
-  });
-
-  const createReleaseMutation = useMutation({
-    mutationFn: () => createAndroidAppRelease({
-      ...releaseForm,
-      version: releaseForm.version.trim(),
-      versionCode: Number(releaseForm.versionCode),
-      fileUrl: releaseForm.fileUrl.trim(),
-      fileName: releaseForm.fileName.trim(),
-      fileSize: Number(releaseForm.fileSize),
-      sha256: releaseForm.sha256?.trim() || null,
-      releasedAt: new Date(releaseForm.releasedAt).toISOString(),
-    }),
-    onSuccess: async () => {
-      showToast('APK release создан', 'success');
-      setReleaseForm(initialReleaseForm());
-      await queryClient.invalidateQueries({ queryKey: distributionKeys.releases });
-    },
-    onError: (err) => showToast(validationMessage(err, 'Не удалось создать APK release'), 'error'),
   });
 
   const publishMutation = useMutation({
@@ -303,49 +264,6 @@ export const AppDistributionPage: React.FC = () => {
           loading={appStoreMutation.isPending || configQuery.isLoading}
         />
       </div>
-
-      <Card className="space-y-4">
-        <div>
-          <h3 className="font-display text-base font-semibold text-text-main dark:text-white">Создать APK-релиз</h3>
-          <p className="mt-1 text-xs text-text-muted dark:text-stone-400">
-            Создание не публикует релиз автоматически
-          </p>
-        </div>
-        <form
-          className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6"
-          onSubmit={(e) => {
-            e.preventDefault();
-            createReleaseMutation.mutate();
-          }}
-        >
-          <Field label="Версия" className="xl:col-span-2">
-            <input className="search-input w-full" placeholder="0.1.0" value={releaseForm.version} onChange={(e) => setReleaseForm({ ...releaseForm, version: e.target.value })} required />
-          </Field>
-          <Field label="Код версии" className="xl:col-span-2">
-            <input className="search-input w-full" placeholder="128" type="number" min={1} value={releaseForm.versionCode || ''} onChange={(e) => setReleaseForm({ ...releaseForm, versionCode: Number(e.target.value) })} required />
-          </Field>
-          <Field label="Размер файла, байты" className="xl:col-span-2">
-            <input className="search-input w-full" placeholder="48234496" type="number" min={1} value={releaseForm.fileSize || ''} onChange={(e) => setReleaseForm({ ...releaseForm, fileSize: Number(e.target.value) })} required />
-          </Field>
-          <Field label="Ссылка на файл" className="md:col-span-2 xl:col-span-4">
-            <input className="search-input w-full" placeholder="https://..." type="url" value={releaseForm.fileUrl} onChange={(e) => setReleaseForm({ ...releaseForm, fileUrl: e.target.value })} required />
-          </Field>
-          <Field label="Имя файла" className="md:col-span-2 xl:col-span-2">
-            <input className="search-input w-full" placeholder="coffeepeek.apk" value={releaseForm.fileName} onChange={(e) => setReleaseForm({ ...releaseForm, fileName: e.target.value })} required />
-          </Field>
-          <Field label="SHA-256" className="md:col-span-2 xl:col-span-4">
-            <input className="search-input w-full font-mono" placeholder="Опционально" value={releaseForm.sha256 ?? ''} onChange={(e) => setReleaseForm({ ...releaseForm, sha256: e.target.value })} />
-          </Field>
-          <Field label="Дата релиза" className="md:col-span-2 xl:col-span-2">
-            <input className="search-input w-full" type="datetime-local" value={toLocalDateTimeInput(releaseForm.releasedAt)} onChange={(e) => setReleaseForm({ ...releaseForm, releasedAt: new Date(e.target.value).toISOString() })} required />
-          </Field>
-          <div className="md:col-span-2 xl:col-span-6">
-            <Button type="submit" loading={createReleaseMutation.isPending} className="w-full sm:w-auto min-h-[44px]">
-              Создать релиз
-            </Button>
-          </div>
-        </form>
-      </Card>
 
       <Card padding="none">
         <div className="border-b border-border-light p-4 dark:border-border-dark">
