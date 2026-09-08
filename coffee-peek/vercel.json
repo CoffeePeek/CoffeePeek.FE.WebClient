@@ -13,6 +13,9 @@
     { "source": "/", "destination": "/api/public-page?page=home" },
     { "source": "/shops", "destination": "/api/public-page?page=shops" },
     { "source": "/shops/:shopId", "destination": "/api/public-page?page=shop&shopId=:shopId" },
+    { "source": "/download/android", "destination": "https://api.coffeepeek.by/download/android" },
+    { "source": "/download/apk", "destination": "https://api.coffeepeek.by/download/apk" },
+    { "source": "/download/ios", "destination": "https://api.coffeepeek.by/download/ios" },
     { "source": "/:path*", "destination": "/index.html" }
   ],
   "headers": [
