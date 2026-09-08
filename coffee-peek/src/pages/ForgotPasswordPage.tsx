@@ -51,7 +51,7 @@ const ForgotPasswordPage: React.FC = () => {
         <div style={{ padding: 40, paddingTop: sent ? 40 : 48, borderRadius: 24, background: 'rgba(45,36,31,0.6)', backdropFilter: 'blur(24px)', border: `1px solid ${cardBorder}`, boxShadow: '0 24px 48px -12px rgba(0,0,0,0.5)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
             <LogoMark size={52} variant="dark" />
-            <span style={{ fontFamily: '"RF Dewi Expanded","Sora",system-ui', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
+            <span style={{ fontFamily: '"Inter",system-ui', fontWeight: 700, letterSpacing: '-0.025em', fontSize: 18, color: textPrimary }}>
               Coffee<span style={{ color: gold }}>Peek</span>
             </span>
           </div>
@@ -61,31 +61,31 @@ const ForgotPasswordPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 12px' }} aria-hidden>
                 <Mascot pose="happy" size={132} />
               </div>
-              <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>
+              <h1 style={{ margin: '0 0 10px', fontFamily: '"Inter"', fontWeight: 700, fontSize: 24, color: textPrimary }}>
                 Проверьте почту
               </h1>
-              <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
+              <p style={{ margin: '0 0 24px', fontFamily: '"Inter", sans-serif', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
                 Если аккаунт с паролем существует, мы отправили ссылку для сброса на{' '}
                 <span style={{ fontWeight: 600, color: textPrimary }}>{email}</span>.
               </p>
               <Link
                 to="/login"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, textDecoration: 'none' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', fontFamily: '"Inter"', fontWeight: 600, fontSize: 15, textDecoration: 'none' }}
               >
                 Вернуться ко входу
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <h1 style={{ margin: '0 0 8px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary, textAlign: 'center' }}>
+              <h1 style={{ margin: '0 0 8px', fontFamily: '"Inter"', fontWeight: 700, fontSize: 24, color: textPrimary, textAlign: 'center' }}>
                 Забыли пароль?
               </h1>
-              <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: textMuted, textAlign: 'center', lineHeight: 1.55 }}>
+              <p style={{ margin: '0 0 24px', fontFamily: '"Inter", sans-serif', fontSize: 14, color: textMuted, textAlign: 'center', lineHeight: 1.55 }}>
                 Укажите email — пришлём ссылку для сброса, если аккаунт найден.
               </p>
 
               <label style={{ display: 'block', textAlign: 'left', marginBottom: 16 }}>
-                <div style={{ fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 12, fontWeight: 600, color: textMuted, marginBottom: 6 }}>Email</div>
+                <div style={{ fontFamily: '"Inter", sans-serif', fontSize: 12, fontWeight: 600, color: textMuted, marginBottom: 6 }}>Email</div>
                 <input
                   type="email"
                   value={email}
@@ -96,13 +96,13 @@ const ForgotPasswordPage: React.FC = () => {
                     width: '100%', height: 50, borderRadius: 12, padding: '0 16px',
                     border: `1px solid ${error ? '#EF4444' : cardBorder}`,
                     background: 'rgba(255,255,255,0.03)', color: textPrimary,
-                    fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 15, outline: 'none', boxSizing: 'border-box',
+                    fontFamily: '"Inter", sans-serif', fontSize: 15, outline: 'none', boxSizing: 'border-box',
                   }}
                 />
               </label>
 
               {error && (
-                <p style={{ margin: '0 0 12px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: '#EF4444' }}>{error}</p>
+                <p style={{ margin: '0 0 12px', fontFamily: '"Inter", sans-serif', fontSize: 13, color: '#EF4444' }}>{error}</p>
               )}
 
               <button
@@ -110,7 +110,7 @@ const ForgotPasswordPage: React.FC = () => {
                 disabled={isLoading || !email.trim()}
                 style={{
                   width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none',
-                  fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15,
+                  fontFamily: '"Inter"', fontWeight: 600, fontSize: 15,
                   cursor: isLoading || !email.trim() ? 'not-allowed' : 'pointer',
                   opacity: !email.trim() ? 0.5 : 1,
                 }}
@@ -118,7 +118,7 @@ const ForgotPasswordPage: React.FC = () => {
                 {isLoading ? 'Отправляем…' : 'Отправить ссылку'}
               </button>
 
-              <p style={{ margin: '20px 0 0', textAlign: 'center', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: textMuted }}>
+              <p style={{ margin: '20px 0 0', textAlign: 'center', fontFamily: '"Inter", sans-serif', fontSize: 13, color: textMuted }}>
                 <Link to="/login" style={{ color: gold, fontWeight: 600, textDecoration: 'none' }}>Назад ко входу</Link>
               </p>
             </form>

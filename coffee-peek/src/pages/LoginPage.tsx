@@ -33,7 +33,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
   const [focused, setFocused] = useState(false);
   return (
     <label style={{ display: 'block', textAlign: 'left' }}>
-      {label && <div style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
+      {label && <div style={{ fontFamily: '"Inter"', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
       <div style={{ position: 'relative' }}>
         {icon && (
           <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
@@ -49,7 +49,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
             background: dark ? 'rgba(255,255,255,0.03)' : '#fff',
             boxShadow: focused ? '0 0 0 4px rgba(234,179,8,0.08)' : 'none',
             padding: `0 ${trailing ? 44 : 16}px 0 ${icon ? 46 : 16}px`,
-            fontSize: 15, fontFamily: '"RF Dewi Expanded"',
+            fontSize: 15, fontFamily: '"Inter"',
             color: dark ? '#fff' : '#1C1917',
             outline: 'none', boxSizing: 'border-box', transition: 'all .15s',
           }}
@@ -57,7 +57,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
         {trailing}
       </div>
       {error && (
-        <div style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ fontFamily: '"Inter"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
           <WarningCircle size={14} weight="fill" />{error}
         </div>
       )}
@@ -74,7 +74,7 @@ const Stepper: React.FC<{ dark: boolean }> = ({ dark }) => {
           <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-1.5 py-1 text-[10px] font-semibold min-[360px]:px-2 sm:px-2.5 sm:text-[11px]" style={{
             background: i <= 1 ? 'rgba(234,179,8,0.12)' : dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
             color: i <= 1 ? '#EAB308' : dark ? '#A39E93' : '#78716C',
-            fontFamily: '"RF Dewi Expanded"',
+            fontFamily: '"Inter"',
           }}>
             <span style={{ width: 16, height: 16, borderRadius: 99, background: i <= 1 ? '#EAB308' : 'transparent', border: i <= 1 ? 'none' : `1px solid ${dark ? '#3D2F28' : '#E7E5E4'}`, color: '#1A1412', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
               {i < 1 ? <Check size={10} weight="bold" /> : i + 1}
@@ -225,10 +225,10 @@ const LoginPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <WarningCircle size={20} weight="fill" color="#EAB308" style={{ flexShrink: 0, marginTop: 1 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 13, color: gold, lineHeight: 1.4 }}>
+                <p style={{ margin: 0, fontFamily: '"Inter"', fontWeight: 700, fontSize: 13, color: gold, lineHeight: 1.4 }}>
                   Email не подтверждён
                 </p>
-                <p style={{ margin: '4px 0 0', fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: dark ? '#E7E5E4' : '#57534E', lineHeight: 1.5 }}>
+                <p style={{ margin: '4px 0 0', fontFamily: '"Inter"', fontSize: 13, color: dark ? '#E7E5E4' : '#57534E', lineHeight: 1.5 }}>
                   {resendState === 'sending'
                     ? 'Отправляем письмо подтверждения…'
                     : resendState === 'sent'
@@ -252,7 +252,7 @@ const LoginPage: React.FC = () => {
                     border: `1px solid ${dark ? 'rgba(234,179,8,0.4)' : 'rgba(212,168,75,0.5)'}`,
                     background: dark ? 'rgba(234,179,8,0.12)' : 'rgba(212,168,75,0.12)',
                     color: gold,
-                    fontFamily: '"RF Dewi Expanded"',
+                    fontFamily: '"Inter"',
                     fontWeight: 600,
                     fontSize: 12,
                     cursor: resendState === 'sending' || resendCooldown > 0 ? 'not-allowed' : 'pointer',
@@ -288,7 +288,7 @@ const LoginPage: React.FC = () => {
           onClick={() => navigate('/')}
           style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: 4, cursor: 'pointer', position: 'relative', zIndex: 4 }}
         >
-          <span style={{ fontFamily: '"RF Dewi Expanded"', fontWeight: 800, letterSpacing: '-0.035em', fontSize: 22, color: textPrimary }}>
+          <span style={{ fontFamily: '"Inter"', fontWeight: 800, letterSpacing: '-0.035em', fontSize: 22, color: textPrimary }}>
             Coffee<span style={{ color: '#EAB308' }}>Peek</span>
           </span>
         </button>
@@ -300,18 +300,18 @@ const LoginPage: React.FC = () => {
           {passedEmail && <Stepper dark={dark} />}
 
           {passedEmail && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: dark ? '#22C55E' : '#15803D', fontFamily: '"RF Dewi Expanded"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: dark ? '#22C55E' : '#15803D', fontFamily: '"Inter"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
               <CheckCircle size={14} weight="fill" color="#22C55E" />
               Аккаунт найден
             </span>
           )}
 
-          <h1 style={{ margin: passedEmail ? '14px 0 0' : '0 0 4px', fontFamily: '"RF Dewi Expanded"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>
+          <h1 style={{ margin: passedEmail ? '14px 0 0' : '0 0 4px', fontFamily: '"Inter"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>
             {passedEmail ? 'С возвращением!' : 'Вход в аккаунт'}
           </h1>
 
           {!passedEmail && (
-            <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
+            <p style={{ margin: '0 0 20px', fontFamily: '"Inter"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
               Войдите в свой аккаунт CoffeePeek.
             </p>
           )}
@@ -325,7 +325,7 @@ const LoginPage: React.FC = () => {
                 borderRadius: 12,
                 background: 'rgba(234,179,8,0.09)',
                 border: '1px solid rgba(234,179,8,0.30)',
-                fontFamily: '"RF Dewi Expanded", sans-serif',
+                fontFamily: '"Inter", sans-serif',
                 fontSize: 13,
                 color: gold,
                 lineHeight: 1.5,
@@ -352,7 +352,7 @@ const LoginPage: React.FC = () => {
               onError={setError}
             />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"RF Dewi Expanded"', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"Inter"', marginBottom: 14 }}>
             <div style={{ flex: 1, height: 1, background: cardBorder }} />ИЛИ<div style={{ flex: 1, height: 1, background: cardBorder }} />
           </div>
 
@@ -376,11 +376,11 @@ const LoginPage: React.FC = () => {
               value={password} onChange={e => setPassword(e.target.value)} trailing={PwdToggle} error={error || undefined} dark={dark} />
 
             <div style={{ textAlign: 'right', marginTop: -6 }}>
-              <Link to="/forgot-password" style={{ fontFamily: '"RF Dewi Expanded"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>Забыли пароль?</Link>
+              <Link to="/forgot-password" style={{ fontFamily: '"Inter"', fontSize: 13, color: gold, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>Забыли пароль?</Link>
             </div>
 
             <button type="submit" disabled={isLoading || !password}
-              style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'pointer', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>
+              style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Inter"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'pointer', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>
               {isLoading ? (
                 <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Входим…</>
               ) : 'Войти'}
@@ -390,12 +390,12 @@ const LoginPage: React.FC = () => {
           <div className="mt-[18px] flex items-center justify-between gap-2">
             <button type="button" onClick={() => navigate(passedEmail ? '/register' : '/')}
               className="whitespace-nowrap text-[11px] min-[360px]:text-xs sm:text-[13px]"
-              style={{ padding: 0, background: 'none', border: 'none', color: textMuted, fontFamily: '"RF Dewi Expanded"', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              style={{ padding: 0, background: 'none', border: 'none', color: textMuted, fontFamily: '"Inter"', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <ArrowLeft size={14} /> Назад
             </button>
             <button type="button" onClick={() => navigate('/register')}
               className="whitespace-nowrap text-[11px] min-[360px]:text-xs sm:text-[13px]"
-              style={{ padding: 0, background: 'none', border: 'none', color: gold, fontFamily: '"RF Dewi Expanded"', fontWeight: 600, cursor: 'pointer' }}>
+              style={{ padding: 0, background: 'none', border: 'none', color: gold, fontFamily: '"Inter"', fontWeight: 600, cursor: 'pointer' }}>
               Создать аккаунт
             </button>
           </div>

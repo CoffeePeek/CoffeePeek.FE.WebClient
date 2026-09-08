@@ -56,7 +56,7 @@ function replaceMeta(html, { title, description, canonical, type = 'website', im
 }
 
 function serverContent(content) {
-  return `<div id="server-rendered-content" style="min-height:100vh;background:#1A1412;color:#fff;font-family:'RF Dewi',sans-serif">
+  return `<div id="server-rendered-content" style="min-height:100vh;background:#1A1412;color:#fff;font-family:'Inter',sans-serif">
     <header style="border-bottom:1px solid #3D2F28;padding:16px clamp(20px,5vw,64px)"><a href="/" style="color:#fff;text-decoration:none;font-size:20px;font-weight:700">Coffee<span style="color:#EAB308">Peek</span></a></header>
     ${content}
   </div>
@@ -69,7 +69,7 @@ function injectContent(html, content) {
 
 function pageLayout(title, intro, body) {
   return `<main style="max-width:1120px;margin:0 auto;padding:48px 20px 72px">
-    <h1 style="font-family:'RF Dewi Extended',sans-serif;font-size:clamp(32px,5vw,52px);margin:0 0 12px">${escapeHtml(title)}</h1>
+    <h1 style="font-family:'Inter',sans-serif;font-size:clamp(32px,5vw,52px);margin:0 0 12px">${escapeHtml(title)}</h1>
     <p style="color:#A39E93;font-size:18px;line-height:1.6;margin:0 0 32px">${escapeHtml(intro)}</p>
     ${body}
   </main>`;

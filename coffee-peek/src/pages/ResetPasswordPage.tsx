@@ -62,8 +62,8 @@ const ResetPasswordPage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }} aria-hidden>
             <Mascot pose="astonishment" size={140} />
           </div>
-          <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>Ссылка недействительна</h1>
-          <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: textMuted }}>В ссылке нет токена сброса пароля.</p>
+          <h1 style={{ margin: '0 0 10px', fontFamily: '"Inter"', fontWeight: 700, fontSize: 24, color: textPrimary }}>Ссылка недействительна</h1>
+          <p style={{ margin: '0 0 24px', fontFamily: '"Inter", sans-serif', fontSize: 14, color: textMuted }}>В ссылке нет токена сброса пароля.</p>
           <Link to="/forgot-password" style={{ color: gold, fontWeight: 600, textDecoration: 'none' }}>Запросить новую ссылку</Link>
         </div>
       </div>
@@ -83,7 +83,7 @@ const ResetPasswordPage: React.FC = () => {
         <div style={{ padding: 40, paddingTop: done ? 40 : 48, borderRadius: 24, background: 'rgba(45,36,31,0.6)', backdropFilter: 'blur(24px)', border: `1px solid ${cardBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
             <LogoMark size={52} variant="dark" />
-            <span style={{ fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 18, color: textPrimary }}>
+            <span style={{ fontFamily: '"Inter"', fontWeight: 700, fontSize: 18, color: textPrimary }}>
               Coffee<span style={{ color: gold }}>Peek</span>
             </span>
           </div>
@@ -93,29 +93,29 @@ const ResetPasswordPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 12px' }} aria-hidden>
                 <Mascot pose="happy" size={132} />
               </div>
-              <h1 style={{ margin: '0 0 10px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary }}>Пароль обновлён</h1>
-              <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
+              <h1 style={{ margin: '0 0 10px', fontFamily: '"Inter"', fontWeight: 700, fontSize: 24, color: textPrimary }}>Пароль обновлён</h1>
+              <p style={{ margin: '0 0 24px', fontFamily: '"Inter", sans-serif', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
                 Все сессии сброшены. Войдите с новым паролем.
               </p>
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
+                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Inter"', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
               >
                 Войти
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <h1 style={{ margin: '0 0 8px', fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 700, fontSize: 24, color: textPrimary, textAlign: 'center' }}>
+              <h1 style={{ margin: '0 0 8px', fontFamily: '"Inter"', fontWeight: 700, fontSize: 24, color: textPrimary, textAlign: 'center' }}>
                 Новый пароль
               </h1>
-              <p style={{ margin: '0 0 24px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: textMuted, textAlign: 'center' }}>
+              <p style={{ margin: '0 0 24px', fontFamily: '"Inter", sans-serif', fontSize: 14, color: textMuted, textAlign: 'center' }}>
                 Придумайте новый пароль для входа
               </p>
 
               <label style={{ display: 'block', marginBottom: 14 }}>
-                <div style={{ fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 12, fontWeight: 600, color: textMuted, marginBottom: 6 }}>Новый пароль</div>
+                <div style={{ fontFamily: '"Inter", sans-serif', fontSize: 12, fontWeight: 600, color: textMuted, marginBottom: 6 }}>Новый пароль</div>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPwd ? 'text' : 'password'}
@@ -126,7 +126,7 @@ const ResetPasswordPage: React.FC = () => {
                     style={{
                       width: '100%', height: 50, borderRadius: 12, padding: '0 48px 0 16px',
                       border: `1px solid ${cardBorder}`, background: 'rgba(255,255,255,0.03)', color: textPrimary,
-                      fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 15, outline: 'none', boxSizing: 'border-box',
+                      fontFamily: '"Inter", sans-serif', fontSize: 15, outline: 'none', boxSizing: 'border-box',
                     }}
                   />
                   <button
@@ -141,7 +141,7 @@ const ResetPasswordPage: React.FC = () => {
               </label>
 
               <label style={{ display: 'block', marginBottom: 16 }}>
-                <div style={{ fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 12, fontWeight: 600, color: textMuted, marginBottom: 6 }}>Повторите пароль</div>
+                <div style={{ fontFamily: '"Inter", sans-serif', fontSize: 12, fontWeight: 600, color: textMuted, marginBottom: 6 }}>Повторите пароль</div>
                 <input
                   type={showPwd ? 'text' : 'password'}
                   value={confirmPassword}
@@ -150,13 +150,13 @@ const ResetPasswordPage: React.FC = () => {
                   style={{
                     width: '100%', height: 50, borderRadius: 12, padding: '0 16px',
                     border: `1px solid ${cardBorder}`, background: 'rgba(255,255,255,0.03)', color: textPrimary,
-                    fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 15, outline: 'none', boxSizing: 'border-box',
+                    fontFamily: '"Inter", sans-serif', fontSize: 15, outline: 'none', boxSizing: 'border-box',
                   }}
                 />
               </label>
 
               {error && (
-                <p style={{ margin: '0 0 12px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: '#EF4444' }}>{error}</p>
+                <p style={{ margin: '0 0 12px', fontFamily: '"Inter", sans-serif', fontSize: 13, color: '#EF4444' }}>{error}</p>
               )}
 
               <button
@@ -164,7 +164,7 @@ const ResetPasswordPage: React.FC = () => {
                 disabled={isLoading || newPassword.length < 8}
                 style={{
                   width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none',
-                  fontFamily: '"RF Dewi Expanded","Sora"', fontWeight: 600, fontSize: 15,
+                  fontFamily: '"Inter"', fontWeight: 600, fontSize: 15,
                   cursor: isLoading || newPassword.length < 8 ? 'not-allowed' : 'pointer',
                   opacity: newPassword.length < 8 ? 0.5 : 1,
                 }}

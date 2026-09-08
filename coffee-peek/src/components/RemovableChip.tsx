@@ -31,7 +31,7 @@ export const RemovableChip: React.FC<{
       background: `${gold}15`,
       color: gold,
       border: `1px solid ${gold}40`,
-      fontFamily: '"RF Dewi Expanded"',
+      fontFamily: '"Inter"',
       fontWeight: 600,
       fontSize: 12,
     }}

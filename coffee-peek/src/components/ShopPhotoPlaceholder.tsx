@@ -34,7 +34,7 @@ const ShopPhotoPlaceholder: React.FC<ShopPhotoPlaceholderProps> = ({
     >
       <span
         style={{
-          fontFamily: '"RF Dewi Expanded", sans-serif',
+          fontFamily: '"Inter", sans-serif',
           fontWeight: 800,
           fontSize,
           letterSpacing: '-0.045em',

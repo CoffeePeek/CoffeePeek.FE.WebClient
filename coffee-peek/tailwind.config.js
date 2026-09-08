@@ -41,10 +41,10 @@ export default {
         },
       },
       fontFamily: {
-        body: ["RF Dewi", "sans-serif"],
-        condensed: ["RF Dewi Condensed", "sans-serif"],
-        extended: ["RF Dewi Extended", "sans-serif"],
-        expanded: ["RF Dewi Expanded", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+        condensed: ["Inter", "sans-serif"],
+        extended: ["Inter", "sans-serif"],
+        expanded: ["Inter", "sans-serif"],
       },
       letterSpacing: {
         wordmark: "-0.045em",

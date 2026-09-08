@@ -62,8 +62,8 @@ export const dark = {
 
 export const typography = {
   fontFamily: {
-    display: 'RF Dewi Expanded',
-    body: 'RF Dewi Expanded',
+    display: 'Inter',
+    body: 'Inter',
   },
   fontWeight: {
     ultralight: 200,

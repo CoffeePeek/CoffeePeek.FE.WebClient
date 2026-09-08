@@ -65,7 +65,7 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
         style={{
           minHeight: currentLabel ? 18 : 0,
           marginBottom: currentLabel ? 10 : 6,
-          fontFamily: '"RF Dewi Expanded"',
+          fontFamily: '"Inter"',
           fontSize: 12,
           fontWeight: 600,
           color: gold,

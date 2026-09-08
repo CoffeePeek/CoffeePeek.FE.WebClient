@@ -77,21 +77,15 @@ src/design-system/
 
 | Роль | Семейство | Tailwind | Использование |
 |------|-----------|----------|---------------|
-| Body (простой текст) | RF Dewi | `font-body` | Параграфы, формы, дефолтный текст |
-| Headline (заголовки) | RF Dewi Extended | `font-extended` | H1–H3, заголовки секций |
-| Accent (крупные брендовые акценты) | RF Dewi Expanded | `font-expanded`, `.wordmark`, `.hero-text`, `.numeral` | Логотип, hero, крупные цифры |
-| Condensed (мало места) | RF Dewi Condensed | `font-condensed` | Бейджи, чипы, плотный UI |
+| Body (простой текст) | Inter | `font-body` | Параграфы, формы, дефолтный текст |
+| Headline (заголовки) | Inter | `font-extended` | H1–H3, заголовки секций |
+| Accent (крупные брендовые акценты) | Inter | `font-expanded`, `.wordmark`, `.hero-text`, `.numeral` | Логотип, hero, крупные цифры |
+| Condensed (мало места) | Inter | `font-condensed` | Бейджи, чипы, плотный UI |
 | Icons | Phosphor Icons (`@phosphor-icons/react`) | — | — |
 
-Все семейства — один вес (400, Regular), их визуальная плотность (condensed/expanded/extended) задаётся самим шрифтом, а не `font-weight`.
+Единый шрифт Inter (variable, вес 400–900), подключается через Google Fonts в `index.html`.
 
-Файлы шрифтов в вебе: `/public/fonts/*.otf`
-- `RFDewi-Regular.otf` → `RF Dewi`
-- `RFDewiCondensed-Regular.otf` → `RF Dewi Condensed`
-- `RFDewiExtended-Regular.otf` → `RF Dewi Extended`
-- `RFDewiExpanded-Regular.otf` → `RF Dewi Expanded`
-
-Android-соответствие (плейсхолдер, пока не портировано): `res/font/rf_dewi_*.otf`, body — RF Dewi / RF Dewi.
+Android-соответствие (плейсхолдер, пока не портировано): Inter из Google Fonts → `res/font/`.
 
 ### Стили текста
 
@@ -256,9 +250,7 @@ cp src/design-system/android/dimens.xml       → app/src/main/res/values/dimens
 
 ### Шаг 2: Шрифты
 
-Скопируйте из веб-проекта (`public/fonts/`):
-- `RFDewiExpanded-Regular.otf` → `res/font/`
-- `RF Dewi` → скачайте с Google Fonts → `res/font/`
+Скачайте Inter с Google Fonts → `res/font/`.
 
 ### Шаг 3: Compose Theme
 

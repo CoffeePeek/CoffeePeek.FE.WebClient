@@ -5,35 +5,12 @@
 @layer base {
   html,
   body {
-    font-family: "RF Dewi", sans-serif;
+    font-family: "Inter", sans-serif;
   }
 }
 
-/* ── RF Dewi family — Regular is the only weight per variant ───── */
-@font-face {
-  font-family: "RF Dewi";
-  src: url("/fonts/RFDewi-Regular.otf") format("opentype");
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "RF Dewi Condensed";
-  src: url("/fonts/RFDewiCondensed-Regular.otf") format("opentype");
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "RF Dewi Extended";
-  src: url("/fonts/RFDewiExtended-Regular.otf") format("opentype");
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-/* Expanded — reserved for large brand accents (wordmark, hero, numerals) */
-@font-face {
-  font-family: "RF Dewi Expanded";
-  src: url("/fonts/RFDewiExpanded-Regular.otf") format("opentype");
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-
 :root {
-  font-family: "RF Dewi", sans-serif;
+  font-family: "Inter", sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -154,16 +131,16 @@ html {
 }
 
 /* ── Magazine Stamp typography system ──────────────────────────── */
-/* Wordmark: RF Dewi Expanded Ultrabold, tight tracking            */
+/* Wordmark: Inter Ultrabold, tight tracking                       */
 .wordmark {
-  font-family: "RF Dewi Expanded", sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 1;
 }
 /* Hero / h1: ALL CAPS, Regular 400, dense line-height            */
 .hero-text {
-  font-family: "RF Dewi Expanded", sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: -0.01em;
@@ -178,7 +155,7 @@ html {
 
 /* Large numeral (ratings, stats): Ultrabold, tabular              */
 .numeral {
-  font-family: "RF Dewi Expanded", sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 0.84;

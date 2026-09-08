@@ -69,14 +69,14 @@ const ReviewsPage: React.FC = () => {
             <AppIcon name="arrow_back" size={20} color="currentColor" />
           </button>
           <h1 style={{
-            margin: 0, fontFamily: '"RF Dewi Expanded"', fontWeight: 700,
+            margin: 0, fontFamily: '"Inter"', fontWeight: 700,
             fontSize: 18, color: colors.textPrimary, letterSpacing: '-0.01em',
           }}>
             Мои отзывы
           </h1>
           {totalItems > 0 && (
             <span style={{
-              fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: colors.textSecondary,
+              fontFamily: '"Inter", sans-serif', fontSize: 13, color: colors.textSecondary,
             }}>
               {totalItems}
             </span>
@@ -94,7 +94,7 @@ const ReviewsPage: React.FC = () => {
             padding: 24, borderRadius: 16, border: `1px solid ${colors.border}`,
             background: colors.surface, textAlign: 'center',
           }}>
-            <p style={{ margin: '0 0 16px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: '#EF4444' }}>
+            <p style={{ margin: '0 0 16px', fontFamily: '"Inter", sans-serif', fontSize: 14, color: '#EF4444' }}>
               {getErrorMessage(error)}
             </p>
             <button
@@ -102,7 +102,7 @@ const ReviewsPage: React.FC = () => {
               onClick={() => refetch()}
               style={{
                 padding: '10px 18px', borderRadius: 12, border: 'none', background: gold,
-                color: '#1A1412', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                color: '#1A1412', fontFamily: '"Inter", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
               }}
             >
               Повторить
@@ -117,12 +117,12 @@ const ReviewsPage: React.FC = () => {
               <Mascot pose="book" size={128} />
             </div>
             <h2 style={{
-              margin: '0 0 8px', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700,
+              margin: '0 0 8px', fontFamily: '"Inter", sans-serif', fontWeight: 700,
               fontSize: 18, color: colors.textPrimary,
             }}>
               Пока нет отзывов
             </h2>
-            <p style={{ margin: '0 0 20px', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: colors.textSecondary }}>
+            <p style={{ margin: '0 0 20px', fontFamily: '"Inter", sans-serif', fontSize: 14, color: colors.textSecondary }}>
               Публичный чекин или отзыв на странице кофейни появится здесь.
             </p>
             <button
@@ -130,7 +130,7 @@ const ReviewsPage: React.FC = () => {
               onClick={() => navigate('/shops')}
               style={{
                 padding: '10px 20px', borderRadius: 12, border: 'none', background: gold,
-                color: '#1A1412', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                color: '#1A1412', fontFamily: '"Inter", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
               }}
             >
               Открыть каталог
@@ -163,13 +163,13 @@ const ReviewsPage: React.FC = () => {
                         }}
                       >
                         <p style={{
-                          margin: 0, fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 700,
+                          margin: 0, fontFamily: '"Inter", sans-serif', fontWeight: 700,
                           fontSize: 16, color: colors.textPrimary,
                         }}>
                           {item.shopName || item.header || 'Отзыв о кофейне'}
                         </p>
                         <p style={{
-                          margin: '6px 0 0', fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: colors.textSecondary,
+                          margin: '6px 0 0', fontFamily: '"Inter", sans-serif', fontSize: 13, color: colors.textSecondary,
                         }}>
                           {formatDate(item.visitedAt || item.createdAt)}
                         </p>
@@ -184,7 +184,7 @@ const ReviewsPage: React.FC = () => {
                               />
                             ))}
                           </div>
-                          <span style={{ fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 12, color: colors.textSecondary }}>
+                          <span style={{ fontFamily: '"Inter", sans-serif', fontSize: 12, color: colors.textSecondary }}>
                             Кофе {item.ratingCoffee} · Сервис {item.ratingService} · Атмосф. {item.ratingPlace}
                           </span>
                         </div>
@@ -199,7 +199,7 @@ const ReviewsPage: React.FC = () => {
                             padding: '5px 10px', borderRadius: 8,
                             border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`,
                             background: 'transparent', color: gold,
-                            fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                            fontFamily: '"Inter", sans-serif', fontWeight: 600, fontSize: 12, cursor: 'pointer',
                             flexShrink: 0,
                           }}
                         >
@@ -211,7 +211,7 @@ const ReviewsPage: React.FC = () => {
 
                     {item.header && item.shopName && (
                       <p style={{
-                        margin: '12px 0 0', fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600,
+                        margin: '12px 0 0', fontFamily: '"Inter", sans-serif', fontWeight: 600,
                         fontSize: 14, color: colors.textPrimary,
                       }}>
                         {item.header}
@@ -223,7 +223,7 @@ const ReviewsPage: React.FC = () => {
                         margin: item.header && item.shopName ? '6px 0 0' : '12px 0 0',
                         paddingTop: item.header && item.shopName ? 0 : 12,
                         borderTop: item.header && item.shopName ? 'none' : `1px solid ${colors.border}`,
-                        fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: colors.textPrimary, lineHeight: 1.5,
+                        fontFamily: '"Inter", sans-serif', fontSize: 14, color: colors.textPrimary, lineHeight: 1.5,
                       }}>
                         {item.comment}
                       </p>
@@ -261,13 +261,13 @@ const ReviewsPage: React.FC = () => {
                       border: `1px solid ${colors.border}`,
                       background: page <= 1 ? colors.border : colors.surface,
                       color: page <= 1 ? `${colors.textSecondary}80` : colors.textPrimary,
-                      fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 14,
+                      fontFamily: '"Inter", sans-serif', fontWeight: 600, fontSize: 14,
                       cursor: page <= 1 ? 'not-allowed' : 'pointer',
                     }}
                   >
                     ← Назад
                   </button>
-                  <span style={{ fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 14, color: colors.textSecondary }}>
+                  <span style={{ fontFamily: '"Inter", sans-serif', fontSize: 14, color: colors.textSecondary }}>
                     Страница <span style={{ fontWeight: 700, color: gold }}>{page}</span> из {totalPages}
                   </span>
                   <button
@@ -279,14 +279,14 @@ const ReviewsPage: React.FC = () => {
                       border: `1px solid ${colors.border}`,
                       background: page >= totalPages ? colors.border : colors.surface,
                       color: page >= totalPages ? `${colors.textSecondary}80` : colors.textPrimary,
-                      fontFamily: '"RF Dewi Expanded", sans-serif', fontWeight: 600, fontSize: 14,
+                      fontFamily: '"Inter", sans-serif', fontWeight: 600, fontSize: 14,
                       cursor: page >= totalPages ? 'not-allowed' : 'pointer',
                     }}
                   >
                     Вперёд →
                   </button>
                 </div>
-                <p style={{ margin: 0, fontFamily: '"RF Dewi Expanded", sans-serif', fontSize: 13, color: colors.textSecondary }}>
+                <p style={{ margin: 0, fontFamily: '"Inter", sans-serif', fontSize: 13, color: colors.textSecondary }}>
                   Показано {items.length} из {totalItems}
                 </p>
               </div>
