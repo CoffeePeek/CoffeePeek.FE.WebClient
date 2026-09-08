@@ -84,7 +84,8 @@ function apkChannel(raw: Record<string, unknown>): AdminApkChannel {
 }
 
 function normalizeConfig(raw: unknown): AdminAppDownloadsConfig {
-  const root = record(raw);
+  const response = record(raw);
+  const root = record(response.data ?? response.Data ?? raw);
   const android = record(root.android ?? root.Android);
   const ios = record(root.ios ?? root.Ios ?? root.iOS ?? root.IOS);
   return {
@@ -116,6 +117,9 @@ function normalizeRelease(raw: unknown): AndroidAppRelease {
 function unwrapList(raw: unknown): unknown[] {
   if (Array.isArray(raw)) return raw;
   const root = record(raw);
+  const data = record(root.data ?? root.Data);
+  if (Array.isArray(root.data)) return root.data;
+  if (Array.isArray(root.Data)) return root.Data;
   const candidates = [
     root.items,
     root.Items,
@@ -123,6 +127,12 @@ function unwrapList(raw: unknown): unknown[] {
     root.Releases,
     root.androidReleases,
     root.AndroidReleases,
+    data.items,
+    data.Items,
+    data.releases,
+    data.Releases,
+    data.androidReleases,
+    data.AndroidReleases,
   ];
   return candidates.find(Array.isArray) as unknown[] | undefined ?? [];
 }

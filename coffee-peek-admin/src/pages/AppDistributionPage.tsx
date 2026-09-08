@@ -197,6 +197,9 @@ export const AppDistributionPage: React.FC = () => {
     [releasesQuery.data]
   );
   const production = configQuery.data?.android.apk;
+  const activeRelease = releases.find((release) => release.isActive);
+  const productionVersion = production?.version ?? activeRelease?.version;
+  const isApkAvailable = Boolean(production?.available || production?.url || activeRelease);
 
   return (
     <div className="page-container">
@@ -222,10 +225,10 @@ export const AppDistributionPage: React.FC = () => {
         <Card>
           <p className="text-xs uppercase tracking-wide text-text-muted dark:text-stone-400">Production APK</p>
           <p className="mt-2 text-2xl font-bold text-text-main dark:text-white font-display">
-            {production?.version ?? '—'}
+            {productionVersion ?? '—'}
           </p>
           <p className="mt-1 text-sm text-text-muted dark:text-stone-400">
-            APK {production?.available ? 'включён' : 'выключен'}
+            APK {isApkAvailable ? 'включён' : 'выключен'}
           </p>
         </Card>
         <Card>

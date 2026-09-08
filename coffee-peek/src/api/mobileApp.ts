@@ -75,7 +75,8 @@ function apkChannel(raw: Record<string, unknown>): ApkDownloadChannel {
 }
 
 export function normalizeAppDownloadsConfig(raw: unknown): AppDownloadsConfig {
-  const root = readRecord(raw);
+  const response = readRecord(raw);
+  const root = readRecord(response.data ?? response.Data ?? raw);
   const android = readRecord(root.android ?? root.Android);
   const ios = readRecord(root.ios ?? root.Ios ?? root.iOS ?? root.IOS);
 
