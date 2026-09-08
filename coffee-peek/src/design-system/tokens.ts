@@ -62,8 +62,8 @@ export const dark = {
 
 export const typography = {
   fontFamily: {
-    display: 'Inter',
-    body: 'Inter',
+    display: 'Manrope',
+    body: 'Manrope',
   },
   fontWeight: {
     ultralight: 200,

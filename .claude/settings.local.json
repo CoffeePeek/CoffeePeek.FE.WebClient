@@ -69,7 +69,9 @@
       "Skill(run)",
       "Bash(chromium-cli --help)",
       "Bash(node _verify_shot.mjs)",
-      "Bash(npx playwright *)"
+      "Bash(npx playwright *)",
+      "Bash(xargs -0 sed -i -E 's/\\\\bInter\\\\b/Manrope/g')",
+      "Bash(cd *)"
     ]
   }
 }

@@ -77,15 +77,15 @@ src/design-system/
 
 | Роль | Семейство | Tailwind | Использование |
 |------|-----------|----------|---------------|
-| Body (простой текст) | Inter | `font-body` | Параграфы, формы, дефолтный текст |
-| Headline (заголовки) | Inter | `font-extended` | H1–H3, заголовки секций |
-| Accent (крупные брендовые акценты) | Inter | `font-expanded`, `.wordmark`, `.hero-text`, `.numeral` | Логотип, hero, крупные цифры |
-| Condensed (мало места) | Inter | `font-condensed` | Бейджи, чипы, плотный UI |
+| Body (простой текст) | Manrope | `font-body` | Параграфы, формы, дефолтный текст |
+| Headline (заголовки) | Manrope | `font-extended` | H1–H3, заголовки секций |
+| Accent (крупные брендовые акценты) | Manrope | `font-expanded`, `.wordmark`, `.hero-text`, `.numeral` | Логотип, hero, крупные цифры |
+| Condensed (мало места) | Manrope | `font-condensed` | Бейджи, чипы, плотный UI |
 | Icons | Phosphor Icons (`@phosphor-icons/react`) | — | — |
 
-Единый шрифт Inter (variable, вес 400–900), подключается через Google Fonts в `index.html`.
+Единый шрифт Manrope (variable, вес 400–900), подключается через Google Fonts в `index.html`.
 
-Android-соответствие (плейсхолдер, пока не портировано): Inter из Google Fonts → `res/font/`.
+Android-соответствие (плейсхолдер, пока не портировано): Manrope из Google Fonts → `res/font/`.
 
 ### Стили текста
 
@@ -250,7 +250,7 @@ cp src/design-system/android/dimens.xml       → app/src/main/res/values/dimens
 
 ### Шаг 2: Шрифты
 
-Скачайте Inter с Google Fonts → `res/font/`.
+Скачайте Manrope с Google Fonts → `res/font/`.
 
 ### Шаг 3: Compose Theme
 

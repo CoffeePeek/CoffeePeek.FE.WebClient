@@ -136,7 +136,7 @@ const FilterAccordion: React.FC<{
         }}
       >
         <span style={{
-          fontFamily: '"Inter"', fontSize: 13, fontWeight: 700,
+          fontFamily: '"Manrope"', fontSize: 13, fontWeight: 700,
           color: textPrimary, letterSpacing: '-0.01em',
         }}>
           {title}
@@ -186,7 +186,7 @@ const OptionRow: React.FC<{
     <CheckMark checked={checked} gold={gold} borderColor={borderColor} />
     {icon}
     <span style={{
-      fontFamily: '"Inter"', fontSize: 13, fontWeight: checked ? 700 : 500,
+      fontFamily: '"Manrope"', fontSize: 13, fontWeight: checked ? 700 : 500,
       color: checked ? gold : textPrimary, minWidth: 0,
     }}>
       {label}
@@ -224,7 +224,7 @@ const ExpandableOptions: React.FC<{
           onClick={() => setExpanded((v) => !v)}
           style={{
             marginTop: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            fontFamily: '"Inter"', fontSize: 12, fontWeight: 600, color: COLORS.primary,
+            fontFamily: '"Manrope"', fontSize: 12, fontWeight: 600, color: COLORS.primary,
           }}
         >
           {expanded ? 'Свернуть' : remainingLabel(items.length - LIST_PREVIEW)}
@@ -272,7 +272,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   const chipBase: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 5,
     padding: '6px 12px', borderRadius: 99, whiteSpace: 'nowrap',
-    fontFamily: '"Inter"', fontWeight: 600, fontSize: 12,
+    fontFamily: '"Manrope"', fontWeight: 600, fontSize: 12,
     cursor: 'pointer', transition: 'all .15s', border: '1px solid',
     flexShrink: 0,
   };
@@ -311,7 +311,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
           <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: 12, border: `1px solid ${borderColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 20, minWidth: 160, maxHeight: 280, overflowY: 'auto' as const, background: dark ? '#2D241F' : '#fff' }}>
             {cities.map(city => (
               <button key={city.id} type="button" onClick={() => { onCityChange(city.id); onCityDropdownToggle(); }}
-                style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : textPrimary, border: 'none', cursor: 'pointer', fontFamily: '"Inter"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : textPrimary, border: 'none', cursor: 'pointer', fontFamily: '"Manrope"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                 {selectedCity === city.id && <CheckCircle size={14} color={gold} />}
                 <span style={{ marginLeft: selectedCity === city.id ? 0 : 22 }}>{city.name}</span>
               </button>
@@ -453,7 +453,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     <div>
       {onClose && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 10, borderBottom: `1px solid ${borderColor}` }}>
-          <span style={{ fontFamily: '"Inter"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Фильтры</span>
+          <span style={{ fontFamily: '"Manrope"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Фильтры</span>
           <button
             type="button"
             onClick={onClose}
@@ -551,7 +551,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             style={{
               width: '100%', height: 40, borderRadius: 10, border: `1px solid ${borderColor}`,
               background: 'transparent', color: muted, cursor: 'pointer',
-              fontFamily: '"Inter"', fontWeight: 600, fontSize: 13,
+              fontFamily: '"Manrope"', fontWeight: 600, fontSize: 13,
             }}
           >
             Сбросить фильтры
@@ -564,7 +564,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             style={{
               width: '100%', height: 44, borderRadius: 10, border: 'none',
               background: gold, color: '#1A1412', cursor: 'pointer',
-              fontFamily: '"Inter"', fontWeight: 700, fontSize: 14,
+              fontFamily: '"Manrope"', fontWeight: 700, fontSize: 14,
             }}
           >
             {typeof resultCount === 'number' ? `Найдено ${resultCount}` : 'Готово'}

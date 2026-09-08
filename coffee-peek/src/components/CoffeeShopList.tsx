@@ -444,7 +444,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         {!isLoading && featured.length > 0 && (
           <div className="lg:hidden mb-6">
             <div className="flex items-baseline justify-between mb-3">
-              <h2 style={{ margin: 0, fontFamily: '"Inter"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>Подборка недели</h2>
+              <h2 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>Подборка недели</h2>
             </div>
             <div className="overflow-x-auto no-scrollbar -mx-4 sm:-mx-6 px-4 sm:px-6" style={{ display: 'flex', gap: 12, paddingBottom: 4 }}>
               {featured.map(shop => {
@@ -459,17 +459,17 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                         <ShopPhotoPlaceholder fontSize={14} />
                       )}
                       {shop.rating && (
-                        <span style={{ position: 'absolute', top: 8, left: 8, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 7px', borderRadius: 6, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', fontFamily: '"Inter"', fontWeight: 700, fontSize: 11, color: '#D4A84B' }}>
+                        <span style={{ position: 'absolute', top: 8, left: 8, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 7px', borderRadius: 6, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 11, color: '#D4A84B' }}>
                           <StarIcon filled size={12} color="#D4A84B" />
                           {shop.rating.toFixed(1)}
                         </span>
                       )}
                     </div>
                     <div style={{ padding: '9px 11px 11px' }}>
-                      <h4 style={{ margin: 0, fontFamily: '"Inter"', fontWeight: 700, fontSize: 13, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h4>
+                      <h4 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h4>
                       <p
                         title={shop.location?.address || shop.address || shop.cityName || ''}
-                        style={{ margin: '3px 0 0', fontFamily: '"Inter"', fontSize: 11, color: colors.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                        style={{ margin: '3px 0 0', fontFamily: '"Manrope"', fontSize: 11, color: colors.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                       >
                         {shop.location?.address || shop.address || shop.cityName || ''}
                       </p>
@@ -492,7 +492,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none',
                   color: shopSort === 'default' ? colors.textSecondary : COLORS.primary,
-                  fontFamily: '"Inter"', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  fontFamily: '"Manrope"', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 }}
               >
                 <AppIcon name="swap_vert" size={14} />
@@ -517,7 +517,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
                             padding: '10px 14px', border: 'none', background: active ? `${COLORS.primary}14` : 'transparent',
                             color: active ? COLORS.primary : colors.textPrimary,
-                            fontFamily: '"Inter"', fontSize: 13, fontWeight: active ? 700 : 600,
+                            fontFamily: '"Manrope"', fontSize: 13, fontWeight: active ? 700 : 600,
                             cursor: 'pointer', textAlign: 'left',
                           }}
                         >
@@ -545,7 +545,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               style={{ backgroundColor: colors.surface, borderColor: colors.border }}
             >
               <Mascot pose="search" size={132} />
-              <p style={{ margin: '12px 0 0', fontFamily: '"Inter"', fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
+              <p style={{ margin: '12px 0 0', fontFamily: '"Manrope"', fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
                 Ничего не найдено. Попробуйте другой фильтр.
               </p>
             </div>

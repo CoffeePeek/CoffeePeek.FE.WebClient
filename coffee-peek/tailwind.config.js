@@ -41,10 +41,10 @@ export default {
         },
       },
       fontFamily: {
-        body: ["Inter", "sans-serif"],
-        condensed: ["Inter", "sans-serif"],
-        extended: ["Inter", "sans-serif"],
-        expanded: ["Inter", "sans-serif"],
+        body: ["Manrope", "sans-serif"],
+        condensed: ["Manrope", "sans-serif"],
+        extended: ["Manrope", "sans-serif"],
+        expanded: ["Manrope", "sans-serif"],
       },
       letterSpacing: {
         wordmark: "-0.045em",

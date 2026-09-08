@@ -179,7 +179,7 @@
   isolation: isolate;
   z-index: 0;
   background: #1c1917;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Manrope", system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -300,7 +300,7 @@
   box-shadow:
     0 2px 10px rgba(26, 20, 18, 0.35),
     0 0 0 1px rgba(26, 20, 18, 0.1);
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Manrope", system-ui, sans-serif;
   font-weight: 800;
   font-size: 13px;
   line-height: 1;

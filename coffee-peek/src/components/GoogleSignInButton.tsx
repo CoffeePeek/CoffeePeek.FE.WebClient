@@ -122,7 +122,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           background: dark ? 'rgba(255,255,255,0.04)' : '#F9F8F6',
           color: textPrimary,
           border: `1px solid ${cardBorder}`,
-          fontFamily: '"Inter"',
+          fontFamily: '"Manrope"',
           fontWeight: 600,
           fontSize: 15,
           display: 'flex',

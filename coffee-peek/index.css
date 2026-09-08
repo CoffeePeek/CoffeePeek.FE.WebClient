@@ -5,12 +5,12 @@
 @layer base {
   html,
   body {
-    font-family: "Inter", sans-serif;
+    font-family: "Manrope", sans-serif;
   }
 }
 
 :root {
-  font-family: "Inter", sans-serif;
+  font-family: "Manrope", sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -131,16 +131,16 @@ html {
 }
 
 /* ── Magazine Stamp typography system ──────────────────────────── */
-/* Wordmark: Inter Ultrabold, tight tracking                       */
+/* Wordmark: Manrope Ultrabold, tight tracking                       */
 .wordmark {
-  font-family: "Inter", sans-serif;
+  font-family: "Manrope", sans-serif;
   font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 1;
 }
 /* Hero / h1: ALL CAPS, Regular 400, dense line-height            */
 .hero-text {
-  font-family: "Inter", sans-serif;
+  font-family: "Manrope", sans-serif;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: -0.01em;
@@ -155,7 +155,7 @@ html {
 
 /* Large numeral (ratings, stats): Ultrabold, tabular              */
 .numeral {
-  font-family: "Inter", sans-serif;
+  font-family: "Manrope", sans-serif;
   font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 0.84;

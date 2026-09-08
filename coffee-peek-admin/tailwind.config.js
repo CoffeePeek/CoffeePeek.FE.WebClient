@@ -41,8 +41,8 @@ export default {
         },
       },
       fontFamily: {
-        display: ['Inter', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
+        display: ['Manrope', 'sans-serif'],
+        body: ['Manrope', 'sans-serif'],
       },
     },
   },

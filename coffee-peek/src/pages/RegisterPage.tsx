@@ -41,7 +41,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ id, icon, type = 'text', placehol
   const descriptionId = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   return (
     <label htmlFor={id} style={{ display: 'block', textAlign: 'left' }}>
-      {label && <div style={{ fontFamily: '"Inter"', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
+      {label && <div style={{ fontFamily: '"Manrope"', fontSize: 12, fontWeight: 600, color: dark ? '#A39E93' : '#78716C', marginBottom: 6 }}>{label}</div>}
       <div style={{ position: 'relative' }}>
         {icon && (
           <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
@@ -57,19 +57,19 @@ const AuthField: React.FC<AuthFieldProps> = ({ id, icon, type = 'text', placehol
             background: dark ? 'rgba(255,255,255,0.03)' : '#fff',
             boxShadow: focused ? '0 0 0 4px rgba(234,179,8,0.08)' : 'none',
             padding: `0 ${trailing ? 44 : 16}px 0 ${icon ? 46 : 16}px`,
-            fontSize: 15, fontFamily: '"Inter"',
+            fontSize: 15, fontFamily: '"Manrope"',
             color: dark ? '#fff' : '#1C1917',
             outline: 'none', boxSizing: 'border-box', transition: 'all .15s',
           }} />
         {trailing}
       </div>
       {error && (
-        <div id={`${id}-error`} role="alert" style={{ fontFamily: '"Inter"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div id={`${id}-error`} role="alert" style={{ fontFamily: '"Manrope"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
           <WarningCircle size={14} weight="fill" />{error}
         </div>
       )}
       {!error && hint && (
-        <div id={`${id}-hint`} style={{ fontFamily: '"Inter"', fontSize: 11, color: dark ? '#A39E93' : '#78716C', marginTop: 6, lineHeight: 1.4 }}>
+        <div id={`${id}-hint`} style={{ fontFamily: '"Manrope"', fontSize: 11, color: dark ? '#A39E93' : '#78716C', marginTop: 6, lineHeight: 1.4 }}>
           {hint}
         </div>
       )}
@@ -87,7 +87,7 @@ const Stepper: React.FC<{ step: 'email' | 'register'; dark: boolean }> = ({ step
         <React.Fragment key={s}>
           <span
             className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-1.5 min-[360px]:px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-semibold"
-            style={{ background: i <= idx ? 'rgba(234,179,8,0.12)' : dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', color: i <= idx ? '#EAB308' : dark ? '#A39E93' : '#78716C', fontFamily: '"Inter"' }}
+            style={{ background: i <= idx ? 'rgba(234,179,8,0.12)' : dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', color: i <= idx ? '#EAB308' : dark ? '#A39E93' : '#78716C', fontFamily: '"Manrope"' }}
           >
             <span style={{ width: 16, height: 16, borderRadius: 99, background: i <= idx ? '#EAB308' : 'transparent', border: i <= idx ? 'none' : `1px solid ${dark ? '#3D2F28' : '#E7E5E4'}`, color: '#1A1412', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
               {i < idx ? <Check size={10} weight="bold" /> : i + 1}
@@ -112,7 +112,7 @@ const StrengthBar: React.FC<{ password: string; dark: boolean }> = ({ password, 
       {[0,1,2].map(i => (
         <div key={i} style={{ flex: 1, height: 4, borderRadius: 99, background: i < score ? colors[score - 1] : dark ? '#3D2F28' : '#E7E5E4' }} />
       ))}
-      <span style={{ fontFamily: '"Inter"', fontSize: 11, color: dark ? '#A39E93' : '#78716C', marginLeft: 8 }}>{labels[score - 1] || ''}</span>
+      <span style={{ fontFamily: '"Manrope"', fontSize: 11, color: dark ? '#A39E93' : '#78716C', marginLeft: 8 }}>{labels[score - 1] || ''}</span>
     </div>
   );
 };
@@ -233,7 +233,7 @@ const RegisterPage: React.FC = () => {
               onClick={() => navigate('/')}
               style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: 4, cursor: 'pointer', position: 'relative', zIndex: 4 }}
             >
-              <span style={{ fontFamily: '"Inter"', fontWeight: 800, letterSpacing: '-0.035em', fontSize: 22, color: textPrimary }}>
+              <span style={{ fontFamily: '"Manrope"', fontWeight: 800, letterSpacing: '-0.035em', fontSize: 22, color: textPrimary }}>
                 Coffee<span style={{ color: '#EAB308' }}>Peek</span>
               </span>
             </button>
@@ -250,8 +250,8 @@ const RegisterPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 8px' }} aria-hidden>
                 <Mascot pose="happy" size={140} />
               </div>
-              <h1 style={{ margin: '24px 0 10px', fontFamily: '"Inter"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Проверьте почту</h1>
-              <p style={{ margin: '0 0 28px', fontFamily: '"Inter"', fontSize: 14, color: textMuted, lineHeight: 1.6 }}>
+              <h1 style={{ margin: '24px 0 10px', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Проверьте почту</h1>
+              <p style={{ margin: '0 0 28px', fontFamily: '"Manrope"', fontSize: 14, color: textMuted, lineHeight: 1.6 }}>
                 Мы отправили ссылку на{' '}
                 <span style={{ color: textPrimary, fontWeight: 600 }}>{email}</span>.<br />
                 Перейдите по ссылке чтобы активировать аккаунт.<br />
@@ -259,7 +259,7 @@ const RegisterPage: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate('/login')}
-                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Inter"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                 <SignIn size={18} />
                 На страницу входа
               </button>
@@ -270,8 +270,8 @@ const RegisterPage: React.FC = () => {
 
               {step === 'email' ? (
                 <>
-                  <h1 style={{ margin: 0, fontFamily: '"Inter"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Введите email</h1>
-                  <p style={{ margin: '8px 0 24px', fontFamily: '"Inter"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
+                  <h1 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Введите email</h1>
+                  <p style={{ margin: '8px 0 24px', fontFamily: '"Manrope"', fontSize: 14, color: textMuted, lineHeight: 1.5 }}>
                     Мы проверим, есть ли у вас уже аккаунт CoffeePeek.
                   </p>
                   <form onSubmit={handleEmailCheck} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -279,7 +279,7 @@ const RegisterPage: React.FC = () => {
                       value={email} onChange={e => { setEmail(e.target.value); clearFieldError('email'); setGlobalError(null); }}
                       onBlur={() => { if (email.trim()) { const message = validateRegistrationEmail(email); if (message) setFieldErrors(current => ({ ...current, email: message })); } }}
                       error={fieldErrors.email} dark={dark} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"Inter"', margin: '2px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: textMuted, fontSize: 11, fontFamily: '"Manrope"', margin: '2px 0' }}>
                       <div style={{ flex: 1, height: 1, background: cardBorder }} />ИЛИ<div style={{ flex: 1, height: 1, background: cardBorder }} />
                     </div>
                     <GoogleSignInButton
@@ -298,26 +298,26 @@ const RegisterPage: React.FC = () => {
                       onError={setGlobalError}
                     />
                     {globalError && (
-                      <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, color: '#B91C1C', background: dark ? 'rgba(239,68,68,.12)' : '#FEF2F2', border: '1px solid rgba(239,68,68,.3)', fontFamily: '"Inter"', fontSize: 12, lineHeight: 1.45 }}>
+                      <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, color: '#B91C1C', background: dark ? 'rgba(239,68,68,.12)' : '#FEF2F2', border: '1px solid rgba(239,68,68,.3)', fontFamily: '"Manrope"', fontSize: 12, lineHeight: 1.45 }}>
                         <WarningCircle size={16} weight="fill" style={{ flexShrink: 0, marginTop: 1 }} />{globalError}
                       </div>
                     )}
                     <button type="submit" disabled={isLoading}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Inter"', fontWeight: 600, fontSize: 15, cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.65 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 15, cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.65 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Проверяем…</> : 'Продолжить'}
                     </button>
                   </form>
                 </>
               ) : (
                 <>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(180,140,75,.18)', color: gold, fontFamily: '"Inter"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 99, background: 'rgba(180,140,75,.18)', color: gold, fontFamily: '"Manrope"', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
                     <Sparkle size={14} /> Новый профиль
                   </span>
-                  <h1 style={{ margin: '14px 0 0', fontFamily: '"Inter"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Создайте аккаунт</h1>
+                  <h1 style={{ margin: '14px 0 0', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: textPrimary }}>Создайте аккаунт</h1>
                   <div style={{ margin: '8px 0 22px', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 12, background: dark ? 'rgba(255,255,255,0.03)' : '#F9F8F6', border: `1px solid ${cardBorder}` }}>
                     <Envelope size={16} color="#D4A84B" />
-                    <span style={{ fontFamily: '"Inter"', fontSize: 13, color: textPrimary, flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>{email}</span>
-                    <button type="button" onClick={() => { setStep('email'); setFieldErrors({}); setGlobalError(null); }} style={{ background: 'none', border: 'none', color: gold, fontFamily: '"Inter"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Изменить</button>
+                    <span style={{ fontFamily: '"Manrope"', fontSize: 13, color: textPrimary, flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>{email}</span>
+                    <button type="button" onClick={() => { setStep('email'); setFieldErrors({}); setGlobalError(null); }} style={{ background: 'none', border: 'none', color: gold, fontFamily: '"Manrope"', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Изменить</button>
                   </div>
                   <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <AuthField id="register-username" icon={<User size={20} color={gold} />} placeholder="например, coffee_fan" label="Имя пользователя" autoFocus autoComplete="username" maxLength={30}
@@ -342,7 +342,7 @@ const RegisterPage: React.FC = () => {
                           onChange={e => { setAgreeToPrivacy(e.target.checked); if (e.target.checked) clearFieldError('privacy'); setGlobalError(null); }}
                           style={{ marginTop: 2, width: 18, height: 18, accentColor: gold, flexShrink: 0 }}
                         />
-                        <label htmlFor="register-agree" style={{ fontFamily: '"Inter"', fontSize: 12, color: textMuted, lineHeight: 1.45, cursor: 'pointer' }}>
+                        <label htmlFor="register-agree" style={{ fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.45, cursor: 'pointer' }}>
                         Я принимаю{' '}
                         <button
                           type="button"
@@ -363,18 +363,18 @@ const RegisterPage: React.FC = () => {
                         </label>
                       </div>
                       {fieldErrors.privacy && (
-                        <div id="register-agree-error" role="alert" style={{ fontFamily: '"Inter"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div id="register-agree-error" role="alert" style={{ fontFamily: '"Manrope"', fontSize: 12, color: '#EF4444', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
                           <WarningCircle size={14} weight="fill" />{fieldErrors.privacy}
                         </div>
                       )}
                     </div>
                     {globalError && (
-                      <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, color: '#B91C1C', background: dark ? 'rgba(239,68,68,.12)' : '#FEF2F2', border: '1px solid rgba(239,68,68,.3)', fontFamily: '"Inter"', fontSize: 12, lineHeight: 1.45 }}>
+                      <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, color: '#B91C1C', background: dark ? 'rgba(239,68,68,.12)' : '#FEF2F2', border: '1px solid rgba(239,68,68,.3)', fontFamily: '"Manrope"', fontSize: 12, lineHeight: 1.45 }}>
                         <WarningCircle size={16} weight="fill" style={{ flexShrink: 0, marginTop: 1 }} />{globalError}
                       </div>
                     )}
                     <button type="submit" disabled={isLoading}
-                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Inter"', fontWeight: 600, fontSize: 15, cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.65 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
+                      style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 15, cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.65 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)' }}>
                       {isLoading ? <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Создаём…</> : 'Создать аккаунт'}
                     </button>
                   </form>
@@ -384,12 +384,12 @@ const RegisterPage: React.FC = () => {
               <div className="mt-[18px] flex items-center justify-between gap-2">
                 <button type="button" onClick={() => step === 'registration' ? setStep('email') : navigate('/')}
                   className="whitespace-nowrap text-[11px] min-[360px]:text-xs sm:text-[13px]"
-                  style={{ padding: 0, background: 'none', border: 'none', color: textMuted, fontFamily: '"Inter"', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  style={{ padding: 0, background: 'none', border: 'none', color: textMuted, fontFamily: '"Manrope"', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <ArrowLeft size={14} /> Назад
                 </button>
                 <button type="button" onClick={() => navigate('/login')}
                   className="whitespace-nowrap text-[11px] min-[360px]:text-xs sm:text-[13px]"
-                  style={{ padding: 0, background: 'none', border: 'none', color: gold, fontFamily: '"Inter"', fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ padding: 0, background: 'none', border: 'none', color: gold, fontFamily: '"Manrope"', fontWeight: 600, cursor: 'pointer' }}>
                   Уже есть аккаунт
                 </button>
               </div>

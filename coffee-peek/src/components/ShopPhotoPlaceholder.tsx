@@ -34,7 +34,7 @@ const ShopPhotoPlaceholder: React.FC<ShopPhotoPlaceholderProps> = ({
     >
       <span
         style={{
-          fontFamily: '"Inter", sans-serif',
+          fontFamily: '"Manrope", sans-serif',
           fontWeight: 800,
           fontSize,
           letterSpacing: '-0.045em',

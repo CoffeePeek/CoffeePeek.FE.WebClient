@@ -50,7 +50,7 @@ const Header: React.FC = () => {
     border: active ? `1px solid ${gold}` : '1px solid transparent',
     background: active ? (isDark ? '#1A1412' : '#fff') : 'transparent',
     color: active ? gold : mutedColor,
-    fontFamily: '"Inter"', fontWeight: 600, fontSize: 14,
+    fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14,
     cursor: 'pointer', transition: 'all .15s',
   });
 
@@ -68,7 +68,7 @@ const Header: React.FC = () => {
               style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
             >
               <LogoMark size={HEADER_LOGO_SIZE} />
-              <span style={{ fontFamily: '"Inter"', fontWeight: 800, fontSize: 20, letterSpacing: '-0.045em', color: textColor }}>
+              <span style={{ fontFamily: '"Manrope"', fontWeight: 800, fontSize: 20, letterSpacing: '-0.045em', color: textColor }}>
                 Coffee<span style={{ color: gold }}>Peek</span>
               </span>
             </button>
@@ -100,7 +100,7 @@ const Header: React.FC = () => {
                 >
                   {/* Avatar */}
                   <div style={{ width: 30, height: 30, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
-                    <span style={{ fontFamily: '"Inter"', fontWeight: 800, fontSize: 13, color: goldWarm }}>{initial}</span>
+                    <span style={{ fontFamily: '"Manrope"', fontWeight: 800, fontSize: 13, color: goldWarm }}>{initial}</span>
                     {avatarUrl && (
                       <img
                         key={avatarUrl}
@@ -111,7 +111,7 @@ const Header: React.FC = () => {
                       />
                     )}
                   </div>
-                  <span className="hidden lg:block" style={{ fontFamily: '"Inter"', fontWeight: 600, fontSize: 13, color: textColor, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span className="hidden lg:block" style={{ fontFamily: '"Manrope"', fontWeight: 600, fontSize: 13, color: textColor, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {displayName}
                   </span>
                   <CaretDown size={18} color={mutedColor} style={{ transition: 'transform .2s', transform: profileOpen ? 'rotate(180deg)' : 'none' }} />
@@ -126,7 +126,7 @@ const Header: React.FC = () => {
                       <div style={{ padding: '14px 16px', borderBottom: `1px solid ${borderColor}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{ width: 38, height: 38, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
-                            <span style={{ fontFamily: '"Inter"', fontWeight: 800, fontSize: 16, color: goldWarm }}>{initial}</span>
+                            <span style={{ fontFamily: '"Manrope"', fontWeight: 800, fontSize: 16, color: goldWarm }}>{initial}</span>
                             {avatarUrl && (
                               <img
                                 key={avatarUrl}
@@ -138,8 +138,8 @@ const Header: React.FC = () => {
                             )}
                           </div>
                           <div style={{ minWidth: 0 }}>
-                            <p style={{ margin: 0, fontFamily: '"Inter"', fontWeight: 700, fontSize: 14, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
-                            <p style={{ margin: 0, fontFamily: '"Inter"', fontSize: 11, color: mutedColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayEmail}</p>
+                            <p style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 14, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
+                            <p style={{ margin: 0, fontFamily: '"Manrope"', fontSize: 11, color: mutedColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayEmail}</p>
                           </div>
                         </div>
                       </div>
@@ -176,11 +176,11 @@ const Header: React.FC = () => {
               /* ── Login / Register ── */
               <div className="hidden lg:flex" style={{ gap: 8, alignItems: 'center' }}>
                 <button onClick={() => navigate('/login')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"Inter"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
                   Войти
                 </button>
                 <button onClick={() => navigate('/register')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"Inter"', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
                   Регистрация
                 </button>
               </div>
@@ -221,22 +221,22 @@ const Header: React.FC = () => {
               {user ? (
                 <>
                   <button onClick={() => { navigate('/check-ins'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isCheckIns ? `${gold}12` : 'transparent', color: isCheckIns ? gold : textColor, fontFamily: '"Inter"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isCheckIns ? `${gold}12` : 'transparent', color: isCheckIns ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <MapPin size={18} color={isCheckIns ? gold : mutedColor} />
                     Чекины
                   </button>
                   <button onClick={() => { navigate('/reviews'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isReviews ? `${gold}12` : 'transparent', color: isReviews ? gold : textColor, fontFamily: '"Inter"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isReviews ? `${gold}12` : 'transparent', color: isReviews ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <ChatCircleText size={18} color={isReviews ? gold : mutedColor} />
                     Отзывы
                   </button>
                   <button onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"Inter"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <Gear size={18} color={isSettings ? gold : mutedColor} />
                     Настройки
                   </button>
                   <button onClick={() => { logout(); navigate('/'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"Inter"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <SignOut size={18} color="#EF4444" />
                     Выйти
                   </button>
@@ -244,11 +244,11 @@ const Header: React.FC = () => {
               ) : (
                 <>
                   <button onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"Inter"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     Войти
                   </button>
                   <button onClick={() => { navigate('/register'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: `${gold}15`, color: gold, fontFamily: '"Inter"', fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: `${gold}15`, color: gold, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     Регистрация
                   </button>
                 </>
@@ -274,7 +274,7 @@ interface DropdownItemProps {
 const DropdownItem: React.FC<DropdownItemProps> = ({ icon, label, onClick, textColor, hoverBg, activeBg }) => (
   <button
     onClick={onClick}
-    style={{ width: '100%', padding: '9px 16px', textAlign: 'left', background: activeBg ?? 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontFamily: '"Inter"', fontSize: 14, color: textColor, transition: 'background .1s' }}
+    style={{ width: '100%', padding: '9px 16px', textAlign: 'left', background: activeBg ?? 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontFamily: '"Manrope"', fontSize: 14, color: textColor, transition: 'background .1s' }}
     onMouseEnter={e => !activeBg && (e.currentTarget.style.background = hoverBg)}
     onMouseLeave={e => !activeBg && (e.currentTarget.style.background = 'none')}
   >

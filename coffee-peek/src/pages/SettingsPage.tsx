@@ -206,9 +206,9 @@ const SettingsPage: React.FC = () => {
 
       <div style={{ borderBottom: `1px solid ${border}`, background: isDark ? 'rgba(45,36,31,0.7)' : surface, backdropFilter: 'blur(12px)' }}>
         <div className="settings-wrap" style={{ height: 48, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h1 style={{ margin: 0, fontFamily: '"Inter"', fontWeight: 700, fontSize: 18, color: textPrimary }}>Настройки</h1>
+          <h1 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 18, color: textPrimary }}>Настройки</h1>
           {saveSuccess && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: '#15803D', fontFamily: '"Inter"', fontSize: 12, fontWeight: 700 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: '#15803D', fontFamily: '"Manrope"', fontSize: 12, fontWeight: 700 }}>
               <CheckCircle size={14} />
               Сохранено
             </span>
@@ -278,7 +278,7 @@ const SettingsPage: React.FC = () => {
 
 const Notice: React.FC<{ children: React.ReactNode; tone: 'error' | 'warning'; border: string; onClose: () => void }> = ({ children, tone, border, onClose }) => (
   <div style={{ marginBottom: 12, padding: '12px 14px', borderRadius: 12, background: tone === 'error' ? 'rgba(239,68,68,0.08)' : 'rgba(234,179,8,0.08)', border: `1px solid ${tone === 'error' ? 'rgba(239,68,68,0.2)' : border}`, display: 'flex', gap: 10, alignItems: 'center' }}>
-    <p style={{ flex: 1, margin: 0, fontFamily: '"Inter"', fontSize: 13, color: tone === 'error' ? '#EF4444' : '#EAB308' }}>{children}</p>
+    <p style={{ flex: 1, margin: 0, fontFamily: '"Manrope"', fontSize: 13, color: tone === 'error' ? '#EF4444' : '#EAB308' }}>{children}</p>
     <button type="button" onClick={onClose} style={{ border: 'none', background: 'transparent', padding: 2, cursor: 'pointer', color: '#A39E93' }}><X size={16} /></button>
   </div>
 );
@@ -287,13 +287,13 @@ const EmailNotice: React.FC<{ email: string; isResending: boolean; resendSuccess
   <div style={{ marginBottom: 12, padding: '13px 14px', borderRadius: 12, background: 'rgba(234,179,8,0.08)', border: `1px solid ${border}`, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
     <Envelope size={17} color="#EAB308" style={{ flexShrink: 0, marginTop: 2 }} />
     <div style={{ flex: 1, minWidth: 0 }}>
-      <p style={{ margin: '0 0 8px', fontFamily: '"Inter"', fontSize: 12, color: '#EAB308', lineHeight: 1.55 }}>Письмо отправлено на <strong>{email}</strong>. Старый email активен до подтверждения.</p>
+      <p style={{ margin: '0 0 8px', fontFamily: '"Manrope"', fontSize: 12, color: '#EAB308', lineHeight: 1.55 }}>Письмо отправлено на <strong>{email}</strong>. Старый email активен до подтверждения.</p>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <button onClick={onResend} disabled={isResending} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"Inter"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
+        <button onClick={onResend} disabled={isResending} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
           <ArrowClockwise size={14} />
           {isResending ? 'Отправляем...' : 'Отправить повторно'}
         </button>
-        {resendSuccess && <span style={{ fontFamily: '"Inter"', fontSize: 12, color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle size={14} />Письмо отправлено</span>}
+        {resendSuccess && <span style={{ fontFamily: '"Manrope"', fontSize: 12, color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle size={14} />Письмо отправлено</span>}
       </div>
     </div>
     <button onClick={onClose} style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#A39E93', flexShrink: 0 }}><X size={18} /></button>
@@ -339,7 +339,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       <div className="settings-profile-head">
         <div style={{ position: 'relative', width: 74, height: 74, flexShrink: 0 }}>
           <div style={{ width: 74, height: 74, borderRadius: 99, border: `2px solid ${border}`, overflow: 'hidden', background: displayAvatar ? 'transparent' : `${gold}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {displayAvatar ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: '"Inter"', fontWeight: 800, fontSize: 26, color: goldWarm }}>{profile.userName?.[0]?.toUpperCase() ?? 'U'}</span>}
+            {displayAvatar ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: '"Manrope"', fontWeight: 800, fontSize: 26, color: goldWarm }}>{profile.userName?.[0]?.toUpperCase() ?? 'U'}</span>}
           </div>
           {isEditing && (
             <label style={{ position: 'absolute', bottom: -2, right: -2, width: 28, height: 28, borderRadius: 99, background: gold, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: `2px solid ${surface}` }}>
@@ -353,16 +353,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           {isEditing ? (
             <input value={editValues.userName ?? ''} onChange={e => onInputChange('userName', e.target.value)} disabled={isSaving} style={inputStyle(border, textPrimary, softSurface)} />
           ) : (
-            <h2 style={{ margin: 0, fontFamily: '"Inter"', fontWeight: 800, fontSize: 22, color: textPrimary, letterSpacing: '-0.01em', overflowWrap: 'anywhere' }}>{profile.userName}</h2>
+            <h2 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 800, fontSize: 22, color: textPrimary, letterSpacing: '-0.01em', overflowWrap: 'anywhere' }}>{profile.userName}</h2>
           )}
           <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 99, background: `${gold}12`, border: `1px solid ${gold}26` }}>
               <Coffee size={12} color={goldWarm} />
-              <span style={{ fontFamily: '"Inter"', fontWeight: 700, fontSize: 10, color: goldWarm, letterSpacing: '.05em', textTransform: 'uppercase' }}>{roleLabel}</span>
+              <span style={{ fontFamily: '"Manrope"', fontWeight: 700, fontSize: 10, color: goldWarm, letterSpacing: '.05em', textTransform: 'uppercase' }}>{roleLabel}</span>
             </span>
           </div>
-          {memberSince && <p style={{ margin: '8px 0 0', fontFamily: '"Inter"', fontSize: 12, color: textMuted }}>С {memberSince}</p>}
-          {isEditing && selectedAvatarFile && <p style={{ margin: '8px 0 0', fontFamily: '"Inter"', fontSize: 11, color: textMuted, overflowWrap: 'anywhere' }}>Выбран файл: {selectedAvatarFile.name}</p>}
+          {memberSince && <p style={{ margin: '8px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted }}>С {memberSince}</p>}
+          {isEditing && selectedAvatarFile && <p style={{ margin: '8px 0 0', fontFamily: '"Manrope"', fontSize: 11, color: textMuted, overflowWrap: 'anywhere' }}>Выбран файл: {selectedAvatarFile.name}</p>}
         </div>
 
         <div className="settings-edit-action" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -400,15 +400,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 function inputStyle(border: string, textPrimary: string, background: string): React.CSSProperties {
   return {
     width: '100%', minHeight: 38, borderRadius: 9, border: `1px solid ${border}`,
-    background, color: textPrimary, fontFamily: '"Inter"', fontSize: 13,
+    background, color: textPrimary, fontFamily: '"Manrope"', fontSize: 13,
     padding: '0 12px', outline: 'none', boxSizing: 'border-box',
   };
 }
 
 const InfoField: React.FC<{ label: string; value: string; isEditing: boolean; input: React.ReactNode; textPrimary: string; textMuted: string }> = ({ label, value, isEditing, input, textPrimary, textMuted }) => (
   <div style={{ minWidth: 0 }}>
-    <p style={{ margin: '0 0 6px', fontFamily: '"Inter"', fontSize: 10, fontWeight: 700, color: textMuted, letterSpacing: '.06em', textTransform: 'uppercase' }}>{label}</p>
-    {isEditing ? input : <p style={{ margin: 0, fontFamily: '"Inter"', fontSize: 13, color: textPrimary, overflowWrap: 'anywhere', lineHeight: 1.45 }}>{value}</p>}
+    <p style={{ margin: '0 0 6px', fontFamily: '"Manrope"', fontSize: 10, fontWeight: 700, color: textMuted, letterSpacing: '.06em', textTransform: 'uppercase' }}>{label}</p>
+    {isEditing ? input : <p style={{ margin: 0, fontFamily: '"Manrope"', fontSize: 13, color: textPrimary, overflowWrap: 'anywhere', lineHeight: 1.45 }}>{value}</p>}
   </div>
 );
 
@@ -418,8 +418,8 @@ const StatItem: React.FC<{ icon: React.ReactNode; value: number; label: string; 
   <button type="button" onClick={onClick} disabled={!onClick} style={{ border: 'none', background: 'transparent', padding: 0, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', cursor: onClick ? 'pointer' : 'default', minWidth: 0 }}>
     <span style={{ width: 30, height: 30, borderRadius: 9, background: `${gold}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</span>
     <span style={{ minWidth: 0 }}>
-      <span style={{ display: 'block', fontFamily: '"Inter"', fontWeight: 800, fontSize: 16, color: textPrimary, lineHeight: 1 }}>{value}</span>
-      <span style={{ display: 'block', marginTop: 2, fontFamily: '"Inter"', fontSize: 11, color: textMuted }}>{label}{onClick ? ' →' : ''}</span>
+      <span style={{ display: 'block', fontFamily: '"Manrope"', fontWeight: 800, fontSize: 16, color: textPrimary, lineHeight: 1 }}>{value}</span>
+      <span style={{ display: 'block', marginTop: 2, fontFamily: '"Manrope"', fontSize: 11, color: textMuted }}>{label}{onClick ? ' →' : ''}</span>
     </span>
   </button>
 );
@@ -458,8 +458,8 @@ const SecurityRow: React.FC<{ border: string; textPrimary: string; textMuted: st
     <div>
       <div className="settings-row">
         <div style={{ minWidth: 0 }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontFamily: '"Inter"', fontWeight: 700, fontSize: 15, color: textPrimary }}><Lock size={15} />Пароль</h3>
-          <p style={{ margin: '5px 0 0', fontFamily: '"Inter"', fontSize: 12, color: success ? '#22C55E' : textMuted, lineHeight: 1.45 }}>{success || 'Смена пароля не разлогинивает текущую сессию'}</p>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}><Lock size={15} />Пароль</h3>
+          <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: success ? '#22C55E' : textMuted, lineHeight: 1.45 }}>{success || 'Смена пароля не разлогинивает текущую сессию'}</p>
         </div>
         <ButtonLike className="settings-row-action" onClick={() => { setOpen((v) => !v); setError(''); setSuccess(''); }} border={border} color={textPrimary} background="transparent">{open ? 'Отмена' : 'Изменить'}</ButtonLike>
       </div>
@@ -469,7 +469,7 @@ const SecurityRow: React.FC<{ border: string; textPrimary: string; textMuted: st
           <input type="password" placeholder="Текущий пароль" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle(border, textPrimary, softSurface)} />
           <input type="password" placeholder="Новый пароль" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle(border, textPrimary, softSurface)} />
           <input type="password" placeholder="Повторите новый пароль" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={inputStyle(border, textPrimary, softSurface)} />
-          {error && <p style={{ margin: 0, fontFamily: '"Inter"', fontSize: 12, color: '#EF4444' }}>{error}</p>}
+          {error && <p style={{ margin: 0, fontFamily: '"Manrope"', fontSize: 12, color: '#EF4444' }}>{error}</p>}
           <ButtonLike onClick={handleSave} disabled={isSaving || !currentPassword || newPassword.length < 8} border={gold} color="#1A1412" background={gold}>{isSaving ? 'Сохраняем...' : 'Сохранить пароль'}</ButtonLike>
         </div>
       )}
@@ -480,8 +480,8 @@ const SecurityRow: React.FC<{ border: string; textPrimary: string; textMuted: st
 const AppearanceRow: React.FC<{ border: string; textPrimary: string; textMuted: string; gold: string; theme: string; onSetTheme: (theme: 'dark' | 'light') => void }> = ({ border, textPrimary, textMuted, gold, theme, onSetTheme }) => (
   <div className="settings-row">
     <div style={{ minWidth: 0 }}>
-      <h3 style={{ margin: 0, fontFamily: '"Inter"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Внешний вид</h3>
-      <p style={{ margin: '5px 0 0', fontFamily: '"Inter"', fontSize: 12, color: textMuted }}>Выберите тему оформления</p>
+      <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Внешний вид</h3>
+      <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted }}>Выберите тему оформления</p>
     </div>
     <div className="settings-row-action" style={{ display: 'flex', gap: 10 }}>
       {[
@@ -501,21 +501,21 @@ const AppearanceRow: React.FC<{ border: string; textPrimary: string; textMuted: 
 
 const AppDownloadSection: React.FC<{ surface: string; border: string; textPrimary: string; textMuted: string }> = ({ surface, border, textPrimary, textMuted }) => (
   <section className="settings-release-card" style={{ borderRadius: 14, border: `1px solid ${border}`, background: surface }}>
-    <h3 style={{ margin: '0 0 4px', fontFamily: '"Inter"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Мобильное приложение</h3>
-    <p style={{ margin: '0 0 16px', fontFamily: '"Inter"', fontSize: 13, color: textMuted, lineHeight: 1.45 }}>Android доступен для тестирования, iOS уже в разработке</p>
+    <h3 style={{ margin: '0 0 4px', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Мобильное приложение</h3>
+    <p style={{ margin: '0 0 16px', fontFamily: '"Manrope"', fontSize: 13, color: textMuted, lineHeight: 1.45 }}>Android доступен для тестирования, iOS уже в разработке</p>
     <MobileAppDownload variant="compact" />
   </section>
 );
 
 const ButtonLike: React.FC<{ children: React.ReactNode; border: string; color: string; background: string; icon?: React.ReactNode; disabled?: boolean; className?: string; onClick: () => void }> = ({ children, border, color, background, icon, disabled, className = '', onClick }) => (
-  <button type="button" className={className} onClick={onClick} disabled={disabled} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 36, padding: '8px 14px', borderRadius: 9, border: `1px solid ${border}`, background, color, fontFamily: '"Inter"', fontWeight: 700, fontSize: 13, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+  <button type="button" className={className} onClick={onClick} disabled={disabled} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 36, padding: '8px 14px', borderRadius: 9, border: `1px solid ${border}`, background, color, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, whiteSpace: 'nowrap' }}>
     {icon}
     {children}
   </button>
 );
 
 const ActionButton: React.FC<{ children: React.ReactNode; border: string; background: string; color: string; icon: React.ReactNode; onClick: () => void }> = ({ children, border, background, color, icon, onClick }) => (
-  <button type="button" onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 38, padding: '9px 14px', borderRadius: 9, border: `1px solid ${border}`, background, color, fontFamily: '"Inter"', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+  <button type="button" onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 38, padding: '9px 14px', borderRadius: 9, border: `1px solid ${border}`, background, color, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
     {icon}
     {children}
   </button>
