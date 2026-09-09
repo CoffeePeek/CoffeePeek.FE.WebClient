@@ -543,8 +543,6 @@ const ContributeSection: React.FC<{
   const items: ContributeItem[] = [
     { icon: <Storefront size={15} color={gold} />, title: 'Добавить кофейню', subtitle: 'Не нашли кофейню в каталоге? Добавьте её сами', action: 'Добавить', onClick: onAddShop },
     { icon: <Factory size={15} color={gold} />, title: 'Добавить обжарщика', subtitle: 'Не нашли обжарщика в каталоге? Предложите добавить', action: 'Предложить', onClick: () => openMail('Хочу добавить обжарщика в CoffeePeek') },
-    { icon: <ChatCircleText size={15} color={gold} />, title: 'Обратная связь', subtitle: 'Расскажите, что понравилось или что стоит улучшить', action: 'Написать нам', onClick: () => openMail('Обратная связь по CoffeePeek') },
-    { icon: <ShareNetwork size={15} color={gold} />, title: 'Поделиться с друзьями', subtitle: 'Расскажите друзьям о CoffeePeek', action: 'Поделиться', onClick: handleShare },
   ];
 
   return (
