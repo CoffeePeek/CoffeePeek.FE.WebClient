@@ -270,15 +270,13 @@ const SettingsPage: React.FC = () => {
           textPrimary={textPrimary}
           textMuted={textMuted}
           gold={gold}
+          onAddShop={() => navigate('/coffee-shops/new')}
           onShowToast={showToast}
         />
 
         <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
 
         <div className="settings-actions">
-          <ActionButton onClick={() => navigate('/coffee-shops/new')} border={border} background={surface} color={gold} icon={<Storefront size={15} color={gold} />}>
-            Добавить кофейню
-          </ActionButton>
           <ActionButton onClick={() => { logout(); navigate('/'); }} border={border} background={surface} color="#EF4444" icon={<SignOut size={15} color="#EF4444" />}>
             Выйти
           </ActionButton>
@@ -521,8 +519,9 @@ interface ContributeItem {
 
 const ContributeSection: React.FC<{
   surface: string; border: string; textPrimary: string; textMuted: string; gold: string;
+  onAddShop: () => void;
   onShowToast: (message: string, type?: 'error' | 'success' | 'info' | 'warning') => void;
-}> = ({ surface, border, textPrimary, textMuted, gold, onShowToast }) => {
+}> = ({ surface, border, textPrimary, textMuted, gold, onAddShop, onShowToast }) => {
   const openMail = (subject: string) => {
     window.location.href = `mailto:${LEGAL.contactEmail}?subject=${encodeURIComponent(subject)}`;
   };
@@ -542,8 +541,8 @@ const ContributeSection: React.FC<{
   };
 
   const items: ContributeItem[] = [
-    { icon: <Storefront size={15} color={gold} />, title: 'Забрать свою кофейню', subtitle: 'Вы владелец кофейни на CoffeePeek? Подтвердите права на профиль', action: 'Оставить заявку', onClick: () => openMail('Хочу забрать свою кофейню на CoffeePeek') },
-    { icon: <Factory size={15} color={gold} />, title: 'Забрать профиль обжарщика', subtitle: 'Управляете обжарочным цехом? Подтвердите права на профиль', action: 'Оставить заявку', onClick: () => openMail('Хочу забрать профиль обжарщика на CoffeePeek') },
+    { icon: <Storefront size={15} color={gold} />, title: 'Добавить кофейню', subtitle: 'Не нашли кофейню в каталоге? Добавьте её сами', action: 'Добавить', onClick: onAddShop },
+    { icon: <Factory size={15} color={gold} />, title: 'Добавить обжарщика', subtitle: 'Не нашли обжарщика в каталоге? Предложите добавить', action: 'Предложить', onClick: () => openMail('Хочу добавить обжарщика в CoffeePeek') },
     { icon: <ChatCircleText size={15} color={gold} />, title: 'Обратная связь', subtitle: 'Расскажите, что понравилось или что стоит улучшить', action: 'Написать нам', onClick: () => openMail('Обратная связь по CoffeePeek') },
     { icon: <ShareNetwork size={15} color={gold} />, title: 'Поделиться с друзьями', subtitle: 'Расскажите друзьям о CoffeePeek', action: 'Поделиться', onClick: handleShare },
   ];
