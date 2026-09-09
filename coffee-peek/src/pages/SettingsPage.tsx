@@ -15,10 +15,12 @@ import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import WobbleRing from '../components/WobbleRing';
 import { MobileAppDownload } from '../components/mobile-app';
+import { useToast } from '../contexts/ToastContext';
+import { LEGAL } from '../constants/legal';
 import {
   Coffee, SignOut, Camera, PencilSimple, Check,
   ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
-  ArrowClockwise, X, MapPin, Lock,
+  ArrowClockwise, X, MapPin, Lock, ShareNetwork, Factory,
 } from '@/components/Icon';
 
 const styles = `
@@ -52,6 +54,7 @@ const SettingsPage: React.FC = () => {
   const userId = user?.id;
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { showToast } = useToast();
   const isDark = theme === 'dark';
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -260,6 +263,15 @@ const SettingsPage: React.FC = () => {
             onOpenReviews={() => navigate('/reviews')}
           />
         )}
+
+        <ContributeSection
+          surface={surface}
+          border={border}
+          textPrimary={textPrimary}
+          textMuted={textMuted}
+          gold={gold}
+          onShowToast={showToast}
+        />
 
         <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
 
@@ -499,10 +511,71 @@ const AppearanceRow: React.FC<{ border: string; textPrimary: string; textMuted: 
   </div>
 );
 
+interface ContributeItem {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  action: string;
+  onClick: () => void;
+}
+
+const ContributeSection: React.FC<{
+  surface: string; border: string; textPrimary: string; textMuted: string; gold: string;
+  onShowToast: (message: string, type?: 'error' | 'success' | 'info' | 'warning') => void;
+}> = ({ surface, border, textPrimary, textMuted, gold, onShowToast }) => {
+  const openMail = (subject: string) => {
+    window.location.href = `mailto:${LEGAL.contactEmail}?subject=${encodeURIComponent(subject)}`;
+  };
+
+  const handleShare = async () => {
+    const shareData = { title: 'CoffeePeek', text: 'Нашёл классное приложение для поиска кофеен — CoffeePeek', url: window.location.origin };
+    if (navigator.share) {
+      try { await navigator.share(shareData); } catch { /* пользователь отменил шеринг */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      onShowToast('Ссылка скопирована', 'success');
+    } catch {
+      onShowToast('Не удалось скопировать ссылку', 'error');
+    }
+  };
+
+  const items: ContributeItem[] = [
+    { icon: <Storefront size={15} color={gold} />, title: 'Забрать свою кофейню', subtitle: 'Вы владелец кофейни на CoffeePeek? Подтвердите права на профиль', action: 'Оставить заявку', onClick: () => openMail('Хочу забрать свою кофейню на CoffeePeek') },
+    { icon: <Factory size={15} color={gold} />, title: 'Забрать профиль обжарщика', subtitle: 'Управляете обжарочным цехом? Подтвердите права на профиль', action: 'Оставить заявку', onClick: () => openMail('Хочу забрать профиль обжарщика на CoffeePeek') },
+    { icon: <ChatCircleText size={15} color={gold} />, title: 'Обратная связь', subtitle: 'Расскажите, что понравилось или что стоит улучшить', action: 'Написать нам', onClick: () => openMail('Обратная связь по CoffeePeek') },
+    { icon: <ShareNetwork size={15} color={gold} />, title: 'Поделиться с друзьями', subtitle: 'Расскажите друзьям о CoffeePeek', action: 'Поделиться', onClick: handleShare },
+  ];
+
+  return (
+    <section className="settings-card" style={{ marginTop: 20, border: `1px solid ${border}`, background: surface }}>
+      <div style={{ padding: '20px 28px 4px' }}>
+        <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Помогите проекту</h3>
+      </div>
+      {items.map((item, i) => (
+        <React.Fragment key={item.title}>
+          {i > 0 && <Divider border={border} />}
+          <div className="settings-row">
+            <div style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <span style={{ width: 30, height: 30, borderRadius: 9, background: `${gold}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{item.icon}</span>
+              <div style={{ minWidth: 0 }}>
+                <h4 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 14, color: textPrimary }}>{item.title}</h4>
+                <p style={{ margin: '4px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.45 }}>{item.subtitle}</p>
+              </div>
+            </div>
+            <ButtonLike className="settings-row-action" onClick={item.onClick} border={border} color={textPrimary} background="transparent">{item.action}</ButtonLike>
+          </div>
+        </React.Fragment>
+      ))}
+    </section>
+  );
+};
+
 const AppDownloadSection: React.FC<{ surface: string; border: string; textPrimary: string; textMuted: string }> = ({ surface, border, textPrimary, textMuted }) => (
   <section className="settings-release-card" style={{ borderRadius: 14, border: `1px solid ${border}`, background: surface }}>
     <h3 style={{ margin: '0 0 4px', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Мобильное приложение</h3>
-    <p style={{ margin: '0 0 16px', fontFamily: '"Manrope"', fontSize: 13, color: textMuted, lineHeight: 1.45 }}>Android доступен для тестирования, iOS уже в разработке</p>
+    <p style={{ margin: '0 0 16px', fontFamily: '"Manrope"', fontSize: 13, color: textMuted, lineHeight: 1.45 }}>В скором времене приложения появятся в Play Market и App Store</p>
     <MobileAppDownload variant="compact" />
   </section>
 );
