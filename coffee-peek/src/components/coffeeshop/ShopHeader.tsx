@@ -15,6 +15,7 @@ interface ShopHeaderProps {
   isCheckingFavorite: boolean;
   onToggleFavorite: () => void;
   onCheckIn?: () => void;
+  onReportIssue?: () => void;
   textMain: string;
   textMuted: string;
   borderColor: string;
@@ -54,6 +55,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   isCheckingFavorite,
   onToggleFavorite,
   onCheckIn,
+  onReportIssue,
   textMain,
   textMuted,
   borderColor,
@@ -149,6 +151,20 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
         >
           <AppIcon name="share" size={26} color={iconMuted} />
         </button>
+        {onReportIssue && (
+          <button
+            type="button"
+            onClick={onReportIssue}
+            aria-label="Сообщить о неточности"
+            title="Сообщить о неточности"
+            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border ${borderColor} flex items-center justify-center transition-all shrink-0 ${
+              theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+            }`}
+            style={{ padding: 0 }}
+          >
+            <AppIcon name="flag" size={24} color={iconMuted} />
+          </button>
+        )}
       </div>
     </div>
   );

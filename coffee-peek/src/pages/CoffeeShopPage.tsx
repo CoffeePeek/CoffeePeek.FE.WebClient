@@ -8,6 +8,7 @@ import { ReviewsSection } from '../components/coffeeshop/ReviewsSection';
 import { ShopSidebar } from '../components/coffeeshop/ShopSidebar';
 import { ShopMenuSection } from '../components/coffeeshop/ShopMenuSection';
 import CheckInModal from '../components/CheckInModal';
+import ReportShopIssueModal from '../components/ReportShopIssueModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { useRequireAuth } from '../hooks/useRequireAuth';
@@ -143,6 +144,7 @@ const CoffeeShopPage: React.FC = () => {
   
   // Check-in modal state
   const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const tc = getThemeClasses(theme);
   const bgClass = tc.bg.primary;
@@ -180,6 +182,12 @@ const CoffeeShopPage: React.FC = () => {
     if (!shopId || !shop) return;
     if (!requireAuth()) return;
     setShowCheckInModal(true);
+  };
+
+  const handleReportIssue = () => {
+    if (!shopId || !shop) return;
+    if (!requireAuth()) return;
+    setShowReportModal(true);
   };
 
   const handleCheckInSuccess = async () => {
@@ -255,6 +263,7 @@ const CoffeeShopPage: React.FC = () => {
                 isCheckingFavorite={false}
                 onToggleFavorite={handleToggleFavorite}
                 onCheckIn={handleCheckIn}
+                onReportIssue={handleReportIssue}
                 textMain={textMain}
                 textMuted={textMuted}
                 borderColor={borderColor}
@@ -445,6 +454,14 @@ const CoffeeShopPage: React.FC = () => {
         onClose={() => setShowCheckInModal(false)}
         shop={shop || null}
         onSuccess={handleCheckInSuccess}
+      />
+
+      {/* Report Issue Modal */}
+      <ReportShopIssueModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        shopId={shopId || ''}
+        shopName={shop?.name || 'Кофейня'}
       />
     </div>
   );

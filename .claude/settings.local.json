@@ -71,7 +71,8 @@
       "Bash(node _verify_shot.mjs)",
       "Bash(npx playwright *)",
       "Bash(xargs -0 sed -i -E 's/\\\\bInter\\\\b/Manrope/g')",
-      "Bash(cd *)"
+      "Bash(cd *)",
+      "Bash(npx jest *)"
     ]
   }
 }

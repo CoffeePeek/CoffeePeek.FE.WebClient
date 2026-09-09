@@ -8,6 +8,7 @@ const DashboardPage = lazy(() => import('../pages/DashboardPage').then((m) => ({
 const ShopsModerationPage = lazy(() => import('../pages/ShopsModerationPage').then((m) => ({ default: m.ShopsModerationPage })));
 const ShopEditPage = lazy(() => import('../pages/ShopEditPage').then((m) => ({ default: m.ShopEditPage })));
 const ReviewsModerationPage = lazy(() => import('../pages/ReviewsModerationPage').then((m) => ({ default: m.ReviewsModerationPage })));
+const ShopReportsPage = lazy(() => import('../pages/ShopReportsPage').then((m) => ({ default: m.ShopReportsPage })));
 const UsersPage = lazy(() => import('../pages/UsersPage').then((m) => ({ default: m.UsersPage })));
 const CachePage = lazy(() => import('../pages/CachePage').then((m) => ({ default: m.CachePage })));
 const AuditModerationPage = lazy(() => import('../pages/AuditModerationPage').then((m) => ({ default: m.AuditModerationPage })));
@@ -99,6 +100,15 @@ export const AppRoutes: React.FC = () => (
           element={
             <ProtectedRoute requireModerator>
               <ReviewsModerationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/shop-reports"
+          element={
+            <ProtectedRoute requireModerator>
+              <ShopReportsPage />
             </ProtectedRoute>
           }
         />

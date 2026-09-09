@@ -69,6 +69,8 @@ export const API_ENDPOINTS = {
     APP_DOWNLOADS_ANDROID_RELEASES: '/api/admin/v1/app-downloads/android/releases',
     APP_DOWNLOADS_ANDROID_RELEASE_PUBLISH: (id: string) =>
       `/api/admin/v1/app-downloads/android/releases/${id}/publish`,
+    SHOP_REPORTS: '/api/admin/shop-reports',
+    SHOP_REPORT_STATUS: (id: string) => `/api/admin/shop-reports/${id}/status`,
   },
 
   PHOTOS: {

@@ -1,6 +1,6 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
-import { ApiResponse, PaginatedMeta } from './core/types';
+import { ApiResponse, PaginatedMeta, PaginatedResponse } from './core/types';
 import type { PriceRangeLevel } from '../constants/priceRange';
 import { parsePriceRange, toPriceRangeLevel } from '../constants/priceRange';
 import type { CoffeeFocus } from '../constants/catalogIngest';
@@ -197,6 +197,28 @@ export interface AdminReview {
   ratingService: number;
   ratingPlace: number;
   status: ModerationStatus;
+  createdAtUtc: string;
+}
+
+export type ShopIssueCategory =
+  | 'OutdatedMenu'
+  | 'ShopClosed'
+  | 'IncorrectAddress'
+  | 'WrongOpeningHours'
+  | 'IncorrectPhotos'
+  | 'Other';
+
+export type ShopIssueReportStatus = 'Submitted' | 'Reviewed' | 'Fixed' | 'Invalid';
+
+export interface AdminShopIssueReport {
+  id: string;
+  shopId: string;
+  reportedByUserId: string;
+  category: ShopIssueCategory;
+  description: string | null;
+  status: ShopIssueReportStatus;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
   createdAtUtc: string;
 }
 
@@ -714,6 +736,28 @@ export async function rejectReview(id: string, data?: ModerationActionRequest): 
     comment: reason,
     rejectReason: reason,
   });
+}
+
+// ==================== Shop issue reports ====================
+
+interface ShopReportListParams {
+  status?: ShopIssueReportStatus;
+  shopId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export async function getShopIssueReports(
+  params: ShopReportListParams = {}
+): Promise<ApiResponse<PaginatedResponse<AdminShopIssueReport>>> {
+  return httpClient.get<PaginatedResponse<AdminShopIssueReport>>(API_ENDPOINTS.ADMIN.SHOP_REPORTS, { params });
+}
+
+export async function updateShopIssueReportStatus(
+  id: string,
+  status: Exclude<ShopIssueReportStatus, 'Submitted'>
+): Promise<ApiResponse<ShopIssueReportStatus>> {
+  return httpClient.put<ShopIssueReportStatus>(API_ENDPOINTS.ADMIN.SHOP_REPORT_STATUS(id), { status });
 }
 
 // ==================== Users ====================

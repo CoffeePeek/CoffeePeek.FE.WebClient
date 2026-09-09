@@ -78,6 +78,10 @@ export const API_ENDPOINTS = {
     REVIEW_UPDATE: (reviewId: string) => `/api/ModerationReviews/${reviewId}`,
   },
 
+  SHOP_ISSUE_REPORTS: {
+    BASE: "/api/ShopIssueReports",
+  },
+
   PUBLIC: {
     STATS: "/api/public/stats",
     APP_DOWNLOADS: "/api/v1/app-downloads",
