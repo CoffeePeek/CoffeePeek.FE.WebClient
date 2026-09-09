@@ -15,7 +15,6 @@ import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import WobbleRing from '../components/WobbleRing';
 import { MobileAppDownload } from '../components/mobile-app';
-import { LEGAL } from '../constants/legal';
 import {
   Coffee, SignOut, Camera, PencilSimple, Check,
   ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
@@ -269,6 +268,7 @@ const SettingsPage: React.FC = () => {
           textMuted={textMuted}
           gold={gold}
           onAddShop={() => navigate('/coffee-shops/new')}
+          onAddRoaster={() => navigate('/roasters/new')}
         />
 
         <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
@@ -517,14 +517,11 @@ interface ContributeItem {
 const ContributeSection: React.FC<{
   surface: string; border: string; textPrimary: string; textMuted: string; gold: string;
   onAddShop: () => void;
-}> = ({ surface, border, textPrimary, textMuted, gold, onAddShop }) => {
-  const openMail = (subject: string) => {
-    window.location.href = `mailto:${LEGAL.contactEmail}?subject=${encodeURIComponent(subject)}`;
-  };
-
+  onAddRoaster: () => void;
+}> = ({ surface, border, textPrimary, textMuted, gold, onAddShop, onAddRoaster }) => {
   const items: ContributeItem[] = [
     { icon: <Storefront size={15} color={gold} />, title: 'Добавить кофейню', subtitle: 'Не нашли кофейню в каталоге? Добавьте её сами', action: 'Добавить', onClick: onAddShop },
-    { icon: <Factory size={15} color={gold} />, title: 'Добавить обжарщика', subtitle: 'Не нашли обжарщика в каталоге? Предложите добавить', action: 'Предложить', onClick: () => openMail('Хочу добавить обжарщика в CoffeePeek') },
+    { icon: <Factory size={15} color={gold} />, title: 'Добавить обжарщика', subtitle: 'Не нашли обжарщика в каталоге? Добавьте его сами', action: 'Добавить', onClick: onAddRoaster },
   ];
 
   return (

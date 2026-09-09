@@ -66,6 +66,7 @@ export const API_ENDPOINTS = {
   },
 
   PHOTOS: {
+    BASE: "/api/Photos",
     AVATAR: "/api/photos/avatar",
     SHOP: "/api/photos/shop",
     MENU: "/api/Photos/menu",
@@ -76,6 +77,7 @@ export const API_ENDPOINTS = {
     UPLOAD_URLS: "/api/Moderation/upload-urls",
     REVIEWS: "/api/ModerationReviews",
     REVIEW_UPDATE: (reviewId: string) => `/api/ModerationReviews/${reviewId}`,
+    ROASTER: "/api/ModerationRoasters",
   },
 
   SHOP_ISSUE_REPORTS: {

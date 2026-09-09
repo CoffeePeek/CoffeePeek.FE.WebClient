@@ -63,3 +63,17 @@ export async function getMenuUploadUrls(
     { requiresAuth: true }
   );
 }
+
+/**
+ * Получает URLs для загрузки фотографий обжарщика
+ * POST /api/Photos
+ */
+export async function getRoasterUploadUrls(
+  requests: UploadUrlRequest[]
+): Promise<ApiResponse<UploadUrlResponse[]>> {
+  return httpClient.post<UploadUrlResponse[]>(
+    API_ENDPOINTS.PHOTOS.BASE,
+    requests,
+    { requiresAuth: true }
+  );
+}

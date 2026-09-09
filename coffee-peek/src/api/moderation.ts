@@ -126,6 +126,22 @@ export interface SendCoffeeShopToModerationRequest {
   }>;
 }
 
+export interface SendRoasterToModerationRequest {
+  name: string;
+  about?: string;
+  cityId?: string;
+  address?: string;
+  instagramLink?: string;
+  siteLink?: string;
+  photos?: ModerationShopPhoto[];
+}
+
+export interface SendRoasterModerationResult {
+  roasterId: string;
+  status: string;
+  isAddressValidated: boolean;
+}
+
 export interface SendReviewToModerationRequest {
   shopId: string;
   header?: string | null;
@@ -295,6 +311,30 @@ export async function sendCoffeeShopToModeration(
   );
 
   return response;
+}
+
+/**
+ * Отправляет обжарщика на модерацию.
+ * Успех: HTTP 201 + isSuccess: true
+ */
+export async function sendRoasterToModeration(
+  roasterData: SendRoasterToModerationRequest
+): Promise<ApiResponse<SendRoasterModerationResult>> {
+  const hasLocation = Boolean(roasterData.address && roasterData.cityId);
+
+  return httpClient.post<SendRoasterModerationResult>(
+    API_ENDPOINTS.MODERATION.ROASTER,
+    {
+      name: roasterData.name,
+      about: roasterData.about || undefined,
+      cityId: hasLocation ? roasterData.cityId : undefined,
+      address: hasLocation ? roasterData.address : undefined,
+      instagramLink: roasterData.instagramLink || undefined,
+      siteLink: roasterData.siteLink || undefined,
+      photos: roasterData.photos,
+    },
+    { requiresAuth: true }
+  );
 }
 
 /**
