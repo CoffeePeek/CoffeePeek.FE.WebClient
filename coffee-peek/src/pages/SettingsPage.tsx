@@ -15,12 +15,11 @@ import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import WobbleRing from '../components/WobbleRing';
 import { MobileAppDownload } from '../components/mobile-app';
-import { useToast } from '../contexts/ToastContext';
 import { LEGAL } from '../constants/legal';
 import {
   Coffee, SignOut, Camera, PencilSimple, Check,
   ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
-  ArrowClockwise, X, MapPin, Lock, ShareNetwork, Factory,
+  ArrowClockwise, X, MapPin, Lock, Factory,
 } from '@/components/Icon';
 
 const styles = `
@@ -39,7 +38,7 @@ const styles = `
     .settings-edit-action { grid-column: 1 / -1; width: 100%; justify-content: stretch !important; }
     .settings-edit-action > button { flex: 1; }
     .settings-info-grid { grid-template-columns: 1fr; padding: 0 18px 18px; }
-    .settings-stats { grid-template-columns: 1fr; padding: 14px 18px; }
+    .settings-stats { gap: 6px; padding: 14px 12px; }
     .settings-row { grid-template-columns: 1fr; padding: 18px; }
     .settings-row-action { width: 100%; justify-content: center; }
     .settings-actions { flex-direction: column; padding: 18px 0 0; }
@@ -54,7 +53,6 @@ const SettingsPage: React.FC = () => {
   const userId = user?.id;
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { showToast } = useToast();
   const isDark = theme === 'dark';
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -271,7 +269,6 @@ const SettingsPage: React.FC = () => {
           textMuted={textMuted}
           gold={gold}
           onAddShop={() => navigate('/coffee-shops/new')}
-          onShowToast={showToast}
         />
 
         <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
@@ -425,11 +422,11 @@ const InfoField: React.FC<{ label: string; value: string; isEditing: boolean; in
 const Divider: React.FC<{ border: string }> = ({ border }) => <div style={{ height: 1, background: border, margin: '0 22px' }} />;
 
 const StatItem: React.FC<{ icon: React.ReactNode; value: number; label: string; gold: string; textPrimary: string; textMuted: string; onClick?: () => void }> = ({ icon, value, label, gold, textPrimary, textMuted, onClick }) => (
-  <button type="button" onClick={onClick} disabled={!onClick} style={{ border: 'none', background: 'transparent', padding: 0, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', cursor: onClick ? 'pointer' : 'default', minWidth: 0 }}>
+  <button type="button" onClick={onClick} disabled={!onClick} style={{ width: '100%', border: 'none', background: 'transparent', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', cursor: onClick ? 'pointer' : 'default', minWidth: 0 }}>
     <span style={{ width: 30, height: 30, borderRadius: 9, background: `${gold}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</span>
     <span style={{ minWidth: 0 }}>
       <span style={{ display: 'block', fontFamily: '"Manrope"', fontWeight: 800, fontSize: 16, color: textPrimary, lineHeight: 1 }}>{value}</span>
-      <span style={{ display: 'block', marginTop: 2, fontFamily: '"Manrope"', fontSize: 11, color: textMuted }}>{label}{onClick ? ' →' : ''}</span>
+      <span style={{ display: 'block', marginTop: 2, fontFamily: '"Manrope"', fontSize: 11, color: textMuted, whiteSpace: 'nowrap' }}>{label}{onClick ? ' →' : ''}</span>
     </span>
   </button>
 );
@@ -520,24 +517,9 @@ interface ContributeItem {
 const ContributeSection: React.FC<{
   surface: string; border: string; textPrimary: string; textMuted: string; gold: string;
   onAddShop: () => void;
-  onShowToast: (message: string, type?: 'error' | 'success' | 'info' | 'warning') => void;
-}> = ({ surface, border, textPrimary, textMuted, gold, onAddShop, onShowToast }) => {
+}> = ({ surface, border, textPrimary, textMuted, gold, onAddShop }) => {
   const openMail = (subject: string) => {
     window.location.href = `mailto:${LEGAL.contactEmail}?subject=${encodeURIComponent(subject)}`;
-  };
-
-  const handleShare = async () => {
-    const shareData = { title: 'CoffeePeek', text: 'Нашёл классное приложение для поиска кофеен — CoffeePeek', url: window.location.origin };
-    if (navigator.share) {
-      try { await navigator.share(shareData); } catch { /* пользователь отменил шеринг */ }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(shareData.url);
-      onShowToast('Ссылка скопирована', 'success');
-    } catch {
-      onShowToast('Не удалось скопировать ссылку', 'error');
-    }
   };
 
   const items: ContributeItem[] = [
