@@ -52,7 +52,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
         <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 min-w-0`}>
           <span className={`w-1.5 h-8 ${themeClasses.primary.bg} rounded-full shrink-0`} />
-          Отзывы клиентов
+          Отзывы
         </h2>
         {user && (
           <button
@@ -72,8 +72,8 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         <div className="space-y-6">
           {reviews.map((review) => {
             const userProfile = usersCache.get(review.userId);
-            const displayName = userProfile?.userName || 'Анонимный пользователь';
-            const avatarUrl = userProfile?.avatarUrl;
+            const displayName = userProfile?.userName || review.userName || 'Анонимный пользователь';
+            const avatarUrl = userProfile?.avatarUrl || review.userAvatar;
             const reviewDate = new Date(review.createdAt);
             const formattedDate = reviewDate.toLocaleDateString('ru-RU', {
               year: 'numeric',
