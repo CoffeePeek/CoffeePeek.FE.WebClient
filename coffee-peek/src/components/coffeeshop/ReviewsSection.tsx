@@ -83,13 +83,13 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             const avgReviewRating = (review.ratingCoffee + review.ratingService + review.ratingPlace) / 3;
 
             return (
-              <div key={review.id} className={`${cardBg} p-8 rounded-3xl border ${borderColor} hover:shadow-lg transition-all`}>
-                <div className="flex justify-between items-start mb-4">
+              <div key={review.id} className={`${cardBg} p-5 sm:p-8 rounded-3xl border ${borderColor} hover:shadow-lg transition-all`}>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                   <button
                     onClick={() => handleNavigateToUserProfile(review.userId)}
-                    className="flex items-center gap-4 hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-4 hover:opacity-80 transition-opacity min-w-0"
                   >
-                    <div className={`w-12 h-12 rounded-full border-2 ${themeClasses.primary.borderLighter} overflow-hidden`}>
+                    <div className={`w-12 h-12 shrink-0 rounded-full border-2 ${themeClasses.primary.borderLighter} overflow-hidden`}>
                       {avatarUrl ? (
                         <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                       ) : (
@@ -98,14 +98,14 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                         </div>
                       )}
                     </div>
-                    <div className="text-left">
-                      <h4 className={`font-bold ${textMain}`}>{displayName}</h4>
+                    <div className="text-left min-w-0">
+                      <h4 className={`font-bold ${textMain} truncate`}>{displayName}</h4>
                       <p className={`text-xs ${textMuted} font-medium uppercase tracking-widest`}>
                         {formattedDate}
                       </p>
                     </div>
                   </button>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0 sm:pl-4">
                     <div className={`flex ${themeClasses.primary.text}`}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <StarIcon key={star} filled={star <= avgReviewRating} size={20} />

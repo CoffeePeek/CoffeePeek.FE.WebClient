@@ -58,6 +58,10 @@ const UserCheckInsSection: React.FC<UserCheckInsSectionProps> = ({
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
 
+  if (checkIns.length === 0) {
+    return null;
+  }
+
   return (
     <section className={`pt-8 border-t ${borderColor}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
@@ -74,8 +78,7 @@ const UserCheckInsSection: React.FC<UserCheckInsSectionProps> = ({
         </button>
       </div>
 
-      {checkIns.length > 0 && (
-        <div className="space-y-3">
+      <div className="space-y-3">
           {checkIns.map((checkIn) => (
             <article key={checkIn.id} className={`${cardBg} p-4 sm:p-5 rounded-2xl border ${borderColor}`}>
               <div className="flex items-start justify-between gap-3">
@@ -105,8 +108,7 @@ const UserCheckInsSection: React.FC<UserCheckInsSectionProps> = ({
               ) : null}
             </article>
           ))}
-        </div>
-      )}
+      </div>
     </section>
   );
 };
