@@ -1,6 +1,6 @@
 import * as maplibregl from 'maplibre-gl';
 import type { LngLatLike, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
-import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
+import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { brand, dark, light } from '../design-system/tokens';
 
@@ -118,6 +118,9 @@ export function createOsmMap(
   });
   map.getContainer().style.backgroundColor = COFFEEPEEK_PALETTE[theme].background;
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+  const attribution = map.getContainer().querySelector<HTMLDetailsElement>('.maplibregl-ctrl-attrib');
+  attribution?.classList.remove('maplibregl-compact-show');
+  attribution?.removeAttribute('open');
   if (options.zoomControl !== false) {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
   }
