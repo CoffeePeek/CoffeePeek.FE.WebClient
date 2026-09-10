@@ -1,7 +1,10 @@
 import * as maplibregl from 'maplibre-gl';
 import type { LngLatLike, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
+import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { brand, dark, light } from '../design-system/tokens';
+
+maplibregl.setWorkerUrl(mapLibreWorkerUrl);
 
 export const MINSK_CENTER: [number, number] = [27.5667, 53.9];
 
