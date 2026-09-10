@@ -16,6 +16,10 @@ const ShopTagsPage = lazy(() => import('../pages/ShopTagsPage').then((m) => ({ d
 const CatalogManagementPage = lazy(() => import('../pages/CatalogManagementPage').then((m) => ({ default: m.CatalogManagementPage })));
 const PublishedShopsPage = lazy(() => import('../pages/PublishedShopsPage').then((m) => ({ default: m.PublishedShopsPage })));
 const PublishedShopEditPage = lazy(() => import('../pages/PublishedShopEditPage').then((m) => ({ default: m.PublishedShopEditPage })));
+const RoastersModerationPage = lazy(() => import('../pages/RoastersModerationPage').then((m) => ({ default: m.RoastersModerationPage })));
+const RoasterModerationDetailPage = lazy(() => import('../pages/RoasterModerationDetailPage').then((m) => ({ default: m.RoasterModerationDetailPage })));
+const PublishedRoastersPage = lazy(() => import('../pages/PublishedRoastersPage').then((m) => ({ default: m.PublishedRoastersPage })));
+const RoasterEditPage = lazy(() => import('../pages/RoasterEditPage').then((m) => ({ default: m.RoasterEditPage })));
 const OwnerShopsPage = lazy(() => import('../pages/OwnerShopsPage').then((m) => ({ default: m.OwnerShopsPage })));
 const OwnerShopEditPage = lazy(() => import('../pages/OwnerShopEditPage').then((m) => ({ default: m.OwnerShopEditPage })));
 const BrowseShopsPage = lazy(() => import('../pages/BrowseShopsPage').then((m) => ({ default: m.BrowseShopsPage })));
@@ -126,6 +130,39 @@ export const AppRoutes: React.FC = () => (
           element={
             <ProtectedRoute requireAdmin>
               <PublishedShopEditPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/roasters"
+          element={
+            <ProtectedRoute requireModerator>
+              <RoastersModerationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/roasters/:id"
+          element={
+            <ProtectedRoute requireModerator>
+              <RoasterModerationDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/published-roasters"
+          element={
+            <ProtectedRoute requireAdmin>
+              <PublishedRoastersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/published-roasters/:id"
+          element={
+            <ProtectedRoute requireAdmin>
+              <RoasterEditPage />
             </ProtectedRoute>
           }
         />

@@ -134,7 +134,7 @@ export interface DetailedCoffeeShop {
     longitude?: number;
   };
   beans?: Array<{ id: string; name: string }>;
-  roasters?: Array<{ id: string; name: string }>;
+  roasters?: Array<{ id: string; name: string; photoUrl?: string | null }>;
   equipments?: Equipment[];
   brewMethods?: Array<{ id: string; name: string }> | null;
   shopContact?: {
@@ -196,7 +196,7 @@ export interface ShortShopDto {
     longitude?: number;
   };
   beans?: Array<{ id: string; name: string }>;
-  roasters?: Array<{ id: string; name: string }>;
+  roasters?: Array<{ id: string; name: string; photoUrl?: string | null }>;
   equipments?: Equipment[];
   brewMethods?: Array<{ id: string; name: string }>;
   shopContact?: {
@@ -283,6 +283,17 @@ export interface CoffeeBean {
 export interface Roaster {
   id: string;
   name: string;
+  photoUrl?: string | null;
+}
+
+export interface RoasterDetails {
+  id: string;
+  name: string;
+  about?: string | null;
+  location?: { address?: string | null; latitude?: number | null; longitude?: number | null } | null;
+  contact?: { instagramLink?: string | null; siteLink?: string | null } | null;
+  photos: ShortPhotoMetadataDto[];
+  shops: Array<{ id: string; name: string }>;
 }
 
 export interface BrewMethod {
@@ -621,6 +632,15 @@ export async function getRoasters(): Promise<ApiResponse<Roaster[]>> {
   
   referenceDataCache.roasters = { data: [], promise };
   return promise;
+}
+
+/**
+ * Получает полную информацию об обжарщике
+ */
+export async function getRoasterById(id: string): Promise<ApiResponse<RoasterDetails>> {
+  return httpClient.get<RoasterDetails>(API_ENDPOINTS.ROASTERS.BY_ID(id), {
+    requiresAuth: false,
+  });
 }
 
 /**

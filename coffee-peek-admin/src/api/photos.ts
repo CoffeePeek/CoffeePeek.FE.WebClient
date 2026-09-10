@@ -31,8 +31,17 @@ export async function getShopUploadUrls(
   });
 }
 
+export async function getRoasterUploadUrls(
+  requests: PhotoRequest[]
+): Promise<ApiResponse<GenerateUploadUrlResponse[]>> {
+  return httpClient.post<GenerateUploadUrlResponse[]>(API_ENDPOINTS.PHOTOS.ROASTER, requests, {
+    requiresAuth: true,
+  });
+}
+
 const MAX_MENU_PHOTOS = 4;
 const MAX_SHOP_PHOTOS = 12;
+const MAX_ROASTER_PHOTOS = 12;
 
 async function uploadPhotoFiles(
   files: File[],
@@ -79,4 +88,8 @@ export async function uploadMenuPhotoFiles(files: File[]): Promise<UploadedPhoto
 
 export async function uploadShopPhotoFiles(files: File[]): Promise<UploadedPhotoDto[]> {
   return uploadPhotoFiles(files, getShopUploadUrls, MAX_SHOP_PHOTOS);
+}
+
+export async function uploadRoasterPhotoFiles(files: File[]): Promise<UploadedPhotoDto[]> {
+  return uploadPhotoFiles(files, getRoasterUploadUrls, MAX_ROASTER_PHOTOS);
 }

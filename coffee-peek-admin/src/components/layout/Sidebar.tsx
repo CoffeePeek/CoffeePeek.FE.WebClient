@@ -78,6 +78,12 @@ const IconMap = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
   </svg>
 );
+const IconRoaster = () => (
+  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10a5 5 0 015-5h6a5 5 0 015 5v2a7 7 0 01-7 7H10a7 7 0 01-7-7v-2z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v2m-3.5-.5L9 5m7-3.5L15.5 5" />
+  </svg>
+);
 const IconImport = () => (
   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h7" />
@@ -108,6 +114,8 @@ const NAV: NavEntry[] = [
         { path: '/shops', label: 'Пользовательская модерация', icon: <IconShop />, moderatorOnly: true },
         { path: '/import', label: 'Парсинг', icon: <IconImport />, moderatorOnly: true },
         { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
+        { path: '/roasters', label: 'Обжарщики: модерация', icon: <IconRoaster />, moderatorOnly: true },
+        { path: '/published-roasters', label: 'Обжарщики: опубликованные', icon: <IconRoaster />, adminOnly: true },
       ],
     },
   },

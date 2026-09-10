@@ -76,6 +76,7 @@ export const API_ENDPOINTS = {
   PHOTOS: {
     MENU: '/api/Photos/menu',
     SHOP: '/api/Photos/shop',
+    ROASTER: '/api/Photos/roaster',
   },
 
   REALTIME: {
@@ -94,6 +95,9 @@ export const API_ENDPOINTS = {
     SHOP_STATUS: '/api/ModerationShops/status',
     REVIEWS: '/api/ModerationReviews',
     REVIEW_BY_ID: (id: string) => `/api/ModerationReviews/${id}`,
+    ROASTERS: '/api/ModerationRoasters',
+    ROASTER_BY_ID: (id: string) => `/api/ModerationRoasters/${id}`,
+    ROASTER_STATUS: '/api/ModerationRoasters/status',
   },
 
   COFFEE_SHOP: {
@@ -112,6 +116,10 @@ export const API_ENDPOINTS = {
     ROASTERS: '/api/Catalogs/roasters',
     BREW_METHODS: '/api/Catalogs/brew-methods',
     SHOP_TAGS: '/api/Catalogs/shop-tags',
+  },
+
+  ROASTERS: {
+    BY_ID: (id: string) => `/api/roasters/${id}`,
   },
 } as const;
 

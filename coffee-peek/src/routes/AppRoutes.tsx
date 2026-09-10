@@ -17,6 +17,7 @@ const CreateReviewPage = lazyWithRetry(() => import('../pages/CreateReviewPage')
 const UserProfilePage = lazyWithRetry(() => import('../pages/UserProfilePage'));
 const CreateCoffeeShopPage = lazyWithRetry(() => import('../pages/CreateCoffeeShopPage'));
 const CreateRoasterPage = lazyWithRetry(() => import('../pages/CreateRoasterPage'));
+const RoasterDetailPage = lazyWithRetry(() => import('../pages/RoasterDetailPage'));
 const CreateCheckInPage = lazyWithRetry(() => import('../pages/CreateCheckInPage'));
 const SettingsPage = lazyWithRetry(() => import('../pages/SettingsPage'));
 const ErrorPage = lazyWithRetry(() => import('../pages/ErrorPage'));
@@ -135,6 +136,15 @@ export const AppRoutes: React.FC = () => {
                 <CreateRoasterPage />
               </AuthenticatedLayout>
             </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/roasters/:roasterId"
+          element={
+            <AuthenticatedLayout>
+              <RoasterDetailPage />
+            </AuthenticatedLayout>
           }
         />
 

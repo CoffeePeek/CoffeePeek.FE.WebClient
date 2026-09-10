@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { DetailedCoffeeShop, formatEquipmentName, getEquipmentCategoryLabel } from '../api/coffeeshop';
 import PhotoCarousel from './PhotoCarousel';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
@@ -240,12 +241,17 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {shop.roasters.map(roaster => (
-                        <span
+                        <Link
                           key={roaster.id}
-                          className={`px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium`}
+                          to={`/roasters/${roaster.id}`}
+                          onClick={onClose}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 ${themeClasses.bg.primary} border ${themeClasses.border.default} text-[#EAB308] rounded-lg text-sm font-medium hover:opacity-80 transition-opacity`}
                         >
+                          {roaster.photoUrl && (
+                            <img src={roaster.photoUrl} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />
+                          )}
                           {roaster.name}
-                        </span>
+                        </Link>
                       ))}
                     </div>
                   </div>

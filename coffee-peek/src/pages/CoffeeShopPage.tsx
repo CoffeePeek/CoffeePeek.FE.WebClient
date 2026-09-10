@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ShopDetailSkeleton } from '../components/skeletons';
 import { PhotoGallery } from '../components/coffeeshop/PhotoGallery';
 import { ShopHeader } from '../components/coffeeshop/ShopHeader';
@@ -384,12 +384,16 @@ const CoffeeShopPage: React.FC = () => {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {shop.roasters.map(roaster => (
-                        <span 
+                        <Link
                           key={roaster.id}
-                          className="px-4 py-2 bg-[#F8F1DD] text-[#D4A84B] rounded-xl text-sm font-semibold border border-[#D4A84B]/20"
+                          to={`/roasters/${roaster.id}`}
+                          className="flex items-center gap-2 px-3 py-2 bg-[#F8F1DD] text-[#D4A84B] rounded-xl text-sm font-semibold border border-[#D4A84B]/20 hover:border-[#D4A84B]/50 transition-colors"
                         >
+                          {roaster.photoUrl && (
+                            <img src={roaster.photoUrl} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                          )}
                           {roaster.name}
-                        </span>
+                        </Link>
                       ))}
                     </div>
                   </div>

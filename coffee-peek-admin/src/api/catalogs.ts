@@ -23,6 +23,7 @@ export interface CatalogBean {
 export interface CatalogRoaster {
   id: string;
   name: string;
+  photoUrl?: string | null;
 }
 
 export interface CatalogBrewMethod {

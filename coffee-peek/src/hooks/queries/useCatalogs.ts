@@ -4,6 +4,7 @@ import {
   getEquipments,
   getCoffeeBeans,
   getRoasters,
+  getRoasterById,
   getBrewMethods,
   City,
   Equipment,
@@ -21,6 +22,7 @@ export const catalogKeys = {
   equipments: () => [...catalogKeys.all, 'equipments'] as const,
   coffeeBeans: () => [...catalogKeys.all, 'coffeeBeans'] as const,
   roasters: () => [...catalogKeys.all, 'roasters'] as const,
+  roaster: (id: string) => [...catalogKeys.all, 'roaster', id] as const,
   brewMethods: () => [...catalogKeys.all, 'brewMethods'] as const,
 };
 
@@ -93,6 +95,24 @@ export function useRoasters(enabled: boolean = true) {
     },
     enabled,
     staleTime: Infinity, // Roasters rarely change, cache forever
+  });
+}
+
+/**
+ * Hook to fetch a single roaster by ID
+ */
+export function useRoaster(roasterId: string | null, enabled: boolean = true) {
+  return useQuery({
+    queryKey: catalogKeys.roaster(roasterId!),
+    queryFn: async () => {
+      if (!roasterId) throw new Error('Roaster ID is required');
+      const response = await getRoasterById(roasterId);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch roaster');
+      }
+      return response.data;
+    },
+    enabled: enabled && !!roasterId,
   });
 }
 

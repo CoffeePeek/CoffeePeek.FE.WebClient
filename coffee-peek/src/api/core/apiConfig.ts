@@ -57,6 +57,10 @@ export const API_ENDPOINTS = {
     SHOP_TAGS: "/api/Catalogs/shop-tags",
   },
 
+  ROASTERS: {
+    BY_ID: (id: string) => `/api/roasters/${id}`,
+  },
+
   REVIEW: {
     BY_ID: (reviewId: string) => `/api/CoffeeShopReviews/${reviewId}`,
   },
@@ -66,10 +70,10 @@ export const API_ENDPOINTS = {
   },
 
   PHOTOS: {
-    BASE: "/api/Photos",
     AVATAR: "/api/photos/avatar",
     SHOP: "/api/photos/shop",
     MENU: "/api/Photos/menu",
+    ROASTER: "/api/Photos/roaster",
   },
 
   MODERATION: {
