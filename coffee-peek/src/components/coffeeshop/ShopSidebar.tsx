@@ -1,8 +1,8 @@
 import WobbleRing from '../WobbleRing';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import type { Map as LeafletMap } from 'leaflet';
-import { DetailedCoffeeShop } from '../../api/coffeeshop';
+import * as maplibregl from 'maplibre-gl';
+import type { Map as MapLibreMap } from 'maplibre-gl';
+import type { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { formatDayOfWeekShort, getCurrentDayOfWeek } from '../../utils/shopUtils';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
@@ -29,7 +29,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
   const themeClasses = getThemeClasses(theme);
   const currentDay = getCurrentDayOfWeek();
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<LeafletMap | null>(null);
+  const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [hoursOpen, setHoursOpen] = useState(false);
 
@@ -43,7 +43,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
     let cancelled = false;
 
     const map = createOsmMap(container, {
-      center: [latitude, longitude],
+      center: [longitude, latitude],
       zoom: 15,
       dark: isDark,
       interactive: false,
@@ -53,11 +53,12 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
 
     void ensureMapPinMascots().then(() => {
       if (cancelled || mapInstanceRef.current !== map) return;
-      L.marker([latitude, longitude], {
-        icon: coffeeDetailIcon(shop.type),
-        title: shop.name,
-        interactive: false,
-      }).addTo(map);
+      const element = coffeeDetailIcon(shop.type);
+      element.title = shop.name;
+      element.style.pointerEvents = 'none';
+      new maplibregl.Marker({ element, anchor: 'center' })
+        .setLngLat([longitude, latitude])
+        .addTo(map);
       setIsMapLoaded(true);
     });
 

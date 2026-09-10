@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
+import * as maplibregl from 'maplibre-gl';
+import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { createOsmMap, coffeeDetailIcon, MINSK_CENTER } from '../map/osmMap';
@@ -71,8 +71,8 @@ export const AddressMapField: React.FC<AddressMapFieldProps> = ({
   const themeClasses = getThemeClasses(theme);
   const isDark = theme === 'dark';
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<LeafletMap | null>(null);
-  const markerRef = useRef<LeafletMarker | null>(null);
+  const mapInstanceRef = useRef<MapLibreMap | null>(null);
+  const markerRef = useRef<MapLibreMarker | null>(null);
 
   const [coords, setCoords] = useState<LatLng | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
@@ -102,7 +102,7 @@ export const AddressMapField: React.FC<AddressMapFieldProps> = ({
         if (!opts?.silent) {
           setGeoHint('Не удалось определить местоположение — укажите адрес или выберите на карте');
         }
-        setCoords((prev) => prev ?? { lat: MINSK_CENTER[0], lng: MINSK_CENTER[1] });
+        setCoords((prev) => prev ?? { lat: MINSK_CENTER[1], lng: MINSK_CENTER[0] });
       } finally {
         setLocating(false);
       }
@@ -137,8 +137,8 @@ export const AddressMapField: React.FC<AddressMapFieldProps> = ({
   useEffect(() => {
     if (!mapOpen || !mapRef.current) return;
 
-    const center: L.LatLngTuple = coords
-      ? [coords.lat, coords.lng]
+    const center: [number, number] = coords
+      ? [coords.lng, coords.lat]
       : MINSK_CENTER;
 
     const map = createOsmMap(mapRef.current, {
@@ -150,28 +150,30 @@ export const AddressMapField: React.FC<AddressMapFieldProps> = ({
     });
     mapInstanceRef.current = map;
 
-    const marker = L.marker(center, {
-      icon: coffeeDetailIcon(),
+    const markerElement = coffeeDetailIcon();
+    markerElement.title = 'Адрес кофейни';
+    const marker = new maplibregl.Marker({
+      element: markerElement,
+      anchor: 'center',
       draggable: true,
-      title: 'Адрес кофейни',
-    }).addTo(map);
+    }).setLngLat(center).addTo(map);
     markerRef.current = marker;
 
-    const syncFromLatLng = (ll: L.LatLng) => {
+    const syncFromLatLng = (ll: { lat: number; lng: number }) => {
       void applyCoords({ lat: ll.lat, lng: ll.lng }, true);
     };
 
     marker.on('dragend', () => {
-      const ll = marker.getLatLng();
+      const ll = marker.getLngLat();
       syncFromLatLng(ll);
     });
 
-    map.on('click', (e: L.LeafletMouseEvent) => {
-      marker.setLatLng(e.latlng);
-      syncFromLatLng(e.latlng);
+    map.on('click', (e) => {
+      marker.setLngLat(e.lngLat);
+      syncFromLatLng(e.lngLat);
     });
 
-    requestAnimationFrame(() => map.invalidateSize());
+    requestAnimationFrame(() => map.resize());
 
     return () => {
       map.remove();
@@ -186,12 +188,12 @@ export const AddressMapField: React.FC<AddressMapFieldProps> = ({
     if (!mapOpen || !coords || !markerRef.current || !mapInstanceRef.current) return;
     const marker = markerRef.current;
     const map = mapInstanceRef.current;
-    const current = marker.getLatLng();
+    const current = marker.getLngLat();
     if (Math.abs(current.lat - coords.lat) < 1e-7 && Math.abs(current.lng - coords.lng) < 1e-7) {
       return;
     }
-    marker.setLatLng([coords.lat, coords.lng]);
-    map.panTo([coords.lat, coords.lng]);
+    marker.setLngLat([coords.lng, coords.lat]);
+    map.panTo([coords.lng, coords.lat]);
   }, [coords, mapOpen]);
 
   const muted = themeClasses.text.secondary;

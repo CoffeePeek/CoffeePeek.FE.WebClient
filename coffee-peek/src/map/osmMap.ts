@@ -1,8 +1,9 @@
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import * as maplibregl from 'maplibre-gl';
+import type { LngLatLike, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { brand, dark, light } from '../design-system/tokens';
 
-export const MINSK_CENTER: L.LatLngTuple = [53.9, 27.5667];
+export const MINSK_CENTER: [number, number] = [27.5667, 53.9];
 
 export type MapBoundsBox = {
   minLat: number;
@@ -11,99 +12,126 @@ export type MapBoundsBox = {
   maxLon: number;
 };
 
-const tileLayers = new WeakMap<L.Map, L.TileLayer>();
+type MapTheme = 'light' | 'dark';
 
-function cartoApiKey(): string {
-  return (import.meta.env.VITE_CARTO_API_KEY ?? '').trim();
+const STYLE_URLS: Record<MapTheme, string> = {
+  light: 'https://tiles.openfreemap.org/styles/positron',
+  dark: 'https://tiles.openfreemap.org/styles/dark',
+};
+
+const COFFEEPEEK_PALETTE = {
+  light: {
+    background: '#F8F6F3', residential: '#EFEAE5', park: '#E4E8DF', building: '#E3DDD7',
+    water: '#D3DEE1', waterLine: '#B2C5CA', roadCasing: '#D6CEC7', road: '#FFFFFF',
+    minorRoad: '#E8E2DC', boundary: '#AA9D94', text: '#625A55', waterText: '#687E84', textHalo: '#FAF8F5',
+  },
+  dark: {
+    background: '#1A1412', residential: '#211B18', park: '#25231D', building: '#302722',
+    water: '#26343A', waterLine: '#42545B', roadCasing: '#332A26', road: '#4B403A',
+    minorRoad: '#3D342F', boundary: '#66564D', text: '#C8BEB7', waterText: '#9AAFB5', textHalo: '#1A1412',
+  },
+} as const;
+
+const NOISE_PHRASES = [
+  'house-number', 'house_number', 'transit_stop', 'transit-stop', 'bus_stop', 'bus-stop',
+  'ferry_terminal', 'ferry-terminal', 'aerodrome_label', 'aerodrome-label', 'airport_label', 'airport-label',
+];
+
+function isNoiseLayer(id: string): boolean {
+  if (id.startsWith('coffeepeek-')) return false;
+  const normalized = id.toLowerCase();
+  const segments = normalized.split(/[-_.]/);
+  return segments.includes('poi') || segments.includes('housenumber') || segments.includes('oneway')
+    || NOISE_PHRASES.some((phrase) => normalized.includes(phrase));
 }
 
-function tileUrl(dark: boolean): string {
-  const key = cartoApiKey();
-  if (key) {
-    const style = dark ? 'dark_all' : 'rastertiles/voyager';
-    return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(key)}`;
+function safely(action: () => void): void {
+  try { action(); } catch { /* External styles may expose incompatible paint properties. */ }
+}
+
+function applyCoffeePeekStyle(map: MapLibreMap, theme: MapTheme): void {
+  const palette = COFFEEPEEK_PALETTE[theme];
+  for (const layer of map.getStyle().layers ?? []) {
+    const id = layer.id.toLowerCase();
+    if (id.startsWith('coffeepeek-')) continue;
+    if (isNoiseLayer(id)) {
+      safely(() => map.setLayoutProperty(layer.id, 'visibility', 'none'));
+      continue;
+    }
+    if (id.includes('highway_path')) {
+      safely(() => map.setLayerZoomRange(layer.id, Math.max(layer.minzoom ?? 0, 15), layer.maxzoom ?? 24));
+    }
+    if (layer.type === 'background') {
+      safely(() => map.setPaintProperty(layer.id, 'background-color', palette.background));
+    } else if (layer.type === 'fill') {
+      if (id === 'water' || id.startsWith('water_')) {
+        safely(() => map.setPaintProperty(layer.id, 'fill-color', palette.water));
+        safely(() => map.setPaintProperty(layer.id, 'fill-outline-color', palette.waterLine));
+      } else if (id === 'park' || id.includes('landcover_wood') || id.includes('landuse_park')) {
+        safely(() => map.setPaintProperty(layer.id, 'fill-color', palette.park));
+      } else if (id.includes('building')) {
+        safely(() => map.setPaintProperty(layer.id, 'fill-color', palette.building));
+        safely(() => map.setPaintProperty(layer.id, 'fill-outline-color', palette.roadCasing));
+      } else if (id.includes('residential')) {
+        safely(() => map.setPaintProperty(layer.id, 'fill-color', palette.residential));
+      }
+    } else if (layer.type === 'line') {
+      let color: string | undefined;
+      if (id.includes('waterway')) color = palette.waterLine;
+      else if (id.includes('boundary')) color = palette.boundary;
+      else if (id.includes('highway') || id.includes('road') || id.includes('bridge') || id.includes('tunnel')) {
+        if (id.includes('casing')) color = palette.roadCasing;
+        else if (id.includes('inner') || id.includes('motorway') || id.includes('major')) color = palette.road;
+        else color = palette.minorRoad;
+      }
+      if (color) safely(() => map.setPaintProperty(layer.id, 'line-color', color));
+    } else if (layer.type === 'symbol' && layer.layout && 'text-field' in layer.layout) {
+      safely(() => map.setPaintProperty(layer.id, 'text-color', id.includes('water') ? palette.waterText : palette.text));
+      safely(() => map.setPaintProperty(layer.id, 'text-halo-color', palette.textHalo));
+      safely(() => map.setPaintProperty(layer.id, 'text-halo-width', 1.2));
+    }
   }
-  return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-}
-
-function tileAttribution(): string {
-  if (cartoApiKey()) {
-    return '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OSM</a> · <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>';
-  }
-  return '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a>';
-}
-
-function createTileLayer(dark: boolean): L.TileLayer {
-  const key = cartoApiKey();
-  if (key) {
-    return L.tileLayer(tileUrl(dark), {
-      attribution: tileAttribution(),
-      maxZoom: 20,
-      subdomains: 'abcd',
-    });
-  }
-  return L.tileLayer(tileUrl(dark), {
-    attribution: tileAttribution(),
-    maxZoom: 19,
-  });
-}
-
-function syncMapDarkClass(map: L.Map, dark: boolean): void {
-  const el = map.getContainer();
-  el.classList.toggle('map-tiles-dark', dark && !cartoApiKey());
 }
 
 export function createOsmMap(
   container: HTMLElement,
   options: {
-    center?: L.LatLngExpression;
+    center?: LngLatLike;
     zoom?: number;
     dark?: boolean;
     interactive?: boolean;
     zoomControl?: boolean;
   } = {},
-): L.Map {
+): MapLibreMap {
   const interactive = options.interactive !== false;
-  const dark = Boolean(options.dark);
-  const map = L.map(container, {
+  const theme: MapTheme = options.dark ? 'dark' : 'light';
+  const map = new maplibregl.Map({
+    container,
+    style: STYLE_URLS[theme],
     center: options.center ?? MINSK_CENTER,
     zoom: options.zoom ?? 12,
-    zoomControl: options.zoomControl ?? true,
-    attributionControl: true,
-    dragging: interactive,
-    scrollWheelZoom: interactive,
-    doubleClickZoom: interactive,
-    boxZoom: interactive,
-    keyboard: interactive,
+    attributionControl: false,
+    interactive,
   });
-
-  const tiles = createTileLayer(dark);
-  tiles.addTo(map);
-  tileLayers.set(map, tiles);
-  syncMapDarkClass(map, dark);
-
-  map.attributionControl?.setPrefix('');
-  map.attributionControl?.setPosition('bottomright');
-
+  map.getContainer().style.backgroundColor = COFFEEPEEK_PALETTE[theme].background;
+  map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   if (options.zoomControl !== false) {
-    map.zoomControl.setPosition('topright');
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
   }
-
-  requestAnimationFrame(() => map.invalidateSize());
+  map.once('style.load', () => applyCoffeePeekStyle(map, theme));
+  requestAnimationFrame(() => map.resize());
 
   return map;
 }
 
-export function applyOsmMapTheme(map: L.Map, dark: boolean): void {
-  const prev = tileLayers.get(map);
-  if (prev) map.removeLayer(prev);
-  const next = createTileLayer(dark);
-  next.addTo(map);
-  tileLayers.set(map, next);
-  syncMapDarkClass(map, dark);
+export function applyOsmMapTheme(map: MapLibreMap, dark: boolean): void {
+  const theme: MapTheme = dark ? 'dark' : 'light';
+  map.getContainer().style.backgroundColor = COFFEEPEEK_PALETTE[theme].background;
+  map.setStyle(STYLE_URLS[theme] as string | StyleSpecification);
+  map.once('style.load', () => applyCoffeePeekStyle(map, theme));
 }
 
-export function getMapBoundsBox(map: L.Map): MapBoundsBox {
+export function getMapBoundsBox(map: MapLibreMap): MapBoundsBox {
   const bounds = map.getBounds();
   return {
     minLat: bounds.getSouth(),
@@ -151,9 +179,7 @@ const PIN_SIZE_SELECTED = 41;
 const PIN_SIZE_DETAIL = 43;
 
 const mascotCanvases = new Map<string, HTMLCanvasElement>();
-const pinIconCache = new Map<string, L.DivIcon>();
 let mascotsPromise: Promise<void> | null = null;
-let mascotsReady = false;
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -220,8 +246,6 @@ export function ensureMapPinMascots(): Promise<void> {
         mascotCanvases.set(mascot, knockOutBlack(img));
       }),
     ).then(() => {
-      mascotsReady = true;
-      pinIconCache.clear();
     });
   }
   return mascotsPromise;
@@ -320,47 +344,33 @@ function buildPinHtml(
   return `<div class="coffee-pin-shell${selectedClass}${detailClass}" style="--pin-size:${size}px" aria-hidden="true"><span class="coffee-pin-pulse"></span>${face}</div>`;
 }
 
-export function coffeeMapPinIcon(options: { focus?: unknown; selected?: boolean } = {}): L.DivIcon {
+export function coffeeMapPinIcon(options: { focus?: unknown; selected?: boolean } = {}): HTMLElement {
   const focus = parseCoffeeFocus(options.focus);
   const selected = Boolean(options.selected);
-  const key = `${focus}-${selected ? 's' : 'n'}-${mascotsReady ? 'm' : 'p'}`;
-  const cached = pinIconCache.get(key);
-  if (cached) return cached;
-
   const size = pinDiameter(selected);
-  const icon = L.divIcon({
-    className: `coffee-map-pin coffee-map-pin--${focus}${selected ? ' coffee-map-pin--selected' : ''}`,
-    html: buildPinHtml(focus, selected),
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -(size / 2 + 4)],
-  });
-  pinIconCache.set(key, icon);
-  return icon;
+  const element = document.createElement('div');
+  element.className = `coffee-map-pin coffee-map-pin--${focus}${selected ? ' coffee-map-pin--selected' : ''}`;
+  element.style.width = `${size}px`;
+  element.style.height = `${size}px`;
+  element.innerHTML = buildPinHtml(focus, selected);
+  return element;
 }
 
 /** @deprecated use coffeeMapPinIcon */
-export function coffeeCircleIcon(selected: boolean, focus?: unknown): L.DivIcon {
+export function coffeeCircleIcon(selected: boolean, focus?: unknown): HTMLElement {
   return coffeeMapPinIcon({ selected, focus });
 }
 
 /** Pin for shop detail sidebar / address picker (slightly larger). */
-export function coffeeDetailIcon(focus?: unknown): L.DivIcon {
+export function coffeeDetailIcon(focus?: unknown): HTMLElement {
   const parsed = parseCoffeeFocus(focus);
   const size = PIN_SIZE_DETAIL;
-  const key = `detail-${parsed}-${mascotsReady ? 'm' : 'p'}`;
-  const cached = pinIconCache.get(key);
-  if (cached) return cached;
-
-  const icon = L.divIcon({
-    className: `coffee-map-pin coffee-map-pin--${parsed} coffee-map-pin--selected coffee-map-pin--detail`,
-    html: buildPinHtml(parsed, true, true),
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -(size / 2 + 4)],
-  });
-  pinIconCache.set(key, icon);
-  return icon;
+  const element = document.createElement('div');
+  element.className = `coffee-map-pin coffee-map-pin--${parsed} coffee-map-pin--selected coffee-map-pin--detail`;
+  element.style.width = `${size}px`;
+  element.style.height = `${size}px`;
+  element.innerHTML = buildPinHtml(parsed, true, true);
+  return element;
 }
 
 export type MapShopLike = {
@@ -386,7 +396,7 @@ export type GroupShopsOptions = {
  */
 export function groupShopsForMap<T extends MapShopLike>(
   shops: T[],
-  map: L.Map,
+  map: MapLibreMap,
   options: GroupShopsOptions = {},
 ): MapMarkerTarget<T>[] {
   const minClusterZoom = options.minClusterZoom ?? 15;
@@ -403,13 +413,13 @@ export function groupShopsForMap<T extends MapShopLike>(
 
   while (remaining.length > 0) {
     const seed = remaining.shift()!;
-    const seedPoint = map.latLngToLayerPoint([seed.latitude, seed.longitude]);
+    const seedPoint = map.project([seed.longitude, seed.latitude]);
     const group: T[] = [seed];
 
     for (let i = remaining.length - 1; i >= 0; i -= 1) {
       const candidate = remaining[i];
-      const point = map.latLngToLayerPoint([candidate.latitude, candidate.longitude]);
-      if (seedPoint.distanceTo(point) <= clusterRadiusPx) {
+      const point = map.project([candidate.longitude, candidate.latitude]);
+      if (Math.hypot(seedPoint.x - point.x, seedPoint.y - point.y) <= clusterRadiusPx) {
         group.push(candidate);
         remaining.splice(i, 1);
       }
@@ -428,33 +438,28 @@ export function groupShopsForMap<T extends MapShopLike>(
   return result;
 }
 
-const clusterIconCache = new Map<string, L.DivIcon>();
-
-export function coffeeClusterIcon(count: number): L.DivIcon {
+export function coffeeClusterIcon(count: number): HTMLElement {
   const label = count > 99 ? '99+' : String(count);
   const size = count < 10 ? 49 : count < 100 ? 55 : 60;
-  const key = `${size}-${label}`;
-  const cached = clusterIconCache.get(key);
-  if (cached) return cached;
-
-  const icon = L.divIcon({
-    className: 'coffee-map-cluster',
-    html: `<div class="coffee-cluster-shell" aria-hidden="true"><span class="coffee-cluster-count">${label}</span></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-  clusterIconCache.set(key, icon);
-  return icon;
+  const element = document.createElement('div');
+  element.className = 'coffee-map-cluster';
+  element.style.width = `${size}px`;
+  element.style.height = `${size}px`;
+  element.innerHTML = `<div class="coffee-cluster-shell" aria-hidden="true"><span class="coffee-cluster-count">${label}</span></div>`;
+  return element;
 }
 
 /** Zoom map to fit cluster shops with padding. */
-export function zoomToClusterShops(map: L.Map, shops: MapShopLike[]): void {
+export function zoomToClusterShops(map: MapLibreMap, shops: MapShopLike[]): void {
   if (shops.length === 0) return;
-  const bounds = L.latLngBounds(shops.map((shop) => [shop.latitude, shop.longitude] as L.LatLngTuple));
+  const bounds = shops.reduce(
+    (result, shop) => result.extend([shop.longitude, shop.latitude]),
+    new maplibregl.LngLatBounds(),
+  );
   const targetZoom = Math.min(map.getZoom() + 2, 17);
-  map.fitBounds(bounds.pad(0.25), {
+  map.fitBounds(bounds, {
+    padding: 48,
     maxZoom: targetZoom,
-    animate: true,
-    duration: 0.35,
+    duration: 350,
   });
 }

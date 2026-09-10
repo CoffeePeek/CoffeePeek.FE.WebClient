@@ -10,6 +10,9 @@ export default defineConfig(() => {
       host: "0.0.0.0",
     },
     plugins: [react()],
+    optimizeDeps: {
+      exclude: ["maplibre-gl"],
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "src"),
