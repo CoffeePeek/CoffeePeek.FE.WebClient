@@ -84,7 +84,8 @@
       "Bash(curl -s https://api.coffeepeek.by/shops/openapi/v1.json -o shops-openapi.json)",
       "Bash(curl -s https://api.coffeepeek.by/shops/openapi/v1.json -o /tmp2-shops-openapi.json)",
       "Bash(taskkill //F //IM node.exe //T)",
-      "Bash(curl -s https://api.coffeepeek.by/moderation/openapi/v1.json -o moderation-openapi.json)"
+      "Bash(curl -s https://api.coffeepeek.by/moderation/openapi/v1.json -o moderation-openapi.json)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

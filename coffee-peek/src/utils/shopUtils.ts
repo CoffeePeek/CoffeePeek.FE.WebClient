@@ -51,6 +51,42 @@ export function normalizeDayOfWeek(
 }
 
 /**
+ * Переводит время расписания из локального часового пояса браузера в UTC.
+ * dayOfWeek сдвигается, если конвертация пересекает полночь.
+ */
+export function localTimeToUtc(
+  dayOfWeek: number,
+  time: string,
+  offsetMinutes = new Date().getTimezoneOffset()
+): { dayOfWeek: number; time: string } {
+  return shiftScheduleTime(dayOfWeek, time, offsetMinutes);
+}
+
+/** Обратное преобразование к {@link localTimeToUtc}. */
+export function utcTimeToLocal(
+  dayOfWeek: number,
+  time: string,
+  offsetMinutes = new Date().getTimezoneOffset()
+): { dayOfWeek: number; time: string } {
+  return shiftScheduleTime(dayOfWeek, time, -offsetMinutes);
+}
+
+function shiftScheduleTime(
+  dayOfWeek: number,
+  time: string,
+  offsetMinutes: number
+): { dayOfWeek: number; time: string } {
+  const [hours, minutes] = time.split(':').map(Number);
+  const raw = hours * 60 + minutes + offsetMinutes;
+  const dayDelta = Math.floor(raw / 1440);
+  const totalMinutes = ((raw % 1440) + 1440) % 1440;
+  return {
+    dayOfWeek: ((dayOfWeek + dayDelta) % 7 + 7) % 7,
+    time: `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`,
+  };
+}
+
+/**
  * Получает статус работы кофейни на основе расписания
  */
 export function getCurrentStatus(shop: { schedules?: Array<{ dayOfWeek: number | string; openTime?: string; closeTime?: string }> } | null): {

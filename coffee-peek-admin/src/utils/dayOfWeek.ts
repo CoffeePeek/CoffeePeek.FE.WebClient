@@ -51,6 +51,39 @@ export function uiDayToDotNetName(ui: number): (typeof UI_TO_DOTNET_NAME)[number
   return UI_TO_DOTNET_NAME[truncated];
 }
 
+/** Convert a local wall-clock schedule time to UTC, shifting the UI day if it crosses midnight. */
+export function localTimeToUtc(
+  dayOfWeek: number,
+  time: string,
+  offsetMinutes = new Date().getTimezoneOffset()
+): { dayOfWeek: number; time: string } {
+  return shiftScheduleTime(dayOfWeek, time, offsetMinutes);
+}
+
+/** Reverse of {@link localTimeToUtc}. */
+export function utcTimeToLocal(
+  dayOfWeek: number,
+  time: string,
+  offsetMinutes = new Date().getTimezoneOffset()
+): { dayOfWeek: number; time: string } {
+  return shiftScheduleTime(dayOfWeek, time, -offsetMinutes);
+}
+
+function shiftScheduleTime(
+  dayOfWeek: number,
+  time: string,
+  offsetMinutes: number
+): { dayOfWeek: number; time: string } {
+  const [hours, minutes] = time.split(':').map(Number);
+  const raw = hours * 60 + minutes + offsetMinutes;
+  const dayDelta = Math.floor(raw / 1440);
+  const totalMinutes = ((raw % 1440) + 1440) % 1440;
+  return {
+    dayOfWeek: ((dayOfWeek + dayDelta) % 7 + 7) % 7,
+    time: `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`,
+  };
+}
+
 /**
  * Normalize API dayOfWeek (string name or .NET number) to UI 0=Mon…6=Sun.
  */

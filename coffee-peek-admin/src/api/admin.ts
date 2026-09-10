@@ -6,7 +6,7 @@ import { parsePriceRange, toPriceRangeLevel } from '../constants/priceRange';
 import type { CoffeeFocus } from '../constants/catalogIngest';
 import { COFFEE_FOCUS_TO_API, parseCoffeeFocus } from '../constants/catalogIngest';
 import { mapShopMenu, ShopMenuDto } from './menu';
-import { apiDayOfWeekToUi, uiDayToDotNetName } from '../utils/dayOfWeek';
+import { apiDayOfWeekToUi, localTimeToUtc, uiDayToDotNetName, utcTimeToLocal } from '../utils/dayOfWeek';
 
 // ==================== Types ====================
 
@@ -442,11 +442,18 @@ function mapBackendSchedules(schedules?: BackendSchedule[] | null): AdminShopSch
     }
 
     const interval = schedule.intervals?.[0];
+    const openRaw = formatTimeSpan(interval?.openTime);
+    const closeRaw = formatTimeSpan(interval?.closeTime);
+    if (!openRaw || !closeRaw) {
+      return { dayOfWeek, isClosed: false, openTime: '', closeTime: '' };
+    }
+    const open = utcTimeToLocal(dayOfWeek, openRaw);
+    const close = utcTimeToLocal(dayOfWeek, closeRaw);
     return {
-      dayOfWeek,
+      dayOfWeek: open.dayOfWeek,
       isClosed: false,
-      openTime: formatTimeSpan(interval?.openTime),
-      closeTime: formatTimeSpan(interval?.closeTime),
+      openTime: open.time,
+      closeTime: close.time,
     };
   });
 }
@@ -579,20 +586,25 @@ function buildModerationShopFormData(
 
   const schedules = updates.schedules ?? mapBackendSchedules(shop.schedules);
   schedules.forEach((schedule, scheduleIndex) => {
-    appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, uiDayToDotNetName(schedule.dayOfWeek));
-    appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, schedule.isClosed ?? false);
-    if (!schedule.isClosed && schedule.openTime && schedule.closeTime) {
-      appendFormValue(
-        form,
-        `Schedules[${scheduleIndex}].Intervals[0].OpenTime`,
-        toBackendTime(schedule.openTime)
-      );
-      appendFormValue(
-        form,
-        `Schedules[${scheduleIndex}].Intervals[0].CloseTime`,
-        toBackendTime(schedule.closeTime)
-      );
+    if (schedule.isClosed || !schedule.openTime || !schedule.closeTime) {
+      appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, uiDayToDotNetName(schedule.dayOfWeek));
+      appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, schedule.isClosed ?? false);
+      return;
     }
+    const open = localTimeToUtc(schedule.dayOfWeek, schedule.openTime);
+    const close = localTimeToUtc(schedule.dayOfWeek, schedule.closeTime);
+    appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, uiDayToDotNetName(open.dayOfWeek));
+    appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, false);
+    appendFormValue(
+      form,
+      `Schedules[${scheduleIndex}].Intervals[0].OpenTime`,
+      toBackendTime(open.time)
+    );
+    appendFormValue(
+      form,
+      `Schedules[${scheduleIndex}].Intervals[0].CloseTime`,
+      toBackendTime(close.time)
+    );
   });
 
   appendGuidArray(form, 'EquipmentIds', updates.equipmentIds ?? shop.equipmentIds);
@@ -876,33 +888,48 @@ function mapPublishedSchedules(raw: unknown): AdminShopSchedule[] {
       | Array<Record<string, unknown>>
       | undefined;
     const interval = Array.isArray(intervals) ? intervals[0] : undefined;
+    const openRaw = formatTimeSpan(
+      String(interval?.openTime ?? interval?.OpenTime ?? schedule.openTime ?? schedule.OpenTime ?? '')
+    );
+    const closeRaw = formatTimeSpan(
+      String(interval?.closeTime ?? interval?.CloseTime ?? schedule.closeTime ?? schedule.CloseTime ?? '')
+    );
+    if (isClosed || !openRaw || !closeRaw) {
+      return { dayOfWeek, isClosed, openTime: '', closeTime: '' };
+    }
+    const open = utcTimeToLocal(dayOfWeek, openRaw);
+    const close = utcTimeToLocal(dayOfWeek, closeRaw);
     return {
-      dayOfWeek,
-      isClosed,
-      openTime: formatTimeSpan(
-        String(interval?.openTime ?? interval?.OpenTime ?? schedule.openTime ?? schedule.OpenTime ?? '')
-      ),
-      closeTime: formatTimeSpan(
-        String(interval?.closeTime ?? interval?.CloseTime ?? schedule.closeTime ?? schedule.CloseTime ?? '')
-      ),
+      dayOfWeek: open.dayOfWeek,
+      isClosed: false,
+      openTime: open.time,
+      closeTime: close.time,
     };
   });
 }
 
 function toPublishedApiSchedules(schedules: AdminShopSchedule[]) {
-  return schedules.map((schedule) => ({
-    dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
-    isClosed: Boolean(schedule.isClosed),
-    intervals:
-      schedule.isClosed || !schedule.openTime || !schedule.closeTime
-        ? []
-        : [
-            {
-              openTime: toBackendTime(schedule.openTime),
-              closeTime: toBackendTime(schedule.closeTime),
-            },
-          ],
-  }));
+  return schedules.map((schedule) => {
+    if (schedule.isClosed || !schedule.openTime || !schedule.closeTime) {
+      return {
+        dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
+        isClosed: Boolean(schedule.isClosed),
+        intervals: [],
+      };
+    }
+    const open = localTimeToUtc(schedule.dayOfWeek, schedule.openTime);
+    const close = localTimeToUtc(schedule.dayOfWeek, schedule.closeTime);
+    return {
+      dayOfWeek: uiDayToDotNetName(open.dayOfWeek),
+      isClosed: false,
+      intervals: [
+        {
+          openTime: toBackendTime(open.time),
+          closeTime: toBackendTime(close.time),
+        },
+      ],
+    };
+  });
 }
 
 export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {

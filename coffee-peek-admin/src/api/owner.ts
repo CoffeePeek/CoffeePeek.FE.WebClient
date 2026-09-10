@@ -10,7 +10,7 @@ import {
   PublishedShopContacts,
   PublishedShopLocation,
 } from './admin';
-import { uiDayToDotNetName } from '../utils/dayOfWeek';
+import { localTimeToUtc, uiDayToDotNetName } from '../utils/dayOfWeek';
 
 export interface UpdateOwnerShopRequest {
   name?: string;
@@ -36,19 +36,27 @@ function toBackendTime(value: string): string {
 }
 
 function toOwnerApiSchedules(schedules: AdminShopSchedule[]) {
-  return schedules.map((schedule) => ({
-    dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
-    isClosed: Boolean(schedule.isClosed),
-    intervals:
-      schedule.isClosed || !schedule.openTime || !schedule.closeTime
-        ? []
-        : [
-            {
-              openTime: toBackendTime(schedule.openTime),
-              closeTime: toBackendTime(schedule.closeTime),
-            },
-          ],
-  }));
+  return schedules.map((schedule) => {
+    if (schedule.isClosed || !schedule.openTime || !schedule.closeTime) {
+      return {
+        dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
+        isClosed: Boolean(schedule.isClosed),
+        intervals: [],
+      };
+    }
+    const open = localTimeToUtc(schedule.dayOfWeek, schedule.openTime);
+    const close = localTimeToUtc(schedule.dayOfWeek, schedule.closeTime);
+    return {
+      dayOfWeek: uiDayToDotNetName(open.dayOfWeek),
+      isClosed: false,
+      intervals: [
+        {
+          openTime: toBackendTime(open.time),
+          closeTime: toBackendTime(close.time),
+        },
+      ],
+    };
+  });
 }
 
 export async function getOwnerShops(): Promise<ApiResponse<PublishedShop[]>> {

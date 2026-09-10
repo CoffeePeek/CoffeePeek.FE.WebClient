@@ -6,7 +6,7 @@ import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 import { SendShopSuccessResponse } from './core/apiError';
-import { normalizeDayOfWeek } from '../utils/shopUtils';
+import { localTimeToUtc, normalizeDayOfWeek, utcTimeToLocal } from '../utils/shopUtils';
 
 // ==================== Types ====================
 
@@ -180,16 +180,20 @@ function formatTimeForTimeSpan(time: string): string {
 export function transformSchedulesToBackend(
   schedules: FrontendSchedule[]
 ): ScheduleDto[] {
-  return schedules.map(schedule => ({
-    dayOfWeek: schedule.dayOfWeek,
-    isClosed: false,
-    intervals: [
-      {
-        openTime: formatTimeForTimeSpan(schedule.openTime),
-        closeTime: formatTimeForTimeSpan(schedule.closeTime),
-      },
-    ],
-  }));
+  return schedules.map(schedule => {
+    const open = localTimeToUtc(schedule.dayOfWeek, schedule.openTime);
+    const close = localTimeToUtc(schedule.dayOfWeek, schedule.closeTime);
+    return {
+      dayOfWeek: open.dayOfWeek,
+      isClosed: false,
+      intervals: [
+        {
+          openTime: formatTimeForTimeSpan(open.time),
+          closeTime: formatTimeForTimeSpan(close.time),
+        },
+      ],
+    };
+  });
 }
 
 /**
@@ -202,14 +206,14 @@ export function transformSchedulesFromBackend(
     .filter(schedule => !schedule.isClosed && schedule.intervals && schedule.intervals.length > 0)
     .map(schedule => {
       const interval = schedule.intervals![0];
-      const openTime = interval.openTime.substring(0, 5);
-      const closeTime = interval.closeTime.substring(0, 5);
       const dayOfWeek = normalizeDayOfWeek(schedule.dayOfWeek);
       if (dayOfWeek === null) return null;
+      const open = utcTimeToLocal(dayOfWeek, interval.openTime.substring(0, 5));
+      const close = utcTimeToLocal(dayOfWeek, interval.closeTime.substring(0, 5));
       return {
-        dayOfWeek,
-        openTime,
-        closeTime,
+        dayOfWeek: open.dayOfWeek,
+        openTime: open.time,
+        closeTime: close.time,
       };
     })
     .filter((s): s is FrontendSchedule => s !== null);
