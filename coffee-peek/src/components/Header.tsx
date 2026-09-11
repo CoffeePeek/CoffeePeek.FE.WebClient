@@ -56,7 +56,7 @@ const Header: React.FC = () => {
 
   return (
     <header style={{ background: bg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 1100, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 12 }}>
 
           {/* Left: logo — flex:1 so nav sits on the true horizontal center */}
@@ -203,9 +203,13 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile nav */}
+        {/* Mobile nav — absolute overlay so it floats over the page instead of growing the header */}
         {isMobileMenuOpen && (
-          <div id="mobile-nav" style={{ padding: '8px 0 16px', borderTop: `1px solid ${borderColor}` }}>
+          <div
+            id="mobile-nav"
+            className="lg:hidden px-4 sm:px-6 lg:px-8"
+            style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1090, background: surfaceBg, borderTop: `1px solid ${borderColor}`, borderBottom: `1px solid ${borderColor}`, boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.5)' : '0 12px 40px rgba(0,0,0,0.14)', paddingTop: 8, paddingBottom: 16 }}
+          >
             {/* Nav items */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {allNav.map(({ id, label, route }) => (
