@@ -80,6 +80,10 @@ import {
   DeviceMobile,
   BookmarkSimple,
   Calendar,
+  Crosshair,
+  Minus,
+  NavigationArrow,
+  Plus,
 } from '@phosphor-icons/react';
 
 export type { IconProps };
@@ -164,6 +168,10 @@ export {
   DeviceMobile,
   BookmarkSimple,
   Calendar,
+  Crosshair,
+  Minus,
+  NavigationArrow,
+  Plus,
 };
 
 /** Backward-compatible aliases used across the app */

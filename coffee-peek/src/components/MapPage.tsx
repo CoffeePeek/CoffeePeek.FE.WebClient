@@ -7,7 +7,7 @@ import { getThemeClasses } from '../utils/theme';
 import { getCoffeeShopsByMapBounds, getCoffeeShopById } from '../api/coffeeshop';
 import type { DetailedCoffeeShop, MapShop } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
-import { ArrowRight, Star } from '@/components/Icon';
+import { ArrowRight, Star, Plus, Minus, Crosshair, NavigationArrow } from '@/components/Icon';
 import Button from './Button';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
@@ -22,6 +22,23 @@ import {
   zoomToClusterShops,
 } from '../map/osmMap';
 import { getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
+
+/** Opens a driving route to the shop in Yandex Maps (tries the mobile app first, falls back to the web map). */
+function openYandexRoute(from: { lat: number; lon: number } | null, toLat: number, toLon: number): void {
+  const dest = `${toLat},${toLon}`;
+  const rtext = from ? `${from.lat},${from.lon}~${dest}` : `~${dest}`;
+  const webUrl = `https://yandex.ru/maps/?rtext=${rtext}&rtt=auto`;
+  const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (isMobile) {
+    // ponytail: best-effort deep link; if the Yandex app isn't installed the timeout falls back to the web map
+    window.location.href = `yandexmaps://maps.yandex.ru/?rtext=${rtext}&rtt=auto`;
+    window.setTimeout(() => {
+      if (!document.hidden) window.location.href = webUrl;
+    }, 1200);
+  } else {
+    window.open(webUrl, '_blank', 'noopener,noreferrer');
+  }
+}
 
 const MapPage: React.FC = () => {
   const navigate = useNavigate();
@@ -41,6 +58,9 @@ const MapPage: React.FC = () => {
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
   const [selectedShopDetails, setSelectedShopDetails] = useState<DetailedCoffeeShop | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const userPosRef = useRef<{ lat: number; lon: number } | null>(null);
+  const userMarkerRef = useRef<MapLibreMarker | null>(null);
 
   const loadCoffeeShops = async (map: MapLibreMap) => {
     try {
@@ -82,6 +102,37 @@ const MapPage: React.FC = () => {
     } finally {
       setIsLoadingDetails(false);
     }
+  };
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) {
+      setError('Геолокация не поддерживается вашим браузером');
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        userPosRef.current = { lat: latitude, lon: longitude };
+        const map = mapInstanceRef.current;
+        if (map) {
+          map.flyTo({ center: [longitude, latitude], zoom: Math.max(map.getZoom(), 15), duration: 700 });
+          if (userMarkerRef.current) {
+            userMarkerRef.current.setLngLat([longitude, latitude]);
+          } else {
+            const el = document.createElement('div');
+            el.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#2F80ED;border:3px solid #fff;box-shadow:0 0 0 4px rgba(47,128,237,0.25);';
+            userMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat([longitude, latitude]).addTo(map);
+          }
+        }
+        setIsLocating(false);
+      },
+      () => {
+        setError('Не удалось определить местоположение');
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   };
 
   useEffect(() => {
@@ -146,6 +197,7 @@ const MapPage: React.FC = () => {
     const map = createOsmMap(container, {
       zoom: 12,
       dark: theme === 'dark',
+      zoomControl: false,
     });
     mapInstanceRef.current = map;
     setIsLoading(false);
@@ -237,6 +289,39 @@ const MapPage: React.FC = () => {
             <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
           </div>
 
+          {/* App-style map controls: locate + zoom */}
+          <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-[500] flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleLocate}
+              disabled={isLocating}
+              aria-label="Моё местоположение"
+              className={`w-11 h-11 flex items-center justify-center rounded-xl border shadow-lg active:scale-95 transition-all disabled:opacity-60 ${themeClasses.bg.card} ${themeClasses.border.default} ${themeClasses.text.primary}`}
+            >
+              {isLocating
+                ? <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                : <Crosshair size={20} />}
+            </button>
+            <div className={`flex flex-col rounded-xl border overflow-hidden shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+              <button
+                type="button"
+                onClick={() => mapInstanceRef.current?.zoomIn()}
+                aria-label="Приблизить"
+                className={`w-11 h-11 flex items-center justify-center active:scale-95 transition-all ${themeClasses.text.primary}`}
+              >
+                <Plus size={20} />
+              </button>
+              <button
+                type="button"
+                onClick={() => mapInstanceRef.current?.zoomOut()}
+                aria-label="Отдалить"
+                className={`w-11 h-11 flex items-center justify-center border-t active:scale-95 transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
+              >
+                <Minus size={20} />
+              </button>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => {
@@ -298,15 +383,26 @@ const MapPage: React.FC = () => {
 
                   </div>
 
-                  <Button
-                    type="button"
-                    onClick={() => navigate(`/shops/${selectedShop.id}`)}
-                    className="w-full min-h-11 mt-4"
-                    aria-label={`Открыть кофейню ${selectedShop.title}`}
-                  >
-                    Открыть кофейню
-                    <ArrowRight size={18} aria-hidden="true" />
-                  </Button>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => openYandexRoute(userPosRef.current, selectedShop.latitude, selectedShop.longitude)}
+                      aria-label={`Маршрут до ${selectedShop.title}`}
+                      className={`flex-1 min-h-11 inline-flex items-center justify-center gap-2 rounded-xl border font-semibold active:scale-[0.98] transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
+                    >
+                      <NavigationArrow size={18} />
+                      Маршрут
+                    </button>
+                    <Button
+                      type="button"
+                      onClick={() => navigate(`/shops/${selectedShop.id}`)}
+                      className="flex-1 min-h-11"
+                      aria-label={`Открыть ${selectedShop.title}`}
+                    >
+                      Открыть
+                      <ArrowRight size={18} aria-hidden="true" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
