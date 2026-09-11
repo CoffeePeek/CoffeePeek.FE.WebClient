@@ -195,23 +195,16 @@ const MapPage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen ${themeClasses.bg.primary} p-6`}>
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className={`text-4xl font-bold ${themeClasses.text.primary} mb-2`}>Карта кофеен</h1>
-          <p className={themeClasses.text.secondary}>Найдите кофейни на карте</p>
-        </div>
-
+    <div
+      className={`relative z-0 isolate overflow-hidden ${themeClasses.bg.primary}`}
+      // ponytail: 64px = sticky header height; if the email-unconfirmed banner shows, the map runs that much taller than the viewport
+      style={{ height: 'calc(100dvh - 64px)' }}
+    >
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[600] max-w-[92%] px-4 py-2.5 rounded-2xl bg-red-500/10 border border-red-500/30 shadow-lg backdrop-blur-md">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
-
-        <div
-          className={`relative z-0 isolate ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl overflow-hidden`}
-          style={{ height: '600px' }}
-        >
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="text-[#EAB308] text-xl">Загрузка карты...</div>
@@ -238,7 +231,7 @@ const MapPage: React.FC = () => {
           )}
 
           <div
-            style={{ width: '100%', height: '100%', minHeight: '600px' }}
+            style={{ width: '100%', height: '100%' }}
             className={isLoading ? 'opacity-0' : 'opacity-100'}
           >
             <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
@@ -319,8 +312,6 @@ const MapPage: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
-    </div>
   );
 };
 
