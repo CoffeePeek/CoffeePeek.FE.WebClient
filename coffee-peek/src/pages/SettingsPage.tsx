@@ -20,7 +20,7 @@ import { MobileAppDownload } from '../components/mobile-app';
 import {
   Coffee, SignOut, Camera, PencilSimple, Check,
   ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
-  ArrowClockwise, X, MapPin, Lock, Factory,
+  ArrowClockwise, X, MapPin, Lock, Factory, CaretDown,
 } from '@/components/Icon';
 
 const styles = `
@@ -33,7 +33,9 @@ const styles = `
   .settings-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 20px; padding: 20px 28px; }
   .settings-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 16px 0; }
   .settings-release-card { margin-top: 28px; padding: 22px; }
+  .settings-city-select { width: 240px; }
   @media (max-width: 720px) {
+    .settings-city-select { width: 100%; }
     .settings-wrap { width: min(100%, calc(100vw - 24px)); }
     .settings-profile-head { grid-template-columns: auto 1fr; gap: 14px; padding: 18px; }
     .settings-edit-action { grid-column: 1 / -1; width: 100%; justify-content: stretch !important; }
@@ -506,7 +508,7 @@ const AppearanceRow: React.FC<{ border: string; textPrimary: string; textMuted: 
         <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Внешний вид</h3>
         <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted }}>Выберите тему оформления</p>
       </div>
-      <div className="settings-row-action" role="tablist" aria-label="Тема оформления" style={{ display: 'inline-flex', padding: 3, gap: 3, borderRadius: 10, border: `1px solid ${border}`, background: softSurface }}>
+      <div className="settings-row-action" role="tablist" aria-label="Тема оформления" style={{ display: 'flex', padding: 3, gap: 3, borderRadius: 10, border: `1px solid ${border}`, background: softSurface }}>
         {tabs.map(tab => {
           const active = theme === tab.value;
           return (
@@ -517,8 +519,8 @@ const AppearanceRow: React.FC<{ border: string; textPrimary: string; textMuted: 
               aria-selected={active}
               onClick={() => onSetTheme(tab.value)}
               style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                minHeight: 34, padding: '0 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                minHeight: 38, padding: '0 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
                 background: active ? gold : 'transparent',
                 color: active ? '#1A1412' : textMuted,
                 fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, transition: 'all .15s',
@@ -603,15 +605,17 @@ const CitySection: React.FC<{ surface: string; softSurface: string; border: stri
             <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.45 }}>Кофейни показываются для выбранного города</p>
           </div>
         </div>
-        <select
-          className="settings-row-action"
-          value={cityId}
-          onChange={e => setCityId(e.target.value)}
-          style={{ ...inputStyle(border, textPrimary, softSurface), maxWidth: 220, cursor: 'pointer' }}
-        >
-          {cities.length === 0 && <option value="">Загрузка…</option>}
-          {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <div className="settings-row-action settings-city-select" style={{ position: 'relative' }}>
+          <select
+            value={cityId}
+            onChange={e => setCityId(e.target.value)}
+            style={{ ...inputStyle(border, textPrimary, softSurface), width: '100%', height: 42, paddingRight: 36, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+          >
+            {cities.length === 0 && <option value="">Загрузка…</option>}
+            {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <CaretDown size={15} color={textMuted} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        </div>
       </div>
     </section>
   );
