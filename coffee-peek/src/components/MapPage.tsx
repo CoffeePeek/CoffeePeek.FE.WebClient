@@ -7,7 +7,7 @@ import { getThemeClasses } from '../utils/theme';
 import { getCoffeeShopsByMapBounds, getCoffeeShopById } from '../api/coffeeshop';
 import type { DetailedCoffeeShop, MapShop } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
-import { ArrowRight, Star, Plus, Minus, Crosshair, NavigationArrow } from '@/components/Icon';
+import { ArrowRight, Star, Plus, Minus, Crosshair, NavigationArrow, MagnifyingGlass, X } from '@/components/Icon';
 import Button from './Button';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
@@ -61,6 +61,8 @@ const MapPage: React.FC = () => {
   const [isLocating, setIsLocating] = useState(false);
   const userPosRef = useRef<{ lat: number; lon: number } | null>(null);
   const userMarkerRef = useRef<MapLibreMarker | null>(null);
+  const [query, setQuery] = useState('');
+  const queryRef = useRef('');
 
   const loadCoffeeShops = async (map: MapLibreMap) => {
     try {
@@ -156,10 +158,12 @@ const MapPage: React.FC = () => {
     const paintMarkers = (shopsList: MapShop[]) => {
       const map = mapInstanceRef.current;
       if (!map) return;
+      const q = queryRef.current.trim().toLowerCase();
+      const visible = q ? shopsList.filter((s) => (s.title ?? '').toLowerCase().includes(q)) : shopsList;
       void ensureMapPinMascots().then(() => {
         if (mapInstanceRef.current !== map) return;
         clearMarkers();
-        const targets = groupShopsForMap(shopsList, map);
+        const targets = groupShopsForMap(visible, map);
 
         targets.forEach((target) => {
           if (target.type === 'cluster') {
@@ -234,6 +238,12 @@ const MapPage: React.FC = () => {
     applyOsmMapTheme(map, theme === 'dark');
   }, [theme]);
 
+  // Filter the loaded pins by name (client-side) as the user types.
+  useEffect(() => {
+    queryRef.current = query;
+    paintMarkersRef.current(shopsRef.current);
+  }, [query]);
+
   const formatWorkingHours = (
     schedules?: Array<{ dayOfWeek: number | string; openTime?: string; closeTime?: string }>,
   ) => {
@@ -252,11 +262,30 @@ const MapPage: React.FC = () => {
       // ponytail: 64px = sticky header height; if the email-unconfirmed banner shows, the map runs that much taller than the viewport
       style={{ height: 'calc(100dvh - 64px)' }}
     >
-        {error && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[600] max-w-[92%] px-4 py-2.5 rounded-2xl bg-red-500/10 border border-red-500/30 shadow-lg backdrop-blur-md">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
+          {!isLoading && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[550] w-[calc(100%-1.5rem)] max-w-md">
+              <div className={`flex items-center gap-2 h-11 px-3 rounded-xl border shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+                <MagnifyingGlass size={18} weight="bold" className={themeClasses.text.secondary} />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Поиск по названию"
+                  className={`flex-1 min-w-0 bg-transparent outline-none text-sm ${themeClasses.text.primary}`}
+                />
+                {query && (
+                  <button type="button" onClick={() => setQuery('')} aria-label="Очистить" className={`shrink-0 ${themeClasses.text.secondary}`}>
+                    <X size={16} weight="bold" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="absolute top-[68px] left-1/2 -translate-x-1/2 z-[600] max-w-[92%] px-4 py-2.5 rounded-2xl bg-red-500/10 border border-red-500/30 shadow-lg backdrop-blur-md">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="text-[#EAB308] text-xl">Загрузка карты...</div>
@@ -265,7 +294,7 @@ const MapPage: React.FC = () => {
 
           {shopsLoaded && shops.length === 0 && !isLoading && (
             <div
-              className="absolute top-4 left-4 right-4 z-[500] px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5 pointer-events-none"
+              className="absolute top-[68px] left-4 right-4 z-[500] px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5 pointer-events-none"
               style={{
                 backgroundColor: theme === 'dark' ? 'rgba(45,36,31,0.94)' : 'rgba(255,255,255,0.96)',
                 borderColor: theme === 'dark' ? '#3D2F28' : '#E7E5E4',
@@ -300,7 +329,7 @@ const MapPage: React.FC = () => {
             >
               {isLocating
                 ? <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                : <Crosshair size={20} />}
+                : <Crosshair size={20} weight="bold" />}
             </button>
             <div className={`flex flex-col rounded-xl border overflow-hidden shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
               <button
@@ -309,7 +338,7 @@ const MapPage: React.FC = () => {
                 aria-label="Приблизить"
                 className={`w-11 h-11 flex items-center justify-center active:scale-95 transition-all ${themeClasses.text.primary}`}
               >
-                <Plus size={20} />
+                <Plus size={20} weight="bold" />
               </button>
               <button
                 type="button"
@@ -317,7 +346,7 @@ const MapPage: React.FC = () => {
                 aria-label="Отдалить"
                 className={`w-11 h-11 flex items-center justify-center border-t active:scale-95 transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
               >
-                <Minus size={20} />
+                <Minus size={20} weight="bold" />
               </button>
             </div>
           </div>
@@ -390,7 +419,7 @@ const MapPage: React.FC = () => {
                       aria-label={`Маршрут до ${selectedShop.title}`}
                       className={`flex-1 min-h-11 inline-flex items-center justify-center gap-2 rounded-xl border font-semibold active:scale-[0.98] transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
                     >
-                      <NavigationArrow size={18} />
+                      <NavigationArrow size={18} weight="bold" />
                       Маршрут
                     </button>
                     <Button
