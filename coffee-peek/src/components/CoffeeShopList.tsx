@@ -7,38 +7,16 @@ import { useLoadMoreOnScroll } from '../hooks/useLoadMoreOnScroll';
 import { getErrorMessage } from '../utils/errorHandler';
 import { COLORS, getThemeColors } from '../constants/colors';
 import { logger } from '../utils/logger';
-import { getPriceRangeTier } from '../utils/priceRange';
 import ShopCard from './ShopCard';
 import ShopSearchBar from './ShopSearchBar';
 import ShopFilterPanel from './ShopFilterPanel';
-import { AppIcon, StarIcon } from './icons';
+import { StarIcon } from './icons';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
+import { useLocalCity } from '../hooks/useLocalCity';
 
 const PAGE_SIZE = 12;
-const SORT_PAGE_SIZE = 100;
-
-type ShopSort = 'default' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc';
-
-const SORT_OPTIONS: { id: ShopSort; label: string }[] = [
-  { id: 'default', label: 'По умолчанию' },
-  { id: 'name-asc', label: 'Название А–Я' },
-  { id: 'name-desc', label: 'Название Я–А' },
-  { id: 'price-asc', label: 'Сначала дешевле' },
-  { id: 'price-desc', label: 'Сначала дороже' },
-];
-
-function compareShops(a: CoffeeShop, b: CoffeeShop, sort: ShopSort): number {
-  if (sort === 'name-asc') return a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' });
-  if (sort === 'name-desc') return b.name.localeCompare(a.name, 'ru', { sensitivity: 'base' });
-  if (sort === 'price-asc' || sort === 'price-desc') {
-    const pa = getPriceRangeTier(a.priceRange) ?? 99;
-    const pb = getPriceRangeTier(b.priceRange) ?? 99;
-    return sort === 'price-asc' ? pa - pb : pb - pa;
-  }
-  return 0;
-}
 
 type ShopsPage = Record<string, unknown> & {
   coffeeShops?: Record<string, unknown>[];
@@ -130,8 +108,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [shopSort, setShopSort] = useState<ShopSort>('default');
-  const [showSortMenu, setShowSortMenu] = useState(false);
   const [activeQuick, setActiveQuick] = useState<string[]>(['all']);
 
   const handleQuickChange = (id: string) => {
@@ -150,25 +126,29 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     );
   };
 
-  const [selectedCity, setSelectedCity] = useState<string>('');
+  const { cityId: storedCityId } = useLocalCity();
+  const [selectedCity, setSelectedCity] = useState<string>(storedCityId);
   const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
   const [selectedBeans, setSelectedBeans] = useState<string[]>([]);
   const [selectedRoasters, setSelectedRoasters] = useState<string[]>([]);
   const [selectedBrewMethods, setSelectedBrewMethods] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
-  
+
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
-  
+
   useEffect(() => {
     loadInitialData().then(() => {
       setInitialDataLoaded(true);
     });
   }, [user]);
-  
-  // Set default city when cities are loaded and no city is selected yet
-  // Автоматически выбираем первый город при загрузке (скрыто от пользователя)
+
+  // City is chosen in Settings; sync when it changes (also cross-tab).
+  useEffect(() => {
+    if (storedCityId) setSelectedCity(storedCityId);
+  }, [storedCityId]);
+
+  // Fall back to the first city if none has been chosen in Settings yet.
   useEffect(() => {
     if (cities.length > 0 && !selectedCity && initialDataLoaded) {
       setSelectedCity(cities[0].id);
@@ -236,7 +216,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     filters.isVisited,
     debouncedSearchQuery,
     initialDataLoaded,
-    shopSort,
   ]);
 
   const applyFavoriteFilter = useCallback((shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
@@ -247,10 +226,9 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   // Favorite is local-only — re-apply after load or when favorite chip / ids change
   useEffect(() => {
     const filtered = applyFavoriteFilter(allShops);
-    const next = shopSort === 'default' ? filtered : [...filtered].sort((a, b) => compareShops(a, b, shopSort));
-    setShops(next);
-    if (activeQuick.includes('favorite')) setTotalItems(next.length);
-  }, [applyFavoriteFilter, allShops, activeQuick, shopSort]);
+    setShops(filtered);
+    if (activeQuick.includes('favorite')) setTotalItems(filtered.length);
+  }, [applyFavoriteFilter, allShops, activeQuick]);
 
   const loadInitialData = async () => {
     try {
@@ -300,8 +278,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     }
 
     try {
-      const pageSize = shopSort === 'default' ? PAGE_SIZE : SORT_PAGE_SIZE;
-      const response = await searchCoffeeShops(debouncedSearchQuery, filters, pageToLoad, pageSize);
+      const response = await searchCoffeeShops(debouncedSearchQuery, filters, pageToLoad, PAGE_SIZE);
       if (requestId !== requestIdRef.current) return;
 
       const list = parseShopList(response.data);
@@ -315,7 +292,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         return [...prev, ...list.filter((shop) => !seen.has(shop.id))];
       });
       setHasMore(
-        shopSort === 'default' && list.length > 0 && (
+        list.length > 0 && (
           totalPages > 0
             ? pageToLoad < totalPages
             : apiTotal > 0
@@ -386,11 +363,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     selectedBeans,
     selectedRoasters,
     selectedBrewMethods,
-    cities,
-    selectedCity,
-    onCityChange: setSelectedCity,
-    showCityDropdown,
-    onCityDropdownToggle: () => setShowCityDropdown((v) => !v),
     colors,
     dark: isDark,
     onApplyFilters: handleApplyFilters,
@@ -478,57 +450,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
                 );
               })}
               <div style={{ flexShrink: 0, width: 4 }} />
-            </div>
-          </div>
-        )}
-
-        {/* ── List section header (sort only) ─────────────────── */}
-        {!isLoading && (
-          <div className="flex items-baseline justify-end mb-3">
-            <div style={{ position: 'relative' }}>
-              <button
-                type="button"
-                onClick={() => setShowSortMenu((v) => !v)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none',
-                  color: shopSort === 'default' ? colors.textSecondary : COLORS.primary,
-                  fontFamily: '"Manrope"', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                }}
-              >
-                <AppIcon name="swap_vert" size={14} />
-                {SORT_OPTIONS.find((o) => o.id === shopSort)?.label ?? 'Сортировка'}
-              </button>
-              {showSortMenu && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowSortMenu(false)} />
-                  <div style={{
-                    position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 20, minWidth: 200,
-                    borderRadius: 12, border: `1px solid ${colors.border}`, background: colors.surface,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.16)', overflow: 'hidden',
-                  }}>
-                    {SORT_OPTIONS.map((option) => {
-                      const active = shopSort === option.id;
-                      return (
-                        <button
-                          key={option.id}
-                          type="button"
-                          onClick={() => { setShopSort(option.id); setShowSortMenu(false); }}
-                          style={{
-                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                            padding: '10px 14px', border: 'none', background: active ? `${COLORS.primary}14` : 'transparent',
-                            color: active ? COLORS.primary : colors.textPrimary,
-                            fontFamily: '"Manrope"', fontSize: 13, fontWeight: active ? 700 : 600,
-                            cursor: 'pointer', textAlign: 'left',
-                          }}
-                        >
-                          {option.label}
-                          {active && <AppIcon name="check" size={14} color={COLORS.primary} />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
             </div>
           </div>
         )}

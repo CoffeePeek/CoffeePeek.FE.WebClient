@@ -7,6 +7,8 @@ import {
   changePassword,
 } from '../api/auth';
 import { getAvatarUploadUrl } from '../api/photos';
+import { getCities, City } from '../api/coffeeshop';
+import { useLocalCity } from '../hooks/useLocalCity';
 import { useTheme } from '../contexts/ThemeContext';
 import { COLORS } from '../constants/colors';
 import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
@@ -261,6 +263,15 @@ const SettingsPage: React.FC = () => {
           />
         )}
 
+        <CitySection
+          surface={surface}
+          softSurface={softSurface}
+          border={border}
+          textPrimary={textPrimary}
+          textMuted={textMuted}
+          goldWarm={goldWarm}
+        />
+
         <ContributeSection
           surface={surface}
           border={border}
@@ -399,7 +410,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       <Divider border={border} />
       <SecurityRow border={border} textPrimary={textPrimary} textMuted={textMuted} softSurface={softSurface} />
       <Divider border={border} />
-      <AppearanceRow border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} theme={theme} onSetTheme={onSetTheme} />
+      <AppearanceRow border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} softSurface={softSurface} theme={theme} onSetTheme={onSetTheme} />
     </section>
   );
 };
@@ -484,27 +495,44 @@ const SecurityRow: React.FC<{ border: string; textPrimary: string; textMuted: st
   );
 };
 
-const AppearanceRow: React.FC<{ border: string; textPrimary: string; textMuted: string; gold: string; theme: string; onSetTheme: (theme: 'dark' | 'light') => void }> = ({ border, textPrimary, textMuted, gold, theme, onSetTheme }) => (
-  <div className="settings-row">
-    <div style={{ minWidth: 0 }}>
-      <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Внешний вид</h3>
-      <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted }}>Выберите тему оформления</p>
+const AppearanceRow: React.FC<{ border: string; textPrimary: string; textMuted: string; gold: string; softSurface: string; theme: string; onSetTheme: (theme: 'dark' | 'light') => void }> = ({ border, textPrimary, textMuted, gold, softSurface, theme, onSetTheme }) => {
+  const tabs = [
+    { value: 'light' as const, label: 'Светлая', Icon: Sun },
+    { value: 'dark' as const, label: 'Тёмная', Icon: Moon },
+  ];
+  return (
+    <div className="settings-row">
+      <div style={{ minWidth: 0 }}>
+        <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Внешний вид</h3>
+        <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted }}>Выберите тему оформления</p>
+      </div>
+      <div className="settings-row-action" role="tablist" aria-label="Тема оформления" style={{ display: 'inline-flex', padding: 3, gap: 3, borderRadius: 10, border: `1px solid ${border}`, background: softSurface }}>
+        {tabs.map(tab => {
+          const active = theme === tab.value;
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onSetTheme(tab.value)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                minHeight: 34, padding: '0 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                background: active ? gold : 'transparent',
+                color: active ? '#1A1412' : textMuted,
+                fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, transition: 'all .15s',
+              }}
+            >
+              <tab.Icon size={15} color={active ? '#1A1412' : textMuted} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
-    <div className="settings-row-action" style={{ display: 'flex', gap: 10 }}>
-      {[
-        { value: 'light' as const, label: 'Светлая тема', Icon: Sun, bg: '#FFFFFF', color: '#1C1917' },
-        { value: 'dark' as const, label: 'Тёмная тема', Icon: Moon, bg: '#2D241F', color: '#FFFFFF' },
-      ].map(opt => {
-        const active = theme === opt.value;
-        return (
-          <button key={opt.value} type="button" aria-label={opt.label} onClick={() => onSetTheme(opt.value)} style={{ width: 48, height: 38, borderRadius: 9, border: `1px solid ${active ? gold : border}`, background: active ? `${gold}12` : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <span style={{ width: 32, height: 28, borderRadius: 8, background: opt.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${border}` }}><opt.Icon size={16} color={opt.color} /></span>
-          </button>
-        );
-      })}
-    </div>
-  </div>
-);
+  );
+};
 
 interface ContributeItem {
   icon: React.ReactNode;
@@ -544,6 +572,47 @@ const ContributeSection: React.FC<{
           </div>
         </React.Fragment>
       ))}
+    </section>
+  );
+};
+
+const CitySection: React.FC<{ surface: string; softSurface: string; border: string; textPrimary: string; textMuted: string; goldWarm: string }> = ({ surface, softSurface, border, textPrimary, textMuted, goldWarm }) => {
+  const [cities, setCities] = useState<City[]>([]);
+  const { cityId, setCityId } = useLocalCity();
+
+  useEffect(() => {
+    getCities().then(res => {
+      const data = res.data as unknown;
+      const list = Array.isArray(data)
+        ? (data as City[])
+        : (data && typeof data === 'object' && Array.isArray((data as { cities?: City[] }).cities) ? (data as { cities: City[] }).cities : []);
+      setCities(list);
+      // Default to the first city so the shop list isn't empty on first visit.
+      if (!cityId && list.length > 0) setCityId(list[0].id);
+    }).catch(err => logger.error('Error loading cities:', err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <section className="settings-card" style={{ marginTop: 20, border: `1px solid ${border}`, background: surface }}>
+      <div className="settings-row">
+        <div style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <span style={{ width: 30, height: 30, borderRadius: 9, background: `${goldWarm}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><MapPin size={15} color={goldWarm} /></span>
+          <div style={{ minWidth: 0 }}>
+            <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Город</h3>
+            <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.45 }}>Кофейни показываются для выбранного города</p>
+          </div>
+        </div>
+        <select
+          className="settings-row-action"
+          value={cityId}
+          onChange={e => setCityId(e.target.value)}
+          style={{ ...inputStyle(border, textPrimary, softSurface), maxWidth: 220, cursor: 'pointer' }}
+        >
+          {cities.length === 0 && <option value="">Загрузка…</option>}
+          {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </div>
     </section>
   );
 };

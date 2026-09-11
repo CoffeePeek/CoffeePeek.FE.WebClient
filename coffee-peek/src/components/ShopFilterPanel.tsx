@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto } from '../api/coffeeshop';
+import { Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
 import type { IconProps } from '@phosphor-icons/react';
 import {
   SquaresFour, Clock, Sparkle, CheckCircle, Heart,
-  MapPin, CaretDown, Check,
+  CaretDown, Check,
 } from '@/components/Icon';
 import { RemovableChip } from './RemovableChip';
 import { PriceRangeSlider } from './PriceRangeSlider';
@@ -98,11 +98,6 @@ interface ShopFilterPanelProps {
   coffeeBeans: CoffeeBean[];
   roasters: Roaster[];
   brewMethods: BrewMethod[];
-  cities: City[];
-  selectedCity: string;
-  onCityChange: (cityId: string) => void;
-  showCityDropdown: boolean;
-  onCityDropdownToggle: () => void;
   colors: { surface: string; border: string; textPrimary: string; background: string };
   dark: boolean;
   onApplyFilters: (applied: AppliedFilters) => void;
@@ -242,7 +237,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   shopTags, selectedTagIds, onTagToggle,
   filters, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods,
   equipments, coffeeBeans, roasters, brewMethods,
-  cities, selectedCity, onCityChange, showCityDropdown, onCityDropdownToggle,
   colors, dark,
   onApplyFilters,
   resultCount,
@@ -250,7 +244,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
 }) => {
   const gold = COLORS.primary;
   const goldWarm = '#D4A84B';
-  const currentCityName = cities.find(c => c.id === selectedCity)?.name || 'Город';
   const borderColor = dark ? '#3D2F28' : colors.border;
   const muted = dark ? '#A39E93' : '#78716C';
   const textPrimary = dark ? '#fff' : '#1C1917';
@@ -292,35 +285,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     roasters: selectedRoasters,
     brewMethods: selectedBrewMethods,
   };
-
-  const cityChip = (
-    <div style={{ position: 'relative', flexShrink: 0 }}>
-      <button type="button" onClick={onCityDropdownToggle} style={{
-        ...chipBase,
-        background: dark ? 'rgba(255,255,255,0.04)' : '#fff',
-        color: textPrimary,
-        borderColor,
-      }}>
-        <MapPin size={14} color={goldWarm} />
-        {currentCityName}
-        <CaretDown size={13} color={muted} style={{ transition: 'transform .2s', transform: showCityDropdown ? 'rotate(180deg)' : 'none' }} />
-      </button>
-      {showCityDropdown && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={onCityDropdownToggle} />
-          <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, borderRadius: 12, border: `1px solid ${borderColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 20, minWidth: 160, maxHeight: 280, overflowY: 'auto' as const, background: dark ? '#2D241F' : '#fff' }}>
-            {cities.map(city => (
-              <button key={city.id} type="button" onClick={() => { onCityChange(city.id); onCityDropdownToggle(); }}
-                style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: selectedCity === city.id ? `${gold}15` : 'transparent', color: selectedCity === city.id ? gold : textPrimary, border: 'none', cursor: 'pointer', fontFamily: '"Manrope"', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                {selectedCity === city.id && <CheckCircle size={14} color={gold} />}
-                <span style={{ marginLeft: selectedCity === city.id ? 0 : 22 }}>{city.name}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
 
   const statusAndFocusChips = (
     <>
@@ -369,18 +333,10 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     </>
   );
 
-  const cityAndStatusChips = (
-    <>
-      {cityChip}
-      <div style={{ width: 1, height: 20, background: borderColor, flexShrink: 0 }} />
-      {statusAndFocusChips}
-    </>
-  );
-
   if (mode === 'quick') {
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center', justifyContent: 'center', paddingBottom: 16 }}>
-        {cityAndStatusChips}
+        {statusAndFocusChips}
       </div>
     );
   }
@@ -390,13 +346,9 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     const showApplied = hasApplied || appliedTags.length > 0;
     return (
       <div style={{ paddingBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
-          {cityChip}
-          <div style={{ width: 1, height: 20, background: borderColor, flexShrink: 0 }} />
-          <div className="overflow-x-auto no-scrollbar" style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              {statusAndFocusChips}
-            </div>
+        <div className="overflow-x-auto no-scrollbar" style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            {statusAndFocusChips}
           </div>
         </div>
 
