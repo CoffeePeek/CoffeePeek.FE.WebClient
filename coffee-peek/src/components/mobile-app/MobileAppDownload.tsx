@@ -70,7 +70,7 @@ const MobileAppDownload: React.FC<MobileAppDownloadProps> = ({ variant = 'full',
           <a
             key={channel.key}
             href={channel.href}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#EAB308] px-4 py-2.5 font-extended text-sm font-bold text-[#1A1412] transition-opacity hover:opacity-90"
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#EAB308] px-4 py-2.5 font-extended text-sm font-bold text-[#1A1412] transition-colors hover:bg-[#FACC15]"
           >
             <AppIcon name={channel.icon} size={18} color="currentColor" />
             {channel.label}
