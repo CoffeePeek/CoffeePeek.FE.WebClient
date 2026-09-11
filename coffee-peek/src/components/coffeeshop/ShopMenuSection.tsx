@@ -58,18 +58,9 @@ export const ShopMenuSection: React.FC<ShopMenuSectionProps> = ({
   const grouped = useMemo(() => groupPresent(menu?.items ?? []), [menu?.items]);
   const photos = (menu?.photos ?? []).filter((photo) => photo.fullUrl);
 
-
-  if (!menu) {
-    return (
-      <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0`}>
-        <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 mb-3`}>
-          <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
-          Меню
-        </h2>
-        <p className={textMuted}>Меню пока нет</p>
-      </div>
-    );
-  }
+  // Empty menu → hide the whole section (title included).
+  const hasContent = grouped.espresso.length > 0 || grouped.filter.length > 0 || photos.length > 0;
+  if (!menu || !hasContent) return null;
 
   const captured = menu.capturedAtUtc ? formatMenuCapturedAt(menu.capturedAtUtc) : null;
   const updated =
