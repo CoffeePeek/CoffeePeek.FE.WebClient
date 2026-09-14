@@ -262,181 +262,181 @@ const MapPage: React.FC = () => {
       // ponytail: 64px = sticky header height; if the email-unconfirmed banner shows, the map runs that much taller than the viewport
       style={{ height: 'calc(100dvh - 64px)' }}
     >
-          {!isLoading && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[550] w-[calc(100%-1.5rem)] max-w-md">
-              <div className={`flex items-center gap-2 h-11 px-3 rounded-xl border shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
-                <MagnifyingGlass size={18} weight="bold" className={themeClasses.text.secondary} />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Поиск по названию"
-                  className={`flex-1 min-w-0 bg-transparent outline-none text-sm ${themeClasses.text.primary}`}
-                />
-                {query && (
-                  <button type="button" onClick={() => setQuery('')} aria-label="Очистить" className={`shrink-0 ${themeClasses.text.secondary}`}>
-                    <X size={16} weight="bold" />
-                  </button>
-                )}
+      {!isLoading && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[550] w-[calc(100%-1.5rem)] max-w-md">
+          <div className={`flex items-center gap-2 h-11 px-3 rounded-xl border shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+            <MagnifyingGlass size={18} weight="bold" className={themeClasses.text.secondary} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Поиск по названию"
+              className={`flex-1 min-w-0 bg-transparent outline-none text-sm ${themeClasses.text.primary}`}
+            />
+            {query && (
+              <button type="button" onClick={() => setQuery('')} aria-label="Очистить" className={`shrink-0 ${themeClasses.text.secondary}`}>
+                <X size={16} weight="bold" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="absolute top-[68px] left-1/2 -translate-x-1/2 z-[600] max-w-[92%] px-4 py-2.5 rounded-2xl bg-red-500/10 border border-red-500/30 shadow-lg backdrop-blur-md">
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="text-[#EAB308] text-xl">Загрузка карты...</div>
+        </div>
+      )}
+
+      {shopsLoaded && shops.length === 0 && !isLoading && (
+        <div
+          className="absolute top-[68px] left-4 right-4 z-[500] px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5 pointer-events-none"
+          style={{
+            backgroundColor: theme === 'dark' ? 'rgba(45,36,31,0.94)' : 'rgba(255,255,255,0.96)',
+            borderColor: theme === 'dark' ? '#3D2F28' : '#E7E5E4',
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          <Mascot pose="search" size={40} className="shrink-0" />
+          <span
+            className="min-w-0 flex-1 text-[13px] sm:text-sm font-medium leading-snug"
+            style={{ color: theme === 'dark' ? '#fff' : '#1C1917' }}
+          >
+            Кофейни в этой области не найдены
+          </span>
+        </div>
+      )}
+
+      <div
+        style={{ width: '100%', height: '100%' }}
+        className={isLoading ? 'opacity-0' : 'opacity-100'}
+      >
+        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+      </div>
+
+      {/* App-style map controls: locate + zoom */}
+      <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-[500] flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={handleLocate}
+          disabled={isLocating}
+          aria-label="Моё местоположение"
+          className={`w-14 h-14 flex items-center justify-center rounded-xl border shadow-lg active:scale-95 transition-all disabled:opacity-60 ${themeClasses.bg.card} ${themeClasses.border.default} ${themeClasses.text.primary}`}
+        >
+          {isLocating
+            ? <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+            : <Crosshair size={20} weight="bold" />}
+        </button>
+        <div className={`flex flex-col rounded-xl border overflow-hidden shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+          <button
+            type="button"
+            onClick={() => mapInstanceRef.current?.zoomIn()}
+            aria-label="Приблизить"
+            className={`w-14 h-14 flex items-center justify-center active:scale-95 transition-all ${themeClasses.text.primary}`}
+          >
+            <Plus size={20} weight="bold" />
+          </button>
+          <button
+            type="button"
+            onClick={() => mapInstanceRef.current?.zoomOut()}
+            aria-label="Отдалить"
+            className={`w-14 h-14 flex items-center justify-center border-t active:scale-95 transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
+          >
+            <Minus size={20} weight="bold" />
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          const map = mapInstanceRef.current;
+          if (!map) return;
+          void loadCoffeeShops(map).then((loaded) => paintMarkersRef.current(loaded));
+        }}
+        className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] w-[calc(100%-2rem)] max-w-xs sm:w-auto sm:min-w-[280px] min-h-12 px-8 py-3 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-full shadow-lg hover:bg-opacity-90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EAB308]/50 focus-visible:ring-offset-2`}
+      >
+        <span className={`${themeClasses.text.primary} font-medium whitespace-nowrap`}>Поиск в этой области</span>
+      </button>
+
+      {selectedShop && (
+        <div
+          className={`absolute bottom-4 left-4 right-4 z-[500] ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl shadow-2xl max-w-md mx-auto`}
+        >
+          {isLoadingDetails ? (
+            <div className="p-4 flex items-center justify-center">
+              <div className="text-[#EAB308]">Загрузка...</div>
+            </div>
+          ) : (
+            <div className="p-4">
+              <div className="flex gap-4">
+                <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                  <MapShopThumb
+                    alt={selectedShop.title}
+                    src={(() => {
+                      const imageUrls =
+                        selectedShopDetails?.photos &&
+                          Array.isArray(selectedShopDetails.photos) &&
+                          selectedShopDetails.photos.length > 0
+                          ? selectedShopDetails.photos.map((p: { fullUrl?: string } | string) =>
+                            typeof p === 'string' ? p : p.fullUrl || '',
+                          )
+                          : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
+                            ? selectedShopDetails.imageUrls
+                            : [];
+                      return imageUrls.length > 0 ? imageUrls[0] : undefined;
+                    })()}
+                  />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Star size={16} weight="fill" color="#EAB308" />
+                    <span className={`${themeClasses.text.secondary} text-sm`}>
+                      {selectedShopDetails?.reviewCount
+                        ? `${selectedShopDetails.reviewCount} отзывов`
+                        : 'Нет отзывов'}
+                    </span>
+                  </div>
+                  <h3 className={`${themeClasses.text.primary} font-bold text-lg mb-1 truncate`}>
+                    {selectedShop.title}
+                  </h3>
+                  <p className={`${themeClasses.text.secondary} text-sm`}>
+                    {formatWorkingHours(selectedShopDetails?.schedules)}
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={() => openYandexRoute(userPosRef.current, selectedShop.latitude, selectedShop.longitude)}
+                  aria-label={`Маршрут до ${selectedShop.title}`}
+                  className={`flex-1 min-h-11 inline-flex items-center justify-center gap-2 rounded-xl border font-semibold active:scale-[0.98] transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
+                >
+                  <NavigationArrow size={18} weight="bold" />
+                  Маршрут
+                </button>
+                <Button
+                  type="button"
+                  onClick={() => navigate(`/shops/${selectedShop.id}`)}
+                  className="flex-1 min-h-11"
+                  aria-label={`Открыть ${selectedShop.title}`}
+                >
+                  Открыть
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Button>
               </div>
             </div>
           )}
-
-          {error && (
-            <div className="absolute top-[68px] left-1/2 -translate-x-1/2 z-[600] max-w-[92%] px-4 py-2.5 rounded-2xl bg-red-500/10 border border-red-500/30 shadow-lg backdrop-blur-md">
-              <p className="text-red-400 text-sm">{error}</p>
-            </div>
-          )}
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              <div className="text-[#EAB308] text-xl">Загрузка карты...</div>
-            </div>
-          )}
-
-          {shopsLoaded && shops.length === 0 && !isLoading && (
-            <div
-              className="absolute top-[68px] left-4 right-4 z-[500] px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5 pointer-events-none"
-              style={{
-                backgroundColor: theme === 'dark' ? 'rgba(45,36,31,0.94)' : 'rgba(255,255,255,0.96)',
-                borderColor: theme === 'dark' ? '#3D2F28' : '#E7E5E4',
-                backdropFilter: 'blur(12px)',
-              }}
-            >
-              <Mascot pose="search" size={40} className="shrink-0" />
-              <span
-                className="min-w-0 flex-1 text-[13px] sm:text-sm font-medium leading-snug"
-                style={{ color: theme === 'dark' ? '#fff' : '#1C1917' }}
-              >
-                Кофейни в этой области не найдены
-              </span>
-            </div>
-          )}
-
-          <div
-            style={{ width: '100%', height: '100%' }}
-            className={isLoading ? 'opacity-0' : 'opacity-100'}
-          >
-            <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-          </div>
-
-          {/* App-style map controls: locate + zoom */}
-          <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-[500] flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleLocate}
-              disabled={isLocating}
-              aria-label="Моё местоположение"
-              className={`w-11 h-11 flex items-center justify-center rounded-xl border shadow-lg active:scale-95 transition-all disabled:opacity-60 ${themeClasses.bg.card} ${themeClasses.border.default} ${themeClasses.text.primary}`}
-            >
-              {isLocating
-                ? <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                : <Crosshair size={20} weight="bold" />}
-            </button>
-            <div className={`flex flex-col rounded-xl border overflow-hidden shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
-              <button
-                type="button"
-                onClick={() => mapInstanceRef.current?.zoomIn()}
-                aria-label="Приблизить"
-                className={`w-11 h-11 flex items-center justify-center active:scale-95 transition-all ${themeClasses.text.primary}`}
-              >
-                <Plus size={20} weight="bold" />
-              </button>
-              <button
-                type="button"
-                onClick={() => mapInstanceRef.current?.zoomOut()}
-                aria-label="Отдалить"
-                className={`w-11 h-11 flex items-center justify-center border-t active:scale-95 transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
-              >
-                <Minus size={20} weight="bold" />
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              const map = mapInstanceRef.current;
-              if (!map) return;
-              void loadCoffeeShops(map).then((loaded) => paintMarkersRef.current(loaded));
-            }}
-            className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] w-[calc(100%-2rem)] max-w-xs sm:w-auto sm:min-w-[280px] min-h-12 px-8 py-3 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-full shadow-lg hover:bg-opacity-90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EAB308]/50 focus-visible:ring-offset-2`}
-          >
-            <span className={`${themeClasses.text.primary} font-medium whitespace-nowrap`}>Поиск в этой области</span>
-          </button>
-
-          {selectedShop && (
-            <div
-              className={`absolute bottom-4 left-4 right-4 z-[500] ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl shadow-2xl max-w-md mx-auto`}
-            >
-              {isLoadingDetails ? (
-                <div className="p-4 flex items-center justify-center">
-                  <div className="text-[#EAB308]">Загрузка...</div>
-                </div>
-              ) : (
-                <div className="p-4">
-                  <div className="flex gap-4">
-                    <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                      <MapShopThumb
-                        alt={selectedShop.title}
-                        src={(() => {
-                          const imageUrls =
-                            selectedShopDetails?.photos &&
-                            Array.isArray(selectedShopDetails.photos) &&
-                            selectedShopDetails.photos.length > 0
-                              ? selectedShopDetails.photos.map((p: { fullUrl?: string } | string) =>
-                                  typeof p === 'string' ? p : p.fullUrl || '',
-                                )
-                              : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
-                                ? selectedShopDetails.imageUrls
-                                : [];
-                          return imageUrls.length > 0 ? imageUrls[0] : undefined;
-                        })()}
-                      />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Star size={16} weight="fill" color="#EAB308" />
-                        <span className={`${themeClasses.text.secondary} text-sm`}>
-                          {selectedShopDetails?.reviewCount
-                            ? `${selectedShopDetails.reviewCount} отзывов`
-                            : 'Нет отзывов'}
-                        </span>
-                      </div>
-                      <h3 className={`${themeClasses.text.primary} font-bold text-lg mb-1 truncate`}>
-                        {selectedShop.title}
-                      </h3>
-                      <p className={`${themeClasses.text.secondary} text-sm`}>
-                        {formatWorkingHours(selectedShopDetails?.schedules)}
-                      </p>
-                    </div>
-
-                  </div>
-
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      type="button"
-                      onClick={() => openYandexRoute(userPosRef.current, selectedShop.latitude, selectedShop.longitude)}
-                      aria-label={`Маршрут до ${selectedShop.title}`}
-                      className={`flex-1 min-h-11 inline-flex items-center justify-center gap-2 rounded-xl border font-semibold active:scale-[0.98] transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
-                    >
-                      <NavigationArrow size={18} weight="bold" />
-                      Маршрут
-                    </button>
-                    <Button
-                      type="button"
-                      onClick={() => navigate(`/shops/${selectedShop.id}`)}
-                      className="flex-1 min-h-11"
-                      aria-label={`Открыть ${selectedShop.title}`}
-                    >
-                      Открыть
-                      <ArrowRight size={18} aria-hidden="true" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
+      )}
+    </div>
   );
 };
 
