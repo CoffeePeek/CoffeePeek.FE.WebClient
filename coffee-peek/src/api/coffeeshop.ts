@@ -4,7 +4,7 @@
 
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
-import { ApiResponse } from './core/types';
+import type { ApiResponse } from './core/types';
 import { logger } from '../utils/logger';
 import { normalizeReviewDto } from './core/reviewNormalize';
 import { normalizeCheckInDto } from './core/checkInNormalize';
@@ -89,16 +89,54 @@ export interface CoffeeShop {
   title?: string;
 }
 
+export type CoffeeShopType = 'Specialty' | 'CoffeeBar' | 'Cafe';
+
 export interface MapShop {
   id: string;
   latitude: number;
   longitude: number;
   title: string;
-  type?: string;
+  type: CoffeeShopType | null;
+  primaryZoneId?: string;
 }
 
-export interface GetShopsInBoundsResponse {
+export interface MapBounds {
+  minLatitude: number;
+  minLongitude: number;
+  maxLatitude: number;
+  maxLongitude: number;
+}
+
+export interface MapCluster {
+  id: string;
+  latitude: number;
+  longitude: number;
+  count: number;
+  bounds: MapBounds;
+}
+
+export interface MapCoffeeZone {
+  id: string;
+  name: string;
+  description: string | null;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  shopCount: number;
+}
+
+export interface MapSearchData {
   shops: MapShop[];
+  clusters?: MapCluster[];
+  zones?: MapCoffeeZone[];
+  isTruncated?: boolean;
+}
+
+export interface MapViewportBounds {
+  minLat: number;
+  minLon: number;
+  maxLat: number;
+  maxLon: number;
 }
 
 export interface ShopTagDto {
@@ -496,26 +534,66 @@ export async function getCoffeeShopsByCity(
   return getCoffeeShops({ cityId }, page, pageSize);
 }
 
-/**
- * Получает список кофеен для карты по границам видимой области
- */
-export async function getCoffeeShopsByMapBounds(
-  minLat?: number,
-  minLon?: number,
-  maxLat?: number,
-  maxLon?: number
-): Promise<ApiResponse<GetShopsInBoundsResponse>> {
-  const params: Record<string, any> = {};
+function normalizeLongitude(longitude: number): number {
+  return ((longitude + 180) % 360 + 360) % 360 - 180;
+}
 
-  if (minLat !== undefined) params.minLat = minLat;
-  if (minLon !== undefined) params.minLon = minLon;
-  if (maxLat !== undefined) params.maxLat = maxLat;
-  if (maxLon !== undefined) params.maxLon = maxLon;
+function splitMapBounds(bounds: MapViewportBounds): MapViewportBounds[] {
+  const minLat = Math.max(-90, Math.min(90, bounds.minLat));
+  const maxLat = Math.max(-90, Math.min(90, bounds.maxLat));
+  const longitudeSpan = bounds.maxLon - bounds.minLon;
 
-  return httpClient.get<GetShopsInBoundsResponse>(API_ENDPOINTS.MAP.BASE, {
-    params,
-    requiresAuth: false,
-  });
+  if (longitudeSpan >= 360) {
+    return [{ minLat, minLon: -180, maxLat, maxLon: 180 }];
+  }
+
+  const minLon = normalizeLongitude(bounds.minLon);
+  const maxLon = normalizeLongitude(bounds.maxLon);
+  if (minLon <= maxLon) {
+    return [{ minLat, minLon, maxLat, maxLon }];
+  }
+
+  return [
+    { minLat, minLon, maxLat, maxLon: 180 },
+    { minLat, minLon: -180, maxLat, maxLon },
+  ];
+}
+
+function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  return Array.from(new Map(items.map((item) => [item.id, item])).values());
+}
+
+/** Loads the server-selected map representation for the current viewport. */
+export async function getMapSearch(
+  bounds: MapViewportBounds,
+  zoom: number,
+  signal?: AbortSignal,
+): Promise<ApiResponse<MapSearchData>> {
+  const requests = splitMapBounds(bounds).map((part) =>
+    httpClient.get<MapSearchData>(API_ENDPOINTS.MAP.BASE, {
+      params: {
+        ...part,
+        zoom: Math.max(0, Math.min(22, Math.round(zoom))),
+      },
+      requiresAuth: false,
+      signal,
+    }),
+  );
+  const responses = await Promise.all(requests);
+  const data = responses.map((response) => response.data);
+
+  return {
+    success: true,
+    isSuccess: true,
+    message: responses[0]?.message ?? '',
+    data: {
+      shops: uniqueById(data.flatMap((part) => part.shops ?? [])),
+      // Cluster ids are opaque and only meaningful for the request that produced them.
+      clusters: data.flatMap((part) => part.clusters ?? []),
+      zones: uniqueById(data.flatMap((part) => part.zones ?? [])),
+      isTruncated: data.some((part) => part.isTruncated === true),
+    },
+  };
 }
 
 /**

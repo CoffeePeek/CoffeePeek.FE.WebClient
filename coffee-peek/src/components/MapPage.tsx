@@ -4,8 +4,8 @@ import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
-import { getCoffeeShopsByMapBounds, getCoffeeShopById } from '../api/coffeeshop';
-import type { DetailedCoffeeShop, MapShop } from '../api/coffeeshop';
+import { getMapSearch, getCoffeeShopById } from '../api/coffeeshop';
+import type { DetailedCoffeeShop, MapSearchData, MapShop } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
 import { ArrowRight, Star, Plus, Minus, Crosshair, NavigationArrow, MagnifyingGlass, X } from '@/components/Icon';
 import Button from './Button';
@@ -15,11 +15,12 @@ import {
   applyOsmMapTheme,
   coffeeClusterIcon,
   coffeeMapPinIcon,
+  coffeeZoneLabelIcon,
   createOsmMap,
   ensureMapPinMascots,
   getMapBoundsBox,
-  groupShopsForMap,
-  zoomToClusterShops,
+  renderMapZones,
+  zoomToClusterBounds,
 } from '../map/osmMap';
 import { getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
 
@@ -48,12 +49,14 @@ const MapPage: React.FC = () => {
   const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
   const selectedIdRef = useRef<string | null>(null);
-  const shopsRef = useRef<MapShop[]>([]);
-  const paintMarkersRef = useRef<(shopsList: MapShop[]) => void>(() => undefined);
+  const mapDataRef = useRef<MapSearchData>({ shops: [], clusters: [], zones: [] });
+  const paintMapRef = useRef<(data: MapSearchData) => void>(() => undefined);
+  const mapRequestRef = useRef<AbortController | null>(null);
+  const themeRef = useRef(theme);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [shops, setShops] = useState<MapShop[]>([]);
+  const [mapData, setMapData] = useState<MapSearchData>({ shops: [], clusters: [], zones: [] });
   const [shopsLoaded, setShopsLoaded] = useState(false);
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
   const [selectedShopDetails, setSelectedShopDetails] = useState<DetailedCoffeeShop | null>(null);
@@ -65,30 +68,39 @@ const MapPage: React.FC = () => {
   const queryRef = useRef('');
 
   const loadCoffeeShops = async (map: MapLibreMap) => {
+    mapRequestRef.current?.abort();
+    const controller = new AbortController();
+    mapRequestRef.current = controller;
     try {
-      const { minLat, minLon, maxLat, maxLon } = getMapBoundsBox(map);
-      const response = await getCoffeeShopsByMapBounds(minLat, minLon, maxLat, maxLon);
-
-      let shopsList: MapShop[] = [];
-      if (response.data?.shops && Array.isArray(response.data.shops)) {
-        shopsList = response.data.shops.map((shop: MapShop & { name?: string; Type?: unknown }) => ({
+      const response = await getMapSearch(getMapBoundsBox(map), map.getZoom(), controller.signal);
+      if (mapRequestRef.current !== controller) return null;
+      const shops = Array.isArray(response.data?.shops)
+        ? response.data.shops.map((shop: MapShop) => ({
           id: shop.id,
           latitude: Number(shop.latitude),
           longitude: Number(shop.longitude),
-          title: shop.title || shop.name || 'Кофейня',
-          type: typeof shop.type === 'string' ? shop.type : typeof shop.Type === 'string' ? shop.Type : undefined,
-        }));
-      }
+          title: shop.title || 'Кофейня',
+          type: shop.type ?? null,
+          primaryZoneId: shop.primaryZoneId,
+        }))
+        : [];
+      const nextData: MapSearchData = {
+        shops,
+        clusters: Array.isArray(response.data?.clusters) ? response.data.clusters : [],
+        zones: Array.isArray(response.data?.zones) ? response.data.zones : [],
+        isTruncated: response.data?.isTruncated === true,
+      };
 
-      shopsRef.current = shopsList;
-      setShops(shopsList);
+      mapDataRef.current = nextData;
+      setMapData(nextData);
       setShopsLoaded(true);
       setError(null);
-      return shopsList;
+      return nextData;
     } catch (err: unknown) {
+      if ((err as { name?: string })?.name === 'AbortError') return null;
       setShopsLoaded(true);
       setError('Ошибка при загрузке кофеен: ' + getErrorMessage(err));
-      return [];
+      return null;
     }
   };
 
@@ -143,6 +155,7 @@ const MapPage: React.FC = () => {
 
     let cancelled = false;
     let updateTimeout: ReturnType<typeof setTimeout> | undefined;
+    let paintVersion = 0;
 
     const clearMarkers = () => {
       markersRef.current.forEach((marker) => {
@@ -155,30 +168,37 @@ const MapPage: React.FC = () => {
       markersRef.current = [];
     };
 
-    const paintMarkers = (shopsList: MapShop[]) => {
+    const paintMap = (data: MapSearchData) => {
       const map = mapInstanceRef.current;
       if (!map) return;
+      const version = ++paintVersion;
+      clearMarkers();
+      renderMapZones(map, data.zones ?? [], themeRef.current === 'dark');
+
+      (data.zones ?? []).forEach((zone) => {
+        const marker = new maplibregl.Marker({ element: coffeeZoneLabelIcon(zone), anchor: 'center' })
+          .setLngLat([zone.longitude, zone.latitude])
+          .addTo(map);
+        markersRef.current.push(marker);
+      });
+
+      (data.clusters ?? []).forEach((cluster) => {
+        const element = coffeeClusterIcon(cluster.count);
+        element.title = `Кофеен: ${cluster.count}`;
+        element.addEventListener('click', () => zoomToClusterBounds(map, cluster.bounds));
+        const marker = new maplibregl.Marker({ element, anchor: 'center' })
+          .setLngLat([cluster.longitude, cluster.latitude])
+          .addTo(map);
+        markersRef.current.push(marker);
+      });
+
       const q = queryRef.current.trim().toLowerCase();
-      const visible = q ? shopsList.filter((s) => (s.title ?? '').toLowerCase().includes(q)) : shopsList;
+      const visible = q
+        ? data.shops.filter((shop) => shop.title.toLowerCase().includes(q))
+        : data.shops;
       void ensureMapPinMascots().then(() => {
-        if (mapInstanceRef.current !== map) return;
-        clearMarkers();
-        const targets = groupShopsForMap(visible, map);
-
-        targets.forEach((target) => {
-          if (target.type === 'cluster') {
-            const element = coffeeClusterIcon(target.shops.length);
-            element.addEventListener('click', () => {
-              zoomToClusterShops(map, target.shops);
-            });
-            const marker = new maplibregl.Marker({ element, anchor: 'center' })
-              .setLngLat([target.lng, target.lat])
-              .addTo(map);
-            markersRef.current.push(marker);
-            return;
-          }
-
-          const shop = target.shop;
+        if (mapInstanceRef.current !== map || version !== paintVersion) return;
+        visible.forEach((shop) => {
           const selected = selectedIdRef.current === shop.id;
           const element = coffeeMapPinIcon({ focus: shop.type, selected });
           element.title = shop.title;
@@ -187,7 +207,7 @@ const MapPage: React.FC = () => {
             selectedIdRef.current = shop.id;
             setSelectedShop(shop);
             void loadShopDetails(shop.id);
-            paintMarkers(shopsRef.current);
+            paintMap(mapDataRef.current);
           });
           const marker = new maplibregl.Marker({ element, anchor: 'center' })
             .setLngLat([shop.longitude, shop.latitude])
@@ -196,7 +216,7 @@ const MapPage: React.FC = () => {
         });
       });
     };
-    paintMarkersRef.current = paintMarkers;
+    paintMapRef.current = paintMap;
 
     const map = createOsmMap(container, {
       zoom: 12,
@@ -205,26 +225,24 @@ const MapPage: React.FC = () => {
     });
     mapInstanceRef.current = map;
     setIsLoading(false);
+    map.on('style.load', () => paintMap(mapDataRef.current));
 
     const updateCoffeeShops = () => {
       clearTimeout(updateTimeout);
       updateTimeout = setTimeout(() => {
         void loadCoffeeShops(map).then((loaded) => {
-          if (!cancelled) paintMarkers(loaded);
+          if (!cancelled && loaded) paintMap(loaded);
         });
       }, 300);
     };
 
     updateTimeout = setTimeout(updateCoffeeShops, 400);
     map.on('moveend', updateCoffeeShops);
-    map.on('zoomend', () => {
-      paintMarkers(shopsRef.current);
-      updateCoffeeShops();
-    });
 
     return () => {
       cancelled = true;
       clearTimeout(updateTimeout);
+      mapRequestRef.current?.abort();
       clearMarkers();
       map.remove();
       mapInstanceRef.current = null;
@@ -233,6 +251,7 @@ const MapPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    themeRef.current = theme;
     const map = mapInstanceRef.current;
     if (!map) return;
     applyOsmMapTheme(map, theme === 'dark');
@@ -241,7 +260,7 @@ const MapPage: React.FC = () => {
   // Filter the loaded pins by name (client-side) as the user types.
   useEffect(() => {
     queryRef.current = query;
-    paintMarkersRef.current(shopsRef.current);
+    paintMapRef.current(mapDataRef.current);
   }, [query]);
 
   const formatWorkingHours = (
@@ -292,7 +311,11 @@ const MapPage: React.FC = () => {
         </div>
       )}
 
-      {shopsLoaded && shops.length === 0 && !isLoading && (
+      {shopsLoaded
+        && mapData.shops.length === 0
+        && (mapData.clusters?.length ?? 0) === 0
+        && (mapData.zones?.length ?? 0) === 0
+        && !isLoading && (
         <div
           className="absolute top-[68px] left-4 right-4 z-[500] px-3.5 py-2.5 rounded-2xl shadow-lg border flex items-center gap-2.5 pointer-events-none"
           style={{
@@ -308,6 +331,12 @@ const MapPage: React.FC = () => {
           >
             Кофейни в этой области не найдены
           </span>
+        </div>
+      )}
+
+      {mapData.isTruncated && !isLoading && (
+        <div className="absolute top-[68px] left-4 right-4 z-[500] px-3.5 py-2.5 rounded-2xl bg-amber-500/90 text-[#1A1412] text-center text-sm font-medium shadow-lg pointer-events-none">
+          Показана часть кофеен — приблизьте карту
         </div>
       )}
 
@@ -356,7 +385,9 @@ const MapPage: React.FC = () => {
         onClick={() => {
           const map = mapInstanceRef.current;
           if (!map) return;
-          void loadCoffeeShops(map).then((loaded) => paintMarkersRef.current(loaded));
+          void loadCoffeeShops(map).then((loaded) => {
+            if (loaded) paintMapRef.current(loaded);
+          });
         }}
         className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] w-[calc(100%-2rem)] max-w-xs sm:w-auto sm:min-w-[280px] min-h-12 px-8 py-3 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-full shadow-lg hover:bg-opacity-90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EAB308]/50 focus-visible:ring-offset-2`}
       >

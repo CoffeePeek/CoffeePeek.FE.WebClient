@@ -1,5 +1,5 @@
 import * as maplibregl from 'maplibre-gl';
-import type { LngLatLike, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
+import type { GeoJSONSource, LngLatLike, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { brand, dark, light } from '../design-system/tokens';
@@ -379,71 +379,6 @@ export function coffeeDetailIcon(focus?: unknown): HTMLElement {
   return element;
 }
 
-export type MapShopLike = {
-  id: string;
-  latitude: number;
-  longitude: number;
-};
-
-export type MapMarkerTarget<T extends MapShopLike = MapShopLike> =
-  | { type: 'shop'; shop: T }
-  | { type: 'cluster'; lat: number; lng: number; shops: T[] };
-
-export type GroupShopsOptions = {
-  /** Zoom level at which clustering stops (default 15). */
-  minClusterZoom?: number;
-  /** Pixel radius to merge nearby pins (default 46). */
-  clusterRadiusPx?: number;
-};
-
-/**
- * Groups nearby shops into clusters when zoomed out.
- * At close zoom every shop is returned as a single pin.
- */
-export function groupShopsForMap<T extends MapShopLike>(
-  shops: T[],
-  map: MapLibreMap,
-  options: GroupShopsOptions = {},
-): MapMarkerTarget<T>[] {
-  const minClusterZoom = options.minClusterZoom ?? 15;
-  const clusterRadiusPx = options.clusterRadiusPx ?? 46;
-
-  const valid = shops.filter((s) => s.latitude && s.longitude);
-  if (valid.length === 0) return [];
-  if (map.getZoom() >= minClusterZoom) {
-    return valid.map((shop) => ({ type: 'shop', shop }));
-  }
-
-  const remaining = [...valid];
-  const result: MapMarkerTarget<T>[] = [];
-
-  while (remaining.length > 0) {
-    const seed = remaining.shift()!;
-    const seedPoint = map.project([seed.longitude, seed.latitude]);
-    const group: T[] = [seed];
-
-    for (let i = remaining.length - 1; i >= 0; i -= 1) {
-      const candidate = remaining[i];
-      const point = map.project([candidate.longitude, candidate.latitude]);
-      if (Math.hypot(seedPoint.x - point.x, seedPoint.y - point.y) <= clusterRadiusPx) {
-        group.push(candidate);
-        remaining.splice(i, 1);
-      }
-    }
-
-    if (group.length === 1) {
-      result.push({ type: 'shop', shop: group[0] });
-      continue;
-    }
-
-    const lat = group.reduce((sum, shop) => sum + shop.latitude, 0) / group.length;
-    const lng = group.reduce((sum, shop) => sum + shop.longitude, 0) / group.length;
-    result.push({ type: 'cluster', lat, lng, shops: group });
-  }
-
-  return result;
-}
-
 export function coffeeClusterIcon(count: number): HTMLElement {
   const label = count > 99 ? '99+' : String(count);
   const size = count < 10 ? 49 : count < 100 ? 55 : 60;
@@ -455,17 +390,119 @@ export function coffeeClusterIcon(count: number): HTMLElement {
   return element;
 }
 
-/** Zoom map to fit cluster shops with padding. */
-export function zoomToClusterShops(map: MapLibreMap, shops: MapShopLike[]): void {
-  if (shops.length === 0) return;
-  const bounds = shops.reduce(
-    (result, shop) => result.extend([shop.longitude, shop.latitude]),
-    new maplibregl.LngLatBounds(),
+export type MapClusterBoundsLike = {
+  minLatitude: number;
+  minLongitude: number;
+  maxLatitude: number;
+  maxLongitude: number;
+};
+
+export type MapZoneLike = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  shopCount: number;
+};
+
+const ZONES_SOURCE_ID = 'coffeepeek-zones';
+const ZONES_FILL_LAYER_ID = 'coffeepeek-zones-fill';
+const ZONES_LINE_LAYER_ID = 'coffeepeek-zones-line';
+
+function zonePolygon(zone: MapZoneLike): [number, number][] {
+  const earthRadiusMeters = 6_371_008.8;
+  const angularDistance = Math.max(0, zone.radiusMeters) / earthRadiusMeters;
+  const latitude = zone.latitude * Math.PI / 180;
+  const longitude = zone.longitude * Math.PI / 180;
+  const coordinates: [number, number][] = [];
+
+  for (let step = 0; step <= 64; step += 1) {
+    const bearing = step / 64 * Math.PI * 2;
+    const targetLatitude = Math.asin(
+      Math.sin(latitude) * Math.cos(angularDistance)
+      + Math.cos(latitude) * Math.sin(angularDistance) * Math.cos(bearing),
+    );
+    const targetLongitude = longitude + Math.atan2(
+      Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latitude),
+      Math.cos(angularDistance) - Math.sin(latitude) * Math.sin(targetLatitude),
+    );
+    coordinates.push([
+      ((targetLongitude * 180 / Math.PI + 540) % 360) - 180,
+      targetLatitude * 180 / Math.PI,
+    ]);
+  }
+
+  return coordinates;
+}
+
+/** Adds or updates accurately sized zone circles below the HTML markers. */
+export function renderMapZones(map: MapLibreMap, zones: MapZoneLike[], isDark: boolean): void {
+  if (!map.isStyleLoaded()) return;
+  const data = {
+    type: 'FeatureCollection' as const,
+    features: zones.map((zone) => ({
+      type: 'Feature' as const,
+      properties: { id: zone.id, name: zone.name, shopCount: zone.shopCount },
+      geometry: { type: 'Polygon' as const, coordinates: [zonePolygon(zone)] },
+    })),
+  };
+  const source = map.getSource(ZONES_SOURCE_ID) as GeoJSONSource | undefined;
+  if (source) {
+    source.setData(data);
+  } else {
+    map.addSource(ZONES_SOURCE_ID, { type: 'geojson', data });
+  }
+
+  if (!map.getLayer(ZONES_FILL_LAYER_ID)) {
+    map.addLayer({
+      id: ZONES_FILL_LAYER_ID,
+      type: 'fill',
+      source: ZONES_SOURCE_ID,
+      paint: { 'fill-color': brand.primary, 'fill-opacity': isDark ? 0.16 : 0.12 },
+    });
+  } else {
+    map.setPaintProperty(ZONES_FILL_LAYER_ID, 'fill-opacity', isDark ? 0.16 : 0.12);
+  }
+  if (!map.getLayer(ZONES_LINE_LAYER_ID)) {
+    map.addLayer({
+      id: ZONES_LINE_LAYER_ID,
+      type: 'line',
+      source: ZONES_SOURCE_ID,
+      paint: { 'line-color': brand.primary, 'line-width': 2, 'line-opacity': 0.8 },
+    });
+  }
+}
+
+export function coffeeZoneLabelIcon(zone: MapZoneLike): HTMLElement {
+  const element = document.createElement('div');
+  element.className = 'coffee-map-zone-label';
+  const name = document.createElement('strong');
+  name.textContent = zone.name;
+  const count = document.createElement('span');
+  count.textContent = `${zone.shopCount}`;
+  count.title = `Кофеен в зоне: ${zone.shopCount}`;
+  element.append(name, count);
+  return element;
+}
+
+/** Fits a server cluster's bounds, or zooms one level for a point-like cluster. */
+export function zoomToClusterBounds(map: MapLibreMap, bounds: MapClusterBoundsLike): void {
+  const isPoint = bounds.minLatitude === bounds.maxLatitude
+    && bounds.minLongitude === bounds.maxLongitude;
+  if (isPoint) {
+    map.easeTo({
+      center: [bounds.minLongitude, bounds.minLatitude],
+      zoom: Math.min(map.getZoom() + 1, 22),
+      duration: 350,
+    });
+    return;
+  }
+  map.fitBounds(
+    [
+      [bounds.minLongitude, bounds.minLatitude],
+      [bounds.maxLongitude, bounds.maxLatitude],
+    ],
+    { padding: 48, maxZoom: 22, duration: 350 },
   );
-  const targetZoom = Math.min(map.getZoom() + 2, 17);
-  map.fitBounds(bounds, {
-    padding: 48,
-    maxZoom: targetZoom,
-    duration: 350,
-  });
 }

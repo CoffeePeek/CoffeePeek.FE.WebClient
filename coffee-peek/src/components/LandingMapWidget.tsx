@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
-import { getCoffeeShopById, getCoffeeShopsByMapBounds } from '../api/coffeeshop';
-import type { MapShop } from '../api/coffeeshop';
+import { getCoffeeShopById, getMapSearch } from '../api/coffeeshop';
+import type { MapSearchData, MapShop } from '../api/coffeeshop';
 import { COLORS, getThemeColors } from '../constants/colors';
 import { useTheme } from '../contexts/ThemeContext';
 import { AppIcon, StarIcon } from './icons';
@@ -12,11 +12,12 @@ import {
   MINSK_CENTER,
   coffeeClusterIcon,
   coffeeMapPinIcon,
+  coffeeZoneLabelIcon,
   createOsmMap,
   ensureMapPinMascots,
   getMapBoundsBox,
-  groupShopsForMap,
-  zoomToClusterShops,
+  renderMapZones,
+  zoomToClusterBounds,
 } from '../map/osmMap';
 
 const MAP_ROUTE = '/dashboard?page=map';
@@ -28,18 +29,6 @@ type PreviewShop = {
   reviewCount?: number;
 };
 
-function parseShops(response: Awaited<ReturnType<typeof getCoffeeShopsByMapBounds>>): MapShop[] {
-  const shops = response.data?.shops;
-  if (!Array.isArray(shops)) return [];
-  return shops.map((shop: MapShop & { name?: string; Type?: unknown }) => ({
-    id: shop.id,
-    latitude: Number(shop.latitude),
-    longitude: Number(shop.longitude),
-    title: shop.title || shop.name || 'Кофейня',
-    type: typeof shop.type === 'string' ? shop.type : typeof shop.Type === 'string' ? shop.Type : undefined,
-  }));
-}
-
 const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -48,7 +37,8 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
-  const shopsRef = useRef<MapShop[]>([]);
+  const mapDataRef = useRef<MapSearchData>({ shops: [], clusters: [], zones: [] });
+  const mapRequestRef = useRef<AbortController | null>(null);
   const initStartedRef = useRef(false);
   const previewIdRef = useRef<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +53,7 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
 
     let cancelled = false;
     let updateTimeout: ReturnType<typeof setTimeout> | undefined;
+    let paintVersion = 0;
 
     const clearMarkers = () => {
       markersRef.current.forEach((marker) => {
@@ -75,11 +66,11 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
       markersRef.current = [];
     };
 
-    const pickPreview = async (shop: MapShop, paint: (list: MapShop[]) => void) => {
+    const pickPreview = async (shop: MapShop, paint: (data: MapSearchData) => void) => {
       const already = previewIdRef.current === shop.id;
       previewIdRef.current = shop.id;
       setPreview({ id: shop.id, title: shop.title });
-      paint(shopsRef.current);
+      paint(mapDataRef.current);
       if (already) return;
 
       try {
@@ -97,26 +88,29 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
       }
     };
 
-    const addMarkers = (map: MapLibreMap, shopsList: MapShop[]) => {
+    const addMarkers = (map: MapLibreMap, data: MapSearchData) => {
+      const version = ++paintVersion;
+      clearMarkers();
+      renderMapZones(map, data.zones ?? [], isDark);
+      (data.zones ?? []).forEach((zone) => {
+        const marker = new maplibregl.Marker({ element: coffeeZoneLabelIcon(zone), anchor: 'center' })
+          .setLngLat([zone.longitude, zone.latitude])
+          .addTo(map);
+        markersRef.current.push(marker);
+      });
+      (data.clusters ?? []).forEach((cluster) => {
+        const element = coffeeClusterIcon(cluster.count);
+        element.title = `Кофеен: ${cluster.count}`;
+        element.addEventListener('click', () => zoomToClusterBounds(map, cluster.bounds));
+        const marker = new maplibregl.Marker({ element, anchor: 'center' })
+          .setLngLat([cluster.longitude, cluster.latitude])
+          .addTo(map);
+        markersRef.current.push(marker);
+      });
+
       void ensureMapPinMascots().then(() => {
-        if (mapInstanceRef.current !== map) return;
-        clearMarkers();
-        const targets = groupShopsForMap(shopsList, map);
-
-        targets.forEach((target) => {
-          if (target.type === 'cluster') {
-            const element = coffeeClusterIcon(target.shops.length);
-            element.addEventListener('click', () => {
-              zoomToClusterShops(map, target.shops);
-            });
-            const marker = new maplibregl.Marker({ element, anchor: 'center' })
-              .setLngLat([target.lng, target.lat])
-              .addTo(map);
-            markersRef.current.push(marker);
-            return;
-          }
-
-          const shop = target.shop;
+        if (mapInstanceRef.current !== map || version !== paintVersion) return;
+        data.shops.forEach((shop) => {
           const selected = previewIdRef.current === shop.id;
           const element = coffeeMapPinIcon({ focus: shop.type, selected });
           element.title = shop.title;
@@ -130,21 +124,28 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
           markersRef.current.push(marker);
         });
 
-        if (shopsList.length > 0 && !previewIdRef.current) {
-          void pickPreview(shopsList[0], (list) => addMarkers(map, list));
+        if (data.shops.length > 0 && !previewIdRef.current) {
+          void pickPreview(data.shops[0], (nextData) => addMarkers(map, nextData));
         }
       });
     };
 
     const loadShops = async (map: MapLibreMap) => {
+      mapRequestRef.current?.abort();
+      const controller = new AbortController();
+      mapRequestRef.current = controller;
       try {
-        const { minLat, minLon, maxLat, maxLon } = getMapBoundsBox(map);
-        const response = await getCoffeeShopsByMapBounds(minLat, minLon, maxLat, maxLon);
-        if (cancelled) return;
-        shopsRef.current = parseShops(response);
-        addMarkers(map, shopsRef.current);
-        setError(null);
-      } catch {
+        const response = await getMapSearch(getMapBoundsBox(map), map.getZoom(), controller.signal);
+        if (cancelled || mapRequestRef.current !== controller) return;
+        if (!response.data.shops.some((shop) => shop.id === previewIdRef.current)) {
+          previewIdRef.current = null;
+          setPreview(null);
+        }
+        mapDataRef.current = response.data;
+        addMarkers(map, response.data);
+        setError(response.data.isTruncated ? 'Приблизьте карту, чтобы увидеть все кофейни' : null);
+      } catch (err: unknown) {
+        if ((err as { name?: string })?.name === 'AbortError') return;
         if (!cancelled) setError('Не удалось загрузить кофейни');
       }
     };
@@ -161,6 +162,7 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
         });
         mapInstanceRef.current = map;
         setIsLoading(false);
+        map.on('style.load', () => addMarkers(map, mapDataRef.current));
 
         const scheduleUpdate = () => {
           clearTimeout(updateTimeout);
@@ -169,10 +171,6 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
 
         scheduleUpdate();
         map.on('moveend', scheduleUpdate);
-        map.on('zoomend', () => {
-          addMarkers(map, shopsRef.current);
-          scheduleUpdate();
-        });
       } catch {
         if (!cancelled) {
           setError('Не удалось загрузить карту');
@@ -193,6 +191,7 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
     return () => {
       cancelled = true;
       clearTimeout(updateTimeout);
+      mapRequestRef.current?.abort();
       observer.disconnect();
       clearMarkers();
       mapInstanceRef.current?.remove();

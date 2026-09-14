@@ -220,7 +220,8 @@
 }
 
 .coffee-map-pin,
-.coffee-map-cluster {
+.coffee-map-cluster,
+.coffee-map-zone-label {
   outline: none !important;
   background: none !important;
   border: none !important;
@@ -230,7 +231,9 @@
 .coffee-map-pin:focus,
 .coffee-map-pin:focus-visible,
 .coffee-map-cluster:focus,
-.coffee-map-cluster:focus-visible {
+.coffee-map-cluster:focus-visible,
+.coffee-map-zone-label:focus,
+.coffee-map-zone-label:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
@@ -318,6 +321,45 @@
 
 .coffee-map-cluster .coffee-cluster-count {
   pointer-events: none;
+}
+
+.coffee-map-zone-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 190px;
+  padding: 6px 8px 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-radius: 999px;
+  background: rgba(26, 20, 18, 0.88) !important;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(26, 20, 18, 0.28);
+  font-family: "Manrope", system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.coffee-map-zone-label strong {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-overflow: ellipsis;
+}
+
+.coffee-map-zone-label span {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #eab308;
+  color: #1a1412;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 @keyframes coffee-pin-selected-pop {
