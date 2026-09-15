@@ -1,4 +1,4 @@
-import { localTimeToUtc, utcTimeToLocal } from '../src/utils/shopUtils';
+import { localTimeToUtc, utcTimeToLocal, getCurrentStatus } from '../src/utils/shopUtils';
 
 // offsetMinutes follows Date.getTimezoneOffset(): negative = ahead of UTC (e.g. Minsk UTC+3 = -180).
 const MINSK = -180;
@@ -21,4 +21,40 @@ test('utcTimeToLocal reverses localTimeToUtc', () => {
     const utc = localTimeToUtc(dayOfWeek, time, MINSK);
     expect(utcTimeToLocal(utc.dayOfWeek, utc.time, MINSK)).toEqual({ dayOfWeek, time });
   }
+});
+
+describe('getCurrentStatus (UTC-aware, "open right now")', () => {
+  // schedules are UTC; getUTC* makes the check independent of the test machine's tz.
+  const at = (iso: string) => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(iso));
+  };
+  afterEach(() => jest.useRealTimers());
+
+  // 2026-09-14T..Z is a Monday → dayOfWeek 0 in the Mon=0 scheme.
+  test('open during same-day hours', () => {
+    at('2026-09-14T09:30:00Z');
+    expect(getCurrentStatus({ schedules: [{ dayOfWeek: 0, openTime: '08:00', closeTime: '22:00' }] })?.isOpen).toBe(true);
+  });
+
+  test('closed before opening', () => {
+    at('2026-09-14T09:30:00Z');
+    expect(getCurrentStatus({ schedules: [{ dayOfWeek: 0, openTime: '10:00', closeTime: '22:00' }] })?.isOpen).toBe(false);
+  });
+
+  test('overnight span open after midnight belongs to previous day', () => {
+    at('2026-09-14T01:00:00Z'); // Monday 01:00 UTC
+    expect(getCurrentStatus({ schedules: [{ dayOfWeek: 6, openTime: '22:00', closeTime: '02:00' }] })?.isOpen).toBe(true);
+  });
+
+  test('overnight span open before midnight on its own day', () => {
+    at('2026-09-14T23:00:00Z'); // Monday 23:00 UTC
+    expect(getCurrentStatus({ schedules: [{ dayOfWeek: 0, openTime: '22:00', closeTime: '02:00' }] })?.isOpen).toBe(true);
+  });
+
+  test('null when there is no schedule to judge by', () => {
+    at('2026-09-14T09:30:00Z');
+    expect(getCurrentStatus({ schedules: [] })).toBeNull();
+    expect(getCurrentStatus(null)).toBeNull();
+  });
 });

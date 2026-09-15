@@ -6,6 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppIcon, StarIcon, BeanPriceMarks } from '../icons';
 import { getPriceRangeTier } from '../../utils/priceRange';
+import { isShopOpenNow } from '../../utils/shopUtils';
 
 interface ShopHeaderProps {
   shop: DetailedCoffeeShop;
@@ -65,6 +66,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   const themeClasses = getThemeClasses(theme);
   const priceTiers = getPriceRangeTier(shop.priceRange);
   const iconMuted = theme === 'dark' ? '#E7E5E4' : '#44403C';
+  const openNow = isShopOpenNow(shop);
 
   const handleShare = async () => {
     const url = `${window.location.origin}/shops/${shop.id}`;
@@ -97,7 +99,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
               Новая
             </span>
           )}
-          {shop.isOpen && (
+          {openNow && (
             <span className="bg-green-500/20 text-green-400 font-bold px-2 py-1 rounded-lg text-xs uppercase tracking-wider shrink-0">
               Открыта
             </span>

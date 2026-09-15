@@ -6,6 +6,7 @@ import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { useTheme } from '../contexts/ThemeContext';
 import { getPriceRangeTier } from '../utils/priceRange';
+import { isShopOpenNow } from '../utils/shopUtils';
 
 interface ShopCardColors {
   surface: string;
@@ -52,6 +53,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
   const equipments = Array.isArray(s.equipments) ? (s.equipments as object[]) : [];
   const showRating = (shop.rating ?? 0) > 0 && (shop.reviewCount ?? 0) > 0;
   const address = shop.location?.address || shop.address || shop.cityName || '';
+  const openNow = isShopOpenNow(shop);
 
   return (
     <article
@@ -163,15 +165,15 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
           <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {shop.name}
           </h3>
-          {typeof shop.isOpen !== 'undefined' && (
+          {typeof openNow !== 'undefined' && (
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 3,
               padding: '3px 8px', borderRadius: 6, whiteSpace: 'nowrap' as const,
-              background: shop.isOpen ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)',
-              color: shop.isOpen ? '#4ADE80' : '#FCA5A5',
+              background: openNow ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)',
+              color: openNow ? '#4ADE80' : '#FCA5A5',
               fontFamily: '"Manrope"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const,
             }}>
-              {shop.isOpen ? 'Открыто' : 'Закрыто'}
+              {openNow ? 'Открыто' : 'Закрыто'}
             </span>
           )}
         </div>

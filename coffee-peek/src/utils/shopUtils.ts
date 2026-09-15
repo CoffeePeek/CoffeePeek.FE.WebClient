@@ -86,8 +86,18 @@ function shiftScheduleTime(
   };
 }
 
+function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
 /**
- * Получает статус работы кофейни на основе расписания
+ * Открыта ли кофейня прямо сейчас на основе расписания.
+ * Время расписания и dayOfWeek хранятся в UTC, поэтому сравниваем с текущим
+ * временем в UTC — getUTC*() уже переводит локальное время ПК в UTC, т.е.
+ * часовой пояс пользователя учитывается автоматически.
+ * Обрабатывает интервалы через полночь (например, 22:00–02:00).
+ * Возвращает null, если расписания нет.
  */
 export function getCurrentStatus(shop: { schedules?: Array<{ dayOfWeek: number | string; openTime?: string; closeTime?: string }> } | null): {
   isOpen: boolean;
@@ -96,20 +106,37 @@ export function getCurrentStatus(shop: { schedules?: Array<{ dayOfWeek: number |
 } | null {
   if (!shop?.schedules || shop.schedules.length === 0) return null;
 
-  const currentDay = getCurrentDayOfWeek();
-  const todaySchedule = shop.schedules.find((s) => normalizeDayOfWeek(s.dayOfWeek) === currentDay);
-  if (!todaySchedule || !todaySchedule.openTime || !todaySchedule.closeTime) return null;
-
-  const openTime = parseInt(todaySchedule.openTime.split(':')[0]) * 60 + parseInt(todaySchedule.openTime.split(':')[1]);
-  const closeTime = parseInt(todaySchedule.closeTime.split(':')[0]) * 60 + parseInt(todaySchedule.closeTime.split(':')[1]);
   const now = new Date();
-  const currentTime = now.getHours() * 60 + now.getMinutes();
+  const nowDay = (now.getUTCDay() + 6) % 7; // getUTCDay: 0=Вс…6=Сб → 0=Пн…6=Вс
+  const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
 
-  return {
-    isOpen: currentTime >= openTime && currentTime < closeTime,
-    openTime: todaySchedule.openTime,
-    closeTime: todaySchedule.closeTime,
-  };
+  for (const s of shop.schedules) {
+    const day = normalizeDayOfWeek(s.dayOfWeek);
+    if (day === null || !s.openTime || !s.closeTime) continue;
+    const open = timeToMinutes(s.openTime);
+    const close = timeToMinutes(s.closeTime);
+    const openNow = close <= open
+      // Через полночь: [open, 24:00) в этот день и [00:00, close) в следующий.
+      ? (day === nowDay && nowMinutes >= open) || ((day + 1) % 7 === nowDay && nowMinutes < close)
+      : day === nowDay && nowMinutes >= open && nowMinutes < close;
+    if (openNow) return { isOpen: true, openTime: s.openTime, closeTime: s.closeTime };
+  }
+
+  const today = shop.schedules.find((s) => normalizeDayOfWeek(s.dayOfWeek) === nowDay);
+  return { isOpen: false, openTime: today?.openTime, closeTime: today?.closeTime };
+}
+
+/**
+ * Открыта ли кофейня прямо сейчас. Считаем по расписанию (UTC-aware),
+ * при отсутствии расписания откатываемся на флаг isOpen из API.
+ */
+export function isShopOpenNow(
+  shop: {
+    schedules?: Array<{ dayOfWeek: number | string; openTime?: string; closeTime?: string }>;
+    isOpen?: boolean;
+  } | null
+): boolean | undefined {
+  return getCurrentStatus(shop)?.isOpen ?? shop?.isOpen;
 }
 
 /**

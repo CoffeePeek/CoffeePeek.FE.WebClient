@@ -6,7 +6,7 @@ import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getPriceRangeTier } from '../utils/priceRange';
-import { formatDayOfWeek, getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
+import { formatDayOfWeek, getCurrentDayOfWeek, normalizeDayOfWeek, isShopOpenNow } from '../utils/shopUtils';
 import {
   X, Camera, Star, MapPin, Phone, Envelope, Globe, DeviceMobile,
   Coffee, Gear, Leaf, Flame, Drop, Clock, Circle, PriceRangeLabel,
@@ -22,6 +22,8 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   if (!isOpen || !shop) return null;
+
+  const openNow = isShopOpenNow(shop);
 
   const extractPhotoUrls = (): string[] => {
     const urls: string[] = [];
@@ -103,12 +105,12 @@ const CoffeeShopModal: React.FC<CoffeeShopModalProps> = ({ shop, isOpen, onClose
                 </div>
               )}
               <span className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${
-                shop.isOpen
+                openNow
                   ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                   : 'bg-red-500/20 text-red-400 border border-red-500/30'
               }`}>
-                <Circle size={8} weight="fill" color={shop.isOpen ? '#22C55E' : '#EF4444'} />
-                {shop.isOpen ? 'Открыто' : 'Закрыто'}
+                <Circle size={8} weight="fill" color={openNow ? '#22C55E' : '#EF4444'} />
+                {openNow ? 'Открыто' : 'Закрыто'}
               </span>
             </div>
 
