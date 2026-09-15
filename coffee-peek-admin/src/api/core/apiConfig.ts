@@ -71,6 +71,13 @@ export const API_ENDPOINTS = {
       `/api/admin/v1/app-downloads/android/releases/${id}/publish`,
     SHOP_REPORTS: '/api/admin/shop-reports',
     SHOP_REPORT_STATUS: (id: string) => `/api/admin/shop-reports/${id}/status`,
+    COFFEE_ZONES: '/api/admin/coffee-zones',
+    COFFEE_ZONE_BY_ID: (id: string) => `/api/admin/coffee-zones/${id}`,
+    COFFEE_ZONE_STATUS: (id: string) => `/api/admin/coffee-zones/${id}/status`,
+    COFFEE_ZONE_MEMBERSHIP: (id: string) => `/api/admin/coffee-zones/${id}/membership`,
+    COFFEE_ZONE_MEMBER: (zoneId: string, shopId: string) =>
+      `/api/admin/coffee-zones/${zoneId}/membership/${shopId}`,
+    COFFEE_ZONE_CANDIDATES: '/api/admin/coffee-zones/candidates',
   },
 
   PHOTOS: {

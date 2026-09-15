@@ -25,6 +25,8 @@ const OwnerShopEditPage = lazy(() => import('../pages/OwnerShopEditPage').then((
 const BrowseShopsPage = lazy(() => import('../pages/BrowseShopsPage').then((m) => ({ default: m.BrowseShopsPage })));
 const BrowseShopPage = lazy(() => import('../pages/BrowseShopPage').then((m) => ({ default: m.BrowseShopPage })));
 const BrowseMapPage = lazy(() => import('../pages/BrowseMapPage').then((m) => ({ default: m.BrowseMapPage })));
+const CoffeeZonesPage = lazy(() => import('../pages/CoffeeZonesPage').then((m) => ({ default: m.CoffeeZonesPage })));
+const CoffeeZoneEditorPage = lazy(() => import('../pages/CoffeeZoneEditorPage').then((m) => ({ default: m.CoffeeZoneEditorPage })));
 const ImportQueuePage = lazy(() => import('../pages/ImportQueuePage').then((m) => ({ default: m.ImportQueuePage })));
 const ImportDuplicatesPage = lazy(() =>
   import('../pages/ImportDuplicatesPage').then((m) => ({ default: m.ImportDuplicatesPage }))
@@ -62,6 +64,10 @@ export const AppRoutes: React.FC = () => (
         <Route path="/coffee-shops" element={<BrowseShopsPage />} />
         <Route path="/coffee-shops/:id" element={<BrowseShopPage />} />
         <Route path="/map" element={<BrowseMapPage />} />
+
+        <Route path="/coffee-zones" element={<ProtectedRoute requireModerator><CoffeeZonesPage /></ProtectedRoute>} />
+        <Route path="/coffee-zones/new" element={<ProtectedRoute requireModerator><CoffeeZoneEditorPage /></ProtectedRoute>} />
+        <Route path="/coffee-zones/:id" element={<ProtectedRoute requireModerator><CoffeeZoneEditorPage /></ProtectedRoute>} />
 
         <Route
           path="/shops"
