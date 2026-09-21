@@ -157,7 +157,11 @@ class HttpClient {
       return undefined;
     }
 
-    return data instanceof FormData ? data : JSON.stringify(data);
+    if (data instanceof FormData || data instanceof URLSearchParams) {
+      return data;
+    }
+
+    return JSON.stringify(data);
   }
 
   async post<T>(

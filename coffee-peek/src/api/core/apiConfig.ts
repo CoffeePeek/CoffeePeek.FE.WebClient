@@ -30,6 +30,8 @@ export const API_ENDPOINTS = {
     PASSWORD_FORGOT: "/api/users/password/forgot",
     PASSWORD_RESET: "/api/users/password/reset",
     DELETE: "/api/users/me",
+    DELETION_CONFIRMATION: "/api/users/me/deletion-confirmation",
+    DELETION_REQUEST: "/api/users/me/deletion-request",
     EMAIL_CONFIRMATION: "/api/users/me/email-confirmation",
     REVIEWS: (userId: string) => `/api/users/${userId}/reviews`,
     EMAIL_CONFIRMATION_RESEND: "/api/users/email-confirmation/resend",

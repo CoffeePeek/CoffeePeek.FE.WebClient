@@ -311,12 +311,59 @@ export async function updateAvatar(
   });
 }
 
+export type AccountDeletionReason =
+  | 'PrivacyConcerns'
+  | 'NoLongerUsing'
+  | 'DuplicateAccount'
+  | 'UnsatisfactoryExperience'
+  | 'Other';
+
+export interface AccountDeletionRequest {
+  requestId: string;
+  status: string;
+  expiresAtUtc: string;
+  resendAvailableAtUtc: string;
+}
+
 /**
- * Удаляет текущего пользователя
+ * Запрашивает удаление аккаунта (202 + PendingConfirmation).
+ * Письмо со ссылкой подтверждения; повтор в cooldown тоже 202 без нового письма.
  */
-export async function deleteUser(): Promise<ApiResponse<boolean>> {
-  return httpClient.delete<boolean>(API_ENDPOINTS.USER.DELETE, {
+export async function deleteUser(): Promise<ApiResponse<AccountDeletionRequest>> {
+  return httpClient.delete<AccountDeletionRequest>(API_ENDPOINTS.USER.DELETE, {
     requiresAuth: true,
+  });
+}
+
+/**
+ * Подтверждает удаление по токену из письма (form-urlencoded).
+ */
+export async function confirmAccountDeletion(params: {
+  token: string;
+  reason: AccountDeletionReason;
+  otherReason?: string;
+}): Promise<ApiResponse<unknown>> {
+  const body = new URLSearchParams();
+  body.set('token', params.token);
+  body.set('reason', params.reason);
+  if (params.reason === 'Other' && params.otherReason?.trim()) {
+    body.set('otherReason', params.otherReason.trim().slice(0, 500));
+  }
+
+  return httpClient.post<unknown>(API_ENDPOINTS.USER.DELETION_CONFIRMATION, body, {
+    requiresAuth: false,
+  });
+}
+
+/**
+ * Отменяет запрос на удаление до подтверждения.
+ */
+export async function cancelAccountDeletionRequest(
+  token: string
+): Promise<ApiResponse<unknown>> {
+  return httpClient.delete<unknown>(API_ENDPOINTS.USER.DELETION_REQUEST, {
+    params: { token },
+    requiresAuth: false,
   });
 }
 

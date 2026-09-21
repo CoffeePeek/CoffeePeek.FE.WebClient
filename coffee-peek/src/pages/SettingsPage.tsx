@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import {
-  getProfile, UserProfile,
+  getProfile,
   updateUsername, updateEmail, updateAbout, updateAvatar, resendEmailConfirmation,
-  changePassword,
+  changePassword, deleteUser,
+  type UserProfile,
+  type AccountDeletionRequest,
 } from '../api/auth';
 import { getAvatarUploadUrl } from '../api/photos';
-import { getCities, City } from '../api/coffeeshop';
+import { getCities, type City } from '../api/coffeeshop';
 import { useLocalCity } from '../hooks/useLocalCity';
 import { useTheme } from '../contexts/ThemeContext';
 import { COLORS } from '../constants/colors';
@@ -20,7 +22,7 @@ import { MobileAppDownload } from '../components/mobile-app';
 import {
   Coffee, SignOut, Camera, PencilSimple, Check,
   ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
-  ArrowClockwise, X, MapPin, Lock, Factory, CaretDown,
+  ArrowClockwise, X, MapPin, Lock, Factory, CaretDown, WarningCircle,
 } from '@/components/Icon';
 
 const styles = `
@@ -71,10 +73,28 @@ const SettingsPage: React.FC = () => {
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [deletionStep, setDeletionStep] = useState<'idle' | 'confirm' | 'check-email'>('idle');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletionRequest, setDeletionRequest] = useState<AccountDeletionRequest | null>(null);
+  const [deletionError, setDeletionError] = useState<string | null>(null);
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  const handleRequestDeletion = async () => {
+    setDeletionError(null);
+    setIsDeleting(true);
+    try {
+      const response = await deleteUser();
+      setDeletionRequest(response.data ?? null);
+      setDeletionStep('check-email');
+    } catch (err: unknown) {
+      setDeletionError(getErrorMessage(err));
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const gold = COLORS.primary;
@@ -290,6 +310,21 @@ const SettingsPage: React.FC = () => {
         />
 
         <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
+
+        <AccountDeletionSection
+          surface={surface}
+          border={border}
+          textPrimary={textPrimary}
+          textMuted={textMuted}
+          email={profile?.email}
+          step={deletionStep}
+          isDeleting={isDeleting}
+          error={deletionError}
+          request={deletionRequest}
+          onStart={() => { setDeletionError(null); setDeletionStep('confirm'); }}
+          onCancel={() => { setDeletionError(null); setDeletionStep('idle'); }}
+          onConfirm={() => { void handleRequestDeletion(); }}
+        />
 
         <div className="settings-actions">
           <ActionButton onClick={() => { void handleLogout(); }} border={border} background={surface} color="#EF4444" icon={<SignOut size={15} color="#EF4444" />}>
@@ -631,6 +666,85 @@ const AppDownloadSection: React.FC<{ surface: string; border: string; textPrimar
     <h3 style={{ margin: '0 0 4px', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Мобильное приложение</h3>
     <p style={{ margin: '0 0 16px', fontFamily: '"Manrope"', fontSize: 13, color: textMuted, lineHeight: 1.45 }}>В скором времене приложения появятся в Play Market и App Store</p>
     <MobileAppDownload variant="compact" />
+  </section>
+);
+
+const AccountDeletionSection: React.FC<{
+  surface: string;
+  border: string;
+  textPrimary: string;
+  textMuted: string;
+  email?: string;
+  step: 'idle' | 'confirm' | 'check-email';
+  isDeleting: boolean;
+  error: string | null;
+  request: AccountDeletionRequest | null;
+  onStart: () => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}> = ({
+  surface, border, textPrimary, textMuted, email, step, isDeleting, error, request, onStart, onCancel, onConfirm,
+}) => (
+  <section className="settings-card" style={{ marginTop: 20, border: `1px solid ${border}`, background: surface }}>
+    <div className="settings-row" style={{ alignItems: 'start' }}>
+      <div style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <span style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(239,68,68,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <WarningCircle size={15} color="#EF4444" />
+        </span>
+        <div style={{ minWidth: 0 }}>
+          <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Удаление аккаунта</h3>
+          {step === 'check-email' ? (
+            <div style={{ marginTop: 8 }}>
+              <p style={{ margin: 0, fontFamily: '"Manrope"', fontSize: 13, color: textMuted, lineHeight: 1.55 }}>
+                Проверьте почту{email ? <> (<strong style={{ color: textPrimary }}>{email}</strong>)</> : null}. Мы отправили ссылку для подтверждения удаления.
+              </p>
+              <p style={{ margin: '8px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.5 }}>
+                Ссылка действует 24 часа. Аккаунт не будет удалён, пока вы не подтвердите действие в письме. Сессия остаётся активной.
+              </p>
+              {request?.expiresAtUtc && (
+                <p style={{ margin: '8px 0 0', fontFamily: '"Manrope"', fontSize: 11, color: textMuted }}>
+                  Истекает: {new Date(request.expiresAtUtc).toLocaleString('ru')}
+                </p>
+              )}
+            </div>
+          ) : step === 'confirm' ? (
+            <p style={{ margin: '6px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.5 }}>
+              На адрес аккаунта придёт письмо со ссылкой. Удаление произойдёт только после подтверждения.
+            </p>
+          ) : (
+            <p style={{ margin: '6px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.5 }}>
+              Запрос необратим после подтверждения по ссылке из письма.
+            </p>
+          )}
+          {error && (
+            <p style={{ margin: '10px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: '#EF4444', lineHeight: 1.45 }}>{error}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="settings-row-action" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {step === 'idle' && (
+          <ButtonLike onClick={onStart} border="rgba(239,68,68,0.35)" color="#EF4444" background="rgba(239,68,68,0.08)">
+            Удалить аккаунт
+          </ButtonLike>
+        )}
+        {step === 'confirm' && (
+          <>
+            <ButtonLike onClick={onCancel} border={border} color={textPrimary} background="transparent" disabled={isDeleting}>
+              Отмена
+            </ButtonLike>
+            <ButtonLike onClick={onConfirm} border="rgba(239,68,68,0.35)" color="#fff" background="#EF4444" disabled={isDeleting}>
+              {isDeleting ? 'Отправляем…' : 'Удалить'}
+            </ButtonLike>
+          </>
+        )}
+        {step === 'check-email' && (
+          <ButtonLike onClick={onCancel} border={border} color={textPrimary} background="transparent">
+            Понятно
+          </ButtonLike>
+        )}
+      </div>
+    </div>
   </section>
 );
 

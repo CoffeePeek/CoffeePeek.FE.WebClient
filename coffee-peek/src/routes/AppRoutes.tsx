@@ -25,6 +25,7 @@ const ErrorPage = lazyWithRetry(() => import('../pages/ErrorPage'));
 const PrivacyPolicyPage = lazyWithRetry(() => import('../pages/PrivacyPolicyPage'));
 const TermsOfServicePage = lazyWithRetry(() => import('../pages/TermsOfServicePage'));
 const ConfirmEmailPage = lazyWithRetry(() => import('../pages/ConfirmEmailPage'));
+const ConfirmAccountDeletionPage = lazyWithRetry(() => import('../pages/ConfirmAccountDeletionPage'));
 const ForgotPasswordPage = lazyWithRetry(() => import('../pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazyWithRetry(() => import('../pages/ResetPasswordPage'));
 const CheckInsPage = lazyWithRetry(() => import('../pages/CheckInsPage'));
@@ -67,6 +68,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/error" element={<ErrorPage />} />
         <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+        <Route path="/confirm-account-deletion" element={<ConfirmAccountDeletionPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/download" element={<DownloadPage />} />
