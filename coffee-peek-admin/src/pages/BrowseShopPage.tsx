@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useToast } from '../contexts/ToastContext';
 
-const DAY_NAMES = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 export const BrowseShopPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -150,6 +150,7 @@ export const BrowseShopPage: React.FC = () => {
               </h3>
               <ul className="space-y-1 text-sm text-text-main dark:text-stone-300">
                 {shop.shopContact.phone && <li>Тел.: {shop.shopContact.phone}</li>}
+                {shop.shopContact.email && <li>Email: {shop.shopContact.email}</li>}
                 {shop.shopContact.website && (
                   <li>
                     <a href={shop.shopContact.website} target="_blank" rel="noreferrer" className="text-primary hover:underline">

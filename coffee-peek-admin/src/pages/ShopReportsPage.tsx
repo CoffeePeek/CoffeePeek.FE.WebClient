@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   getShopIssueReports,
   updateShopIssueReportStatus,
@@ -70,7 +70,14 @@ const ReportCard: React.FC<{
           <Badge variant={STATUS_BADGE[report.status]}>{STATUS_LABELS[report.status]}</Badge>
         </div>
         <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-2">
-          Кофейня {report.shopId} · {new Date(report.createdAtUtc).toLocaleDateString('ru')}
+          Кофейня{' '}
+          <Link
+            to={`/coffee-shops/${report.shopId}`}
+            className="font-mono text-primary hover:underline break-all"
+          >
+            {report.shopId}
+          </Link>
+          {' '}· {new Date(report.createdAtUtc).toLocaleDateString('ru')}
         </p>
         {report.description && (
           <p className="text-sm text-text-main dark:text-stone-300 font-body">{report.description}</p>
