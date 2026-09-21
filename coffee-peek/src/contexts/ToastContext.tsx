@@ -20,7 +20,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const showServerError = useCallback(() => {
-    const serverErrorGifUrl = '/server-error.mp4'; // Добавьте файл в coffee-peek/public/
+    const serverErrorGifUrl = '/server-error.gif'; // Добавьте файл в coffee-peek/public/
     showToast('Сервер сейчас недоступен. Пожалуйста, попробуйте позже.', 'error', 7000, serverErrorGifUrl);
   }, [showToast]);
 
