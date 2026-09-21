@@ -126,6 +126,9 @@ export interface AdminShopSchedule {
   isClosed?: boolean;
   openTime: string;
   closeTime: string;
+  utcDayOfWeek?: number;
+  openTimeUtc?: string;
+  closeTimeUtc?: string;
 }
 
 export interface AdminCoffeeShop {
@@ -438,6 +441,9 @@ function mapBackendSchedules(schedules?: BackendSchedule[] | null): AdminShopSch
         isClosed: true,
         openTime: '',
         closeTime: '',
+        utcDayOfWeek: dayOfWeek,
+        openTimeUtc: '',
+        closeTimeUtc: '',
       };
     }
 
@@ -445,7 +451,15 @@ function mapBackendSchedules(schedules?: BackendSchedule[] | null): AdminShopSch
     const openRaw = formatTimeSpan(interval?.openTime);
     const closeRaw = formatTimeSpan(interval?.closeTime);
     if (!openRaw || !closeRaw) {
-      return { dayOfWeek, isClosed: false, openTime: '', closeTime: '' };
+      return {
+        dayOfWeek,
+        isClosed: false,
+        openTime: '',
+        closeTime: '',
+        utcDayOfWeek: dayOfWeek,
+        openTimeUtc: openRaw,
+        closeTimeUtc: closeRaw,
+      };
     }
     const open = utcTimeToLocal(dayOfWeek, openRaw);
     const close = utcTimeToLocal(dayOfWeek, closeRaw);
@@ -454,6 +468,9 @@ function mapBackendSchedules(schedules?: BackendSchedule[] | null): AdminShopSch
       isClosed: false,
       openTime: open.time,
       closeTime: close.time,
+      utcDayOfWeek: dayOfWeek,
+      openTimeUtc: openRaw,
+      closeTimeUtc: closeRaw,
     };
   });
 }
@@ -895,7 +912,15 @@ function mapPublishedSchedules(raw: unknown): AdminShopSchedule[] {
       String(interval?.closeTime ?? interval?.CloseTime ?? schedule.closeTime ?? schedule.CloseTime ?? '')
     );
     if (isClosed || !openRaw || !closeRaw) {
-      return { dayOfWeek, isClosed, openTime: '', closeTime: '' };
+      return {
+        dayOfWeek,
+        isClosed,
+        openTime: '',
+        closeTime: '',
+        utcDayOfWeek: dayOfWeek,
+        openTimeUtc: openRaw,
+        closeTimeUtc: closeRaw,
+      };
     }
     const open = utcTimeToLocal(dayOfWeek, openRaw);
     const close = utcTimeToLocal(dayOfWeek, closeRaw);
@@ -904,6 +929,9 @@ function mapPublishedSchedules(raw: unknown): AdminShopSchedule[] {
       isClosed: false,
       openTime: open.time,
       closeTime: close.time,
+      utcDayOfWeek: dayOfWeek,
+      openTimeUtc: openRaw,
+      closeTimeUtc: closeRaw,
     };
   });
 }
@@ -1140,6 +1168,8 @@ export async function getPublishedShops(
     search?: string;
     status?: CoffeeShopStatus;
     importedFromFile?: boolean;
+    sortBy?: 'name' | 'coffeeFocus' | 'status' | 'createdAtUtc';
+    sortDirection?: 'asc' | 'desc';
   } = {}
 ): Promise<ApiResponse<PaginatedResult<PublishedShop>>> {
   const page = params.page ?? 1;
@@ -1153,6 +1183,8 @@ export async function getPublishedShops(
         search: params.search,
         status: params.status,
         importedFromFile: params.importedFromFile === true ? true : undefined,
+        sortBy: params.sortBy,
+        sortDirection: params.sortDirection,
       },
     }
   );

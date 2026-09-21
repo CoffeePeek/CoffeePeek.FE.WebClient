@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
@@ -15,6 +15,8 @@ import { Pagination } from '../components/ui/Pagination';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 const PAGE_SIZE = 15;
+type SortKey = 'name' | 'address' | 'description' | 'status';
+type SortDir = 'asc' | 'desc';
 
 const STATUS_OPTIONS: { value: ModerationStatus | ''; label: string }[] = [
   { value: '', label: 'Все' },
@@ -22,6 +24,41 @@ const STATUS_OPTIONS: { value: ModerationStatus | ''; label: string }[] = [
   { value: 'Approved', label: 'Одобренные' },
   { value: 'Rejected', label: 'Отклонённые' },
 ];
+
+function compareShops(
+  a: Awaited<ReturnType<typeof getModerationShops>>['data']['items'][number],
+  b: Awaited<ReturnType<typeof getModerationShops>>['data']['items'][number],
+  key: SortKey
+): number {
+  const value = (shop: typeof a) => {
+    if (key === 'status') return statusLabels[shop.status];
+    return shop[key] ?? '';
+  };
+  const aValue = value(a);
+  const bValue = value(b);
+  if (!aValue && bValue) return 1;
+  if (aValue && !bValue) return -1;
+  return aValue.localeCompare(bValue, 'ru', { sensitivity: 'base', numeric: true });
+}
+
+const SortButton: React.FC<{
+  label: string;
+  column: SortKey;
+  sortKey: SortKey | '';
+  sortDir: SortDir;
+  onSort: (column: SortKey) => void;
+}> = ({ label, column, sortKey, sortDir, onSort }) => (
+  <button
+    type="button"
+    onClick={() => onSort(column)}
+    className="inline-flex items-center gap-1 text-xs font-medium text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white font-body"
+  >
+    {label}
+    <span className="text-[10px] leading-none w-2.5" aria-hidden="true">
+      {sortKey === column ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+    </span>
+  </button>
+);
 
 export const ShopsModerationPage: React.FC = () => {
   const { showToast } = useToast();
@@ -31,6 +68,8 @@ export const ShopsModerationPage: React.FC = () => {
   const status = (searchParams.get('status') ?? '') as ModerationStatus | '';
   const page = parseInt(searchParams.get('page') ?? '1');
   const search = searchParams.get('search') ?? '';
+  const sortKey = (searchParams.get('sort') ?? '') as SortKey | '';
+  const sortDir = (searchParams.get('dir') === 'desc' ? 'desc' : 'asc') as SortDir;
 
   const [pendingAction, setPendingAction] = useState<{ id: string; type: 'approve' | 'reject' } | null>(null);
   const [localSearch, setLocalSearch] = useState(search);
@@ -80,6 +119,22 @@ export const ShopsModerationPage: React.FC = () => {
     setParam('search', localSearch);
   };
 
+  const handleSort = (column: SortKey) => {
+    const next = new URLSearchParams(searchParams);
+    const nextDirection = sortKey === column && sortDir === 'asc' ? 'desc' : 'asc';
+    next.set('sort', column);
+    next.set('dir', nextDirection);
+    next.delete('page');
+    setSearchParams(next);
+  };
+
+  const items = useMemo(() => {
+    const list = data?.items ?? [];
+    if (!sortKey) return list;
+    const direction = sortDir === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => compareShops(a, b, sortKey) * direction);
+  }, [data?.items, sortDir, sortKey]);
+
   return (
     <div className="page-container">
       <div>
@@ -90,21 +145,18 @@ export const ShopsModerationPage: React.FC = () => {
       </div>
 
       <div className="filter-bar">
-        <div className="filter-chips">
-          {STATUS_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setParam('status', opt.value)}
-              className={`filter-chip ${
-                status === opt.value
-                  ? 'bg-primary text-black'
-                  : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        <label className="flex items-center gap-2 text-sm text-text-muted dark:text-stone-400 font-body">
+          <span className="shrink-0">Статус</span>
+          <select
+            value={status}
+            onChange={(event) => setParam('status', event.target.value)}
+            className="min-h-[40px] rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-[#1A1412] px-3 py-2 text-sm text-text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
         <form onSubmit={handleSearch} className="search-form">
           <input
             type="text"
@@ -134,7 +186,7 @@ export const ShopsModerationPage: React.FC = () => {
       ) : (
         <>
           <div className="space-y-3 lg:hidden">
-            {data.items.map((shop) => (
+            {items.map((shop) => (
               <Card key={shop.id} padding="md">
                 <div className="flex gap-3">
                   {shop.photos?.[0] ? (
@@ -201,17 +253,25 @@ export const ShopsModerationPage: React.FC = () => {
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
                     <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-16" />
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Название</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Адрес</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Описание</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Статус</th>
+                    <th className="text-left px-4 py-3">
+                      <SortButton label="Название" column="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                    </th>
+                    <th className="text-left px-4 py-3">
+                      <SortButton label="Адрес" column="address" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                    </th>
+                    <th className="text-left px-4 py-3">
+                      <SortButton label="Описание" column="description" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                    </th>
+                    <th className="text-left px-4 py-3">
+                      <SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                    </th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-[7.25rem]">
                       Действия
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">
-                  {data.items.map((shop) => (
+                  {items.map((shop) => (
                     <tr key={shop.id} className="table-row align-top">
                       <td className="px-5 py-3">
                         {shop.photos?.[0] ? (

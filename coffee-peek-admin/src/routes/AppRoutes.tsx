@@ -1,7 +1,8 @@
-import React, { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect, useRef } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
+import { useUser } from '../contexts/UserContext';
 
 const LoginPage = lazy(() => import('../pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
@@ -41,8 +42,23 @@ const Loader = () => (
   </div>
 );
 
+const LogoutRoute = () => {
+  const { logout } = useUser();
+  const navigate = useNavigate();
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    void logout().finally(() => navigate('/login', { replace: true }));
+  }, [logout, navigate]);
+
+  return <Loader />;
+};
+
 export const AppRoutes: React.FC = () => (
   <Routes>
+    <Route path="/logout" element={<LogoutRoute />} />
     <Route
       path="/login"
       element={

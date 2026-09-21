@@ -72,6 +72,11 @@ const SettingsPage: React.FC = () => {
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
   const gold = COLORS.primary;
   const goldWarm = '#D4A84B';
   const bg = isDark ? '#1A1412' : '#F5F4F2';
@@ -287,7 +292,7 @@ const SettingsPage: React.FC = () => {
         <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
 
         <div className="settings-actions">
-          <ActionButton onClick={() => { logout(); navigate('/'); }} border={border} background={surface} color="#EF4444" icon={<SignOut size={15} color="#EF4444" />}>
+          <ActionButton onClick={() => { void handleLogout(); }} border={border} background={surface} color="#EF4444" icon={<SignOut size={15} color="#EF4444" />}>
             Выйти
           </ActionButton>
         </div>

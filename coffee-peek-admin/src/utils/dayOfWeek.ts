@@ -30,6 +30,26 @@ const NAME_TO_UI: Record<string, number> = {
   sun: 6,
 };
 
+const TIME_24_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+/** Normalize a complete wall-clock value to strict HH:mm, or return null. */
+export function normalizeTime24(value: string): string | null {
+  const match = value.trim().match(TIME_24_PATTERN);
+  if (!match) return null;
+  return `${match[1]}:${match[2]}`;
+}
+
+/** Device IANA timezone plus its current UTC offset. */
+export function getDeviceTimezoneLabel(date = new Date()): string {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Локальное время';
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const absolute = Math.abs(offsetMinutes);
+  const hours = String(Math.floor(absolute / 60)).padStart(2, '0');
+  const minutes = String(absolute % 60).padStart(2, '0');
+  return `${zone} (UTC${sign}${hours}:${minutes})`;
+}
+
 /** Convert .NET DayOfWeek number (0=Sun) → UI index (0=Mon). */
 export function dotNetNumberToUiDay(n: number): number {
   const truncated = Math.trunc(n);
@@ -74,7 +94,9 @@ function shiftScheduleTime(
   time: string,
   offsetMinutes: number
 ): { dayOfWeek: number; time: string } {
-  const [hours, minutes] = time.split(':').map(Number);
+  const normalized = normalizeTime24(time);
+  if (!normalized) return { dayOfWeek, time };
+  const [hours, minutes] = normalized.split(':').map(Number);
   const raw = hours * 60 + minutes + offsetMinutes;
   const dayDelta = Math.floor(raw / 1440);
   const totalMinutes = ((raw % 1440) + 1440) % 1440;

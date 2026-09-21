@@ -28,6 +28,7 @@ import {
   parseModerationShopMenu,
   updateModerationShopMenu,
 } from '../api/menu';
+import { getUserPublicProfile } from '../api/users';
 
 const schema = z.object({
   name: z.string().min(1, 'Обязательное поле'),
@@ -56,6 +57,7 @@ export const ShopEditPage: React.FC = () => {
   const [coffeeBeanIds, setCoffeeBeanIds] = useState<string[]>([]);
   const [roasterIds, setRoasterIds] = useState<string[]>([]);
   const [brewMethodIds, setBrewMethodIds] = useState<string[]>([]);
+  const [profileExpanded, setProfileExpanded] = useState(false);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['admin', 'shop', id],
@@ -65,6 +67,16 @@ export const ShopEditPage: React.FC = () => {
       const status = query.state.data?.menu?.parseStatus;
       return status === 'Pending' || status === 'Running' ? 2500 : false;
     },
+  });
+
+  const {
+    data: authorProfile,
+    isLoading: authorProfileLoading,
+    isError: authorProfileError,
+  } = useQuery({
+    queryKey: ['public-user-profile', shop?.userId],
+    queryFn: () => getUserPublicProfile(shop!.userId!).then((response) => response.data),
+    enabled: profileExpanded && !!shop?.userId,
   });
 
   const { data: catalogs, isLoading: catalogsLoading } = useCatalogs();
@@ -240,7 +252,19 @@ export const ShopEditPage: React.FC = () => {
             </h3>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm font-body">
               <MetaItem label="ID заявки" value={shop.id} mono />
-              <MetaItem label="ID автора" value={shop.userId ?? '—'} mono />
+              <div>
+                <MetaItem label="ID автора" value={shop.userId ?? '—'} mono />
+                {shop.userId && (
+                  <button
+                    type="button"
+                    aria-expanded={profileExpanded}
+                    onClick={() => setProfileExpanded((expanded) => !expanded)}
+                    className="mt-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {profileExpanded ? 'Скрыть профиль' : 'Показать профиль'}
+                  </button>
+                )}
+              </div>
               <MetaItem label="Город" value={cityName ?? (shop.cityId ? 'Загрузка...' : '—')} />
               <MetaItem
                 label="Адрес проверен"
@@ -252,6 +276,49 @@ export const ShopEditPage: React.FC = () => {
               />
               <MetaItem label="Фото" value={String(shop.photos?.length ?? 0)} />
             </dl>
+            {profileExpanded && shop.userId && (
+              <div className="mt-4 rounded-lg border border-border-light dark:border-border-dark bg-gray-50 dark:bg-white/5 p-3">
+                {authorProfileLoading ? (
+                  <p className="text-sm text-text-muted dark:text-stone-400 font-body">
+                    Загрузка профиля...
+                  </p>
+                ) : authorProfileError ? (
+                  <p className="text-sm text-red-500 dark:text-red-400 font-body">
+                    Не удалось загрузить профиль пользователя
+                  </p>
+                ) : authorProfile ? (
+                  <div className="flex items-start gap-3">
+                    {authorProfile.avatarUrl ? (
+                      <img
+                        src={authorProfile.avatarUrl}
+                        alt=""
+                        className="h-12 w-12 shrink-0 rounded-full object-cover border border-border-light dark:border-border-dark"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 shrink-0 rounded-full bg-gray-200 dark:bg-white/10" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-medium text-text-main dark:text-white font-body break-words">
+                        {authorProfile.nickname || authorProfile.userName}
+                      </p>
+                      {authorProfile.nickname && (
+                        <p className="text-xs text-text-muted dark:text-stone-400 font-body">
+                          @{authorProfile.userName}
+                        </p>
+                      )}
+                      {authorProfile.about && (
+                        <p className="mt-2 text-sm text-text-muted dark:text-stone-300 font-body whitespace-pre-wrap">
+                          {authorProfile.about}
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs text-text-muted dark:text-stone-400 font-body">
+                        Отзывов: {authorProfile.reviewCount ?? 0} · Отметок: {authorProfile.checkInCount ?? 0}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
             {shop.description && (
               <div className="mt-4 pt-4 border-t border-border-light dark:border-border-dark">
                 <p className="text-xs font-medium text-text-muted dark:text-stone-400 mb-1">Описание от автора</p>

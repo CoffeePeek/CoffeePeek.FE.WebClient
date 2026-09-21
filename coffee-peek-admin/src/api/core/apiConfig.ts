@@ -112,6 +112,10 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/api/CoffeeShops/${id}`,
   },
 
+  USER: {
+    BY_ID: (id: string) => `/api/users/${id}`,
+  },
+
   MAP: {
     BASE: '/api/Map',
   },

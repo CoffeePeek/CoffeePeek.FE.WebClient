@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
-import { logout as apiLogout } from '../../api/auth';
 import LogoMark from '../LogoMark';
 
 interface NavItem {
@@ -176,9 +175,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      await apiLogout();
+      await logout();
     } finally {
-      logout();
       navigate('/login');
     }
   };
@@ -238,8 +236,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
               <button
                 type="button"
                 title={group.label}
+                aria-expanded={open}
                 onClick={() => setOpenGroups((current) => ({ ...current, [group.id]: !open }))}
-                className={linkClass(childActive && !open)}
+                className={linkClass(childActive && !open, 'w-full')}
               >
                 {group.icon}
                 {showLabels && <span className="leading-tight flex-1 text-left">{group.label}</span>}

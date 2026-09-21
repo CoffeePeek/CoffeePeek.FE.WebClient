@@ -226,7 +226,16 @@ export function getPasswordErrorMessage(error: unknown): string | null {
   collectErrors(err?.response?.data?.errors);
 
   const haystack = parts.join(' ').toLowerCase();
-  if (/oauth|google|password/.test(haystack)) {
+
+  if (
+    /current password|existing password|old password|incorrect password|invalid password|wrong password|password (?:is )?(?:incorrect|wrong)|парол[ья].*(невер|неправ)|неверн\w*\s+парол/.test(haystack)
+  ) {
+    return 'Текущий пароль указан неверно.';
+  }
+
+  if (
+    /oauth|google|external (?:login|account|provider)|passwordless|has no password|does not have (?:a )?password|no local password|парол[ья]\s+нет|без парол/.test(haystack)
+  ) {
     return OAUTH_PASSWORD_HINT;
   }
   return null;

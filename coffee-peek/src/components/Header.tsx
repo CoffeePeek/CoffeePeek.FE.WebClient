@@ -21,6 +21,13 @@ const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
+  const handleLogout = async () => {
+    setProfileOpen(false);
+    setIsMobileMenuOpen(false);
+    await logout();
+    navigate('/');
+  };
+
   const isDark = theme === 'dark';
   const gold = COLORS.primary;
   const goldWarm = '#D4A84B';
@@ -166,7 +173,7 @@ const Header: React.FC = () => {
                       <div style={{ borderTop: `1px solid ${borderColor}`, padding: '6px 0' }}>
                         <DropdownItem icon={<SignOut size={18} color="#EF4444" />} label="Выйти" hoverBg="rgba(239,68,68,0.07)"
                           textColor="#EF4444" mutedColor="#EF4444"
-                          onClick={() => { logout(); navigate('/'); setProfileOpen(false); }} />
+                          onClick={() => { void handleLogout(); }} />
                       </div>
                     </div>
                   </>
@@ -239,7 +246,7 @@ const Header: React.FC = () => {
                     <Gear size={18} color={isSettings ? gold : mutedColor} />
                     Настройки
                   </button>
-                  <button onClick={() => { logout(); navigate('/'); setIsMobileMenuOpen(false); }}
+                  <button onClick={() => { void handleLogout(); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <SignOut size={18} color="#EF4444" />
                     Выйти

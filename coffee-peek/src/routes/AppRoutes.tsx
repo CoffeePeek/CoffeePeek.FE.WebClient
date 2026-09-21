@@ -1,6 +1,7 @@
-import React, { Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, useEffect, useRef } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUser } from '../contexts/UserContext';
 import WobbleRing from '../components/WobbleRing';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AuthenticatedLayout } from '../components/layouts/AuthenticatedLayout';
@@ -39,6 +40,20 @@ const LoadingFallback = () => {
   );
 };
 
+const LogoutRoute = () => {
+  const { logout } = useUser();
+  const navigate = useNavigate();
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    void logout().finally(() => navigate('/', { replace: true }));
+  }, [logout, navigate]);
+
+  return <LoadingFallback />;
+};
+
 export const AppRoutes: React.FC = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
@@ -46,6 +61,7 @@ export const AppRoutes: React.FC = () => {
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/logout" element={<LogoutRoute />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />

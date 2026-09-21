@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getModerationReviews, approveReview, rejectReview, ModerationStatus, AdminReview } from '../api/admin';
 import { useToast } from '../contexts/ToastContext';
 import { Badge, statusToBadgeVariant, statusLabels } from '../components/ui/Badge';
@@ -45,7 +45,15 @@ const ReviewCard: React.FC<{
           <Badge variant={statusToBadgeVariant(review.status)}>{statusLabels[review.status]}</Badge>
         </div>
         <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-2">
-          {review.authorName ?? review.authorEmail} · {review.shopName} ·{' '}
+          {review.authorName ?? review.authorEmail} ·{' '}
+          <Link
+            to={`/coffee-shops/${review.shopId}`}
+            title={`Открыть кофейню ${review.shopName}`}
+            className="font-medium text-blue-600 underline decoration-blue-600/30 underline-offset-2 hover:text-blue-700 hover:decoration-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            {review.shopName}
+          </Link>{' '}
+          ·{' '}
           {new Date(review.createdAtUtc).toLocaleDateString('ru')}
         </p>
         <p className="text-sm text-text-main dark:text-stone-300 font-body mb-3 line-clamp-3">

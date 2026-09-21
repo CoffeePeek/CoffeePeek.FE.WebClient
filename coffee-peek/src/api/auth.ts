@@ -3,9 +3,9 @@
  */
 
 import { httpClient, TokenManager } from './core/httpClient';
-import { API_ENDPOINTS } from './core/apiConfig';
+import { API_BASE_URL, API_ENDPOINTS } from './core/apiConfig';
 import type { ApiResponse } from './core/types';
-import { pickAuthTokens } from './core/interceptors';
+import { ensureFreshAccessToken, pickAuthTokens } from './core/interceptors';
 
 // ==================== Request/Response Types ====================
 
@@ -227,6 +227,9 @@ export async function refreshAccessToken(): Promise<AuthResponse> {
  */
 export async function logout(): Promise<void> {
   try {
+    // DELETE /api/tokens requires an access token. Refresh it first so logout
+    // still invalidates the HttpOnly refresh cookie after the access token expires.
+    await ensureFreshAccessToken(API_BASE_URL);
     await httpClient.delete<void>(API_ENDPOINTS.TOKEN.BASE, {
       requiresAuth: true,
     });

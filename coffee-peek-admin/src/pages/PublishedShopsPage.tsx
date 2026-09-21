@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { getPublishedShops, setPublishedShopVisibility, CoffeeShopStatus } from '../api/admin';
@@ -14,6 +14,8 @@ import {
 import { FocusBadge } from '../components/import/catalogControls';
 
 const PAGE_SIZE = 20;
+type SortKey = 'name' | 'coffeeFocus' | 'status' | 'createdAtUtc';
+type SortDirection = 'asc' | 'desc';
 
 const STATUS_OPTIONS: { value: CoffeeShopStatus | ''; label: string }[] = [
   { value: '', label: 'Все' },
@@ -22,34 +24,20 @@ const STATUS_OPTIONS: { value: CoffeeShopStatus | ''; label: string }[] = [
   { value: 'PermanentlyClosed', label: 'Закрыта навсегда' },
 ];
 
-function formatRelativeRu(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const diffMs = date.getTime() - Date.now();
-  const absSec = Math.round(Math.abs(diffMs) / 1000);
-  const rtf = new Intl.RelativeTimeFormat('ru', { numeric: 'auto' });
-  if (absSec < 60) return rtf.format(Math.round(diffMs / 1000), 'second');
-  const absMin = Math.round(absSec / 60);
-  if (absMin < 60) return rtf.format(Math.round(diffMs / 60000), 'minute');
-  const absHr = Math.round(absMin / 60);
-  if (absHr < 48) return rtf.format(Math.round(diffMs / 3600000), 'hour');
-  const absDay = Math.round(absHr / 24);
-  if (absDay < 60) return rtf.format(Math.round(diffMs / 86400000), 'day');
-  return date.toLocaleDateString('ru');
-}
-
 export const PublishedShopsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get('page') ?? '1');
   const search = searchParams.get('search') ?? '';
   const status = (searchParams.get('status') ?? '') as CoffeeShopStatus | '';
   const importedFromFile = searchParams.get('importedFromFile') === '1';
+  const sortKey = (searchParams.get('sort') ?? 'createdAtUtc') as SortKey;
+  const sortDirection = (searchParams.get('direction') ?? 'desc') as SortDirection;
   const [localSearch, setLocalSearch] = useState(search);
   const { showToast } = useToast();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'published-shops', { page, search, status, importedFromFile }],
+    queryKey: ['admin', 'published-shops', { page, search, status, importedFromFile, sortKey, sortDirection }],
     queryFn: () =>
       getPublishedShops({
         page,
@@ -57,8 +45,25 @@ export const PublishedShopsPage: React.FC = () => {
         search: search || undefined,
         status: status || undefined,
         importedFromFile: importedFromFile || undefined,
+        sortBy: sortKey,
+        sortDirection,
       }).then((r) => r.data),
   });
+
+  const sortedItems = useMemo(() => {
+    const items = [...(data?.items ?? [])];
+    const direction = sortDirection === 'asc' ? 1 : -1;
+
+    return items.sort((left, right) => {
+      if (sortKey === 'createdAtUtc') {
+        return (new Date(left.createdAtUtc).getTime() - new Date(right.createdAtUtc).getTime()) * direction;
+      }
+
+      return String(left[sortKey] ?? '').localeCompare(String(right[sortKey] ?? ''), 'ru', {
+        sensitivity: 'base',
+      }) * direction;
+    });
+  }, [data?.items, sortDirection, sortKey]);
 
   const visibilityMutation = useMutation({
     mutationFn: ({ id, hidden }: { id: string; hidden: boolean }) =>
@@ -79,12 +84,46 @@ export const PublishedShopsPage: React.FC = () => {
     setSearchParams(next);
   };
 
+  const toggleSort = (key: SortKey) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('sort', key);
+    next.set('direction', sortKey === key && sortDirection === 'asc' ? 'desc' : 'asc');
+    next.delete('page');
+    setSearchParams(next);
+  };
+
+  const SortHeader: React.FC<{ sort: SortKey; children: React.ReactNode; className?: string }> = ({
+    sort,
+    children,
+    className = '',
+  }) => {
+    const active = sortKey === sort;
+    return (
+      <th
+        scope="col"
+        aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+        className={`px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400 font-body ${className}`}
+      >
+        <button
+          type="button"
+          onClick={() => toggleSort(sort)}
+          className="group inline-flex items-center gap-1.5 whitespace-nowrap hover:text-text-main dark:hover:text-white"
+        >
+          {children}
+          <span className={active ? 'text-text-main dark:text-white' : 'text-stone-300 dark:text-stone-600'}>
+            {active ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
+          </span>
+        </button>
+      </th>
+    );
+  };
+
   return (
     <div className="page-container">
       <div>
         <h2 className="page-header-title">Опубликованные кофейни</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
-          Управление опубликованными кофейнями и владельцами
+          Управление опубликованными кофейнями
         </p>
       </div>
 
@@ -152,29 +191,15 @@ export const PublishedShopsPage: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
-                    <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
-                      Название
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
-                      Focus
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
-                      Статус
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">
-                      Владелец
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">
-                      Из файла
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">
-                      Создана
-                    </th>
+                    <SortHeader sort="name" className="pl-5">Название</SortHeader>
+                    <SortHeader sort="coffeeFocus">Focus</SortHeader>
+                    <SortHeader sort="status">Статус</SortHeader>
+                    <SortHeader sort="createdAtUtc">Создана</SortHeader>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">
-                  {data.items.map((shop) => (
+                  {sortedItems.map((shop) => (
                     <tr key={shop.id} className="table-row">
                       <td className="px-5 py-3 font-medium text-text-main dark:text-white font-body text-sm">
                         <div className="flex flex-wrap items-center gap-2">
@@ -190,19 +215,7 @@ export const PublishedShopsPage: React.FC = () => {
                           {COFFEE_SHOP_STATUS_LABELS[shop.status]}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-xs font-mono text-text-muted dark:text-stone-400 hidden lg:table-cell">
-                        {shop.ownerUserId ? `${shop.ownerUserId.slice(0, 8)}…` : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 hidden md:table-cell font-body">
-                        {shop.importedFromFileAt ? (
-                          <span title={new Date(shop.importedFromFileAt).toLocaleString('ru')}>
-                            {formatRelativeRu(shop.importedFromFileAt)}
-                          </span>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 hidden lg:table-cell font-body">
+                      <td className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 font-body">
                         {new Date(shop.createdAtUtc).toLocaleDateString('ru')}
                       </td>
                       <td className="px-4 py-3 text-right">

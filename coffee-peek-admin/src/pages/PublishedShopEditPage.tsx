@@ -524,15 +524,6 @@ export const PublishedShopEditPage: React.FC = () => {
             </form>
           </Card>
 
-          <PhotoOrderEditor
-            photos={shop.photos}
-            isSaving={photoOrderMutation.isPending}
-            isUploading={photoAddMutation.isPending}
-            isDeleting={photoDeleteMutation.isPending}
-            onSave={(photoIds) => photoOrderMutation.mutateAsync(photoIds)}
-            onAddFiles={(files) => photoAddMutation.mutateAsync(files)}
-            onDelete={(photoIds) => photoDeleteMutation.mutateAsync(photoIds)}
-          />
         </div>
 
         <div className="space-y-5 min-w-0">
@@ -617,6 +608,16 @@ export const PublishedShopEditPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      <PhotoOrderEditor
+        photos={shop.photos}
+        isSaving={photoOrderMutation.isPending}
+        isUploading={photoAddMutation.isPending}
+        isDeleting={photoDeleteMutation.isPending}
+        onSave={(photoIds) => photoOrderMutation.mutateAsync(photoIds)}
+        onAddFiles={(files) => photoAddMutation.mutateAsync(files)}
+        onDelete={(photoIds) => photoDeleteMutation.mutateAsync(photoIds)}
+      />
 
       {id && (
         <Card>

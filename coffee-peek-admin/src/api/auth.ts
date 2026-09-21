@@ -1,7 +1,7 @@
 import { httpClient, TokenManager } from './core/httpClient';
-import { API_ENDPOINTS } from './core/apiConfig';
+import { API_BASE_URL, API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
-import { pickAuthTokens } from './core/interceptors';
+import { ensureFreshAccessToken, pickAuthTokens } from './core/interceptors';
 
 export interface LoginRequest {
   email: string;
@@ -33,6 +33,7 @@ export async function login(credentials: LoginRequest): Promise<ApiResponse<Auth
 
 export async function logout(): Promise<void> {
   try {
+    await ensureFreshAccessToken(API_BASE_URL);
     await httpClient.delete<void>(API_ENDPOINTS.TOKEN.BASE, { requiresAuth: true });
   } finally {
     TokenManager.clearTokens();
