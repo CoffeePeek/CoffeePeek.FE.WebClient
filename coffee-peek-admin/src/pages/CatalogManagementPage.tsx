@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   createAdminCatalogItem,
   deleteAdminCatalogItem,
@@ -10,6 +11,7 @@ import {
   type CatalogMutationRequest,
   type CatalogEquipment,
   type CatalogBrewMethod,
+  type CatalogRoaster,
 } from '../api/catalogs';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -38,6 +40,11 @@ const EQUIPMENT_CATEGORIES = [
 ];
 
 const BREW_CATEGORIES = ['Не указана', 'Под давлением', 'Пролив', 'Иммерсия', 'Традиционный'];
+const CATALOG_KINDS = new Set<CatalogKind>(CATALOGS.map((catalog) => catalog.kind));
+
+function parseCatalogKind(value: string | null): CatalogKind {
+  return value && CATALOG_KINDS.has(value as CatalogKind) ? value as CatalogKind : 'cities';
+}
 
 type FormState = { name: string; brand: string; modelName: string; category: number };
 const EMPTY_FORM: FormState = { name: '', brand: '', modelName: '', category: 0 };
@@ -110,7 +117,8 @@ const CatalogForm: React.FC<{
 };
 
 export const CatalogManagementPage: React.FC = () => {
-  const [kind, setKind] = useState<CatalogKind>('cities');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [kind, setKind] = useState<CatalogKind>(() => parseCatalogKind(searchParams.get('kind')));
   const [search, setSearch] = useState('');
   const [createForm, setCreateForm] = useState<FormState>(EMPTY_FORM);
   const [editing, setEditing] = useState<CatalogItem | null>(null);
@@ -150,6 +158,9 @@ export const CatalogManagementPage: React.FC = () => {
   }, [data, kind, search]);
 
   const changeKind = (next: CatalogKind) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('kind', next);
+    setSearchParams(nextParams, { replace: true });
     setKind(next); setSearch(''); setCreateForm(EMPTY_FORM); setEditing(null); setDeleting(null);
   };
   const submitCreate = () => {
@@ -189,7 +200,19 @@ export const CatalogManagementPage: React.FC = () => {
           : visibleItems.length === 0 ? <div className="p-10 text-center"><p className="text-sm text-text-muted dark:text-stone-400 font-body">{search ? 'Ничего не найдено' : 'В этом справочнике пока нет записей'}</p></div>
           : <ul className="divide-y divide-border-light dark:divide-border-dark">{visibleItems.map((item) => {
             const category = itemCategory(kind, item);
-            return <li key={item.id} className="p-4 sm:px-5 flex flex-col sm:flex-row sm:items-center gap-3 hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors"><div className="min-w-0 flex-1"><p className="text-sm font-medium text-text-main dark:text-white font-body break-words">{itemTitle(kind, item)}</p>{category && <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1">{category}</p>}</div><div className="flex gap-2 sm:shrink-0"><Button variant="secondary" size="sm" className="flex-1 sm:flex-none min-h-[40px]" onClick={() => { setEditing(item); setEditForm(formFromItem(kind, item)); }}>Изменить</Button><Button variant="ghost" size="sm" className="flex-1 sm:flex-none min-h-[40px] text-red-500 hover:text-red-600" onClick={() => setDeleting(item)}>Удалить</Button></div></li>;
+            const roaster = kind === 'roasters' ? item as CatalogRoaster : null;
+            return <li key={item.id} className="p-4 sm:px-5 flex flex-col sm:flex-row sm:items-center gap-3 hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
+              {roaster && (roaster.photoUrl
+                ? <img src={roaster.photoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-border-light dark:border-border-dark object-cover" />
+                : <div className="h-12 w-12 shrink-0 rounded-lg border border-border-light dark:border-border-dark bg-stone-100 dark:bg-white/5" />)}
+              <div className="min-w-0 flex-1"><p className="text-sm font-medium text-text-main dark:text-white font-body break-words">{itemTitle(kind, item)}</p>{category && <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1">{category}</p>}</div>
+              <div className="flex gap-2 sm:shrink-0">
+                {roaster
+                  ? <Link to={`/catalogs/roasters/${roaster.id}`} className="flex-1 sm:flex-none"><Button variant="secondary" size="sm" className="w-full min-h-[40px]">Редактировать</Button></Link>
+                  : <Button variant="secondary" size="sm" className="flex-1 sm:flex-none min-h-[40px]" onClick={() => { setEditing(item); setEditForm(formFromItem(kind, item)); }}>Изменить</Button>}
+                <Button variant="ghost" size="sm" className="flex-1 sm:flex-none min-h-[40px] text-red-500 hover:text-red-600" onClick={() => setDeleting(item)}>Удалить</Button>
+              </div>
+            </li>;
           })}</ul>}
       </Card>
 

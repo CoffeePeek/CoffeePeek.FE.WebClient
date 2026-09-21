@@ -103,7 +103,8 @@ export const RoasterEditPage: React.FC = () => {
     onSuccess: () => {
       showToast('Обжарщик обновлён', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'roaster', id] });
-      qc.invalidateQueries({ queryKey: ['admin', 'published-roasters'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'catalogs', 'roasters'] });
+      qc.invalidateQueries({ queryKey: ['catalogs'] });
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
   });
@@ -112,8 +113,9 @@ export const RoasterEditPage: React.FC = () => {
     mutationFn: () => deleteRoaster(id!),
     onSuccess: () => {
       showToast('Обжарщик удалён', 'success');
-      qc.invalidateQueries({ queryKey: ['admin', 'published-roasters'] });
-      navigate('/published-roasters');
+      qc.invalidateQueries({ queryKey: ['admin', 'catalogs', 'roasters'] });
+      qc.invalidateQueries({ queryKey: ['catalogs'] });
+      navigate('/catalogs?kind=roasters');
     },
     onError: (err: any) => showToast(err?.message ?? 'Не удалось удалить обжарщика', 'error'),
   });
@@ -159,7 +161,7 @@ export const RoasterEditPage: React.FC = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/published-roasters')}
+          onClick={() => navigate('/catalogs?kind=roasters')}
           className="shrink-0 self-start min-h-[44px] sm:min-h-0"
         >
           ← Назад

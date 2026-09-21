@@ -19,7 +19,6 @@ const PublishedShopsPage = lazy(() => import('../pages/PublishedShopsPage').then
 const PublishedShopEditPage = lazy(() => import('../pages/PublishedShopEditPage').then((m) => ({ default: m.PublishedShopEditPage })));
 const RoastersModerationPage = lazy(() => import('../pages/RoastersModerationPage').then((m) => ({ default: m.RoastersModerationPage })));
 const RoasterModerationDetailPage = lazy(() => import('../pages/RoasterModerationDetailPage').then((m) => ({ default: m.RoasterModerationDetailPage })));
-const PublishedRoastersPage = lazy(() => import('../pages/PublishedRoastersPage').then((m) => ({ default: m.PublishedRoastersPage })));
 const RoasterEditPage = lazy(() => import('../pages/RoasterEditPage').then((m) => ({ default: m.RoasterEditPage })));
 const OwnerShopsPage = lazy(() => import('../pages/OwnerShopsPage').then((m) => ({ default: m.OwnerShopsPage })));
 const OwnerShopEditPage = lazy(() => import('../pages/OwnerShopEditPage').then((m) => ({ default: m.OwnerShopEditPage })));
@@ -174,11 +173,7 @@ export const AppRoutes: React.FC = () => (
         />
         <Route
           path="/published-roasters"
-          element={
-            <ProtectedRoute requireAdmin>
-              <PublishedRoastersPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/catalogs?kind=roasters" replace />}
         />
         <Route
           path="/published-roasters/:id"
@@ -189,6 +184,14 @@ export const AppRoutes: React.FC = () => (
           }
         />
 
+        <Route
+          path="/catalogs/roasters/:id"
+          element={
+            <ProtectedRoute requireAdmin>
+              <RoasterEditPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/catalogs"
           element={

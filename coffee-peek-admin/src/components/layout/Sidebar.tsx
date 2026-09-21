@@ -114,7 +114,6 @@ const NAV: NavEntry[] = [
         { path: '/import', label: 'Парсинг', icon: <IconImport />, moderatorOnly: true },
         { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
         { path: '/roasters', label: 'Обжарщики: модерация', icon: <IconRoaster />, moderatorOnly: true },
-        { path: '/published-roasters', label: 'Обжарщики: опубликованные', icon: <IconRoaster />, adminOnly: true },
         { path: '/coffee-zones', label: 'Кофейные зоны', icon: <IconMap />, moderatorOnly: true },
       ],
     },

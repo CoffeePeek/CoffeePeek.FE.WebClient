@@ -134,8 +134,8 @@ export const RoastersModerationPage: React.FC = () => {
                       </p>
                     )}
                     <div className="flex flex-wrap gap-2 mt-3">
-                      <Link to={`/roasters/${roaster.id}`} className="flex-1 min-w-[120px]">
-                        <Button variant="primary" size="sm" className="w-full">Открыть</Button>
+                      <Link to={`/roasters/${roaster.id}`}>
+                        <Button variant="primary" size="sm">Открыть</Button>
                       </Link>
                       {roaster.status === 'Pending' && (
                         <>
