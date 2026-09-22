@@ -31,6 +31,8 @@ const ResetPasswordPage = lazyWithRetry(() => import('../pages/ResetPasswordPage
 const CheckInsPage = lazyWithRetry(() => import('../pages/CheckInsPage'));
 const ReviewsPage = lazyWithRetry(() => import('../pages/ReviewsPage'));
 const DownloadPage = lazyWithRetry(() => import('../pages/DownloadPage'));
+const EditCoffeeShopPage = lazyWithRetry(() => import('../pages/EditCoffeeShopPage'));
+const ShopChangeRequestsPage = lazyWithRetry(() => import('../pages/ShopChangeRequestsPage'));
 
 const LoadingFallback = () => {
   const { theme } = useTheme();
@@ -107,6 +109,28 @@ export const AppRoutes: React.FC = () => {
             <ProtectedRoute>
               <AuthenticatedLayout>
                 <CreateReviewPage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/shops/:shopId/edit"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <EditCoffeeShopPage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/shop-change-requests"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <ShopChangeRequestsPage />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

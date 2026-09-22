@@ -34,6 +34,8 @@ const ImportDuplicatesPage = lazy(() =>
 const AppDistributionPage = lazy(() =>
   import('../pages/AppDistributionPage').then((m) => ({ default: m.AppDistributionPage }))
 );
+const ShopChangeRequestsPage = lazy(() => import('../pages/ShopChangeRequestsPage').then((m) => ({ default: m.ShopChangeRequestsPage })));
+const ShopChangeRequestDetailPage = lazy(() => import('../pages/ShopChangeRequestDetailPage').then((m) => ({ default: m.ShopChangeRequestDetailPage })));
 
 const Loader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -127,6 +129,15 @@ export const AppRoutes: React.FC = () => (
               <ReviewsModerationPage />
             </ProtectedRoute>
           }
+        />
+
+        <Route
+          path="/shop-change-requests"
+          element={<ProtectedRoute requireModerator><ShopChangeRequestsPage /></ProtectedRoute>}
+        />
+        <Route
+          path="/shop-change-requests/:id"
+          element={<ProtectedRoute requireModerator><ShopChangeRequestDetailPage /></ProtectedRoute>}
         />
 
         <Route

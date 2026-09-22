@@ -39,6 +39,7 @@ const Header: React.FC = () => {
   const isSettings = currentPath.startsWith('/settings');
   const isCheckIns = location.pathname.startsWith('/check-ins');
   const isReviews = location.pathname === '/reviews';
+  const isChanges = location.pathname === '/shop-change-requests';
 
   const bg = isDark ? 'rgba(45,36,31,0.88)' : 'rgba(255,255,255,0.88)';
   const borderColor = isDark ? '#3D2F28' : '#E7E5E4';
@@ -163,6 +164,11 @@ const Header: React.FC = () => {
                           mutedColor={isReviews ? gold : mutedColor}
                           activeBg={isReviews ? `${gold}10` : undefined}
                           onClick={() => { navigate('/reviews'); setProfileOpen(false); }} />
+                        <DropdownItem icon={<Gear size={18} color={isChanges ? gold : mutedColor} />} label="Мои изменения" hoverBg={hoverBg}
+                          textColor={isChanges ? gold : textColor}
+                          mutedColor={isChanges ? gold : mutedColor}
+                          activeBg={isChanges ? `${gold}10` : undefined}
+                          onClick={() => { navigate('/shop-change-requests'); setProfileOpen(false); }} />
                         <DropdownItem icon={<Gear size={18} color={isSettings ? gold : mutedColor} />} label="Настройки" hoverBg={hoverBg}
                           textColor={isSettings ? gold : textColor}
                           mutedColor={isSettings ? gold : mutedColor}
@@ -245,6 +251,11 @@ const Header: React.FC = () => {
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <Gear size={18} color={isSettings ? gold : mutedColor} />
                     Настройки
+                  </button>
+                  <button onClick={() => { navigate('/shop-change-requests'); setIsMobileMenuOpen(false); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isChanges ? `${gold}12` : 'transparent', color: isChanges ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    <Gear size={18} color={isChanges ? gold : mutedColor} />
+                    Мои изменения
                   </button>
                   <button onClick={() => { void handleLogout(); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>

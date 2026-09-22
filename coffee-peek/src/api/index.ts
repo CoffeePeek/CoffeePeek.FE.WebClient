@@ -36,3 +36,4 @@ export * from './user';
 
 // Public
 export * from './public';
+export * from './shopChangeRequests';

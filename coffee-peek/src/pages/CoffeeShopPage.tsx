@@ -443,6 +443,14 @@ const CoffeeShopPage: React.FC = () => {
 
           {/* Правая колонка */}
           <div className="lg:col-span-4 space-y-8 self-start min-w-0">
+            {user && (
+              <Link
+                to={`/shops/${shop.id}/edit`}
+                className="block w-full rounded-2xl bg-[#D4A84B] px-5 py-3 text-center font-bold text-white transition-opacity hover:opacity-90"
+              >
+                Предложить изменения
+              </Link>
+            )}
             <ShopSidebar
               shop={shop}
               textMain={textMain}

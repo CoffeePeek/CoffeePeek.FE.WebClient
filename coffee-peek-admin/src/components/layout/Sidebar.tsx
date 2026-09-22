@@ -110,6 +110,7 @@ const NAV: NavEntry[] = [
       label: 'Модерация',
       icon: <IconShop />,
       children: [
+        { path: '/shop-change-requests', label: 'Изменения кофейных', icon: <IconReview />, moderatorOnly: true },
         { path: '/shops', label: 'Пользовательская модерация', icon: <IconShop />, moderatorOnly: true },
         { path: '/import', label: 'Парсинг', icon: <IconImport />, moderatorOnly: true },
         { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
