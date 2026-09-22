@@ -80,6 +80,10 @@ export const API_ENDPOINTS = {
     COFFEE_ZONE_CANDIDATES: '/api/admin/coffee-zones/candidates',
   },
 
+  MENU: {
+    DRINKS: '/api/menu/drinks',
+  },
+
   PHOTOS: {
     MENU: '/api/Photos/menu',
     SHOP: '/api/Photos/shop',

@@ -239,6 +239,19 @@ export async function updateModerationShopMenu(
   return { ...response, data: mapShopMenu(response.data) };
 }
 
+function unwrapDrinks(data: unknown): CoffeeDrinkDefinitionDto[] {
+  if (Array.isArray(data)) return data as CoffeeDrinkDefinitionDto[];
+  if (data && typeof data === 'object' && Array.isArray((data as { drinks?: unknown }).drinks)) {
+    return (data as { drinks: CoffeeDrinkDefinitionDto[] }).drinks;
+  }
+  return [];
+}
+
+export async function getMenuDrinks(): Promise<ApiResponse<CoffeeDrinkDefinitionDto[]>> {
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.MENU.DRINKS, { requiresAuth: false });
+  return { ...response, data: unwrapDrinks(response.data) };
+}
+
 export async function getPublishedShopMenu(id: string): Promise<ApiResponse<AdminShopMenuDto>> {
   const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.SHOP_MENU(id));
   return { ...response, data: mapAdminShopMenu(response.data) };
