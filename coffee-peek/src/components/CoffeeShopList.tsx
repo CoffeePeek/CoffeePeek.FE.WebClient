@@ -423,7 +423,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           dark={isDark}
         />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1680px] px-4 sm:px-6 lg:px-8">
           <div className="hidden lg:block">
             <ShopFilterPanel mode="quick" {...filterPanelProps} />
           </div>
@@ -447,10 +447,10 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           </div>
         )}
 
-        {/* ── Shop grid: 1 / 2 / 3 cols beside sidebar ── */}
+        {/* ── Shop grid: 1 / 2 / 3 / 4 cols beside sidebar ── */}
         <div>
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-5 pb-12">
+            <div className="grid grid-cols-1 gap-5 pb-12 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               <ShopCardSkeleton count={8} />
             </div>
           ) : shops.length === 0 ? (
@@ -464,7 +464,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-5 pb-12 sm:pb-12">
+            <div className="grid grid-cols-1 gap-5 pb-12 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 sm:pb-12">
               {shops.map((shop) => (
                 <ShopCard key={shop.id} shop={shop} colors={colors} userLocation={userLocation} onSelect={openShopDetails} />
               ))}
@@ -484,7 +484,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               </div>
             )}
             {isLoadingMore && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 <ShopCardSkeleton count={4} />
               </div>
             )}
