@@ -4,13 +4,19 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { Icons } from '../constants';
 import { COLORS } from '../constants/colors';
-import { Gear, SignOut, CaretDown, MapPin, ChatCircleText } from '@/components/Icon';
+import { Coffee, Gear, MapTrifold, SignOut, CaretDown, User } from '@/components/Icon';
 import ThemeToggle from './ThemeToggle';
 import LogoMark, { HEADER_LOGO_SIZE } from './LogoMark';
 
 const PUBLIC_NAV = [
-  { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
-  { id: 'map',         label: 'Карта',   route: '/dashboard?page=map',  match: (p: string) => p.includes('map')        },
+  { id: 'coffeeshops', label: 'Кофейни', route: '/shops',              Icon: Coffee,      match: (p: string) => p.startsWith('/shops') },
+  { id: 'map',         label: 'Карта',   route: '/dashboard?page=map', Icon: MapTrifold, match: (p: string) => p.includes('page=map') },
+] as const;
+
+const AUTH_NAV = [
+  ...PUBLIC_NAV,
+  { id: 'profile',  label: 'Профиль',   route: '/profile',  Icon: User, match: (p: string) => ['/profile', '/reviews', '/check-ins', '/shop-change-requests'].some(route => p.startsWith(route)) },
+  { id: 'settings', label: 'Настройки', route: '/settings', Icon: Gear, match: (p: string) => p.startsWith('/settings') },
 ] as const;
 
 const Header: React.FC = () => {
@@ -32,14 +38,10 @@ const Header: React.FC = () => {
   const gold = COLORS.primary;
   const goldWarm = '#D4A84B';
 
-  const allNav = [...PUBLIC_NAV];
+  const allNav = user ? [...AUTH_NAV] : [...PUBLIC_NAV];
 
   const currentPath = location.pathname + location.search;
   const currentId = allNav.find(n => n.match(currentPath))?.id ?? '';
-  const isSettings = currentPath.startsWith('/settings');
-  const isCheckIns = location.pathname.startsWith('/check-ins');
-  const isReviews = location.pathname === '/reviews';
-  const isChanges = location.pathname === '/shop-change-requests';
 
   const bg = isDark ? 'rgba(45,36,31,0.88)' : 'rgba(255,255,255,0.88)';
   const borderColor = isDark ? '#3D2F28' : '#E7E5E4';
@@ -64,7 +66,7 @@ const Header: React.FC = () => {
 
   return (
     <header style={{ background: bg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 1100, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div className={`${user ? 'hidden lg:block' : ''} max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative`}>
         <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 12 }}>
 
           {/* Left: logo — flex:1 so nav sits on the true horizontal center */}
@@ -154,26 +156,9 @@ const Header: React.FC = () => {
 
                       {/* Menu */}
                       <div style={{ padding: '6px 0' }}>
-                        <DropdownItem icon={<MapPin size={18} color={isCheckIns ? gold : mutedColor} />} label="Чекины" hoverBg={hoverBg}
-                          textColor={isCheckIns ? gold : textColor}
-                          mutedColor={isCheckIns ? gold : mutedColor}
-                          activeBg={isCheckIns ? `${gold}10` : undefined}
-                          onClick={() => { navigate('/check-ins'); setProfileOpen(false); }} />
-                        <DropdownItem icon={<ChatCircleText size={18} color={isReviews ? gold : mutedColor} />} label="Отзывы" hoverBg={hoverBg}
-                          textColor={isReviews ? gold : textColor}
-                          mutedColor={isReviews ? gold : mutedColor}
-                          activeBg={isReviews ? `${gold}10` : undefined}
-                          onClick={() => { navigate('/reviews'); setProfileOpen(false); }} />
-                        <DropdownItem icon={<Gear size={18} color={isChanges ? gold : mutedColor} />} label="Мои изменения" hoverBg={hoverBg}
-                          textColor={isChanges ? gold : textColor}
-                          mutedColor={isChanges ? gold : mutedColor}
-                          activeBg={isChanges ? `${gold}10` : undefined}
-                          onClick={() => { navigate('/shop-change-requests'); setProfileOpen(false); }} />
-                        <DropdownItem icon={<Gear size={18} color={isSettings ? gold : mutedColor} />} label="Настройки" hoverBg={hoverBg}
-                          textColor={isSettings ? gold : textColor}
-                          mutedColor={isSettings ? gold : mutedColor}
-                          activeBg={isSettings ? `${gold}10` : undefined}
-                          onClick={() => { navigate('/settings'); setProfileOpen(false); }} />
+                        <DropdownItem icon={<User size={18} color={mutedColor} />} label="Профиль" hoverBg={hoverBg}
+                          textColor={textColor} mutedColor={mutedColor}
+                          onClick={() => { navigate('/profile'); setProfileOpen(false); }} />
                       </div>
 
                       <div style={{ borderTop: `1px solid ${borderColor}`, padding: '6px 0' }}>
@@ -202,7 +187,7 @@ const Header: React.FC = () => {
             {!user && <ThemeToggle size={36} />}
 
             {/* Mobile hamburger */}
-            <div className="lg:hidden">
+            {!user && <div className="lg:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(o => !o)}
                 style={{ padding: 8, borderRadius: 8, border: 'none', background: 'transparent', color: mutedColor, cursor: 'pointer' }}
@@ -212,7 +197,7 @@ const Header: React.FC = () => {
               >
                 {isMobileMenuOpen ? <Icons.Close className="w-5 h-5" /> : <Icons.Menu className="w-5 h-5" />}
               </button>
-            </div>
+            </div>}
           </div>
         </div>
 
@@ -237,26 +222,6 @@ const Header: React.FC = () => {
             <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', gap: 2 }}>
               {user ? (
                 <>
-                  <button onClick={() => { navigate('/check-ins'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isCheckIns ? `${gold}12` : 'transparent', color: isCheckIns ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <MapPin size={18} color={isCheckIns ? gold : mutedColor} />
-                    Чекины
-                  </button>
-                  <button onClick={() => { navigate('/reviews'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isReviews ? `${gold}12` : 'transparent', color: isReviews ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <ChatCircleText size={18} color={isReviews ? gold : mutedColor} />
-                    Отзывы
-                  </button>
-                  <button onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <Gear size={18} color={isSettings ? gold : mutedColor} />
-                    Настройки
-                  </button>
-                  <button onClick={() => { navigate('/shop-change-requests'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isChanges ? `${gold}12` : 'transparent', color: isChanges ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <Gear size={18} color={isChanges ? gold : mutedColor} />
-                    Мои изменения
-                  </button>
                   <button onClick={() => { void handleLogout(); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     <SignOut size={18} color="#EF4444" />
@@ -279,6 +244,29 @@ const Header: React.FC = () => {
           </div>
         )}
       </div>
+      {user && (
+        <nav
+          className="fixed inset-x-0 bottom-0 z-[1200] grid grid-cols-4 border-t lg:hidden"
+          aria-label="Основная навигация"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)', background: surfaceBg, borderColor }}
+        >
+          {AUTH_NAV.map(({ id, label, route, Icon }) => {
+            const active = currentId === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => navigate(route)}
+                className="flex min-h-[68px] flex-col items-center justify-center gap-1"
+                style={{ color: active ? gold : mutedColor }}
+              >
+                <Icon size={24} weight={active ? 'bold' : 'regular'} />
+                <span style={{ fontFamily: '"Manrope"', fontSize: 11, fontWeight: active ? 700 : 500 }}>{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
     </header>
   );
 };

@@ -10,11 +10,11 @@ import { logger } from '../utils/logger';
 import ShopCard from './ShopCard';
 import ShopSearchBar from './ShopSearchBar';
 import ShopFilterPanel from './ShopFilterPanel';
-import { StarIcon } from './icons';
-import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { useLocalCity } from '../hooks/useLocalCity';
+import { useSearchParams } from 'react-router-dom';
+import { distanceKm } from '../utils/distance';
 
 const PAGE_SIZE = 12;
 
@@ -84,6 +84,7 @@ interface CoffeeShopListProps {
 }
 
 const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
+  const [searchParams] = useSearchParams();
   const { theme } = useTheme();
   const { user, requireAuth } = useRequireAuth();
   const colors = getThemeColors(theme);
@@ -108,10 +109,34 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [activeQuick, setActiveQuick] = useState<string[]>(['all']);
+  const [activeQuick, setActiveQuick] = useState<string[]>(() => searchParams.get('filter') === 'favorite' ? ['favorite'] : ['all']);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  const requestLocation = useCallback((activateNearby = true) => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setUserLocation({ latitude: coords.latitude, longitude: coords.longitude });
+        if (activateNearby) setActiveQuick(prev => [...prev.filter(id => id !== 'all' && id !== 'nearby'), 'nearby']);
+      },
+      () => setActiveQuick(prev => prev.filter(id => id !== 'nearby')),
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!navigator.permissions) return;
+    void navigator.permissions.query({ name: 'geolocation' }).then(permission => {
+      if (permission.state === 'granted') requestLocation(false);
+    }).catch(() => undefined);
+  }, [requestLocation]);
 
   const handleQuickChange = (id: string) => {
     if (id === 'visited' && !requireAuth()) return;
+    if (id === 'nearby' && !userLocation) {
+      requestLocation();
+      return;
+    }
     setActiveQuick(prev => {
       if (id === 'all') return ['all'];
       const without = prev.filter(x => x !== 'all');
@@ -217,17 +242,28 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     initialDataLoaded,
   ]);
 
-  const applyFavoriteFilter = useCallback((shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
-    if (!activeQuick.includes('favorite')) return shopsToFilter;
-    return shopsToFilter.filter(shop => favoriteIds.has(shop.id));
-  }, [activeQuick, favoriteIds]);
+  const applyClientFilters = useCallback((shopsToFilter: CoffeeShop[]): CoffeeShop[] => {
+    const filtered = activeQuick.includes('favorite')
+      ? shopsToFilter.filter(shop => favoriteIds.has(shop.id))
+      : [...shopsToFilter];
+    if (!activeQuick.includes('nearby') || !userLocation) return filtered;
+    return filtered.sort((left, right) => {
+      const leftLat = left.location?.latitude ?? left.latitude;
+      const leftLon = left.location?.longitude ?? left.longitude;
+      const rightLat = right.location?.latitude ?? right.latitude;
+      const rightLon = right.location?.longitude ?? right.longitude;
+      const leftDistance = leftLat === undefined || leftLon === undefined ? Infinity : distanceKm(userLocation.latitude, userLocation.longitude, leftLat, leftLon);
+      const rightDistance = rightLat === undefined || rightLon === undefined ? Infinity : distanceKm(userLocation.latitude, userLocation.longitude, rightLat, rightLon);
+      return leftDistance - rightDistance;
+    });
+  }, [activeQuick, favoriteIds, userLocation]);
 
   // Favorite is local-only — re-apply after load or when favorite chip / ids change
   useEffect(() => {
-    const filtered = applyFavoriteFilter(allShops);
+    const filtered = applyClientFilters(allShops);
     setShops(filtered);
     if (activeQuick.includes('favorite')) setTotalItems(filtered.length);
-  }, [applyFavoriteFilter, allShops, activeQuick]);
+  }, [applyClientFilters, allShops, activeQuick]);
 
   const loadInitialData = async () => {
     try {
@@ -340,8 +376,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   };
 
   const isDark = theme === 'dark';
-  const featured = shops.filter(s => s.rating && s.rating >= 4.7).slice(0, 5);
-
   const activeFilterCount =
     selectedEquipments.length + selectedBeans.length +
     selectedRoasters.length + selectedBrewMethods.length +
@@ -412,48 +446,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           </div>
         )}
 
-        {/* ── Mobile: «Подборка недели» carousel ──────────────── */}
-        {!isLoading && featured.length > 0 && (
-          <div className="lg:hidden mb-6">
-            <div className="flex items-baseline justify-between mb-3">
-              <h2 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 17, color: colors.textPrimary, letterSpacing: '-0.01em' }}>Подборка недели</h2>
-            </div>
-            <div className="overflow-x-auto no-scrollbar -mx-4 sm:-mx-6 px-4 sm:px-6" style={{ display: 'flex', gap: 12, paddingBottom: 4 }}>
-              {featured.map(shop => {
-                const photos = shop.shopPhotos?.filter((p): p is string => typeof p === 'string') ?? [];
-                return (
-                  <div key={`f-${shop.id}`} onClick={() => openShopDetails(shop.id)}
-                    style={{ flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden', border: `1px solid ${colors.border}`, background: colors.surface, cursor: 'pointer' }}>
-                    <div style={{ height: 112, position: 'relative', overflow: 'hidden' }}>
-                      {photos[0] ? (
-                        <div style={{ width: '100%', height: '100%', background: `url(${photos[0]}) center/cover` }} />
-                      ) : (
-                        <ShopPhotoPlaceholder fontSize={14} />
-                      )}
-                      {shop.rating && (
-                        <span style={{ position: 'absolute', top: 8, left: 8, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 7px', borderRadius: 6, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 11, color: '#D4A84B' }}>
-                          <StarIcon filled size={12} color="#D4A84B" />
-                          {shop.rating.toFixed(1)}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ padding: '9px 11px 11px' }}>
-                      <h4 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{shop.name}</h4>
-                      <p
-                        title={shop.location?.address || shop.address || shop.cityName || ''}
-                        style={{ margin: '3px 0 0', fontFamily: '"Manrope"', fontSize: 11, color: colors.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
-                      >
-                        {shop.location?.address || shop.address || shop.cityName || ''}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              <div style={{ flexShrink: 0, width: 4 }} />
-            </div>
-          </div>
-        )}
-
         {/* ── Shop grid: 1 / 2 / 3 cols beside sidebar ── */}
         <div>
           {isLoading ? (
@@ -473,7 +465,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-12 sm:pb-12">
               {shops.map((shop) => (
-                <ShopCard key={shop.id} shop={shop} colors={colors} onSelect={openShopDetails} />
+                <ShopCard key={shop.id} shop={shop} colors={colors} userLocation={userLocation} onSelect={openShopDetails} />
               ))}
             </div>
           )}

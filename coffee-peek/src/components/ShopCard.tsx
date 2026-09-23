@@ -1,12 +1,13 @@
 import React, { memo, useState } from 'react';
-import { CoffeeShop, getPhotoUrl, formatEquipmentName } from '../api/coffeeshop';
+import { type CoffeeShop, getPhotoUrl } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
-import { AppIcon, StarIcon, BeanPriceMarks } from './icons';
-import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
-import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLocalFavorites } from '../hooks/useLocalFavorites';
+import { distanceKm, formatDistance } from '../utils/distance';
 import { getPriceRangeTier } from '../utils/priceRange';
 import { isShopOpenNow } from '../utils/shopUtils';
+import { AppIcon, BeanPriceMarks, StarIcon } from './icons';
+import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 
 interface ShopCardColors {
   surface: string;
@@ -19,192 +20,139 @@ interface ShopCardColors {
 interface ShopCardProps {
   shop: CoffeeShop;
   colors: ShopCardColors;
+  userLocation?: { latitude: number; longitude: number } | null;
   onSelect: (shopId: string) => void;
 }
 
 function extractPhotos(shop: CoffeeShop): string[] {
-  if (shop.shopPhotos?.length) {
-    return shop.shopPhotos.filter((p): p is string => typeof p === 'string' && p.trim().length > 0);
-  }
-  const raw = (shop as unknown as Record<string, unknown>);
-  if (Array.isArray(raw.photos) && raw.photos.length > 0) {
-    return (raw.photos as unknown[]).map((p) => {
-      if (p && typeof p === 'object' && ('fullUrl' in p || 'storageKey' in p)) return getPhotoUrl(p as Parameters<typeof getPhotoUrl>[0]);
-      if (typeof p === 'string') return p;
+  if (shop.shopPhotos?.length) return shop.shopPhotos.filter(Boolean);
+  const raw = shop as unknown as Record<string, unknown>;
+  if (Array.isArray(raw.photos)) {
+    return raw.photos.map(photo => {
+      if (typeof photo === 'string') return photo;
+      if (photo && typeof photo === 'object') return getPhotoUrl(photo as Parameters<typeof getPhotoUrl>[0]);
       return '';
-    }).filter(Boolean) as string[];
-  }
-  if (Array.isArray(raw.imageUrls)) {
-    return (raw.imageUrls as unknown[]).filter((p): p is string => typeof p === 'string' && p.trim().length > 0);
+    }).filter(Boolean);
   }
   return [];
 }
 
-const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
+const SHOP_TYPE_LABELS: Record<string, string> = {
+  Specialty: 'Specialty', specialty: 'Specialty',
+  CoffeeBar: 'Кофейня', coffee_bar: 'Кофейня',
+  Cafe: 'Кафе', cafe: 'Кафе',
+};
+
+const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, onSelect }) => {
   const [hovered, setHovered] = useState(false);
-  const [favHovered, setFavHovered] = useState(false);
   const { theme } = useTheme();
   const { isFavorite, toggleFavorite } = useLocalFavorites();
-  const fav = isFavorite(shop.id);
+  const favorite = isFavorite(shop.id);
   const photos = extractPhotos(shop);
-  const s = shop as Record<string, unknown>;
-  const priceTiers = getPriceRangeTier(shop.priceRange);
-  const beans = Array.isArray(s.beans) ? (s.beans as { name: string }[]) : [];
-  const equipments = Array.isArray(s.equipments) ? (s.equipments as object[]) : [];
-  const showRating = (shop.rating ?? 0) > 0 && (shop.reviewCount ?? 0) > 0;
-  const address = shop.location?.address || shop.address || shop.cityName || '';
+  const raw = shop as unknown as Record<string, unknown>;
+  const brewMethods = Array.isArray(raw.brewMethods) ? raw.brewMethods as Array<{ id?: string; name: string }> : [];
+  const roasters = Array.isArray(raw.roasters) ? raw.roasters as Array<{ id?: string; name: string }> : [];
   const openNow = isShopOpenNow(shop);
+  const priceTier = getPriceRangeTier(shop.priceRange);
+  const address = shop.location?.address || shop.address || shop.cityName || '';
+  const latitude = shop.location?.latitude ?? shop.latitude;
+  const longitude = shop.location?.longitude ?? shop.longitude;
+  const distance = userLocation && latitude !== undefined && longitude !== undefined
+    ? distanceKm(userLocation.latitude, userLocation.longitude, latitude, longitude)
+    : null;
+  const type = shop.type ? (SHOP_TYPE_LABELS[shop.type] ?? shop.type) : '';
+  const showRating = (shop.rating ?? 0) > 0;
+
+  const open = () => onSelect(shop.id);
 
   return (
     <article
+      role="button"
+      tabIndex={0}
+      aria-label={`Открыть кофейню ${shop.name}`}
+      onClick={open}
+      onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') open(); }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={() => onSelect(shop.id)}
+      className="overflow-hidden rounded-[28px] border outline-none transition-transform focus-visible:ring-2 focus-visible:ring-yellow-500"
       style={{
         background: colors.surface,
-        border: `1px solid ${hovered ? `${COLORS.primary}50` : colors.border}`,
-        borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
-        transition: 'all .2s',
-        boxShadow: hovered
-          ? '0 8px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.04)'
-          : 'inset 0 1px 0 rgba(255,255,255,0.04)',
-        transform: hovered ? 'translateY(-3px)' : 'none',
+        borderColor: hovered ? `${COLORS.primary}70` : colors.border,
+        cursor: 'pointer',
+        boxShadow: hovered ? '0 12px 32px rgba(0,0,0,.22)' : '0 3px 14px rgba(0,0,0,.08)',
+        transform: hovered ? 'translateY(-2px)' : undefined,
       }}
     >
-      {/* Photo — 5:3 ratio */}
-      <div style={{ position: 'relative', aspectRatio: '5/3', overflow: 'hidden' }}>
-        {photos.length > 0 ? (
-          <>
-            <img
-              src={photos[0]}
-              alt={shop.name}
-              loading="lazy"
-              decoding="async"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform .5s', transform: hovered ? 'scale(1.05)' : 'scale(1)' }}
-            />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.4) 100%)' }} />
-          </>
-        ) : (
-          <ShopPhotoPlaceholder />
-        )}
+      <div className="relative aspect-[16/9] overflow-hidden">
+        {photos[0] ? (
+          <img src={photos[0]} alt={shop.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500" style={{ transform: hovered ? 'scale(1.035)' : undefined }} />
+        ) : <ShopPhotoPlaceholder />}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/15" />
 
-        {/* Top-left: rating — only if there are reviews */}
-        {showRating && (
-          <span
-            aria-label={`Рейтинг ${shop.rating!.toFixed(1)}`}
-            style={{
-              position: 'absolute', top: 10, left: 10,
-              display: 'inline-flex', alignItems: 'center', gap: 3,
-              fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13,
-              color: '#fff',
-              textShadow: '0 1px 3px rgba(0,0,0,0.55)',
-            }}
-          >
-            <StarIcon filled size={14} color={COLORS.primary} />
-            {shop.rating!.toFixed(1)}
+        {shop.isNew && (
+          <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-2 text-sm font-bold text-white backdrop-blur-md">
+            <AppIcon name="auto_awesome" size={17} color={COLORS.primary} />
+            Новое
           </span>
         )}
 
-        {/* Top-right: price + favorite */}
-        <div
-          style={{
-            position: 'absolute', top: 8, right: 8,
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}
-        >
-          {priceTiers ? (
-            <span
-              aria-label={`Ценовой уровень ${priceTiers}`}
-              style={{
-                display: 'inline-flex',
-                filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
-              }}
-            >
-              <BeanPriceMarks count={priceTiers} size={13} color={COLORS.primary} />
+        <div className="absolute right-4 top-4 flex items-center gap-2">
+          {showRating && (
+            <span className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-black/70 px-3.5 text-sm font-bold text-white backdrop-blur-md" aria-label={`Рейтинг ${shop.rating?.toFixed(1)}`}>
+              <StarIcon filled size={18} color={COLORS.primary} />
+              {shop.rating?.toFixed(1)}
+              {shop.reviewCount ? <span className="font-medium text-white/75">({shop.reviewCount})</span> : null}
             </span>
-          ) : null}
+          )}
           <button
             type="button"
-            aria-label={fav ? 'Убрать из избранного' : 'В избранное'}
-            onClick={(e) => { e.stopPropagation(); toggleFavorite(shop.id); }}
-            onMouseEnter={() => setFavHovered(true)}
-            onMouseLeave={() => setFavHovered(false)}
-            style={{
-              width: 32, height: 32, padding: 0,
-              background: theme === 'dark' ? '#fff' : 'none',
-              border: 'none',
-              borderRadius: 99,
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              filter: theme === 'dark' ? 'none' : 'drop-shadow(0 1px 3px rgba(0,0,0,0.45))',
-              transform: favHovered ? 'scale(1.18)' : 'scale(1)',
-              transition: 'transform .15s ease',
-            }}
+            aria-label={favorite ? 'Убрать из избранного' : 'Добавить в избранное'}
+            onClick={event => { event.stopPropagation(); toggleFavorite(shop.id); }}
+            className="flex h-12 w-12 items-center justify-center rounded-full border-0 bg-black/70 backdrop-blur-md transition-transform hover:scale-105"
           >
-            <AppIcon
-              name="favorite"
-              filled={fav || favHovered}
-              size={22}
-              color={
-                theme === 'dark'
-                  ? '#1A1412'
-                  : fav
-                    ? '#EF4444'
-                    : favHovered
-                      ? '#F87171'
-                      : '#fff'
-              }
-            />
+            <AppIcon name="favorite" filled={favorite} size={27} color={favorite ? '#FB7185' : '#FFFFFF'} />
           </button>
         </div>
       </div>
 
-      {/* Body */}
-      <div style={{ padding: '12px 14px 14px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
-          <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: colors.textPrimary, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {shop.name}
-          </h3>
-          {typeof openNow !== 'undefined' && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 3,
-              padding: '3px 8px', borderRadius: 6, whiteSpace: 'nowrap' as const,
-              background: openNow ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)',
-              color: openNow ? '#4ADE80' : '#FCA5A5',
-              fontFamily: '"Manrope"', fontWeight: 700, fontSize: 9, letterSpacing: '.06em', textTransform: 'uppercase' as const,
-            }}>
+      <div className="px-5 pb-5 pt-4">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="min-w-0 flex-1 truncate text-[22px] font-extrabold tracking-[-0.02em]" style={{ color: colors.textPrimary }}>{shop.name}</h3>
+          {openNow !== undefined && (
+            <span className="mt-0.5 inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-extrabold uppercase" style={{ background: openNow ? 'rgba(34,197,94,.16)' : 'rgba(239,68,68,.14)', color: openNow ? '#22C55E' : '#EF4444' }}>
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'currentColor' }} />
               {openNow ? 'Открыто' : 'Закрыто'}
             </span>
           )}
         </div>
 
-        {address ? (
-          <p
-            title={address}
-            style={{ margin: '4px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}
-          >
-            <AppIcon name="location_on" size={13} color={COLORS.primary} style={{ flexShrink: 0 }} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{address}</span>
-          </p>
-        ) : null}
+        {brewMethods.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2" aria-label="Методы заваривания">
+            {brewMethods.slice(0, 2).map((method, index) => <InfoChip key={method.id ?? `${method.name}-${index}`} colors={colors}>{method.name}</InfoChip>)}
+            {brewMethods.length > 2 && <InfoChip colors={colors}>+{brewMethods.length - 2}</InfoChip>}
+          </div>
+        )}
 
-        {shop.reviewCount ? (
-          <p style={{ margin: '6px 0 0', fontFamily: '"Manrope"', fontSize: 11, color: colors.textSecondary }}>
-            {shop.reviewCount} отзывов
+        {(address || distance !== null) && (
+          <p className="mt-4 flex min-w-0 items-center gap-1.5 text-sm" style={{ color: colors.textSecondary }}>
+            <AppIcon name="location_on" size={18} color={COLORS.primary} style={{ flexShrink: 0 }} />
+            <span className="truncate">{address}</span>
+            {distance !== null && <span className="shrink-0">· {formatDistance(distance)} от вас</span>}
           </p>
-        ) : null}
+        )}
 
-        {/* Tags: beans / equipment only — no price duplicate */}
-        {(beans.length > 0 || equipments.length > 0) && (
-          <div style={{ marginTop: 10, display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
-            {beans.slice(0, 1).map(b => (
-              <TagChip key={b.name} color={colors.textSecondary} bg={colors.background} border={colors.border}>{b.name}</TagChip>
-            ))}
-            {equipments.slice(0, 1).map((eq, i) => (
-              <TagChip key={i} color={colors.textSecondary} bg={colors.background} border={colors.border}>
-                {formatEquipmentName(eq as Parameters<typeof formatEquipmentName>[0])}
-              </TagChip>
-            ))}
+        {roasters.length > 0 && (
+          <p className="mt-3 truncate text-sm" style={{ color: colors.textSecondary }}>
+            <span className="font-semibold" style={{ color: colors.textPrimary }}>Обжарщики:</span> {roasters.map(roaster => roaster.name).join(', ')}
+          </p>
+        )}
+
+        {(type || priceTier) && (
+          <div className="mt-4 flex items-center gap-2 border-t pt-4 text-sm" style={{ borderColor: colors.border, color: colors.textSecondary }}>
+            {type && <span>{type}</span>}
+            {type && priceTier && <span>·</span>}
+            {priceTier && <span className="inline-flex items-center gap-2" aria-label={`Уровень стоимости ${priceTier}`}><span>Стоимость</span><BeanPriceMarks count={priceTier} size={14} color={COLORS.primary} /></span>}
+            <CaretArrow color={colors.textSecondary} />
           </div>
         )}
       </div>
@@ -214,15 +162,14 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, onSelect }) => {
 
 ShopCard.displayName = 'ShopCard';
 
-const TagChip: React.FC<{ color: string; bg: string; border: string; children: React.ReactNode }> = ({ color, bg, border, children }) => (
-  <span style={{
-    display: 'inline-flex', alignItems: 'center', gap: 4,
-    padding: '4px 10px', borderRadius: 8,
-    background: bg, color, border: `1px solid ${border}`,
-    fontFamily: '"Manrope"', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' as const,
-  }}>
-    {children}
-  </span>
+const InfoChip: React.FC<{ colors: ShopCardColors; children: React.ReactNode }> = ({ colors, children }) => (
+  <span className="inline-flex min-h-9 items-center rounded-full border px-3 text-sm font-medium" style={{ borderColor: colors.border, background: colors.background, color: colors.textSecondary }}>{children}</span>
+);
+
+const CaretArrow: React.FC<{ color: string }> = ({ color }) => (
+  <svg className="ml-auto shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+    <path d="m7.5 4 6 6-6 6" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
 );
 
 export default ShopCard;

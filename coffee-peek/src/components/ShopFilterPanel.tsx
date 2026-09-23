@@ -4,7 +4,7 @@ import { COLORS } from '../constants/colors';
 import type { IconProps } from '@phosphor-icons/react';
 import {
   SquaresFour, Clock, Sparkle, CheckCircle, Heart,
-  CaretDown, Check,
+  CaretDown, Check, NavigationArrow,
 } from '@/components/Icon';
 import { RemovableChip } from './RemovableChip';
 import { PriceRangeSlider } from './PriceRangeSlider';
@@ -54,6 +54,7 @@ const AllGridIcon: React.FC<{ color: string; size?: number }> = ({ color, size =
 
 const FIXED_QUICK_FILTERS: { id: string; label: string; Icon: React.ComponentType<IconProps> }[] = [
   { id: 'all',      label: 'Все',        Icon: SquaresFour },
+  { id: 'nearby',   label: 'Рядом',      Icon: NavigationArrow },
   { id: 'open',     label: 'Открыто',    Icon: Clock        },
   { id: 'new',      label: 'Новые',      Icon: Sparkle      },
   { id: 'visited',  label: 'Уже был',    Icon: CheckCircle },
@@ -264,17 +265,17 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
 
   const chipBase: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 5,
-    padding: '6px 12px', borderRadius: 99, whiteSpace: 'nowrap',
-    fontFamily: '"Manrope"', fontWeight: 600, fontSize: 12,
+    minHeight: 46, padding: '10px 16px', borderRadius: 18, whiteSpace: 'nowrap',
+    fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14,
     cursor: 'pointer', transition: 'all .15s', border: '1px solid',
     flexShrink: 0,
   };
 
   const quickChipStyle = (active: boolean): React.CSSProperties => ({
     ...chipBase,
-    background: active ? (dark ? '#fff' : '#1C1917') : (dark ? 'rgba(255,255,255,0.04)' : '#fff'),
-    color: active ? (dark ? '#1C1917' : '#fff') : (dark ? '#fff' : '#1C1917'),
-    borderColor: active ? 'transparent' : borderColor,
+    background: active ? `${gold}18` : (dark ? '#2B211C' : '#fff'),
+    color: textPrimary,
+    borderColor: active ? gold : borderColor,
   });
 
   const current = {

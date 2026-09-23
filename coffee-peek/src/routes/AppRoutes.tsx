@@ -17,6 +17,7 @@ const CoffeeShopListPage = lazyWithRetry(() => import('../pages/CoffeeShopListPa
 const CoffeeShopDetailPage = lazyWithRetry(() => import('../pages/CoffeeShopPage'));
 const CreateReviewPage = lazyWithRetry(() => import('../pages/CreateReviewPage'));
 const UserProfilePage = lazyWithRetry(() => import('../pages/UserProfilePage'));
+const ProfilePage = lazyWithRetry(() => import('../pages/ProfilePage'));
 const CreateCoffeeShopPage = lazyWithRetry(() => import('../pages/CreateCoffeeShopPage'));
 const CreateRoasterPage = lazyWithRetry(() => import('../pages/CreateRoasterPage'));
 const RoasterDetailPage = lazyWithRetry(() => import('../pages/RoasterDetailPage'));
@@ -149,6 +150,17 @@ export const AppRoutes: React.FC = () => {
           }
         />
 
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <ProfilePage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/users/:userId"

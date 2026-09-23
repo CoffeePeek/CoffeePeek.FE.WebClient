@@ -1,765 +1,224 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useUser } from '../contexts/UserContext';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  getProfile,
-  updateUsername, updateEmail, updateAbout, updateAvatar, resendEmailConfirmation,
-  changePassword, deleteUser,
+  changePassword, deleteUser, getProfile, updateAbout, updateAvatar, updateEmail, updateUsername,
   type UserProfile,
-  type AccountDeletionRequest,
 } from '../api/auth';
-import { getAvatarUploadUrl } from '../api/photos';
 import { getCities, type City } from '../api/coffeeshop';
-import { useLocalCity } from '../hooks/useLocalCity';
-import { useTheme } from '../contexts/ThemeContext';
-import { COLORS } from '../constants/colors';
-import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
-import { TokenManager } from '../api/core/httpClient';
-import { logger } from '../utils/logger';
-import { usePageTitle } from '../hooks/usePageTitle';
+import { getAvatarUploadUrl } from '../api/photos';
 import WobbleRing from '../components/WobbleRing';
-import { MobileAppDownload } from '../components/mobile-app';
+import { useTheme } from '../contexts/ThemeContext';
+import { useUser } from '../contexts/UserContext';
+import { useLocalCity } from '../hooks/useLocalCity';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
+import { logger } from '../utils/logger';
 import {
-  Coffee, SignOut, Camera, PencilSimple, Check,
-  ChatCircleText, Storefront, Sun, Moon, CheckCircle, Envelope,
-  ArrowClockwise, X, MapPin, Lock, Factory, CaretDown, WarningCircle,
-} from '@/components/Icon';
+  CaretRight, DeviceMobile, Factory, Gear, Lock, MapPin, Moon, Plus,
+  ShareNetwork, ShieldCheck, Sun, User, WarningCircle,
+} from '@phosphor-icons/react';
 
-const styles = `
-  .settings-page { --settings-max: 820px; }
-  .settings-wrap { width: min(var(--settings-max), calc(100vw - 32px)); margin: 0 auto; }
-  .settings-card { border-radius: 14px; overflow: hidden; }
-  .settings-profile-head { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: start; padding: 22px; }
-  .settings-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 14px 28px 22px 130px; }
-  .settings-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 18px 28px; }
-  .settings-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 20px; padding: 20px 28px; }
-  .settings-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 16px 0; }
-  .settings-release-card { margin-top: 28px; padding: 22px; }
-  .settings-city-select { width: 240px; }
-  @media (max-width: 720px) {
-    .settings-city-select { width: 100%; }
-    .settings-wrap { width: min(100%, calc(100vw - 24px)); }
-    .settings-profile-head { grid-template-columns: auto 1fr; gap: 14px; padding: 18px; }
-    .settings-edit-action { grid-column: 1 / -1; width: 100%; justify-content: stretch !important; }
-    .settings-edit-action > button { flex: 1; }
-    .settings-info-grid { grid-template-columns: 1fr; padding: 0 18px 18px; }
-    .settings-stats { gap: 6px; padding: 14px 12px; }
-    .settings-row { grid-template-columns: 1fr; padding: 18px; }
-    .settings-row-action { width: 100%; justify-content: center; }
-    .settings-actions { flex-direction: column; padding: 18px 0 0; }
-    .settings-actions button { width: 100%; }
-    .settings-release-card { margin-top: 20px; padding: 18px; }
-  }
-`;
+type OpenPanel = 'profile' | 'password' | null;
+type Colors = { bg: string; surface: string; border: string; text: string; muted: string; gold: string };
 
 const SettingsPage: React.FC = () => {
   usePageTitle('Настройки');
-  const { user, isLoading: userLoading, updateUserProfile, logout } = useUser();
-  const userId = user?.id;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { theme, setTheme } = useTheme();
-  const isDark = theme === 'dark';
-
+  const { updateUserProfile } = useUser();
+  const { cityId, setCityId } = useLocalCity();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [cities, setCities] = useState<City[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValues, setEditValues] = useState<Record<string, string>>({});
-  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState<string | null>(null);
-  const [isResending, setIsResending] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
-  const [deletionStep, setDeletionStep] = useState<'idle' | 'confirm' | 'check-email'>('idle');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deletionRequest, setDeletionRequest] = useState<AccountDeletionRequest | null>(null);
-  const [deletionError, setDeletionError] = useState<string | null>(null);
+  const [openPanel, setOpenPanel] = useState<OpenPanel>(searchParams.get('edit') === 'profile' ? 'profile' : null);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
+  useEffect(() => {
+    Promise.all([getProfile(), getCities()])
+      .then(([profileResponse, citiesResponse]) => {
+        setProfile(profileResponse.data);
+        const raw = citiesResponse.data as unknown;
+        const list = Array.isArray(raw) ? raw : ((raw as { cities?: City[] })?.cities ?? []);
+        setCities(list);
+        if (!cityId && list[0]) setCityId(list[0].id);
+      })
+      .catch(cause => {
+        logger.error('Error loading settings:', cause);
+        setError(getErrorMessage(cause));
+      })
+      .finally(() => setIsLoading(false));
+  }, [cityId, setCityId]);
+
+  const isDark = theme === 'dark';
+  const colors: Colors = {
+    bg: isDark ? '#171210' : '#F5F4F2', surface: isDark ? '#2B211C' : '#FFFFFF',
+    border: isDark ? '#46362F' : '#E7E5E4', text: isDark ? '#FFFFFF' : '#1C1917',
+    muted: isDark ? '#A39E93' : '#78716C', gold: '#EAB308',
   };
 
-  const handleRequestDeletion = async () => {
-    setDeletionError(null);
-    setIsDeleting(true);
+  const showMessage = (value: string) => {
+    setError('');
+    setMessage(value);
+    window.setTimeout(() => setMessage(''), 3500);
+  };
+
+  const shareApp = async () => {
+    const data = { title: 'CoffeePeek', text: 'Находите лучшие кофейни в CoffeePeek', url: window.location.origin };
     try {
-      const response = await deleteUser();
-      setDeletionRequest(response.data ?? null);
-      setDeletionStep('check-email');
-    } catch (err: unknown) {
-      setDeletionError(getErrorMessage(err));
-    } finally {
-      setIsDeleting(false);
+      if (navigator.share) await navigator.share(data);
+      else {
+        await navigator.clipboard.writeText(data.url);
+        showMessage('Ссылка скопирована');
+      }
+    } catch (cause) {
+      if ((cause as DOMException).name !== 'AbortError') setError('Не удалось поделиться ссылкой');
     }
   };
 
-  const gold = COLORS.primary;
-  const goldWarm = '#D4A84B';
-  const bg = isDark ? '#1A1412' : '#F5F4F2';
-  const surface = isDark ? '#2D241F' : '#fff';
-  const softSurface = isDark ? 'rgba(255,255,255,0.04)' : '#F9F8F7';
-  const border = isDark ? '#3D2F28' : '#E7E5E4';
-  const textPrimary = isDark ? '#fff' : '#1C1917';
-  const textMuted = isDark ? '#A39E93' : '#78716C';
-
-  const loadProfile = useCallback(async () => {
-    if (userId === undefined) return;
-    try {
-      setIsLoading(true);
-      const token = TokenManager.getAccessToken();
-      if (!token) throw new Error('Токен доступа отсутствует');
-      const response = await getProfile();
-      setProfile(response.data);
-      updateUserProfile(response.data);
-      setError(null);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
-      logger.error('Error loading profile:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId, updateUserProfile]);
-
-  useEffect(() => { loadProfile(); }, [loadProfile]);
-
-  const handleEditStart = useCallback(() => {
-    if (!profile) return;
-    const original = { userName: profile.userName || '', email: profile.email || '', about: profile.about || '' };
-    setOriginalValues(original);
-    setEditValues(original);
-    setSelectedAvatarFile(null);
-    setAvatarPreview(null);
-    setIsEditing(true);
-    setError(null);
-    setSaveSuccess(false);
-    setPendingEmailConfirmation(null);
-  }, [profile]);
-
-  const handleEditCancel = useCallback(() => {
-    setEditValues({});
-    setOriginalValues({});
-    setSelectedAvatarFile(null);
-    setAvatarPreview(null);
-    setIsEditing(false);
-    setError(null);
-  }, []);
-
-  const handleAvatarSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { setError('Выберите изображение'); return; }
-    if (file.size > 5 * 1024 * 1024) { setError('Размер файла не должен превышать 5MB'); return; }
-    setSelectedAvatarFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setAvatarPreview(reader.result as string);
-    reader.readAsDataURL(file);
-  }, []);
-
-  const handleSave = useCallback(async () => {
-    if (!profile) return;
-    const userName = editValues.userName?.trim() || '';
-    const email = editValues.email?.trim() || '';
-    if (!userName) { setError('Имя пользователя не может быть пустым'); return; }
-    if (!email) { setError('Email не может быть пустым'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Введите корректный email'); return; }
-
-    try {
-      setIsSaving(true);
-      setError(null);
-      const updates: Promise<unknown>[] = [];
-      const emailChanged = editValues.email !== originalValues.email;
-      if (editValues.userName !== originalValues.userName) updates.push(updateUsername({ username: editValues.userName }));
-      if (emailChanged) updates.push(updateEmail({ email: editValues.email }));
-      if (editValues.about !== originalValues.about) updates.push(updateAbout({ about: editValues.about || '' }));
-
-      if (selectedAvatarFile) {
-        const uploadUrlResponse = await getAvatarUploadUrl({ fileName: selectedAvatarFile.name, contentType: selectedAvatarFile.type, sizeBytes: selectedAvatarFile.size });
-        if (!uploadUrlResponse.success || !uploadUrlResponse.data) throw new Error('Ошибка при получении URL для загрузки аватара');
-        const { uploadUrl, storageKey } = uploadUrlResponse.data;
-        const uploadRes = await fetch(uploadUrl, { method: 'PUT', body: selectedAvatarFile, headers: { 'Content-Type': selectedAvatarFile.type } });
-        if (!uploadRes.ok) throw new Error('Ошибка загрузки аватара');
-        updates.push(updateAvatar({ uploadedPhoto: { fileName: selectedAvatarFile.name, contentType: selectedAvatarFile.type, storageKey, size: selectedAvatarFile.size } }));
-      }
-
-      if (updates.length > 0) {
-        await Promise.all(updates);
-        const refreshed = await getProfile();
-        setProfile(refreshed.data);
-        updateUserProfile(refreshed.data);
-      }
-      if (emailChanged) setPendingEmailConfirmation(editValues.email);
-      setIsEditing(false);
-      setEditValues({});
-      setOriginalValues({});
-      setSelectedAvatarFile(null);
-      setAvatarPreview(null);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
-      logger.error('Error updating profile:', err);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [profile, editValues, originalValues, selectedAvatarFile, updateUserProfile]);
-
-  const handleResendConfirmation = useCallback(async () => {
-    setIsResending(true);
-    setResendSuccess(false);
-    try {
-      await resendEmailConfirmation();
-      setResendSuccess(true);
-      setTimeout(() => setResendSuccess(false), 4000);
-    } catch (err: unknown) {
-      logger.error('Error resending confirmation:', err);
-    } finally {
-      setIsResending(false);
-    }
-  }, []);
-
-  if (userLoading || isLoading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg }}>
-        <WobbleRing size={48} />
-      </div>
-    );
+  if (isLoading) {
+    return <div className="flex min-h-[70vh] items-center justify-center" style={{ background: colors.bg }}><WobbleRing size={48} /></div>;
   }
 
   return (
-    <div className="settings-page" style={{ minHeight: '100vh', background: bg }}>
-      <style>{styles}</style>
+    <main className="min-h-screen px-5 pb-12 pt-8 sm:px-8 sm:pt-12" style={{ background: colors.bg }}>
+      <div className="mx-auto w-full max-w-[820px]">
+        <h1 className="mb-9 text-3xl font-extrabold sm:text-4xl" style={{ color: colors.text }}>Настройки</h1>
 
-      <div style={{ borderBottom: `1px solid ${border}`, background: isDark ? 'rgba(45,36,31,0.7)' : surface, backdropFilter: 'blur(12px)' }}>
-        <div className="settings-wrap" style={{ height: 48, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h1 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 18, color: textPrimary }}>Настройки</h1>
-          {saveSuccess && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(34,197,94,.14)', color: '#15803D', fontFamily: '"Manrope"', fontSize: 12, fontWeight: 700 }}>
-              <CheckCircle size={14} />
-              Сохранено
-            </span>
-          )}
-        </div>
+        {(message || error) && <div className="mb-5 rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: error ? 'rgba(239,68,68,.45)' : colors.border, color: error ? '#EF4444' : colors.text, background: colors.surface }}>{error || message}</div>}
+
+        <SettingsSection title="Добавить" colors={colors}>
+          <SettingsRow title="Добавить кофейню" subtitle="Предложить новое место для CoffeePeek" Icon={Plus} color="#D8A743" iconBg="rgba(202,145,28,.16)" colors={colors} onClick={() => navigate('/coffee-shops/new')} />
+          <SettingsRow title="Добавить обжарщика" subtitle="Помогите сообществу открыть новых обжарщиков" Icon={Factory} color="#74C98B" iconBg="rgba(65,158,88,.18)" colors={colors} onClick={() => navigate('/roasters/new')} />
+        </SettingsSection>
+
+        <SettingsSection title="Аккаунт" colors={colors}>
+          <SettingsRow title="Личные данные" subtitle="Имя, email, описание и фотография" Icon={User} color="#7CC4E8" iconBg="rgba(56,153,211,.16)" colors={colors} onClick={() => setOpenPanel(openPanel === 'profile' ? null : 'profile')} />
+          {openPanel === 'profile' && profile && <ProfileEditor profile={profile} colors={colors} onSaved={next => { setProfile(next); updateUserProfile(next); setOpenPanel(null); showMessage('Профиль сохранён'); }} onError={setError} />}
+          <SettingsRow title="Сменить пароль" subtitle="Обновить пароль для входа в аккаунт" Icon={Lock} color="#79D2B2" iconBg="rgba(27,155,111,.16)" colors={colors} onClick={() => setOpenPanel(openPanel === 'password' ? null : 'password')} />
+          {openPanel === 'password' && <PasswordEditor colors={colors} onSaved={() => { setOpenPanel(null); showMessage('Пароль изменён'); }} onError={setError} />}
+        </SettingsSection>
+
+        <SettingsSection title="Настройки" colors={colors}>
+          <SettingsRow title="Город" subtitle="Определяет, какие кофейни показывать в первую очередь" Icon={MapPin} color="#71D5D0" iconBg="rgba(38,170,166,.17)" colors={colors}>
+            <select aria-label="Город" value={cityId} onChange={event => setCityId(event.target.value)} className="max-w-[145px] cursor-pointer bg-transparent text-right text-base outline-none" style={{ color: colors.muted }}>
+              {cities.map(city => <option key={city.id} value={city.id}>{city.name}</option>)}
+            </select>
+          </SettingsRow>
+          <SettingsRow title="Внешний вид" subtitle="Выберите тему оформления" Icon={Gear} color="#C594E8" iconBg="rgba(151,85,205,.17)" colors={colors}>
+            <div className="flex rounded-xl border p-1" style={{ borderColor: colors.border, background: colors.bg }} role="group" aria-label="Тема оформления">
+              <ThemeButton active={theme === 'light'} label="Светлая" Icon={Sun} onClick={() => setTheme('light')} colors={colors} />
+              <ThemeButton active={theme === 'dark'} label="Тёмная" Icon={Moon} onClick={() => setTheme('dark')} colors={colors} />
+            </div>
+          </SettingsRow>
+        </SettingsSection>
+
+        <SettingsSection title="Приложение" colors={colors}>
+          <SettingsRow title="Скачать приложение" subtitle="Версия CoffeePeek для вашего телефона" Icon={DeviceMobile} color="#7CC4E8" iconBg="rgba(56,153,211,.16)" colors={colors} onClick={() => navigate('/download')} />
+        </SettingsSection>
+
+        <SettingsSection title="Другое" description="Документы, распространение приложения и управление аккаунтом" colors={colors}>
+          <SettingsRow title="Условия использования" Icon={ShieldCheck} color="#79D2B2" iconBg="rgba(27,155,111,.16)" colors={colors} onClick={() => navigate('/terms')} />
+          <SettingsRow title="Политика конфиденциальности" Icon={Lock} color="#79D2B2" iconBg="rgba(27,155,111,.16)" colors={colors} onClick={() => navigate('/privacy')} />
+          <SettingsRow title="Поделиться" Icon={ShareNetwork} color="#6CCBE4" iconBg="rgba(32,163,193,.17)" colors={colors} onClick={() => { void shareApp(); }} />
+          <DeleteAccountRow colors={colors} email={profile?.email} onError={setError} />
+        </SettingsSection>
       </div>
-
-      <main className="settings-wrap" style={{ padding: '14px 0 44px' }}>
-        {error && (
-          <Notice tone="error" border={border} onClose={() => setError(null)}>
-            {error}
-          </Notice>
-        )}
-
-        {pendingEmailConfirmation && !isEditing && (
-          <EmailNotice
-            email={pendingEmailConfirmation}
-            isResending={isResending}
-            resendSuccess={resendSuccess}
-            onResend={handleResendConfirmation}
-            onClose={() => setPendingEmailConfirmation(null)}
-            border={border}
-          />
-        )}
-
-        {profile && (
-          <ProfileCard
-            profile={profile}
-            isEditing={isEditing}
-            editValues={editValues}
-            isSaving={isSaving}
-            selectedAvatarFile={selectedAvatarFile}
-            avatarPreview={avatarPreview}
-            surface={surface}
-            softSurface={softSurface}
-            border={border}
-            textPrimary={textPrimary}
-            textMuted={textMuted}
-            gold={gold}
-            goldWarm={goldWarm}
-            theme={theme}
-            onSetTheme={setTheme}
-            onEditStart={handleEditStart}
-            onEditCancel={handleEditCancel}
-            onSave={handleSave}
-            onInputChange={(field, value) => setEditValues(prev => ({ ...prev, [field]: value }))}
-            onAvatarSelect={handleAvatarSelect}
-            onOpenCheckIns={() => navigate('/check-ins')}
-            onOpenReviews={() => navigate('/reviews')}
-          />
-        )}
-
-        <CitySection
-          surface={surface}
-          softSurface={softSurface}
-          border={border}
-          textPrimary={textPrimary}
-          textMuted={textMuted}
-          goldWarm={goldWarm}
-        />
-
-        <ContributeSection
-          surface={surface}
-          border={border}
-          textPrimary={textPrimary}
-          textMuted={textMuted}
-          gold={gold}
-          onAddShop={() => navigate('/coffee-shops/new')}
-          onAddRoaster={() => navigate('/roasters/new')}
-        />
-
-        <AppDownloadSection surface={surface} border={border} textPrimary={textPrimary} textMuted={textMuted} />
-
-        <AccountDeletionSection
-          surface={surface}
-          border={border}
-          textPrimary={textPrimary}
-          textMuted={textMuted}
-          email={profile?.email}
-          step={deletionStep}
-          isDeleting={isDeleting}
-          error={deletionError}
-          request={deletionRequest}
-          onStart={() => { setDeletionError(null); setDeletionStep('confirm'); }}
-          onCancel={() => { setDeletionError(null); setDeletionStep('idle'); }}
-          onConfirm={() => { void handleRequestDeletion(); }}
-        />
-
-        <div className="settings-actions">
-          <ActionButton onClick={() => { void handleLogout(); }} border={border} background={surface} color="#EF4444" icon={<SignOut size={15} color="#EF4444" />}>
-            Выйти
-          </ActionButton>
-        </div>
-      </main>
-    </div>
+    </main>
   );
 };
 
-const Notice: React.FC<{ children: React.ReactNode; tone: 'error' | 'warning'; border: string; onClose: () => void }> = ({ children, tone, border, onClose }) => (
-  <div style={{ marginBottom: 12, padding: '12px 14px', borderRadius: 12, background: tone === 'error' ? 'rgba(239,68,68,0.08)' : 'rgba(234,179,8,0.08)', border: `1px solid ${tone === 'error' ? 'rgba(239,68,68,0.2)' : border}`, display: 'flex', gap: 10, alignItems: 'center' }}>
-    <p style={{ flex: 1, margin: 0, fontFamily: '"Manrope"', fontSize: 13, color: tone === 'error' ? '#EF4444' : '#EAB308' }}>{children}</p>
-    <button type="button" onClick={onClose} style={{ border: 'none', background: 'transparent', padding: 2, cursor: 'pointer', color: '#A39E93' }}><X size={16} /></button>
-  </div>
+const SettingsSection: React.FC<{ title: string; description?: string; colors: Colors; children: React.ReactNode }> = ({ title, description, colors, children }) => (
+  <section className="mb-8">
+    <h2 className="mb-3 text-sm font-medium uppercase tracking-wider" style={{ color: colors.muted }}>{title}</h2>
+    {description && <p className="-mt-1 mb-4 text-sm leading-relaxed" style={{ color: colors.muted }}>{description}</p>}
+    <div className="overflow-hidden rounded-[28px] border [&>*+*]:border-t [&>*+*]:border-[var(--settings-border)]" style={{ borderColor: colors.border, background: colors.surface, '--settings-border': colors.border } as React.CSSProperties}>{children}</div>
+  </section>
 );
 
-const EmailNotice: React.FC<{ email: string; isResending: boolean; resendSuccess: boolean; border: string; onResend: () => void; onClose: () => void }> = ({ email, isResending, resendSuccess, border, onResend, onClose }) => (
-  <div style={{ marginBottom: 12, padding: '13px 14px', borderRadius: 12, background: 'rgba(234,179,8,0.08)', border: `1px solid ${border}`, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-    <Envelope size={17} color="#EAB308" style={{ flexShrink: 0, marginTop: 2 }} />
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <p style={{ margin: '0 0 8px', fontFamily: '"Manrope"', fontSize: 12, color: '#EAB308', lineHeight: 1.55 }}>Письмо отправлено на <strong>{email}</strong>. Старый email активен до подтверждения.</p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <button onClick={onResend} disabled={isResending} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(234,179,8,0.4)', background: 'rgba(234,179,8,0.12)', color: '#EAB308', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 12, cursor: isResending ? 'not-allowed' : 'pointer', opacity: isResending ? 0.6 : 1 }}>
-          <ArrowClockwise size={14} />
-          {isResending ? 'Отправляем...' : 'Отправить повторно'}
-        </button>
-        {resendSuccess && <span style={{ fontFamily: '"Manrope"', fontSize: 12, color: '#22C55E', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle size={14} />Письмо отправлено</span>}
-      </div>
-    </div>
-    <button onClick={onClose} style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#A39E93', flexShrink: 0 }}><X size={18} /></button>
-  </div>
-);
-
-interface ProfileCardProps {
-  profile: UserProfile;
-  isEditing: boolean;
-  editValues: Record<string, string>;
-  isSaving: boolean;
-  selectedAvatarFile: File | null;
-  avatarPreview: string | null;
-  surface: string;
-  softSurface: string;
-  border: string;
-  textPrimary: string;
-  textMuted: string;
-  gold: string;
-  goldWarm: string;
-  theme: string;
-  onSetTheme: (theme: 'dark' | 'light') => void;
-  onEditStart: () => void;
-  onEditCancel: () => void;
-  onSave: () => void;
-  onInputChange: (field: string, value: string) => void;
-  onAvatarSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onOpenCheckIns: () => void;
-  onOpenReviews: () => void;
+interface SettingsRowProps {
+  title: string; subtitle?: string; Icon: React.ComponentType<{ size?: number; weight?: 'regular' | 'bold' }>;
+  color: string; iconBg: string; colors: Colors; onClick?: () => void; children?: React.ReactNode;
 }
 
-const ProfileCard: React.FC<ProfileCardProps> = ({
-  profile, isEditing, editValues, isSaving, selectedAvatarFile, avatarPreview,
-  surface, softSurface, border, textPrimary, textMuted, gold, goldWarm,
-  theme, onSetTheme, onEditStart, onEditCancel, onSave, onInputChange, onAvatarSelect, onOpenCheckIns, onOpenReviews,
-}) => {
-  const displayAvatar = avatarPreview || profile.avatarUrl;
-  const memberSince = profile.createdAtUtc ? new Date(profile.createdAtUtc).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-  const roleLabel = (profile.roles ?? []).includes('Admin') ? 'Администратор' : 'Ценитель кофе';
-
-  return (
-    <section className="settings-card" style={{ border: `1px solid ${border}`, background: surface }}>
-      <div className="settings-profile-head">
-        <div style={{ position: 'relative', width: 74, height: 74, flexShrink: 0 }}>
-          <div style={{ width: 74, height: 74, borderRadius: 99, border: `2px solid ${border}`, overflow: 'hidden', background: displayAvatar ? 'transparent' : `${gold}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {displayAvatar ? <img src={displayAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: '"Manrope"', fontWeight: 800, fontSize: 26, color: goldWarm }}>{profile.userName?.[0]?.toUpperCase() ?? 'U'}</span>}
-          </div>
-          {isEditing && (
-            <label style={{ position: 'absolute', bottom: -2, right: -2, width: 28, height: 28, borderRadius: 99, background: gold, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: `2px solid ${surface}` }}>
-              <input type="file" accept="image/*" onChange={onAvatarSelect} disabled={isSaving} style={{ display: 'none' }} />
-              <Camera size={14} color="#1A1412" />
-            </label>
-          )}
-        </div>
-
-        <div style={{ minWidth: 0 }}>
-          {isEditing ? (
-            <input value={editValues.userName ?? ''} onChange={e => onInputChange('userName', e.target.value)} disabled={isSaving} style={inputStyle(border, textPrimary, softSurface)} />
-          ) : (
-            <h2 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 800, fontSize: 22, color: textPrimary, letterSpacing: '-0.01em', overflowWrap: 'anywhere' }}>{profile.userName}</h2>
-          )}
-          <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 99, background: `${gold}12`, border: `1px solid ${gold}26` }}>
-              <Coffee size={12} color={goldWarm} />
-              <span style={{ fontFamily: '"Manrope"', fontWeight: 700, fontSize: 10, color: goldWarm, letterSpacing: '.05em', textTransform: 'uppercase' }}>{roleLabel}</span>
-            </span>
-          </div>
-          {memberSince && <p style={{ margin: '8px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted }}>С {memberSince}</p>}
-          {isEditing && selectedAvatarFile && <p style={{ margin: '8px 0 0', fontFamily: '"Manrope"', fontSize: 11, color: textMuted, overflowWrap: 'anywhere' }}>Выбран файл: {selectedAvatarFile.name}</p>}
-        </div>
-
-        <div className="settings-edit-action" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          {!isEditing ? (
-            <ButtonLike onClick={onEditStart} border={border} color={textPrimary} background="transparent" icon={<PencilSimple size={15} />}>Изменить</ButtonLike>
-          ) : (
-            <>
-              <ButtonLike onClick={onEditCancel} border={border} color={textPrimary} background="transparent" disabled={isSaving}>Отмена</ButtonLike>
-              <ButtonLike onClick={onSave} border={gold} color="#1A1412" background={gold} disabled={isSaving} icon={isSaving ? <WobbleRing size={14} color="#1A1412" /> : <Check size={14} />}>{isSaving ? 'Сохранение' : 'Сохранить'}</ButtonLike>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="settings-info-grid">
-        <InfoField label="Email" value={profile.email || '—'} isEditing={isEditing} input={<input type="email" value={editValues.email ?? ''} onChange={e => onInputChange('email', e.target.value)} disabled={isSaving} style={inputStyle(border, textPrimary, softSurface)} />} textPrimary={textPrimary} textMuted={textMuted} />
-        <InfoField label="О себе" value={profile.about || 'Не указано'} isEditing={isEditing} input={<textarea value={editValues.about ?? ''} onChange={e => onInputChange('about', e.target.value)} disabled={isSaving} placeholder="Расскажите немного о себе..." style={{ ...inputStyle(border, textPrimary, softSurface), height: 72, paddingTop: 10, resize: 'vertical' }} />} textPrimary={profile.about ? textPrimary : textMuted} textMuted={textMuted} />
-      </div>
-
-      <Divider border={border} />
-      <div className="settings-stats">
-        <StatItem icon={<MapPin size={17} color={goldWarm} />} value={profile.checkInCount ?? 0} label="Чекинов" onClick={onOpenCheckIns} gold={gold} textPrimary={textPrimary} textMuted={textMuted} />
-        <StatItem icon={<ChatCircleText size={17} color={goldWarm} />} value={profile.reviewCount ?? 0} label="Отзывов" onClick={onOpenReviews} gold={gold} textPrimary={textPrimary} textMuted={textMuted} />
-        <StatItem icon={<Storefront size={17} color={goldWarm} />} value={profile.addedShopsCount ?? 0} label="Добавлено" gold={gold} textPrimary={textPrimary} textMuted={textMuted} />
-      </div>
-
-      <Divider border={border} />
-      <SecurityRow border={border} textPrimary={textPrimary} textMuted={textMuted} softSurface={softSurface} />
-      <Divider border={border} />
-      <AppearanceRow border={border} textPrimary={textPrimary} textMuted={textMuted} gold={gold} softSurface={softSurface} theme={theme} onSetTheme={onSetTheme} />
-    </section>
-  );
+const SettingsRow: React.FC<SettingsRowProps> = ({ title, subtitle, Icon, color, iconBg, colors, onClick, children }) => {
+  const content = <><span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ color, background: iconBg }}><Icon size={28} /></span><span className="min-w-0 flex-1"><span className="block text-lg font-medium sm:text-xl" style={{ color: colors.text }}>{title}</span>{subtitle && <span className="mt-0.5 block text-sm leading-snug" style={{ color: colors.muted }}>{subtitle}</span>}</span>{children ?? (onClick && <CaretRight size={25} color={colors.muted} />)}</>;
+  return onClick
+    ? <button type="button" onClick={onClick} className="flex w-full items-center gap-4 px-4 py-5 text-left transition-opacity hover:opacity-80 sm:px-6">{content}</button>
+    : <div className="flex w-full items-center gap-4 px-4 py-5 sm:px-6">{content}</div>;
 };
 
-function inputStyle(border: string, textPrimary: string, background: string): React.CSSProperties {
-  return {
-    width: '100%', minHeight: 38, borderRadius: 9, border: `1px solid ${border}`,
-    background, color: textPrimary, fontFamily: '"Manrope"', fontSize: 13,
-    padding: '0 12px', outline: 'none', boxSizing: 'border-box',
-  };
-}
-
-const InfoField: React.FC<{ label: string; value: string; isEditing: boolean; input: React.ReactNode; textPrimary: string; textMuted: string }> = ({ label, value, isEditing, input, textPrimary, textMuted }) => (
-  <div style={{ minWidth: 0 }}>
-    <p style={{ margin: '0 0 6px', fontFamily: '"Manrope"', fontSize: 10, fontWeight: 700, color: textMuted, letterSpacing: '.06em', textTransform: 'uppercase' }}>{label}</p>
-    {isEditing ? input : <p style={{ margin: 0, fontFamily: '"Manrope"', fontSize: 13, color: textPrimary, overflowWrap: 'anywhere', lineHeight: 1.45 }}>{value}</p>}
-  </div>
+const ThemeButton: React.FC<{ active: boolean; label: string; Icon: React.ComponentType<{ size?: number }>; onClick: () => void; colors: Colors }> = ({ active, label, Icon, onClick, colors }) => (
+  <button type="button" aria-pressed={active} onClick={onClick} className="flex min-h-9 items-center gap-1 rounded-lg px-2.5 text-xs font-bold" style={{ background: active ? colors.gold : 'transparent', color: active ? '#1A1412' : colors.muted }}><Icon size={14} /><span className="hidden sm:inline">{label}</span></button>
 );
 
-const Divider: React.FC<{ border: string }> = ({ border }) => <div style={{ height: 1, background: border, margin: '0 22px' }} />;
-
-const StatItem: React.FC<{ icon: React.ReactNode; value: number; label: string; gold: string; textPrimary: string; textMuted: string; onClick?: () => void }> = ({ icon, value, label, gold, textPrimary, textMuted, onClick }) => (
-  <button type="button" onClick={onClick} disabled={!onClick} style={{ width: '100%', border: 'none', background: 'transparent', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', cursor: onClick ? 'pointer' : 'default', minWidth: 0 }}>
-    <span style={{ width: 30, height: 30, borderRadius: 9, background: `${gold}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</span>
-    <span style={{ minWidth: 0 }}>
-      <span style={{ display: 'block', fontFamily: '"Manrope"', fontWeight: 800, fontSize: 16, color: textPrimary, lineHeight: 1 }}>{value}</span>
-      <span style={{ display: 'block', marginTop: 2, fontFamily: '"Manrope"', fontSize: 11, color: textMuted, whiteSpace: 'nowrap' }}>{label}{onClick ? ' →' : ''}</span>
-    </span>
-  </button>
-);
-
-const SecurityRow: React.FC<{ border: string; textPrimary: string; textMuted: string; softSurface: string }> = ({ border, textPrimary, textMuted, softSurface }) => {
-  const [open, setOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+const ProfileEditor: React.FC<{ profile: UserProfile; colors: Colors; onSaved: (profile: UserProfile) => void; onError: (message: string) => void }> = ({ profile, colors, onSaved, onError }) => {
+  const [userName, setUserName] = useState(profile.userName);
+  const [email, setEmail] = useState(profile.email);
+  const [about, setAbout] = useState(profile.about ?? '');
+  const [avatar, setAvatar] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const gold = '#EAB308';
 
-  const handleSave = async () => {
-    setError('');
-    setSuccess('');
-    if (newPassword.length < 8) { setError('Новый пароль должен содержать минимум 8 символов'); return; }
-    if (newPassword !== confirmPassword) { setError('Пароли не совпадают'); return; }
+  const save = async () => {
+    if (!userName.trim() || !/^\S+@\S+\.\S+$/.test(email)) return onError('Проверьте имя и email');
+    if (avatar && (!avatar.type.startsWith('image/') || avatar.size > 5 * 1024 * 1024)) return onError('Выберите изображение размером до 5 МБ');
     setIsSaving(true);
     try {
-      await changePassword({ currentPassword, newPassword });
-      setSuccess('Пароль изменён. Текущая сессия остаётся активной.');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setOpen(false);
-    } catch (err) {
-      setError(getPasswordErrorMessage(err) ?? getErrorMessage(err));
-    } finally {
-      setIsSaving(false);
-    }
+      const updates: Promise<unknown>[] = [];
+      if (userName.trim() !== profile.userName) updates.push(updateUsername({ username: userName.trim() }));
+      if (email.trim() !== profile.email) updates.push(updateEmail({ email: email.trim() }));
+      if (about.trim() !== (profile.about ?? '')) updates.push(updateAbout({ about: about.trim() }));
+      if (avatar) {
+        const upload = await getAvatarUploadUrl({ fileName: avatar.name, contentType: avatar.type, sizeBytes: avatar.size });
+        if (!upload.data) throw new Error('Не удалось подготовить загрузку фотографии');
+        const response = await fetch(upload.data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': avatar.type }, body: avatar });
+        if (!response.ok) throw new Error('Не удалось загрузить фотографию');
+        updates.push(updateAvatar({ uploadedPhoto: { fileName: avatar.name, contentType: avatar.type, storageKey: upload.data.storageKey, size: avatar.size } }));
+      }
+      await Promise.all(updates);
+      onSaved((await getProfile()).data);
+    } catch (cause) { onError(getErrorMessage(cause)); } finally { setIsSaving(false); }
   };
 
-  return (
-    <div>
-      <div className="settings-row">
-        <div style={{ minWidth: 0 }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}><Lock size={15} />Пароль</h3>
-          <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: success ? '#22C55E' : textMuted, lineHeight: 1.45 }}>{success || 'Смена пароля не разлогинивает текущую сессию'}</p>
-        </div>
-        <ButtonLike className="settings-row-action" onClick={() => { setOpen((v) => !v); setError(''); setSuccess(''); }} border={border} color={textPrimary} background="transparent">{open ? 'Отмена' : 'Изменить'}</ButtonLike>
-      </div>
-
-      {open && (
-        <div style={{ padding: '0 28px 20px', display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
-          <input type="password" placeholder="Текущий пароль" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={inputStyle(border, textPrimary, softSurface)} />
-          <input type="password" placeholder="Новый пароль" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle(border, textPrimary, softSurface)} />
-          <input type="password" placeholder="Повторите новый пароль" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={inputStyle(border, textPrimary, softSurface)} />
-          {error && <p style={{ margin: 0, fontFamily: '"Manrope"', fontSize: 12, color: '#EF4444' }}>{error}</p>}
-          <ButtonLike onClick={handleSave} disabled={isSaving || !currentPassword || newPassword.length < 8} border={gold} color="#1A1412" background={gold}>{isSaving ? 'Сохраняем...' : 'Сохранить пароль'}</ButtonLike>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="space-y-3 border-t px-4 py-5 sm:px-6" style={{ borderColor: colors.border, background: colors.bg }}>
+    <input value={userName} onChange={event => setUserName(event.target.value)} placeholder="Имя" style={inputStyle(colors)} />
+    <input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email" style={inputStyle(colors)} />
+    <textarea value={about} onChange={event => setAbout(event.target.value)} placeholder="О себе" rows={3} style={{ ...inputStyle(colors), paddingTop: 12, resize: 'vertical' }} />
+    <label className="block text-sm" style={{ color: colors.muted }}>Фотография профиля<input type="file" accept="image/*" onChange={event => setAvatar(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm" /></label>
+    <button type="button" disabled={isSaving} onClick={() => { void save(); }} className="min-h-11 w-full rounded-xl px-4 font-bold disabled:opacity-60" style={{ background: colors.gold, color: '#1A1412' }}>{isSaving ? 'Сохраняем…' : 'Сохранить'}</button>
+  </div>;
 };
 
-const AppearanceRow: React.FC<{ border: string; textPrimary: string; textMuted: string; gold: string; softSurface: string; theme: string; onSetTheme: (theme: 'dark' | 'light') => void }> = ({ border, textPrimary, textMuted, gold, softSurface, theme, onSetTheme }) => {
-  const tabs = [
-    { value: 'light' as const, label: 'Светлая', Icon: Sun },
-    { value: 'dark' as const, label: 'Тёмная', Icon: Moon },
-  ];
-  return (
-    <div className="settings-row">
-      <div style={{ minWidth: 0 }}>
-        <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Внешний вид</h3>
-        <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted }}>Выберите тему оформления</p>
-      </div>
-      <div className="settings-row-action" role="tablist" aria-label="Тема оформления" style={{ display: 'flex', padding: 3, gap: 3, borderRadius: 10, border: `1px solid ${border}`, background: softSurface }}>
-        {tabs.map(tab => {
-          const active = theme === tab.value;
-          return (
-            <button
-              key={tab.value}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onSetTheme(tab.value)}
-              style={{
-                flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                minHeight: 38, padding: '0 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                background: active ? gold : 'transparent',
-                color: active ? '#1A1412' : textMuted,
-                fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, transition: 'all .15s',
-              }}
-            >
-              <tab.Icon size={15} color={active ? '#1A1412' : textMuted} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
+const PasswordEditor: React.FC<{ colors: Colors; onSaved: () => void; onError: (message: string) => void }> = ({ colors, onSaved, onError }) => {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const save = async () => {
+    if (newPassword.length < 8) return onError('Новый пароль должен содержать минимум 8 символов');
+    if (newPassword !== confirmation) return onError('Пароли не совпадают');
+    setIsSaving(true);
+    try { await changePassword({ currentPassword, newPassword }); onSaved(); }
+    catch (cause) { onError(getPasswordErrorMessage(cause) ?? getErrorMessage(cause)); }
+    finally { setIsSaving(false); }
+  };
+  return <div className="space-y-3 border-t px-4 py-5 sm:px-6" style={{ borderColor: colors.border, background: colors.bg }}>
+    <input type="password" autoComplete="current-password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} placeholder="Текущий пароль" style={inputStyle(colors)} />
+    <input type="password" autoComplete="new-password" value={newPassword} onChange={event => setNewPassword(event.target.value)} placeholder="Новый пароль" style={inputStyle(colors)} />
+    <input type="password" autoComplete="new-password" value={confirmation} onChange={event => setConfirmation(event.target.value)} placeholder="Повторите новый пароль" style={inputStyle(colors)} />
+    <button type="button" disabled={isSaving || !currentPassword} onClick={() => { void save(); }} className="min-h-11 w-full rounded-xl px-4 font-bold disabled:opacity-60" style={{ background: colors.gold, color: '#1A1412' }}>{isSaving ? 'Сохраняем…' : 'Изменить пароль'}</button>
+  </div>;
 };
 
-interface ContributeItem {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  action: string;
-  onClick: () => void;
-}
-
-const ContributeSection: React.FC<{
-  surface: string; border: string; textPrimary: string; textMuted: string; gold: string;
-  onAddShop: () => void;
-  onAddRoaster: () => void;
-}> = ({ surface, border, textPrimary, textMuted, gold, onAddShop, onAddRoaster }) => {
-  const items: ContributeItem[] = [
-    { icon: <Storefront size={15} color={gold} />, title: 'Добавить кофейню', subtitle: 'Не нашли кофейню в каталоге? Добавьте её сами', action: 'Добавить', onClick: onAddShop },
-    { icon: <Factory size={15} color={gold} />, title: 'Добавить обжарщика', subtitle: 'Не нашли обжарщика в каталоге? Добавьте его сами', action: 'Добавить', onClick: onAddRoaster },
-  ];
-
-  return (
-    <section className="settings-card" style={{ marginTop: 20, border: `1px solid ${border}`, background: surface }}>
-      <div style={{ padding: '20px 28px 4px' }}>
-        <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Помогите проекту</h3>
-      </div>
-      {items.map((item, i) => (
-        <React.Fragment key={item.title}>
-          {i > 0 && <Divider border={border} />}
-          <div className="settings-row">
-            <div style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <span style={{ width: 30, height: 30, borderRadius: 9, background: `${gold}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{item.icon}</span>
-              <div style={{ minWidth: 0 }}>
-                <h4 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 14, color: textPrimary }}>{item.title}</h4>
-                <p style={{ margin: '4px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.45 }}>{item.subtitle}</p>
-              </div>
-            </div>
-            <ButtonLike className="settings-row-action" onClick={item.onClick} border={border} color={textPrimary} background="transparent">{item.action}</ButtonLike>
-          </div>
-        </React.Fragment>
-      ))}
-    </section>
-  );
+const DeleteAccountRow: React.FC<{ colors: Colors; email?: string; onError: (message: string) => void }> = ({ colors, email, onError }) => {
+  const [confirming, setConfirming] = useState(false);
+  const [sent, setSent] = useState(false);
+  const remove = async () => { try { await deleteUser(); setSent(true); } catch (cause) { onError(getErrorMessage(cause)); } };
+  if (sent) return <div className="px-5 py-5 text-sm leading-relaxed" style={{ color: colors.muted }}>Ссылка для подтверждения удаления отправлена{email ? ` на ${email}` : ''}.</div>;
+  return <div className="flex items-center gap-4 px-4 py-5 sm:px-6"><span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-red-400" style={{ background: 'rgba(239,68,68,.14)' }}><WarningCircle size={28} /></span><span className="min-w-0 flex-1"><span className="block text-lg font-medium sm:text-xl" style={{ color: colors.text }}>Удалить аккаунт</span><span className="mt-0.5 block text-sm" style={{ color: colors.muted }}>{confirming ? 'Подтвердите отправку письма' : 'Удаление подтверждается по email'}</span></span><button type="button" onClick={() => confirming ? void remove() : setConfirming(true)} className="rounded-xl border px-3 py-2 text-sm font-bold" style={{ borderColor: 'rgba(239,68,68,.35)', color: '#EF4444' }}>{confirming ? 'Подтвердить' : 'Удалить'}</button></div>;
 };
 
-const CitySection: React.FC<{ surface: string; softSurface: string; border: string; textPrimary: string; textMuted: string; goldWarm: string }> = ({ surface, softSurface, border, textPrimary, textMuted, goldWarm }) => {
-  const [cities, setCities] = useState<City[]>([]);
-  const { cityId, setCityId } = useLocalCity();
-
-  useEffect(() => {
-    getCities().then(res => {
-      const data = res.data as unknown;
-      const list = Array.isArray(data)
-        ? (data as City[])
-        : (data && typeof data === 'object' && Array.isArray((data as { cities?: City[] }).cities) ? (data as { cities: City[] }).cities : []);
-      setCities(list);
-      // Default to the first city so the shop list isn't empty on first visit.
-      if (!cityId && list.length > 0) setCityId(list[0].id);
-    }).catch(err => logger.error('Error loading cities:', err));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <section className="settings-card" style={{ marginTop: 20, border: `1px solid ${border}`, background: surface }}>
-      <div className="settings-row">
-        <div style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <span style={{ width: 30, height: 30, borderRadius: 9, background: `${goldWarm}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><MapPin size={15} color={goldWarm} /></span>
-          <div style={{ minWidth: 0 }}>
-            <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Город</h3>
-            <p style={{ margin: '5px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.45 }}>Кофейни показываются для выбранного города</p>
-          </div>
-        </div>
-        <div className="settings-row-action settings-city-select" style={{ position: 'relative' }}>
-          <select
-            value={cityId}
-            onChange={e => setCityId(e.target.value)}
-            style={{ ...inputStyle(border, textPrimary, softSurface), width: '100%', height: 42, paddingRight: 36, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
-          >
-            {cities.length === 0 && <option value="">Загрузка…</option>}
-            {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <CaretDown size={15} color={textMuted} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-        </div>
-      </div>
-    </section>
-  );
-};
-
-const AppDownloadSection: React.FC<{ surface: string; border: string; textPrimary: string; textMuted: string }> = ({ surface, border, textPrimary, textMuted }) => (
-  <section className="settings-release-card" style={{ borderRadius: 14, border: `1px solid ${border}`, background: surface }}>
-    <h3 style={{ margin: '0 0 4px', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Мобильное приложение</h3>
-    <p style={{ margin: '0 0 16px', fontFamily: '"Manrope"', fontSize: 13, color: textMuted, lineHeight: 1.45 }}>В скором времене приложения появятся в Play Market и App Store</p>
-    <MobileAppDownload variant="compact" />
-  </section>
-);
-
-const AccountDeletionSection: React.FC<{
-  surface: string;
-  border: string;
-  textPrimary: string;
-  textMuted: string;
-  email?: string;
-  step: 'idle' | 'confirm' | 'check-email';
-  isDeleting: boolean;
-  error: string | null;
-  request: AccountDeletionRequest | null;
-  onStart: () => void;
-  onCancel: () => void;
-  onConfirm: () => void;
-}> = ({
-  surface, border, textPrimary, textMuted, email, step, isDeleting, error, request, onStart, onCancel, onConfirm,
-}) => (
-  <section className="settings-card" style={{ marginTop: 20, border: `1px solid ${border}`, background: surface }}>
-    <div className="settings-row" style={{ alignItems: 'start' }}>
-      <div style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <span style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(239,68,68,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <WarningCircle size={15} color="#EF4444" />
-        </span>
-        <div style={{ minWidth: 0 }}>
-          <h3 style={{ margin: 0, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 15, color: textPrimary }}>Удаление аккаунта</h3>
-          {step === 'check-email' ? (
-            <div style={{ marginTop: 8 }}>
-              <p style={{ margin: 0, fontFamily: '"Manrope"', fontSize: 13, color: textMuted, lineHeight: 1.55 }}>
-                Проверьте почту{email ? <> (<strong style={{ color: textPrimary }}>{email}</strong>)</> : null}. Мы отправили ссылку для подтверждения удаления.
-              </p>
-              <p style={{ margin: '8px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.5 }}>
-                Ссылка действует 24 часа. Аккаунт не будет удалён, пока вы не подтвердите действие в письме. Сессия остаётся активной.
-              </p>
-              {request?.expiresAtUtc && (
-                <p style={{ margin: '8px 0 0', fontFamily: '"Manrope"', fontSize: 11, color: textMuted }}>
-                  Истекает: {new Date(request.expiresAtUtc).toLocaleString('ru')}
-                </p>
-              )}
-            </div>
-          ) : step === 'confirm' ? (
-            <p style={{ margin: '6px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.5 }}>
-              На адрес аккаунта придёт письмо со ссылкой. Удаление произойдёт только после подтверждения.
-            </p>
-          ) : (
-            <p style={{ margin: '6px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: textMuted, lineHeight: 1.5 }}>
-              Запрос необратим после подтверждения по ссылке из письма.
-            </p>
-          )}
-          {error && (
-            <p style={{ margin: '10px 0 0', fontFamily: '"Manrope"', fontSize: 12, color: '#EF4444', lineHeight: 1.45 }}>{error}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="settings-row-action" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {step === 'idle' && (
-          <ButtonLike onClick={onStart} border="rgba(239,68,68,0.35)" color="#EF4444" background="rgba(239,68,68,0.08)">
-            Удалить аккаунт
-          </ButtonLike>
-        )}
-        {step === 'confirm' && (
-          <>
-            <ButtonLike onClick={onCancel} border={border} color={textPrimary} background="transparent" disabled={isDeleting}>
-              Отмена
-            </ButtonLike>
-            <ButtonLike onClick={onConfirm} border="rgba(239,68,68,0.35)" color="#fff" background="#EF4444" disabled={isDeleting}>
-              {isDeleting ? 'Отправляем…' : 'Удалить'}
-            </ButtonLike>
-          </>
-        )}
-        {step === 'check-email' && (
-          <ButtonLike onClick={onCancel} border={border} color={textPrimary} background="transparent">
-            Понятно
-          </ButtonLike>
-        )}
-      </div>
-    </div>
-  </section>
-);
-
-const ButtonLike: React.FC<{ children: React.ReactNode; border: string; color: string; background: string; icon?: React.ReactNode; disabled?: boolean; className?: string; onClick: () => void }> = ({ children, border, color, background, icon, disabled, className = '', onClick }) => (
-  <button type="button" className={className} onClick={onClick} disabled={disabled} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 36, padding: '8px 14px', borderRadius: 9, border: `1px solid ${border}`, background, color, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, whiteSpace: 'nowrap' }}>
-    {icon}
-    {children}
-  </button>
-);
-
-const ActionButton: React.FC<{ children: React.ReactNode; border: string; background: string; color: string; icon: React.ReactNode; onClick: () => void }> = ({ children, border, background, color, icon, onClick }) => (
-  <button type="button" onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 38, padding: '9px 14px', borderRadius: 9, border: `1px solid ${border}`, background, color, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
-    {icon}
-    {children}
-  </button>
-);
+const inputStyle = (colors: Colors): React.CSSProperties => ({ width: '100%', minHeight: 46, borderRadius: 12, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text, padding: '0 14px', outline: 'none' });
 
 export default SettingsPage;
