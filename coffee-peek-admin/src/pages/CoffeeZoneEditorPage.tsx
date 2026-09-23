@@ -10,11 +10,14 @@ import {
   generateCoffeeZoneCandidates,
   getCoffeeZone,
   getCoffeeZoneMembership,
+  polygonExtentMeters,
   setCoffeeZoneMembershipOverride,
   updateCoffeeZone,
+  ZONE_MAX_EXTENT_METERS,
   type CoffeeZoneCandidate,
   type CoffeeZoneMembershipOverrideKind,
   type CoffeeZonePayload,
+  type GeoPoint,
 } from '../api/coffeeZones';
 import { CoffeeZoneMap } from '../components/coffee-zones/CoffeeZoneMap';
 import { Badge } from '../components/ui/Badge';
@@ -27,10 +30,10 @@ const zoneSchema = z.object({
   cityId: z.string().min(1, 'Выберите город'),
   name: z.string().trim().min(1, 'Введите название').max(100, 'Не более 100 символов'),
   description: z.string().max(500, 'Не более 500 символов'),
-  centerLatitude: z.number().min(-90).max(90),
-  centerLongitude: z.number().min(-180).max(180),
-  radiusMeters: z.number().int().min(100, 'Минимум 100 м').max(2000, 'Максимум 2000 м'),
 });
+
+const MIN_POINTS = 3;
+const MAX_POINTS = 100;
 
 type ZoneForm = z.infer<typeof zoneSchema>;
 
@@ -52,6 +55,8 @@ export function CoffeeZoneEditorPage() {
   const [candidates, setCandidates] = useState<CoffeeZoneCandidate[]>([]);
   const [candidateRadius, setCandidateRadius] = useState(400);
   const [minShops, setMinShops] = useState(4);
+  // Kept outside react-hook-form: setValue clones arrays, and the map relies on reference identity to tell its own edits from loads.
+  const [polygon, setPolygon] = useState<GeoPoint[]>([]);
 
   const form = useForm<ZoneForm>({
     resolver: zodResolver(zoneSchema),
@@ -59,9 +64,6 @@ export function CoffeeZoneEditorPage() {
       cityId: '',
       name: '',
       description: '',
-      centerLatitude: 53.9,
-      centerLongitude: 27.5667,
-      radiusMeters: 500,
     },
   });
 
@@ -83,11 +85,8 @@ export function CoffeeZoneEditorPage() {
       cityId: zone.cityId,
       name: zone.name,
       description: zone.description ?? '',
-      centerLatitude: zone.centerLatitude,
-      centerLongitude: zone.centerLongitude,
-      radiusMeters: zone.radiusMeters,
     });
-    setCandidateRadius(zone.radiusMeters);
+    setPolygon(zone.polygon ?? []);
   }, [zoneQuery.data, form]);
 
   const saveMutation = useMutation({
@@ -127,25 +126,23 @@ export function CoffeeZoneEditorPage() {
     onError: (error: any) => showToast(error?.message ?? 'Не удалось изменить состав', 'error'),
   });
 
-  const latitude = form.watch('centerLatitude');
-  const longitude = form.watch('centerLongitude');
-  const radiusMeters = form.watch('radiusMeters');
   const cityId = form.watch('cityId');
   const description = form.watch('description');
   const members = membershipQuery.data?.members ?? [];
+  const pointCountValid = polygon.length >= MIN_POINTS && polygon.length <= MAX_POINTS;
+  const extentMeters = polygonExtentMeters(polygon);
+  const tooLarge = extentMeters > ZONE_MAX_EXTENT_METERS;
 
   useEffect(() => {
     setCandidates([]);
   }, [cityId]);
 
-  const selectCandidate = (candidate: CoffeeZoneCandidate) => {
-    form.setValue('centerLatitude', candidate.centerLatitude, { shouldDirty: true });
-    form.setValue('centerLongitude', candidate.centerLongitude, { shouldDirty: true });
-    form.setValue('radiusMeters', candidate.suggestedRadiusMeters, { shouldDirty: true, shouldValidate: true });
-  };
+  const selectCandidate = (candidate: CoffeeZoneCandidate) => setPolygon(candidate.polygon);
 
   const onSubmit = form.handleSubmit((values) => {
-    saveMutation.mutate({ ...values, description: values.description.trim() || null });
+    if (!pointCountValid) return;
+    if (tooLarge && !window.confirm(`Точки зоны удалены от центра до ${Math.round(extentMeters)} м (лимит ${ZONE_MAX_EXTENT_METERS} м). Сервер, скорее всего, отклонит зону. Всё равно сохранить?`)) return;
+    saveMutation.mutate({ ...values, description: values.description.trim() || null, polygon });
   });
 
   if (isEditing && zoneQuery.isLoading) {
@@ -164,9 +161,9 @@ export function CoffeeZoneEditorPage() {
             <h2 className="page-header-title">{isEditing ? zoneQuery.data?.name : 'Новая кофейная зона'}</h2>
             {zoneQuery.data && <Badge variant={zoneQuery.data.status === 'Published' ? 'approved' : zoneQuery.data.status === 'Draft' ? 'pending' : 'default'}>{zoneQuery.data.status}</Badge>}
           </div>
-          <p className="mt-0.5 text-sm text-text-muted dark:text-stone-400">Настройте центр, радиус и состав зоны</p>
+          <p className="mt-0.5 text-sm text-text-muted dark:text-stone-400">Нарисуйте контур и настройте состав зоны</p>
         </div>
-        <Button onClick={onSubmit} loading={saveMutation.isPending}>{isEditing ? 'Сохранить' : 'Создать черновик'}</Button>
+        <Button onClick={onSubmit} disabled={!pointCountValid} loading={saveMutation.isPending}>{isEditing ? 'Сохранить' : 'Создать черновик'}</Button>
       </div>
 
       <form onSubmit={onSubmit} className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(320px,420px)_1fr]">
@@ -197,13 +194,13 @@ export function CoffeeZoneEditorPage() {
           </Card>
 
           <Card>
-            <h3 className="mb-3 font-display text-sm font-semibold text-text-main dark:text-white">Радиус</h3>
-            <div className="flex items-center gap-3">
-              <input type="range" min={100} max={2000} step={50} {...form.register('radiusMeters', { valueAsNumber: true })} className="min-w-0 flex-1 accent-primary" />
-              <input type="number" min={100} max={2000} {...form.register('radiusMeters', { valueAsNumber: true })} className={`${inputClass} w-28`} />
-              <span className="text-sm text-text-muted dark:text-stone-400">м</span>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-display text-sm font-semibold text-text-main dark:text-white">Контур</h3>
+              <Button type="button" variant="ghost" size="sm" disabled={polygon.length === 0} onClick={() => setPolygon([])}>Очистить</Button>
             </div>
-            {form.formState.errors.radiusMeters && <p className="mt-1 text-xs text-red-400">{form.formState.errors.radiusMeters.message}</p>}
+            <p className={`mt-2 text-sm ${pointCountValid ? 'text-text-main dark:text-white' : 'text-red-400'}`}>Точек: {polygon.length} (от {MIN_POINTS} до {MAX_POINTS})</p>
+            {polygon.length < MIN_POINTS && <p className="mt-1 text-xs text-text-muted dark:text-stone-400">Добавьте ещё {MIN_POINTS - polygon.length}, чтобы сохранить зону.</p>}
+            {tooLarge && <p className="mt-1 text-xs text-amber-400">Точки удалены от центра до {Math.round(extentMeters)} м — сервер допускает не более {ZONE_MAX_EXTENT_METERS} м.</p>}
           </Card>
 
           <Card>
@@ -214,40 +211,31 @@ export function CoffeeZoneEditorPage() {
               <label className="text-xs text-text-muted dark:text-stone-400">Мин. кофеен<input type="number" min={3} max={50} value={minShops} onChange={(e) => setMinShops(Number(e.target.value))} className={`${inputClass} mt-1.5`} /></label>
             </div>
             <Button type="button" variant="secondary" className="mt-3 w-full" disabled={!cityId || candidateRadius < 100 || candidateRadius > 2000 || minShops < 3 || minShops > 50} loading={candidatesMutation.isPending} onClick={() => candidatesMutation.mutate()}>Найти кофейные скопления</Button>
-            {candidates.length > 0 && <div className="mt-3 max-h-52 space-y-2 overflow-y-auto">{candidates.map((candidate, index) => <button key={`${candidate.centerLatitude}-${candidate.centerLongitude}`} type="button" onClick={() => selectCandidate(candidate)} className="flex w-full items-center justify-between rounded-lg border border-border-light px-3 py-2 text-left text-xs hover:border-primary dark:border-border-dark"><span>Кандидат {index + 1}</span><span className="text-text-muted dark:text-stone-400">{candidate.shopCount} кофеен · {candidate.suggestedRadiusMeters} м</span></button>)}</div>}
+            {candidates.length > 0 && <div className="mt-3 max-h-52 space-y-2 overflow-y-auto">{candidates.map((candidate, index) => <button key={`${candidate.centerLatitude}-${candidate.centerLongitude}`} type="button" onClick={() => selectCandidate(candidate)} className="flex w-full items-center justify-between rounded-lg border border-border-light px-3 py-2 text-left text-xs hover:border-primary dark:border-border-dark"><span>Кандидат {index + 1}</span><span className="text-text-muted dark:text-stone-400">{candidate.shopCount} кофеен</span></button>)}</div>}
           </Card>
         </div>
 
         <div className="space-y-5">
           <CoffeeZoneMap
-            latitude={latitude}
-            longitude={longitude}
-            radiusMeters={radiusMeters}
+            polygon={polygon}
             candidates={candidates}
             members={members}
-            onCenterChange={(lat, lng) => {
-              form.setValue('centerLatitude', lat, { shouldDirty: true, shouldValidate: true });
-              form.setValue('centerLongitude', lng, { shouldDirty: true, shouldValidate: true });
-            }}
+            onPolygonChange={setPolygon}
             onCandidateSelect={selectCandidate}
           />
-          <div className="grid grid-cols-2 gap-3">
-            <label className="text-xs text-text-muted dark:text-stone-400">Широта<input type="number" step="0.000001" {...form.register('centerLatitude', { valueAsNumber: true })} className={`${inputClass} mt-1.5`} /></label>
-            <label className="text-xs text-text-muted dark:text-stone-400">Долгота<input type="number" step="0.000001" {...form.register('centerLongitude', { valueAsNumber: true })} className={`${inputClass} mt-1.5`} /></label>
-          </div>
 
           {isEditing && (
             <Card padding="none">
               <div className="border-b border-border-light p-5 dark:border-border-dark">
                 <h3 className="font-display text-sm font-semibold text-text-main dark:text-white">Состав зоны</h3>
-                <p className="mt-1 text-xs text-text-muted dark:text-stone-400">{members.length} кофеен в предпросмотре. Изменение центра или радиуса применится после сохранения.</p>
+                <p className="mt-1 text-xs text-text-muted dark:text-stone-400">{members.length} кофеен в предпросмотре. Изменение контура применится после сохранения.</p>
               </div>
               {membershipQuery.isLoading ? <div className="p-6 text-sm text-text-muted">Загрузка состава…</div> : members.length === 0 ? <div className="p-8 text-center text-sm text-text-muted dark:text-stone-400">Кофейни в зоне не найдены</div> : (
                 <div className="table-scroll max-h-[520px]">
                   <table className="w-full text-sm">
-                    <thead className="sticky top-0 z-10 bg-white dark:bg-surface-dark"><tr className="border-b border-border-light dark:border-border-dark"><th className="px-4 py-3 text-left text-xs text-text-muted">Кофейня</th><th className="px-4 py-3 text-left text-xs text-text-muted">Расстояние</th><th className="px-4 py-3 text-left text-xs text-text-muted">Правило</th><th className="px-4 py-3" /></tr></thead>
+                    <thead className="sticky top-0 z-10 bg-white dark:bg-surface-dark"><tr className="border-b border-border-light dark:border-border-dark"><th className="px-4 py-3 text-left text-xs text-text-muted">Кофейня</th><th className="px-4 py-3 text-left text-xs text-text-muted" title="От расчётного центра зоны">До центра</th><th className="px-4 py-3 text-left text-xs text-text-muted">Правило</th><th className="px-4 py-3" /></tr></thead>
                     <tbody className="divide-y divide-border-light dark:divide-border-dark">
-                      {members.map((member) => <tr key={member.shopId} className="table-row"><td className="px-4 py-3"><p className="font-medium text-text-main dark:text-white">{member.name}</p><p className="mt-0.5 text-xs text-text-muted dark:text-stone-500">{member.isAutomatic ? 'В радиусе' : 'Вне радиуса'}{member.isPrimary ? ' · основная' : ''}</p></td><td className="whitespace-nowrap px-4 py-3 text-xs text-text-muted dark:text-stone-400">{Math.round(member.distanceMeters)} м</td><td className="px-4 py-3">{member.overrideKind ? <Badge variant={member.overrideKind === 'Exclude' ? 'rejected' : member.overrideKind === 'Primary' ? 'pending' : 'info'}>{overrideLabels[member.overrideKind]}</Badge> : <span className="text-xs text-text-muted dark:text-stone-500">Автоматически</span>}</td><td className="px-4 py-3"><div className="flex min-w-max gap-1"><Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: member.shopId, kind: 'Include' })}>Включить</Button><Button type="button" variant="ghost" size="sm" className="text-red-400" onClick={() => membershipMutation.mutate({ shopId: member.shopId, kind: 'Exclude' })}>Исключить</Button><Button type="button" variant="ghost" size="sm" className="text-primary" onClick={() => membershipMutation.mutate({ shopId: member.shopId, kind: 'Primary' })}>Основная</Button>{member.overrideKind && <Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: member.shopId })}>Сбросить</Button>}</div></td></tr>)}
+                      {members.map((member) => <tr key={member.shopId} className="table-row"><td className="px-4 py-3"><p className="font-medium text-text-main dark:text-white">{member.name}</p><p className="mt-0.5 text-xs text-text-muted dark:text-stone-500">{member.isAutomatic ? 'Внутри контура' : 'Вне контура'}{member.isPrimary ? ' · основная' : ''}</p></td><td className="whitespace-nowrap px-4 py-3 text-xs text-text-muted dark:text-stone-400">{Math.round(member.distanceMeters)} м</td><td className="px-4 py-3">{member.overrideKind ? <Badge variant={member.overrideKind === 'Exclude' ? 'rejected' : member.overrideKind === 'Primary' ? 'pending' : 'info'}>{overrideLabels[member.overrideKind]}</Badge> : <span className="text-xs text-text-muted dark:text-stone-500">Автоматически</span>}</td><td className="px-4 py-3"><div className="flex min-w-max gap-1"><Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: member.shopId, kind: 'Include' })}>Включить</Button><Button type="button" variant="ghost" size="sm" className="text-red-400" onClick={() => membershipMutation.mutate({ shopId: member.shopId, kind: 'Exclude' })}>Исключить</Button><Button type="button" variant="ghost" size="sm" className="text-primary" onClick={() => membershipMutation.mutate({ shopId: member.shopId, kind: 'Primary' })}>Основная</Button>{member.overrideKind && <Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: member.shopId })}>Сбросить</Button>}</div></td></tr>)}
                     </tbody>
                   </table>
                 </div>

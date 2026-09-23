@@ -23,6 +23,24 @@ const statusMeta: Record<CoffeeZoneStatus, { label: string; variant: BadgeVarian
 
 type PendingAction = { zone: AdminCoffeeZone; status: CoffeeZoneStatus; archive?: boolean };
 
+function PolygonThumbnail({ zone }: { zone: AdminCoffeeZone }) {
+  const polygon = zone.polygon ?? [];
+  if (polygon.length < 3) return <span>—</span>;
+  // ponytail: flat projection scaled by cos(lat); fine for zones a few km across.
+  const scale = Math.cos((zone.centerLatitude * Math.PI) / 180);
+  const xs = polygon.map((p) => p.longitude * scale);
+  const ys = polygon.map((p) => -p.latitude);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const size = Math.max(Math.max(...xs) - minX, Math.max(...ys) - minY) || 1;
+  const points = xs.map((x, i) => `${((x - minX) / size) * 36 + 2},${((ys[i] - minY) / size) * 36 + 2}`).join(' ');
+  return (
+    <svg width={40} height={40} viewBox="0 0 40 40" aria-label={`Контур: ${polygon.length} точек`}>
+      <polygon points={points} fill="#f59e0b" fillOpacity={0.2} stroke="#f59e0b" strokeWidth={1.5} strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function CoffeeZonesPage() {
   const [cityId, setCityId] = useState('');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
@@ -92,7 +110,7 @@ export function CoffeeZonesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border-light dark:border-border-dark">
-                  {['Название', 'Город', 'Статус', 'Радиус', 'Кофейни', 'Действия'].map((label) => (
+                  {['Название', 'Город', 'Статус', 'Контур', 'Кофейни', 'Действия'].map((label) => (
                     <th key={label} className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400">{label}</th>
                   ))}
                 </tr>
@@ -106,7 +124,7 @@ export function CoffeeZonesPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-text-muted dark:text-stone-400">{cityNames.get(zone.cityId) ?? '—'}</td>
                     <td className="px-4 py-3"><Badge variant={statusMeta[zone.status].variant}>{statusMeta[zone.status].label}</Badge></td>
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-text-muted dark:text-stone-400">{zone.radiusMeters} м</td>
+                    <td className="px-4 py-2 text-xs text-text-muted dark:text-stone-400"><PolygonThumbnail zone={zone} /></td>
                     <td className="px-4 py-3 text-xs text-text-muted dark:text-stone-400">{zone.shopCount}</td>
                     <td className="px-4 py-3">
                       <div className="flex min-w-max flex-wrap gap-1">

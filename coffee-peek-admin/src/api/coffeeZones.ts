@@ -5,11 +5,18 @@ import type { ApiResponse } from './core/types';
 export type CoffeeZoneStatus = 'Draft' | 'Published' | 'Archived';
 export type CoffeeZoneMembershipOverrideKind = 'Include' | 'Exclude' | 'Primary';
 
+export interface GeoPoint {
+  latitude: number;
+  longitude: number;
+}
+
 export interface AdminCoffeeZone {
   id: string;
   cityId: string;
   name: string;
   description?: string | null;
+  polygon: GeoPoint[];
+  /** Derived by the server from the polygon; read-only. */
   centerLatitude: number;
   centerLongitude: number;
   radiusMeters: number;
@@ -38,7 +45,7 @@ export interface CoffeeZoneMembershipPreview {
 export interface CoffeeZoneCandidate {
   centerLatitude: number;
   centerLongitude: number;
-  suggestedRadiusMeters: number;
+  polygon: GeoPoint[];
   shopCount: number;
   shopIds: string[];
 }
@@ -47,9 +54,28 @@ export interface CoffeeZonePayload {
   cityId: string;
   name: string;
   description?: string | null;
-  centerLatitude: number;
-  centerLongitude: number;
-  radiusMeters: number;
+  /** 3–100 points in drawing order, not closed (first point is not repeated). */
+  polygon: GeoPoint[];
+}
+
+export const ZONE_MAX_EXTENT_METERS = 2000;
+
+function distanceMeters(a: GeoPoint, b: GeoPoint): number {
+  const rad = Math.PI / 180;
+  const dLat = (b.latitude - a.latitude) * rad;
+  const dLng = (b.longitude - a.longitude) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.latitude * rad) * Math.cos(b.latitude * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6_371_008.8 * Math.asin(Math.sqrt(h));
+}
+
+/** Largest distance from the average of the points to any point, mirroring the server's 2000 m check. */
+export function polygonExtentMeters(polygon: GeoPoint[]): number {
+  if (polygon.length === 0) return 0;
+  const center = {
+    latitude: polygon.reduce((sum, p) => sum + p.latitude, 0) / polygon.length,
+    longitude: polygon.reduce((sum, p) => sum + p.longitude, 0) / polygon.length,
+  };
+  return Math.max(...polygon.map((p) => distanceMeters(center, p)));
 }
 
 export interface GenerateCoffeeZoneCandidatesPayload {
