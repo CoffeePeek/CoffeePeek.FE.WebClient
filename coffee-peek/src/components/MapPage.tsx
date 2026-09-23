@@ -4,10 +4,10 @@ import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
-import { getMapSearch, getCoffeeShopById } from '../api/coffeeshop';
+import { getMapSearch, getMapZones, getCoffeeShopById } from '../api/coffeeshop';
 import type { DetailedCoffeeShop, MapSearchData, MapShop } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
-import { ArrowRight, Star, Plus, Minus, Crosshair, NavigationArrow, MagnifyingGlass, X } from '@/components/Icon';
+import { ArrowRight, Star, Plus, Minus, Crosshair, NavigationArrow, MagnifyingGlass, X, Polygon } from '@/components/Icon';
 import Button from './Button';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
@@ -66,14 +66,23 @@ const MapPage: React.FC = () => {
   const userMarkerRef = useRef<MapLibreMarker | null>(null);
   const [query, setQuery] = useState('');
   const queryRef = useRef('');
+  const [showZones, setShowZones] = useState(() => localStorage.getItem('mapShowZones') !== 'false');
+  const showZonesRef = useRef(showZones);
 
   const loadCoffeeShops = async (map: MapLibreMap) => {
     mapRequestRef.current?.abort();
     const controller = new AbortController();
     mapRequestRef.current = controller;
     try {
-      const response = await getMapSearch(getMapBoundsBox(map), map.getZoom(), controller.signal);
+      const bounds = getMapBoundsBox(map);
+      const response = await getMapSearch(bounds, map.getZoom(), controller.signal);
       if (mapRequestRef.current !== controller) return null;
+      let zones = Array.isArray(response.data?.zones) ? response.data.zones : [];
+      // The server only includes zones in its zone zoom band; fetch them separately so they stay visible at every zoom.
+      if (zones.length === 0 && showZonesRef.current) {
+        zones = await getMapZones(bounds, controller.signal).catch(() => []);
+        if (mapRequestRef.current !== controller) return null;
+      }
       const shops = Array.isArray(response.data?.shops)
         ? response.data.shops.map((shop: MapShop) => ({
           id: shop.id,
@@ -87,7 +96,7 @@ const MapPage: React.FC = () => {
       const nextData: MapSearchData = {
         shops,
         clusters: Array.isArray(response.data?.clusters) ? response.data.clusters : [],
-        zones: Array.isArray(response.data?.zones) ? response.data.zones : [],
+        zones,
         isTruncated: response.data?.isTruncated === true,
       };
 
@@ -177,9 +186,10 @@ const MapPage: React.FC = () => {
       if (!map) return;
       const version = ++paintVersion;
       clearMarkers();
-      renderMapZones(map, data.zones ?? [], themeRef.current === 'dark');
+      const zones = showZonesRef.current ? data.zones ?? [] : [];
+      renderMapZones(map, zones, themeRef.current === 'dark');
 
-      (data.zones ?? []).forEach((zone) => {
+      zones.forEach((zone) => {
         const marker = new maplibregl.Marker({ element: coffeeZoneLabelIcon(zone), anchor: 'center' })
           .setLngLat([zone.longitude, zone.latitude])
           .addTo(map);
@@ -277,6 +287,20 @@ const MapPage: React.FC = () => {
     paintMapRef.current(mapDataRef.current);
   }, [query]);
 
+  useEffect(() => {
+    showZonesRef.current = showZones;
+    localStorage.setItem('mapShowZones', String(showZones));
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    paintMapRef.current(mapDataRef.current);
+    if (showZones && (mapDataRef.current.zones?.length ?? 0) === 0) {
+      void loadCoffeeShops(map).then((loaded) => {
+        if (loaded) paintMapRef.current(loaded);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showZones]);
+
   const formatWorkingHours = (
     schedules?: Array<{ dayOfWeek: number | string; openTime?: string; closeTime?: string }>,
   ) => {
@@ -373,6 +397,16 @@ const MapPage: React.FC = () => {
           {isLocating
             ? <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
             : <Crosshair size={20} weight="bold" />}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowZones((value) => !value)}
+          aria-label={showZones ? 'Скрыть кофейные зоны' : 'Показать кофейные зоны'}
+          aria-pressed={showZones}
+          title={showZones ? 'Скрыть кофейные зоны' : 'Показать кофейные зоны'}
+          className={`w-14 h-14 flex items-center justify-center rounded-xl border shadow-lg active:scale-95 transition-all ${themeClasses.bg.card} ${themeClasses.border.default} ${showZones ? 'text-[#EAB308]' : themeClasses.text.secondary}`}
+        >
+          <Polygon size={20} weight={showZones ? 'fill' : 'bold'} />
         </button>
         <div className={`flex flex-col rounded-xl border overflow-hidden shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
           <button

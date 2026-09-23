@@ -123,6 +123,7 @@ export interface MapCoffeeZone {
   longitude: number;
   radiusMeters: number;
   shopCount: number;
+  polygon?: { latitude: number; longitude: number }[];
 }
 
 export interface MapSearchData {
@@ -594,6 +595,15 @@ export async function getMapSearch(
       isTruncated: data.some((part) => part.isTruncated === true),
     },
   };
+}
+
+// ponytail: mirrors the server's MapClustering:ZoneMaxZoom; the map endpoint only returns zones at that zoom band.
+const MAP_ZONES_ZOOM = 13;
+
+/** Loads published zones for the viewport regardless of the current zoom. */
+export async function getMapZones(bounds: MapViewportBounds, signal?: AbortSignal): Promise<MapCoffeeZone[]> {
+  const response = await getMapSearch(bounds, MAP_ZONES_ZOOM, signal);
+  return response.data.zones ?? [];
 }
 
 /**

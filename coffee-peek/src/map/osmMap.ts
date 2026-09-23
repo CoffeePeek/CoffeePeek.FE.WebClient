@@ -410,6 +410,7 @@ export type MapZoneLike = {
   longitude: number;
   radiusMeters: number;
   shopCount: number;
+  polygon?: { latitude: number; longitude: number }[];
 };
 
 const ZONES_SOURCE_ID = 'coffeepeek-zones';
@@ -417,6 +418,10 @@ const ZONES_FILL_LAYER_ID = 'coffeepeek-zones-fill';
 const ZONES_LINE_LAYER_ID = 'coffeepeek-zones-line';
 
 function zonePolygon(zone: MapZoneLike): [number, number][] {
+  if (zone.polygon && zone.polygon.length >= 3) {
+    const ring = zone.polygon.map((p): [number, number] => [Number(p.longitude), Number(p.latitude)]);
+    return [...ring, ring[0]];
+  }
   const earthRadiusMeters = 6_371_008.8;
   const angularDistance = Math.max(0, zone.radiusMeters) / earthRadiusMeters;
   const latitude = zone.latitude * Math.PI / 180;
@@ -442,7 +447,7 @@ function zonePolygon(zone: MapZoneLike): [number, number][] {
   return coordinates;
 }
 
-/** Adds or updates accurately sized zone circles below the HTML markers. */
+/** Adds or updates zone outlines (polygon, or bounding circle for legacy data) below the HTML markers. */
 export function renderMapZones(map: MapLibreMap, zones: MapZoneLike[], isDark: boolean): void {
   if (!map.isStyleLoaded()) return;
   const data = {
