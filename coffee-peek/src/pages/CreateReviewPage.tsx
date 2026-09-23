@@ -1,6 +1,8 @@
 import WobbleRing from '../components/WobbleRing';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { coffeeShopKeys, reviewKeys } from '../hooks/queries';
 import { createReview, CreateReviewRequest, getReviewById, updateReview, ShortPhotoMetadataDto, getPhotoUrl } from '../api/coffeeshop';
 import { getShopUploadUrls } from '../api/photos';
 import { useTheme } from '../contexts/ThemeContext';
@@ -36,6 +38,7 @@ const CreateReviewPage: React.FC = () => {
   const themeClasses = getThemeClasses(theme);
   const { user, requireAuth } = useRequireAuth();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
   // Получаем данные о кофейне из navigation state
   const shopFromState = (location.state as { shop?: ShopBasicInfo })?.shop;
@@ -265,8 +268,12 @@ const CreateReviewPage: React.FC = () => {
         ? await updateReview({ ...request, id: reviewId }, token)
         : await createReview(request, token);
       if (response.success) {
+        void queryClient.invalidateQueries({ queryKey: reviewKeys.all });
+        void queryClient.invalidateQueries({ queryKey: coffeeShopKeys.all });
         showToast(reviewId ? 'Отзыв успешно обновлён!' : 'Отзыв успешно опубликован!', 'success');
         navigate(`/shops/${shopId}`);
+      } else {
+        showToast(response.message || (reviewId ? 'Не удалось обновить отзыв' : 'Не удалось опубликовать отзыв'), 'error');
       }
     } catch (err) {
       logger.error('Error submitting review:', err);

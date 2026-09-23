@@ -1,4 +1,4 @@
-import { localTimeToUtc, utcTimeToLocal, getCurrentStatus } from '../src/utils/shopUtils';
+import { localTimeToUtc, utcTimeToLocal, getCurrentStatus, toLocalSchedules } from '../src/utils/shopUtils';
 
 // offsetMinutes follows Date.getTimezoneOffset(): negative = ahead of UTC (e.g. Minsk UTC+3 = -180).
 const MINSK = -180;
@@ -57,4 +57,11 @@ describe('getCurrentStatus (UTC-aware, "open right now")', () => {
     expect(getCurrentStatus({ schedules: [] })).toBeNull();
     expect(getCurrentStatus(null)).toBeNull();
   });
+});
+
+test('toLocalSchedules shows UTC-stored hours in local time', () => {
+  expect(toLocalSchedules([{ dayOfWeek: 0, openTime: '05:00', closeTime: '19:00' }], MINSK))
+    .toEqual([{ dayOfWeek: 0, openTime: '08:00', closeTime: '22:00' }]);
+  expect(toLocalSchedules([{ dayOfWeek: 6, openTime: '23:00', closeTime: '19:00' }], MINSK))
+    .toEqual([{ dayOfWeek: 0, openTime: '02:00', closeTime: '22:00' }]);
 });

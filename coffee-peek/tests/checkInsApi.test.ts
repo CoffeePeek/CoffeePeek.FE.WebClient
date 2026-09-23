@@ -12,6 +12,9 @@ const item = {
   photos: [{ id: 'photo', fileName: 'coffee.jpg', storageKey: 'checkins/coffee.jpg', fullUrl: 'https://media.example/coffee.jpg', sortIndex: 0 }],
 };
 
+// getCheckIns runs items through normalizeCheckInDto: note null → undefined, isPublic derived from reviewId.
+const normalizedItem = { ...item, note: undefined, isPublic: false };
+
 beforeEach(() => jest.clearAllMocks());
 
 test('GET uses pagination headers and preserves deployed checkIns envelope, photos and dates', async () => {
@@ -22,12 +25,12 @@ test('GET uses pagination headers and preserves deployed checkIns envelope, phot
   expect(httpClient.get).toHaveBeenCalledWith('/api/CheckIns', {
     requiresAuth: true, headers: { 'X-Page-Number': '2', 'X-Page-Size': '10' },
   });
-  expect(result.data).toEqual({ items: [item], totalItems: 21, totalPages: 3, currentPage: 2, pageSize: 10 });
+  expect(result.data).toEqual({ items: [normalizedItem], totalItems: 21, totalPages: 3, currentPage: 2, pageSize: 10 });
 });
 
 test('response pagination totals override body totals, never page length', async () => {
   jest.mocked(httpClient.get).mockResolvedValue({ success: true, data: [item], pagination: { totalItems: 31, totalPages: 4 } } as never);
-  expect((await getCheckIns()).data).toMatchObject({ items: [item], totalItems: 31, totalPages: 4 });
+  expect((await getCheckIns()).data).toMatchObject({ items: [normalizedItem], totalItems: 31, totalPages: 4 });
 });
 
 test('private check-in serializes empty fields and uploaded photo metadata with size, not sizeBytes', async () => {

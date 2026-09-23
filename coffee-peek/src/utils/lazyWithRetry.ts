@@ -6,7 +6,8 @@ const RELOAD_KEY = 'cp:chunk-reload';
  * Like React.lazy, but on failed dynamic import (typical after a deploy when
  * hashed chunks are gone) reloads once so the browser picks up fresh index.html.
  */
-export function lazyWithRetry<T extends ComponentType<unknown>>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- страницы с разными пропсами
+export function lazyWithRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ): LazyExoticComponent<T> {
   return lazy(async () => {

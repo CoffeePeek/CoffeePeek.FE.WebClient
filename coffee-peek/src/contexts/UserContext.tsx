@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { getUserRoles, getUserEmail, getUserId, isTokenExpired, isEmailVerified } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
-import { ensureFreshAccessToken } from '../api/core/interceptors';
+import { ensureFreshAccessToken, LOGGED_OUT_KEY } from '../api/core/interceptors';
 import { API_BASE_URL } from '../api/core/apiConfig';
 import { getProfile, logout as apiLogout, type UserProfile } from '../api/auth';
 import { queryClient } from '../lib/queryClient';
 
-const LOGGED_OUT_KEY = 'coffeepeek:logged-out';
 
 export interface AppUser {
   id: string | null;
@@ -122,6 +121,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Детали кофеен содержат пользовательские поля (canCreateReview, userCheckIns) —
+  // при смене пользователя кэш анонимной/чужой версии устаревает.
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: ['coffeeShops'] });
+    void queryClient.invalidateQueries({ queryKey: ['reviews'] });
+  }, [userId]);
 
   useEffect(() => {
     if (userId === undefined) return;

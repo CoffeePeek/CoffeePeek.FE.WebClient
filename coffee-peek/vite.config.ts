@@ -24,7 +24,6 @@ export default defineConfig(() => {
           manualChunks: {
             'vendor-router': ['react-router-dom'],
             'vendor-query': ['@tanstack/react-query'],
-            'vendor-form': ['react-hook-form', 'zod'],
           },
         },
       },

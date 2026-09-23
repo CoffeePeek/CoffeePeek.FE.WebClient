@@ -22,7 +22,7 @@ import {
   renderMapZones,
   zoomToClusterBounds,
 } from '../map/osmMap';
-import { getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
+import { getCurrentDayOfWeek, toLocalSchedules } from '../utils/shopUtils';
 
 /** Opens a driving route to the shop in Yandex Maps (tries the mobile app first, falls back to the web map). */
 function openYandexRoute(from: { lat: number; lon: number } | null, toLat: number, toLon: number): void {
@@ -104,17 +104,21 @@ const MapPage: React.FC = () => {
     }
   };
 
+  const detailsRequestRef = useRef<string | null>(null);
   const loadShopDetails = async (shopId: string) => {
+    // Быстрый клик A→B: ответ A не должен попасть в карточку B.
+    detailsRequestRef.current = shopId;
+    setSelectedShopDetails(null);
     setIsLoadingDetails(true);
     try {
       const response = await getCoffeeShopById(shopId);
-      if (response.success && response.data) {
+      if (detailsRequestRef.current === shopId && response.success && response.data) {
         setSelectedShopDetails(response.data);
       }
     } catch {
       /* name-only card is enough */
     } finally {
-      setIsLoadingDetails(false);
+      if (detailsRequestRef.current === shopId) setIsLoadingDetails(false);
     }
   };
 
@@ -196,18 +200,28 @@ const MapPage: React.FC = () => {
       const visible = q
         ? data.shops.filter((shop) => shop.title.toLowerCase().includes(q))
         : data.shops;
-      void ensureMapPinMascots().then(() => {
+      void ensureMapPinMascots().catch(() => {}).then(() => {
         if (mapInstanceRef.current !== map || version !== paintVersion) return;
         visible.forEach((shop) => {
           const selected = selectedIdRef.current === shop.id;
           const element = coffeeMapPinIcon({ focus: shop.type, selected });
           element.title = shop.title;
           element.style.zIndex = selected ? '1000' : '0';
-          element.addEventListener('click', () => {
+          element.tabIndex = 0;
+          element.setAttribute('role', 'button');
+          element.setAttribute('aria-label', shop.title);
+          const select = () => {
             selectedIdRef.current = shop.id;
             setSelectedShop(shop);
             void loadShopDetails(shop.id);
             paintMap(mapDataRef.current);
+          };
+          element.addEventListener('click', select);
+          element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              select();
+            }
           });
           const marker = new maplibregl.Marker({ element, anchor: 'center' })
             .setLngLat([shop.longitude, shop.latitude])
@@ -268,7 +282,7 @@ const MapPage: React.FC = () => {
   ) => {
     if (!schedules || schedules.length === 0) return 'Часы работы не указаны';
     const today = getCurrentDayOfWeek();
-    const todaySchedule = schedules.find((s) => normalizeDayOfWeek(s.dayOfWeek) === today);
+    const todaySchedule = toLocalSchedules(schedules).find((s) => s.dayOfWeek === today);
     if (todaySchedule?.openTime && todaySchedule?.closeTime) {
       return `${todaySchedule.openTime} - ${todaySchedule.closeTime}`;
     }

@@ -92,6 +92,24 @@ function timeToMinutes(time: string): number {
 }
 
 /**
+ * Расписание с бэкенда хранится в UTC — для отображения переводим в локальное
+ * время браузера. getCurrentStatus работает с UTC-версией напрямую.
+ */
+export function toLocalSchedules<T extends { dayOfWeek: number | string; openTime?: string; closeTime?: string }>(
+  schedules: T[] | undefined,
+  offsetMinutes = new Date().getTimezoneOffset()
+): Array<{ dayOfWeek: number; openTime?: string; closeTime?: string }> {
+  return (schedules ?? []).flatMap((s) => {
+    const day = normalizeDayOfWeek(s.dayOfWeek);
+    if (day === null) return [];
+    if (!s.openTime || !s.closeTime) return [{ dayOfWeek: day, openTime: s.openTime, closeTime: s.closeTime }];
+    const open = utcTimeToLocal(day, s.openTime, offsetMinutes);
+    const close = utcTimeToLocal(day, s.closeTime, offsetMinutes);
+    return [{ dayOfWeek: open.dayOfWeek, openTime: open.time, closeTime: close.time }];
+  });
+}
+
+/**
  * Открыта ли кофейня прямо сейчас на основе расписания.
  * Время расписания и dayOfWeek хранятся в UTC, поэтому сравниваем с текущим
  * временем в UTC — getUTC*() уже переводит локальное время ПК в UTC, т.е.

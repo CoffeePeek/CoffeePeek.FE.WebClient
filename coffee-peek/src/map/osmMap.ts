@@ -251,13 +251,19 @@ export function ensureMapPinMascots(): Promise<void> {
         const img = await loadImage(mascot);
         mascotCanvases.set(mascot, knockOutBlack(img));
       }),
-    ).then(() => {
-    });
+    ).then(
+      () => {},
+      (err) => {
+        // Не кэшируем провал: следующий вызов попробует снова, иначе пинов не будет до перезагрузки.
+        mascotsPromise = null;
+        throw err;
+      },
+    );
   }
   return mascotsPromise;
 }
 
-void ensureMapPinMascots();
+ensureMapPinMascots().catch(() => {});
 
 function pinDiameter(selected: boolean, detail?: boolean): number {
   if (detail) return PIN_SIZE_DETAIL;

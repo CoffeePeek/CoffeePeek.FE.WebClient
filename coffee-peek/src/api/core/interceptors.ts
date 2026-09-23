@@ -24,6 +24,7 @@ export class TokenManager {
 
   static setAccessToken(accessToken: string): void {
     this.accessToken = accessToken;
+    sessionAbsent = false;
   }
 
   static clearTokens(): void {
@@ -46,7 +47,22 @@ try {
 
 const TOKEN_PATH = '/api/tokens';
 
-let refreshInFlight: Promise<boolean> | null = null;
+export const LOGGED_OUT_KEY = 'coffeepeek:logged-out';
+
+/** ok — новый токен; rejected — сервер отверг refresh (сессии нет); error — сеть/5xx/429, сессия может быть жива. */
+export type RefreshResult = 'ok' | 'rejected' | 'error';
+
+let refreshInFlight: Promise<RefreshResult> | null = null;
+// Сервер уже сказал, что refresh-cookie нет — не дёргаем PUT /api/tokens перед каждым запросом анонима.
+let sessionAbsent = false;
+
+function isLoggedOutFlagSet(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(LOGGED_OUT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 export function isAuthTokenEndpoint(endpoint: string): boolean {
   return endpoint === TOKEN_PATH || endpoint.startsWith(`${TOKEN_PATH}/`);
@@ -66,28 +82,33 @@ export function pickAuthTokens(payload: unknown): { accessToken?: string; refres
   return { accessToken, refreshToken };
 }
 
-async function performRefresh(baseURL: string): Promise<boolean> {
-  return fetch(`${baseURL}${TOKEN_PATH}`, {
-    method: 'PUT',
-    headers: { Accept: 'application/json' },
-    credentials: 'include',
-  }).then(async response => {
-    if (!response.ok) return false;
+async function performRefresh(baseURL: string): Promise<RefreshResult> {
+  try {
+    const response = await fetch(`${baseURL}${TOKEN_PATH}`, {
+      method: 'PUT',
+      headers: { Accept: 'application/json' },
+      credentials: 'include',
+    });
+    if (response.status === 401 || response.status === 403) {
+      sessionAbsent = true;
+      return 'rejected';
+    }
+    if (!response.ok) return 'error';
 
     const json = await response.json();
     const payload = json?.data ?? json;
     const tokens = pickAuthTokens(payload);
-    if (!tokens.accessToken) return false;
+    if (!tokens.accessToken) return 'error';
 
     TokenManager.setAccessToken(tokens.accessToken);
-    return true;
-  }).catch(err => {
+    return 'ok';
+  } catch (err) {
     logger.error('[Auth] Refresh failed', err);
-    return false;
-  });
+    return 'error';
+  }
 }
 
-export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
+export function tryRefreshAccessToken(baseURL: string): Promise<RefreshResult> {
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = performRefresh(baseURL).finally(() => {
     refreshInFlight = null;
@@ -98,7 +119,9 @@ export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
 export async function ensureFreshAccessToken(baseURL: string): Promise<boolean> {
   const access = TokenManager.getAccessToken();
   if (access && !isTokenExpired(access)) return true;
-  return tryRefreshAccessToken(baseURL);
+  // Нет токена в памяти и сессии заведомо нет (явный выход или refresh уже отвергнут) — не восстанавливаем её молча.
+  if (!access && (sessionAbsent || isLoggedOutFlagSet())) return false;
+  return (await tryRefreshAccessToken(baseURL)) === 'ok';
 }
 
 export function requestInterceptor(

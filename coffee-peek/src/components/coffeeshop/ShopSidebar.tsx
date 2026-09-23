@@ -3,7 +3,7 @@ import React, { Fragment, useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { DetailedCoffeeShop } from '../../api/coffeeshop';
-import { formatDayOfWeekShort, getCurrentDayOfWeek } from '../../utils/shopUtils';
+import { formatDayOfWeekShort, getCurrentDayOfWeek, toLocalSchedules } from '../../utils/shopUtils';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppIcon } from '../icons';
@@ -51,7 +51,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
     });
     mapInstanceRef.current = map;
 
-    void ensureMapPinMascots().then(() => {
+    void ensureMapPinMascots().catch(() => {}).then(() => {
       if (cancelled || mapInstanceRef.current !== map) return;
       const element = coffeeDetailIcon(shop.type);
       element.title = shop.name;
@@ -115,11 +115,11 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
                 />
               </button>
               <div className={`${hoursOpen ? 'grid' : 'hidden'} lg:grid grid-cols-[2.5rem_1fr] gap-x-3 gap-y-2 text-sm`}>
-                {[...shop.schedules]
-                  .sort((a, b) => Number(a.dayOfWeek) - Number(b.dayOfWeek))
+                {toLocalSchedules(shop.schedules)
+                  .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
                   .map((schedule) => {
                   const dayLabel = formatDayOfWeekShort(schedule.dayOfWeek);
-                  const isToday = Number(schedule.dayOfWeek) === currentDay;
+                  const isToday = schedule.dayOfWeek === currentDay;
                   const rowClass = isToday ? `font-bold ${themeClasses.primary.text}` : textMuted;
                   return (
                     <Fragment key={String(schedule.dayOfWeek)}>

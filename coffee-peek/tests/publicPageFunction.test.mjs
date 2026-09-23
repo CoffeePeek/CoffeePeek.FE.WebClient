@@ -66,3 +66,12 @@ test('catalog API outage returns informative server-side 503 content', async () 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('replacement patterns in shop data are inserted literally', async () => {
+  await withFetchMock({ isSuccess: true, data: { shopDto: { id: shopId, name: "Кофе $` $' $&", description: 'x', location: { address: 'a' }, photos: [] } } }, async () => {
+    const result = await renderPublicPage(new Request(`https://coffeepeek.by/api/public-page?page=shop&shopId=${shopId}`));
+    assert.match(result.html, /Кофе \$` \$&#39; \$&amp;|Кофе \$` \$' \$&amp;|Кофе \$` \$&#x27; \$&amp;/);
+    assert.equal(result.html.match(/<head>/g)?.length, 1);
+    assert.equal(result.html.match(/<body>/g)?.length, 1);
+  });
+});
