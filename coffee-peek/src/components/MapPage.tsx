@@ -7,7 +7,7 @@ import { getThemeClasses } from '../utils/theme';
 import { getMapSearch, getMapZones, getCoffeeShopById } from '../api/coffeeshop';
 import type { DetailedCoffeeShop, MapSearchData, MapShop } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
-import { ArrowRight, Star, Plus, Minus, Crosshair, NavigationArrow, MagnifyingGlass, X, Polygon } from '@/components/Icon';
+import { ArrowRight, Star, Crosshair, NavigationArrow, MagnifyingGlass, X, Polygon } from '@/components/Icon';
 import Button from './Button';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
@@ -385,7 +385,7 @@ const MapPage: React.FC = () => {
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
       </div>
 
-      {/* App-style map controls: locate + zoom */}
+      {/* App-style map controls: locate + zones */}
       <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-[500] flex flex-col gap-2">
         <button
           type="button"
@@ -408,24 +408,6 @@ const MapPage: React.FC = () => {
         >
           <Polygon size={20} weight={showZones ? 'fill' : 'bold'} />
         </button>
-        <div className={`flex flex-col rounded-xl border overflow-hidden shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
-          <button
-            type="button"
-            onClick={() => mapInstanceRef.current?.zoomIn()}
-            aria-label="Приблизить"
-            className={`w-14 h-14 flex items-center justify-center active:scale-95 transition-all ${themeClasses.text.primary}`}
-          >
-            <Plus size={20} weight="bold" />
-          </button>
-          <button
-            type="button"
-            onClick={() => mapInstanceRef.current?.zoomOut()}
-            aria-label="Отдалить"
-            className={`w-14 h-14 flex items-center justify-center border-t active:scale-95 transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
-          >
-            <Minus size={20} weight="bold" />
-          </button>
-        </div>
       </div>
 
       <button

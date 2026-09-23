@@ -104,7 +104,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [shopTags, setShopTags] = useState<ShopTagDto[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
-  const [filters, setFilters] = useState<CoffeeShopFilters>({ coffeeFocus: 'specialty' });
+  const [filters, setFilters] = useState<CoffeeShopFilters>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -161,7 +161,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       setFilters((prev) => ({
         ...prev,
         cityId: selectedCity,
-        coffeeFocus: prev.coffeeFocus ?? 'specialty',
       }));
     }
   }, [initialDataLoaded, selectedCity, filters.cityId]);
