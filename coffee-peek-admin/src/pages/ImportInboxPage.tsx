@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { decideImportCandidate, getImportCandidates, ImportCandidate } from '../api/import';
@@ -10,7 +10,6 @@ import {
   CoffeeFocusPicker,
   FocusBadge,
   GoogleStatusBadge,
-  ImportTabs,
   SourceBadge,
 } from '../components/import/catalogControls';
 import { useToast } from '../contexts/ToastContext';
@@ -26,20 +25,44 @@ import {
   REJECT_REASON_LABELS,
   REJECT_REASON_OPTIONS,
   RejectReason,
-  QueueStatus,
+  KnownQueueStatus,
   displayShopName,
   isClosedPermanently,
   isUsableShopName,
   parseImportListSearch,
+  publishTagSlugs,
 } from '../constants/catalogIngest';
 
 const PAGE_SIZE = IMPORT_LIST_PAGE_SIZE;
+const BATCH_CONCURRENCY = 5;
+
+/** Runs fn over items with at most `limit` in flight; results keep input order. */
+async function settleWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next++;
+      try {
+        results[index] = { status: 'fulfilled', value: await fn(items[index]) };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
 
 type SortKey = 'name' | 'focus' | 'google' | 'osm' | 'bucket' | 'status';
 type SortDir = 'asc' | 'desc';
 type BatchModal = 'publish' | 'reject' | null;
 
-const STATUSES: { value: QueueStatus | 'all'; label: string }[] = [
+const STATUSES: { value: KnownQueueStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Все' },
   { value: 'Pending', label: 'Ожидает' },
   { value: 'Skipped', label: 'Позже' },
@@ -108,10 +131,10 @@ const SortButton: React.FC<{
   </button>
 );
 
+/** Rendered only embedded in the ImportQueuePage "Список" panel. */
 export const ImportInboxPage: React.FC<{
-  embedded?: boolean;
   selectedId?: string;
-}> = ({ embedded, selectedId }) => {
+}> = ({ selectedId }) => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { showToast } = useToast();
@@ -126,8 +149,17 @@ export const ImportInboxPage: React.FC<{
   const [batchFocus, setBatchFocus] = useState<CoffeeFocus | undefined>();
   const [confirmPublishClosed, setConfirmPublishClosed] = useState(false);
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery({
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  } = useInfiniteQuery({
       queryKey: [
         'admin',
         'import',
@@ -184,11 +216,17 @@ export const ImportInboxPage: React.FC<{
     () => items.filter((item) => selectedIds.has(item.id)),
     [items, selectedIds],
   );
-  const publishableSelected = useMemo(
+  const namedSelected = useMemo(
     () => selectedItems.filter((item) => isSelectable(item) && isUsableShopName(item.name)),
     [selectedItems],
   );
-  const skippedNoName = selectedItems.filter(isSelectable).length - publishableSelected.length;
+  // Same rule as single publish: suggestReject needs an explicit per-item override in the dossier.
+  const overrideSelected = namedSelected.filter((item) => item.suggestReject);
+  const publishableSelected = useMemo(
+    () => namedSelected.filter((item) => !item.suggestReject),
+    [namedSelected],
+  );
+  const skippedNoName = selectedItems.filter(isSelectable).length - namedSelected.length;
   const closedSelected = publishableSelected.filter((item) =>
     isClosedPermanently(item.googleBusinessStatus),
   );
@@ -196,11 +234,14 @@ export const ImportInboxPage: React.FC<{
     selectableItems.length > 0 && selectableItems.every((item) => selectedIds.has(item.id));
   const someSelectableChecked = selectableItems.some((item) => selectedIds.has(item.id));
 
+  // Don't gate on items.length: client-side filters may hide every loaded row while more pages exist.
+  // Don't auto-retry after a failed page — the user gets a «Повторить» button instead.
   const loadMoreRef = useLoadMoreOnScroll(
-    Boolean(hasNextPage) && !isFetchingNextPage && items.length > 0,
+    Boolean(hasNextPage) && !isFetchingNextPage && !isFetchNextPageError,
     () => {
       void fetchNextPage();
     },
+    scrollRef,
   );
 
   const openCandidate = (itemId: string) => {
@@ -219,9 +260,14 @@ export const ImportInboxPage: React.FC<{
     setSearchParams(next);
   };
 
+  // The debounce timer must patch the *latest* params, or it reverts filters changed within the window.
+  const latestRef = useRef({ patchParams, search });
+  latestRef.current = { patchParams, search };
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      if (localSearch !== search) patchParams({ search: localSearch });
+      const latest = latestRef.current;
+      if (localSearch !== latest.search) latest.patchParams({ search: localSearch });
     }, 400);
     return () => window.clearTimeout(timer);
   }, [localSearch]);
@@ -276,44 +322,54 @@ export const ImportInboxPage: React.FC<{
   const batchMutation = useMutation({
     mutationFn: async ({
       mode,
+      targets,
       coffeeFocus,
       rejectReason: reason,
       overrideClosed,
     }: {
       mode: 'Published' | 'Rejected';
+      targets: ImportCandidate[];
       coffeeFocus?: CoffeeFocus;
       rejectReason?: RejectReason;
       overrideClosed?: boolean;
     }) => {
-      const targets =
-        mode === 'Published' ? publishableSelected : selectedItems.filter(isSelectable);
-
-      const tagSlugs = coffeeFocus === 'specialty' ? (['specialty'] as string[]) : ([] as string[]);
-
-      const results = await Promise.allSettled(
-        targets.map((item) =>
-          decideImportCandidate(item.id, {
-            status: mode,
-            coffeeFocus: mode === 'Published' ? coffeeFocus : undefined,
-            tagSlugs: mode === 'Published' ? tagSlugs : undefined,
-            overrideClosed: mode === 'Published' ? Boolean(overrideClosed) : undefined,
-            rejectReason: mode === 'Rejected' ? reason : undefined,
-          }),
-        ),
+      const results = await settleWithConcurrency(targets, BATCH_CONCURRENCY, (item) =>
+        decideImportCandidate(item.id, {
+          status: mode,
+          coffeeFocus: mode === 'Published' ? coffeeFocus : undefined,
+          // Same payload as single publish: the candidate's own tags, specialty following focus.
+          tagSlugs: mode === 'Published' ? publishTagSlugs(item.tagSlugs, coffeeFocus) : undefined,
+          overrideClosed: mode === 'Published' ? Boolean(overrideClosed) : undefined,
+          rejectReason: mode === 'Rejected' ? reason : undefined,
+        }),
       );
 
-      const ok = results.filter((r) => r.status === 'fulfilled').length;
+      const okIds = targets.filter((_, i) => results[i].status === 'fulfilled').map((t) => t.id);
+      const ok = okIds.length;
       const fail = results.length - ok;
-      return { ok, fail, total: results.length, mode, reason };
+      return { ok, okIds, fail, total: results.length, mode, reason };
     },
-    onSuccess: ({ ok, fail, mode, reason }) => {
+    onSuccess: ({ ok, okIds, fail, mode, reason }) => {
       const base =
         mode === 'Published'
           ? `В ленте: ${ok}`
           : `Не в ленту · ${reason ? REJECT_REASON_LABELS[reason] : ''}: ${ok}`;
-      if (fail > 0) showToast(`${base}, ошибок: ${fail}`, 'error');
-      else showToast(base, 'success');
-      clearSelection();
+      if (fail > 0) {
+        const verb = mode === 'Published' ? 'опубликовано' : 'отклонено';
+        showToast(`${verb} ${ok}, ошибок ${fail} — неудачные остались выбранными`, 'error');
+        // Keep failed ids selected so the admin can retry just those.
+        setSelectedIds((prev) => {
+          const copy = new Set(prev);
+          okIds.forEach((okId) => copy.delete(okId));
+          return copy;
+        });
+        setBatchModal(null);
+        setBatchFocus(undefined);
+        setConfirmPublishClosed(false);
+      } else {
+        showToast(base, 'success');
+        clearSelection();
+      }
       void qc.invalidateQueries({ queryKey: ['admin', 'import'] });
     },
     onError: (err: { message?: string }) => {
@@ -338,8 +394,15 @@ export const ImportInboxPage: React.FC<{
       setConfirmPublishClosed(true);
       return;
     }
+    if (overrideSelected.length > 0) {
+      showToast(
+        `Пропущено ${overrideSelected.length}: бэкенд предлагает отклонить — решите их по одному в досье`,
+        'info',
+      );
+    }
     batchMutation.mutate({
       mode: 'Published',
+      targets: publishableSelected,
       coffeeFocus: batchFocus,
       overrideClosed,
     });
@@ -349,68 +412,19 @@ export const ImportInboxPage: React.FC<{
   const loadedCount = items.length;
 
   return (
-    <div
-      className={
-        embedded
-          ? 'h-full min-h-0 flex flex-col overflow-hidden'
-          : 'page-container pb-24'
-      }
-    >
-      {!embedded && <ImportTabs />}
-      {!embedded && (
-        <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="page-header-title">Парсинг</h2>
-          <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
-            Кандидаты импорта. Пачкой — в ленту или не в ленту. Клик по строке — досье с картой точки.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {(() => {
-            const firstPending = items.find((item) => item.queueStatus === 'Pending');
-            return firstPending ? (
-              <Link to={`/import/${firstPending.id}`} className="text-sm font-medium text-primary hover:underline">
-                Открыть досье
-              </Link>
-            ) : null;
-          })()}
-          <p className="text-sm font-body text-text-main dark:text-white tabular-nums">
-            В выборке:{' '}
-            <span className="font-semibold">
-              {totalInFilter != null ? totalInFilter : loadedCount}
-            </span>
-            {localSearch.trim()
-              ? hasNextPage && (
-                  <span className="text-text-muted dark:text-stone-400 font-normal">
-                    {' '}
-                    · подгрузка…
-                  </span>
-                )
-              : totalInFilter != null &&
-                loadedCount < totalInFilter && (
-                  <span className="text-text-muted dark:text-stone-400 font-normal">
-                    {' '}
-                    · загружено {loadedCount}
-                  </span>
-                )}
-          </p>
-        </div>
-      </div>
-      )}
-      {embedded && (
-        <p className="shrink-0 px-4 py-2 text-sm font-body text-text-main dark:text-white tabular-nums">
-          В выборке:{' '}
-          <span className="font-semibold">{totalInFilter != null ? totalInFilter : loadedCount}</span>
-        </p>
-      )}
+    <div className="h-full min-h-0 flex flex-col overflow-hidden">
+      <p className="shrink-0 px-4 py-2 text-sm font-body text-text-main dark:text-white tabular-nums">
+        В выборке:{' '}
+        <span className="font-semibold">{totalInFilter != null ? totalInFilter : loadedCount}</span>
+      </p>
 
-      <Card padding="none" className={embedded ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : undefined}>
-        {isError && (
+      <Card padding="none" className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {isError && !isFetchNextPageError && (
           <p className="p-6 text-sm text-red-600 dark:text-red-400">
             Не удалось загрузить список. Проверьте, что backend import API уже выкатили.
           </p>
         )}
-        <div className={embedded ? 'flex-1 min-h-0 overflow-auto' : 'table-scroll'}>
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border-light dark:border-border-dark align-bottom">
@@ -682,33 +696,36 @@ export const ImportInboxPage: React.FC<{
               )}
             </tbody>
           </table>
-        </div>
-        <div
-          ref={loadMoreRef}
-          className="px-5 py-3 border-t border-border-light dark:border-border-dark"
-        >
-          {isFetchingNextPage && (
-            <p className="text-center text-xs text-text-muted dark:text-stone-500">Загрузка…</p>
-          )}
-          {!hasNextPage && items.length > 0 && (
-            <p className="text-center text-xs text-text-muted dark:text-stone-500">
-              {items.length}
-              {totalInFilter != null && totalInFilter !== items.length
-                ? ` из ${totalInFilter}`
-                : ''}
-            </p>
-          )}
+          {/* Sentinel lives inside the scroll container so the observer root actually scrolls it. */}
+          <div
+            ref={loadMoreRef}
+            className="px-5 py-3 border-t border-border-light dark:border-border-dark"
+          >
+            {isFetchingNextPage && (
+              <p className="text-center text-xs text-text-muted dark:text-stone-500">Загрузка…</p>
+            )}
+            {isFetchNextPageError && !isFetchingNextPage && (
+              <div className="flex items-center justify-center gap-3">
+                <p className="text-xs text-red-600 dark:text-red-400">Не удалось загрузить ещё</p>
+                <Button variant="secondary" size="sm" onClick={() => void fetchNextPage()}>
+                  Повторить
+                </Button>
+              </div>
+            )}
+            {!hasNextPage && items.length > 0 && (
+              <p className="text-center text-xs text-text-muted dark:text-stone-500">
+                {items.length}
+                {totalInFilter != null && totalInFilter !== items.length
+                  ? ` из ${totalInFilter}`
+                  : ''}
+              </p>
+            )}
+          </div>
         </div>
       </Card>
 
       {selectedIds.size > 0 && (
-        <div
-          className={
-            embedded
-              ? 'shrink-0 border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark px-4 py-3'
-              : 'fixed bottom-0 inset-x-0 z-30 border-t border-border-light dark:border-border-dark bg-white/95 dark:bg-surface-dark/95 backdrop-blur px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]'
-          }
-        >
+        <div className="shrink-0 border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark px-4 py-3">
           <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-3 justify-between">
             <div className="text-sm font-body text-text-main dark:text-white">
               Выбрано: <span className="font-semibold">{selectedIds.size}</span>
@@ -754,6 +771,12 @@ export const ImportInboxPage: React.FC<{
             {skippedNoName > 0 && (
               <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
                 Без нормального имени пропущены: {skippedNoName}.
+              </p>
+            )}
+            {overrideSelected.length > 0 && (
+              <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
+                Бэкенд предлагает отклонить: {overrideSelected.length}. Пачкой не публикуем — только по
+                одному в досье.
               </p>
             )}
             {closedSelected.length > 0 && (
@@ -810,7 +833,11 @@ export const ImportInboxPage: React.FC<{
                   type="button"
                   disabled={batchMutation.isPending}
                   onClick={() =>
-                    batchMutation.mutate({ mode: 'Rejected', rejectReason: opt.value })
+                    batchMutation.mutate({
+                      mode: 'Rejected',
+                      targets: selectedItems.filter(isSelectable),
+                      rejectReason: opt.value,
+                    })
                   }
                   className="flex flex-col items-start gap-0.5 rounded-xl border border-border-light dark:border-border-dark hover:border-primary/60 px-3 py-3 text-left min-h-[56px] transition-colors disabled:opacity-50"
                 >

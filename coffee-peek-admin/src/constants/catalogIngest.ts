@@ -1,10 +1,12 @@
-export type QueueStatus = 'Pending' | 'Skipped' | 'Published' | 'Rejected';
+/** 'Unknown' = backend sent a value we don't recognise; never sent back, never batch-selectable. */
+export type QueueStatus = 'Pending' | 'Skipped' | 'Published' | 'Rejected' | 'Unknown';
+export type KnownQueueStatus = Exclude<QueueStatus, 'Unknown'>;
 export type CoffeeFocus = 'specialty' | 'coffee_bar' | 'cafe';
 export type CollectorBucket = 'priority' | 'review' | 'noise' | 'vending';
 /** Why an OSM candidate was rejected (not published). */
 export type RejectReason = 'closed' | 'invalid' | 'not_coffee' | 'duplicate';
 export type ImportSource = 'Osm' | 'File' | 'CoffeeMap';
-export type DuplicateSuggestionStatus = 'Pending' | 'Confirmed' | 'Rejected';
+export type DuplicateSuggestionStatus = 'Pending' | 'Confirmed' | 'Rejected' | 'Unknown';
 export type GoogleBusinessStatus =
   | 'Unknown'
   | 'Operational'
@@ -18,6 +20,7 @@ export const QUEUE_STATUS_LABELS: Record<QueueStatus, string> = {
   Skipped: 'Позже',
   Published: 'В ленте',
   Rejected: 'Не в ленту',
+  Unknown: 'Неизвестно',
 };
 
 export const REJECT_REASON_OPTIONS: {
@@ -59,14 +62,8 @@ export const IMPORT_SOURCE_TO_API: Record<ImportSource, number> = {
   CoffeeMap: 3,
 };
 
-export const DUPLICATE_STATUS_LABELS: Record<DuplicateSuggestionStatus, string> = {
-  Pending: 'Ожидает',
-  Confirmed: 'Одно место',
-  Rejected: 'Разные',
-};
-
 /** Backend: Pending=1, Confirmed=2, Rejected=3. */
-export const DUPLICATE_STATUS_TO_API: Record<DuplicateSuggestionStatus, number> = {
+export const DUPLICATE_STATUS_TO_API: Record<Exclude<DuplicateSuggestionStatus, 'Unknown'>, number> = {
   Pending: 1,
   Confirmed: 2,
   Rejected: 3,
@@ -138,7 +135,7 @@ export const COFFEE_FOCUS_TO_API: Record<CoffeeFocus, number> = {
   cafe: 3,
 };
 
-export const QUEUE_STATUS_TO_API: Record<QueueStatus, number> = {
+export const QUEUE_STATUS_TO_API: Record<KnownQueueStatus, number> = {
   Pending: 0,
   Skipped: 1,
   Published: 2,
@@ -156,7 +153,7 @@ export const IMPORT_LIST_PAGE_SIZE = 20;
 export const IMPORT_QUEUE_PAGE_SIZE = 50;
 
 export function parseImportListSearch(searchParams: URLSearchParams) {
-  const status = (searchParams.get('status') ?? 'Pending') as QueueStatus | 'all';
+  const status = (searchParams.get('status') ?? 'Pending') as KnownQueueStatus | 'all';
   const bucket = (searchParams.get('bucket') ?? 'priority') as CollectorBucket | 'all';
   const focus = (searchParams.get('focus') ?? '') as CoffeeFocus | '';
   const search = searchParams.get('search') ?? '';
@@ -272,8 +269,15 @@ export function parseImportSource(value: unknown): ImportSource | undefined {
 }
 
 export function parseDuplicateStatus(value: unknown): DuplicateSuggestionStatus {
-  if (value === undefined || value === null || value === '') return 'Pending';
-  return DUPLICATE_STATUS_ALIASES[String(value)] ?? 'Pending';
+  if (value === undefined || value === null || value === '') return 'Unknown';
+  return DUPLICATE_STATUS_ALIASES[String(value)] ?? 'Unknown';
+}
+
+/** Tag slugs sent on publish: specialty tag follows the chosen focus. Shared by single and batch publish. */
+export function publishTagSlugs(tagSlugs: string[], focus?: CoffeeFocus): string[] {
+  return focus === 'specialty'
+    ? Array.from(new Set([...tagSlugs, 'specialty']))
+    : tagSlugs.filter((slug) => slug !== 'specialty');
 }
 
 export function isClosedPermanently(status?: GoogleBusinessStatus): boolean {
@@ -353,7 +357,9 @@ export function fallbackResearchLinks(input: {
 export function instagramHandleFrom(value?: string | null): string | undefined {
   if (!value?.trim()) return undefined;
   const trimmed = value.trim();
-  const fromUrl = trimmed.match(/instagram\.com\/([A-Za-z0-9._]+)/i)?.[1];
+  const fromUrl = trimmed.match(
+    /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)?instagram\.com\/([A-Za-z0-9._]+)\/?(?:[/?#].*)?$/i
+  )?.[1];
   const fromAt = trimmed.match(/^@([A-Za-z0-9._]+)$/)?.[1];
   const fromBare = /^[A-Za-z0-9._]+$/.test(trimmed) ? trimmed : undefined;
   const handle = fromUrl || fromAt || fromBare;

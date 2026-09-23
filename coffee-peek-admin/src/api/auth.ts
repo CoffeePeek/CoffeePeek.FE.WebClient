@@ -39,21 +39,3 @@ export async function logout(): Promise<void> {
     TokenManager.clearTokens();
   }
 }
-
-export async function refreshAccessToken(): Promise<ApiResponse<AuthData>> {
-  const response = await httpClient.put<AuthData>(
-    API_ENDPOINTS.AUTH.REFRESH,
-    undefined,
-    { requiresAuth: false, skipAuthHeader: true }
-  );
-
-  if (response.success && response.data) {
-    const tokens = pickAuthTokens(response.data);
-    if (tokens.accessToken) {
-      TokenManager.setAccessToken(tokens.accessToken);
-      response.data.accessToken = tokens.accessToken;
-    }
-  }
-
-  return response;
-}

@@ -26,16 +26,23 @@ export const BrowseMapPage: React.FC = () => {
   const [selectedDetails, setSelectedDetails] = useState<BrowseCoffeeShopDetails | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  const loadCoffeeShops = async (map: MapLibreMap) => {
+  // Monotonic request ids: only the latest response of each kind may update state.
+  const boundsRequestIdRef = useRef(0);
+  const detailsRequestIdRef = useRef(0);
+
+  const loadCoffeeShops = async (map: MapLibreMap): Promise<MapShop[] | null> => {
+    const requestId = ++boundsRequestIdRef.current;
     try {
       const { minLat, minLon, maxLat, maxLon } = getMapBoundsBox(map);
       const response = await getCoffeeShopsByMapBounds(minLat, minLon, maxLat, maxLon);
+      if (requestId !== boundsRequestIdRef.current) return null;
       const shopsList = response.data?.shops ?? [];
       setShops(shopsList);
       setShopsLoaded(true);
       setError(null);
       return shopsList;
     } catch {
+      if (requestId !== boundsRequestIdRef.current) return null;
       setShopsLoaded(true);
       setError('Не удалось загрузить кофейни на карте');
       return [];
@@ -43,12 +50,16 @@ export const BrowseMapPage: React.FC = () => {
   };
 
   const loadShopDetails = async (shopId: string) => {
+    const requestId = ++detailsRequestIdRef.current;
+    setSelectedDetails(null);
     setIsLoadingDetails(true);
     try {
       const response = await getBrowseCoffeeShopById(shopId);
-      if (response.data) setSelectedDetails(response.data);
+      if (requestId === detailsRequestIdRef.current && response.data) setSelectedDetails(response.data);
+    } catch {
+      // Details are optional; the panel falls back to the map summary.
     } finally {
-      setIsLoadingDetails(false);
+      if (requestId === detailsRequestIdRef.current) setIsLoadingDetails(false);
     }
   };
 
@@ -97,7 +108,7 @@ export const BrowseMapPage: React.FC = () => {
       clearTimeout(updateTimeout);
       updateTimeout = setTimeout(() => {
         void loadCoffeeShops(map).then((loaded) => {
-          if (!cancelled) paintMarkers(loaded);
+          if (!cancelled && loaded) paintMarkers(loaded);
         });
       }, 300);
     };

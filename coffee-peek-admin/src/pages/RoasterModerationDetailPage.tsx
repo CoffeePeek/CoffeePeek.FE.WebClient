@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { PhotoGallery } from '../components/moderation/PhotoGallery';
+import { getErrorMessage } from '../utils/errors';
 
 export const RoasterModerationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,9 +28,10 @@ export const RoasterModerationDetailPage: React.FC = () => {
     onSuccess: () => {
       showToast('Обжарщик одобрен', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'roasters'] });
+      qc.invalidateQueries({ queryKey: ['catalogs'] });
       navigate('/roasters');
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -37,10 +39,11 @@ export const RoasterModerationDetailPage: React.FC = () => {
     onSuccess: () => {
       showToast('Обжарщик отклонён', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'roasters'] });
+      qc.invalidateQueries({ queryKey: ['catalogs'] });
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'roaster', id] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   if (isLoading || !roaster) {
@@ -75,7 +78,7 @@ export const RoasterModerationDetailPage: React.FC = () => {
               variant="success"
               size="sm"
               loading={approveMutation.isPending}
-              onClick={() => approveMutation.mutate(undefined)}
+              onClick={() => setPendingAction('approve')}
             >
               Одобрить
             </Button>
@@ -128,6 +131,20 @@ export const RoasterModerationDetailPage: React.FC = () => {
           </dl>
         </Card>
       </div>
+
+      <ConfirmModal
+        isOpen={pendingAction === 'approve'}
+        title="Одобрить обжарщика?"
+        message="Обжарщик станет виден пользователям в каталоге."
+        confirmLabel="Одобрить"
+        variant="success"
+        withComment
+        commentLabel="Комментарий (необязательно)"
+        onConfirm={async (comment) => {
+          await approveMutation.mutateAsync(comment || undefined);
+        }}
+        onCancel={() => setPendingAction(null)}
+      />
 
       <ConfirmModal
         isOpen={pendingAction === 'reject'}

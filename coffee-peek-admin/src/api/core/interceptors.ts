@@ -1,4 +1,4 @@
-import { ApiError, PaginatedMeta } from './types';
+import { ApiRequestError, PaginatedMeta } from './types';
 import { isTokenExpired } from '../../utils/jwt';
 
 export class TokenManager {
@@ -10,6 +10,7 @@ export class TokenManager {
 
   static setAccessToken(accessToken: string): void {
     this.accessToken = accessToken;
+    sessionAbsent = false;
   }
 
   static clearTokens(): void {
@@ -30,7 +31,22 @@ try {
 
 const TOKEN_PATH = '/api/tokens';
 
-let refreshInFlight: Promise<boolean> | null = null;
+export const LOGGED_OUT_KEY = 'coffeepeek-admin:logged-out';
+
+/** ok — новый токен; rejected — сервер отверг refresh (сессии нет); error — сеть/5xx/429, сессия может быть жива. */
+export type RefreshResult = 'ok' | 'rejected' | 'error';
+
+let refreshInFlight: Promise<RefreshResult> | null = null;
+// Сервер уже сказал, что refresh-cookie нет — не дёргаем PUT /api/tokens перед каждым запросом.
+let sessionAbsent = false;
+
+function isLoggedOutFlagSet(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(LOGGED_OUT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 export function isAuthTokenEndpoint(endpoint: string): boolean {
   return endpoint === TOKEN_PATH || endpoint.startsWith(`${TOKEN_PATH}/`);
@@ -77,26 +93,31 @@ export function pickAuthTokens(payload: unknown, depth = 0): { accessToken?: str
   return {};
 }
 
-async function performRefresh(baseURL: string): Promise<boolean> {
-  return fetch(`${baseURL}${TOKEN_PATH}`, {
-    method: 'PUT',
-    headers: { Accept: 'application/json' },
-    credentials: 'include',
-  }).then(async response => {
-    if (!response.ok) return false;
+async function performRefresh(baseURL: string): Promise<RefreshResult> {
+  try {
+    const response = await fetch(`${baseURL}${TOKEN_PATH}`, {
+      method: 'PUT',
+      headers: { Accept: 'application/json' },
+      credentials: 'include',
+    });
+    if (response.status === 401 || response.status === 403) {
+      sessionAbsent = true;
+      return 'rejected';
+    }
+    if (!response.ok) return 'error';
 
     const json = await response.json();
     const tokens = pickAuthTokens(json);
-    if (!tokens.accessToken) return false;
+    if (!tokens.accessToken) return 'error';
 
     TokenManager.setAccessToken(tokens.accessToken);
-    return true;
-  }).catch(() => {
-    return false;
-  });
+    return 'ok';
+  } catch {
+    return 'error';
+  }
 }
 
-export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
+export function tryRefreshAccessToken(baseURL: string): Promise<RefreshResult> {
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = performRefresh(baseURL).finally(() => {
     refreshInFlight = null;
@@ -104,10 +125,16 @@ export function tryRefreshAccessToken(baseURL: string): Promise<boolean> {
   return refreshInFlight;
 }
 
-export async function ensureFreshAccessToken(baseURL: string): Promise<boolean> {
+export async function ensureFreshAccessTokenResult(baseURL: string): Promise<RefreshResult> {
   const access = TokenManager.getAccessToken();
-  if (access && !isTokenExpired(access)) return true;
+  if (access && !isTokenExpired(access)) return 'ok';
+  // Нет токена в памяти и сессии заведомо нет (явный выход или refresh уже отвергнут) — не восстанавливаем её молча.
+  if (!access && (sessionAbsent || isLoggedOutFlagSet())) return 'rejected';
   return tryRefreshAccessToken(baseURL);
+}
+
+export async function ensureFreshAccessToken(baseURL: string): Promise<boolean> {
+  return (await ensureFreshAccessTokenResult(baseURL)) === 'ok';
 }
 
 export interface InterceptedResponse<T> {
@@ -155,13 +182,12 @@ export async function responseInterceptor<T>(
   const data = await response.json();
 
   if (!response.ok) {
-    const err: ApiError = {
-      status: response.status,
-      message: formatErrorMessage(data, response.status),
-      errors: data.errors ?? data.Errors,
-      errorCode: data.errorCode ?? data.ErrorCode,
-    };
-    throw err;
+    throw new ApiRequestError(
+      response.status,
+      formatErrorMessage(data, response.status),
+      data.errors ?? data.Errors,
+      data.errorCode ?? data.ErrorCode
+    );
   }
 
   return {
@@ -253,6 +279,6 @@ function formatErrorMessage(data: Record<string, unknown>, status: number): stri
   return getErrorMessageByStatus(status);
 }
 
-function createApiError(status: number, message: string): ApiError {
-  return { status, message };
+function createApiError(status: number, message: string): ApiRequestError {
+  return new ApiRequestError(status, message);
 }

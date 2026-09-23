@@ -5,6 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../utils/errors';
 
 const DEFAULT_PATTERN = 'user:*';
 
@@ -32,7 +33,7 @@ export const CachePage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'cache'] });
       setConfirmClearPattern(false);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка очистки кеша', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка очистки кеша'), 'error'),
   });
 
   const clearKeyMutation = useMutation({
@@ -41,7 +42,7 @@ export const CachePage: React.FC = () => {
       showToast('Ключ удалён из кеша', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'cache'] });
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const handleSearch = (e: React.FormEvent) => {

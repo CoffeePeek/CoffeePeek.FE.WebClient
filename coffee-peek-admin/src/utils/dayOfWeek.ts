@@ -57,13 +57,6 @@ export function dotNetNumberToUiDay(n: number): number {
   return (truncated + 6) % 7;
 }
 
-/** Convert UI index (0=Mon) → .NET DayOfWeek number (0=Sun). */
-export function uiDayToDotNetNumber(ui: number): number {
-  const truncated = Math.trunc(ui);
-  if (truncated < 0 || truncated > 6) return 1;
-  return (truncated + 1) % 7;
-}
-
 /** Prefer for PUT/POST bodies. */
 export function uiDayToDotNetName(ui: number): (typeof UI_TO_DOTNET_NAME)[number] {
   const truncated = Math.trunc(ui);

@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { getBrowseCoffeeShopById } from '../api/coffeeShops';
 import { setPublishedShopVisibility } from '../api/admin';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { useToast } from '../contexts/ToastContext';
+import { useUser } from '../contexts/UserContext';
 
 const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 export const BrowseShopPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { showToast } = useToast();
+  const { isAdmin } = useUser();
   const qc = useQueryClient();
+  const [confirmHide, setConfirmHide] = useState(false);
 
   const { data: shop, isLoading, isError } = useQuery({
     queryKey: ['browse', 'coffee-shop', id],
@@ -65,18 +69,40 @@ export const BrowseShopPage: React.FC = () => {
         <Link to="/map">
           <Button variant="secondary" size="sm">На карте</Button>
         </Link>
-        <Link to={`/published-shops/${shop.id}`}>
-          <Button variant="secondary" size="sm">Редактировать</Button>
-        </Link>
-        <Button
-          variant="danger"
-          size="sm"
-          loading={hideMutation.isPending}
-          onClick={() => hideMutation.mutate()}
-        >
-          Скрыть из приложения
-        </Button>
+        {isAdmin && (
+          <>
+            <Link to={`/published-shops/${shop.id}`}>
+              <Button variant="secondary" size="sm">Редактировать</Button>
+            </Link>
+            <Button
+              variant="danger"
+              size="sm"
+              loading={hideMutation.isPending}
+              onClick={() => setConfirmHide(true)}
+            >
+              Скрыть из приложения
+            </Button>
+          </>
+        )}
       </div>
+
+      <ConfirmModal
+        isOpen={isAdmin && confirmHide}
+        title="Скрыть кофейню из приложения?"
+        message={`«${shop.name}» перестанет отображаться пользователям приложения.`}
+        confirmLabel="Скрыть"
+        variant="danger"
+        onConfirm={async () => {
+          try {
+            await hideMutation.mutateAsync();
+          } catch {
+            // Ошибку показывает onError мутации.
+          } finally {
+            setConfirmHide(false);
+          }
+        }}
+        onCancel={() => setConfirmHide(false)}
+      />
 
       <Card className="overflow-hidden">
         {imageUrls.length > 0 && (

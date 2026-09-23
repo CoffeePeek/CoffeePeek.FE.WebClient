@@ -12,6 +12,7 @@ import {
   coffeeShopStatusBadgeVariant,
 } from '../constants/coffeeShopStatus';
 import { FocusBadge } from '../components/import/catalogControls';
+import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 20;
 type SortKey = 'name' | 'coffeeFocus' | 'status' | 'createdAtUtc';
@@ -23,6 +24,35 @@ const STATUS_OPTIONS: { value: CoffeeShopStatus | ''; label: string }[] = [
   { value: 'TemporarilyClosed', label: 'Временно закрыта' },
   { value: 'PermanentlyClosed', label: 'Закрыта навсегда' },
 ];
+
+const SortHeader: React.FC<{
+  sort: SortKey;
+  sortKey: SortKey;
+  sortDirection: SortDirection;
+  onSort: (key: SortKey) => void;
+  children: React.ReactNode;
+  className?: string;
+}> = ({ sort, sortKey, sortDirection, onSort, children, className = '' }) => {
+  const active = sortKey === sort;
+  return (
+    <th
+      scope="col"
+      aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+      className={`px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400 font-body ${className}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sort)}
+        className="group inline-flex items-center gap-1.5 whitespace-nowrap hover:text-text-main dark:hover:text-white"
+      >
+        {children}
+        <span className={active ? 'text-text-main dark:text-white' : 'text-stone-300 dark:text-stone-600'}>
+          {active ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
+        </span>
+      </button>
+    </th>
+  );
+};
 
 export const PublishedShopsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -73,7 +103,7 @@ export const PublishedShopsPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['browse'] });
       showToast(hidden ? 'Кофейня скрыта из приложения' : 'Кофейня снова видна в приложении', 'success');
     },
-    onError: (err: any) => showToast(err?.message ?? 'Не удалось изменить видимость', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Не удалось изменить видимость'), 'error'),
   });
 
   const setParam = (key: string, value: string) => {
@@ -92,31 +122,7 @@ export const PublishedShopsPage: React.FC = () => {
     setSearchParams(next);
   };
 
-  const SortHeader: React.FC<{ sort: SortKey; children: React.ReactNode; className?: string }> = ({
-    sort,
-    children,
-    className = '',
-  }) => {
-    const active = sortKey === sort;
-    return (
-      <th
-        scope="col"
-        aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-        className={`px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400 font-body ${className}`}
-      >
-        <button
-          type="button"
-          onClick={() => toggleSort(sort)}
-          className="group inline-flex items-center gap-1.5 whitespace-nowrap hover:text-text-main dark:hover:text-white"
-        >
-          {children}
-          <span className={active ? 'text-text-main dark:text-white' : 'text-stone-300 dark:text-stone-600'}>
-            {active ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
-          </span>
-        </button>
-      </th>
-    );
-  };
+  const sortProps = { sortKey, sortDirection, onSort: toggleSort };
 
   return (
     <div className="page-container">
@@ -191,11 +197,11 @@ export const PublishedShopsPage: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
-                    <SortHeader sort="name" className="pl-5">Название</SortHeader>
-                    <SortHeader sort="coffeeFocus">Focus</SortHeader>
-                    <SortHeader sort="status">Статус</SortHeader>
-                    <SortHeader sort="createdAtUtc">Создана</SortHeader>
-                    <th className="px-4 py-3" />
+                    <SortHeader sort="name" className="pl-5" {...sortProps}>Название</SortHeader>
+                    <SortHeader sort="coffeeFocus" {...sortProps}>Фокус</SortHeader>
+                    <SortHeader sort="status" {...sortProps}>Статус</SortHeader>
+                    <SortHeader sort="createdAtUtc" {...sortProps}>Создана</SortHeader>
+                    <th scope="col" className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">

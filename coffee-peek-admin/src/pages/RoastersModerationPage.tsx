@@ -9,6 +9,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 15;
 
@@ -40,9 +41,10 @@ export const RoastersModerationPage: React.FC = () => {
     onSuccess: () => {
       showToast('Обжарщик одобрен', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'roasters'] });
+      qc.invalidateQueries({ queryKey: ['catalogs'] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -50,9 +52,10 @@ export const RoastersModerationPage: React.FC = () => {
     onSuccess: () => {
       showToast('Обжарщик отклонён', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'roasters'] });
+      qc.invalidateQueries({ queryKey: ['catalogs'] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const setParam = (key: string, value: string) => {

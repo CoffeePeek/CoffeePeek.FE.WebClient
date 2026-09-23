@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getModerationReviews, approveReview, rejectReview, ModerationStatus, AdminReview } from '../api/admin';
@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 15;
 
@@ -109,7 +110,7 @@ export const ReviewsModerationPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'reviews'] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -120,7 +121,7 @@ export const ReviewsModerationPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'reviews'] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const setParam = (key: string, value: string) => {
@@ -129,6 +130,15 @@ export const ReviewsModerationPage: React.FC = () => {
     if (key !== 'page') next.delete('page');
     setSearchParams(next);
   };
+
+  // After acting on the last item of page N>1 the page becomes empty — step back instead of stranding the user.
+  useEffect(() => {
+    if (data && page > 1 && !data.items.length) {
+      const next = new URLSearchParams(searchParams);
+      next.set('page', String(page - 1));
+      setSearchParams(next, { replace: true });
+    }
+  }, [data, page, searchParams, setSearchParams]);
 
   return (
     <div className="page-container">

@@ -31,6 +31,32 @@ function collection(features: Feature[]): FeatureCollection {
   return { type: 'FeatureCollection', features };
 }
 
+/** Index to insert a new point at: after the start of the nearest edge of the closed ring (append for < 3 points). */
+function nearestEdgeInsertIndex(points: GeoPoint[], point: GeoPoint): number {
+  if (points.length < 3) return points.length;
+  // Local equirectangular projection — good enough for picking an edge within a city.
+  const k = Math.cos((point.latitude * Math.PI) / 180);
+  const px = point.longitude * k;
+  const py = point.latitude;
+  let best = points.length;
+  let bestDistance = Infinity;
+  points.forEach((a, i) => {
+    const b = points[(i + 1) % points.length];
+    const ax = a.longitude * k;
+    const ay = a.latitude;
+    const dx = b.longitude * k - ax;
+    const dy = b.latitude - ay;
+    const lengthSq = dx * dx + dy * dy;
+    const t = lengthSq ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSq)) : 0;
+    const distance = (px - (ax + t * dx)) ** 2 + (py - (ay + t * dy)) ** 2;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = i + 1;
+    }
+  });
+  return best;
+}
+
 function stopDomEvent(event: Event) {
   event.preventDefault();
   event.stopPropagation();
@@ -84,14 +110,20 @@ export function CoffeeZoneMap({
     });
 
     map.on('click', (event) => {
-      const hit = map.getLayer(CANDIDATES_FILL) ? map.queryRenderedFeatures(event.point, { layers: [CANDIDATES_FILL] })[0] : undefined;
+      // Candidate fills are only clickable before a contour exists; otherwise clicks edit the contour.
+      const hit = polygonRef.current.length === 0 && map.getLayer(CANDIDATES_FILL)
+        ? map.queryRenderedFeatures(event.point, { layers: [CANDIDATES_FILL] })[0]
+        : undefined;
       if (hit) {
         const candidate = candidatesRef.current[Number(hit.properties.index)];
         if (candidate) onCandidateSelectRef.current?.(candidate);
         return;
       }
       if (polygonRef.current.length >= MAX_POINTS) return;
-      emit([...polygonRef.current, { latitude: round(event.lngLat.lat), longitude: round(event.lngLat.lng) }]);
+      const point = { latitude: round(event.lngLat.lat), longitude: round(event.lngLat.lng) };
+      const next = [...polygonRef.current];
+      next.splice(nearestEdgeInsertIndex(next, point), 0, point);
+      emit(next);
     });
 
     mapRef.current = map;
@@ -111,12 +143,9 @@ export function CoffeeZoneMap({
     setZoneShape(toRing(polygon));
     vertexMarkersRef.current.forEach((marker) => marker.remove());
     vertexMarkersRef.current = polygon.map((point, index) => {
-      const element = dotElement('width:14px;height:14px;background:#f59e0b;border:2px solid white;cursor:move', `Точка ${index + 1} — перетащите, клик удаляет`);
+      const element = dotElement('width:14px;height:14px;background:#f59e0b;border:2px solid white;cursor:move', `Точка ${index + 1} — перетащите; двойной или правый клик удаляет`);
       const marker = new maplibregl.Marker({ element, draggable: true }).setLngLat([point.longitude, point.latitude]).addTo(map);
       const remove = () => emit(polygonRef.current.filter((_, i) => i !== index));
-      let dragged = false;
-
-      marker.on('dragstart', () => { dragged = true; });
       marker.on('drag', () => {
         const ring = toRing(polygonRef.current);
         const { lng, lat } = marker.getLngLat();
@@ -128,9 +157,12 @@ export function CoffeeZoneMap({
         emit(polygonRef.current.map((p, i) => (i === index ? { latitude: round(lat), longitude: round(lng) } : p)));
       });
       // Marker clicks bubble to the map (which would add a point), and the browser also fires a click after a drag.
+      // A single click never deletes (too easy to hit by accident) — double-click or right-click does.
       element.addEventListener('click', (event) => {
         stopDomEvent(event);
-        if (dragged) { dragged = false; return; }
+      });
+      element.addEventListener('dblclick', (event) => {
+        stopDomEvent(event);
         remove();
       });
       element.addEventListener('contextmenu', (event) => {
@@ -179,7 +211,7 @@ export function CoffeeZoneMap({
     <div className="relative h-[420px] overflow-hidden rounded-xl border border-border-light dark:border-border-dark">
       <div ref={containerRef} className="h-full w-full" aria-label="Редактор контура кофейной зоны" />
       <div className="pointer-events-none absolute left-3 top-3 z-[500] max-w-xs rounded-lg bg-[#1a1412]/90 px-3 py-2 text-xs text-stone-200 shadow-lg">
-        Клик по карте — добавить точку. Перетащите точку, чтобы сдвинуть; клик или правый клик — удалить.
+        Клик по карте — добавить точку (встанет в ближайшую сторону контура). Перетащите точку, чтобы сдвинуть; двойной или правый клик — удалить.
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { useToast } from '../contexts/ToastContext';
+import { getErrorMessage } from '../utils/errors';
 
 interface CatalogDefinition {
   kind: CatalogKind;
@@ -137,17 +138,17 @@ export const CatalogManagementPage: React.FC = () => {
   const createMutation = useMutation({
     mutationFn: ({ catalog, body }: { catalog: CatalogKind; body: CatalogMutationRequest }) => createAdminCatalogItem(catalog, body),
     onSuccess: async (_, { catalog }) => { setCreateForm(EMPTY_FORM); showToast('Запись добавлена', 'success'); await queryClient.invalidateQueries({ queryKey: ['admin', 'catalogs', catalog] }); },
-    onError: (error: any) => showToast(error?.message ?? 'Не удалось добавить запись', 'error'),
+    onError: (error) => showToast(getErrorMessage(error, 'Не удалось добавить запись'), 'error'),
   });
   const updateMutation = useMutation({
     mutationFn: ({ catalog, id, body }: { catalog: CatalogKind; id: string; body: CatalogMutationRequest }) => updateAdminCatalogItem(catalog, id, body),
     onSuccess: async (_, { catalog }) => { setEditing(null); showToast('Изменения сохранены', 'success'); await queryClient.invalidateQueries({ queryKey: ['admin', 'catalogs', catalog] }); },
-    onError: (error: any) => showToast(error?.message ?? 'Не удалось сохранить изменения', 'error'),
+    onError: (error) => showToast(getErrorMessage(error, 'Не удалось сохранить изменения'), 'error'),
   });
   const deleteMutation = useMutation({
     mutationFn: ({ catalog, id }: { catalog: CatalogKind; id: string }) => deleteAdminCatalogItem(catalog, id),
     onSuccess: async (_, { catalog }) => { setDeleting(null); showToast('Запись удалена', 'success'); await queryClient.invalidateQueries({ queryKey: ['admin', 'catalogs', catalog] }); },
-    onError: (error: any) => showToast(error?.message ?? 'Не удалось удалить запись. Возможно, она используется кофейней.', 'error'),
+    onError: (error) => showToast(getErrorMessage(error, 'Не удалось удалить запись. Возможно, она используется кофейней.'), 'error'),
   });
 
   const visibleItems = useMemo(() => {

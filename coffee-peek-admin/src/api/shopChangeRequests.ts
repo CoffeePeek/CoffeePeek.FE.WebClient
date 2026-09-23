@@ -1,4 +1,5 @@
 import { httpClient } from './core/httpClient';
+import { API_ENDPOINTS } from './core/apiConfig';
 
 export type ShopChangeSection =
   | 'Photos' | 'Contacts' | 'Description' | 'Tags'
@@ -69,21 +70,19 @@ export interface ShopChangeRequestQuery {
   submittedByUserId?: string;
 }
 
-const BASE = '/api/ShopChangeRequests';
-
 export function getShopChangeRequests(query: ShopChangeRequestQuery = {}) {
-  return httpClient.get<ShopChangeRequestPageDto>(BASE, { params: query });
+  return httpClient.get<ShopChangeRequestPageDto>(API_ENDPOINTS.SHOP_CHANGE_REQUESTS.BASE, { params: query });
 }
 
 export function getShopChangeRequest(id: string) {
-  return httpClient.get<ShopChangeRequestDto>(`${BASE}/${id}`);
+  return httpClient.get<ShopChangeRequestDto>(API_ENDPOINTS.SHOP_CHANGE_REQUESTS.BY_ID(id));
 }
 
 export function updateShopChangeRequest(
   id: string,
   body: { section: ShopChangeSection; payload: ShopChangePayloadDto }
 ) {
-  return httpClient.put<ShopChangeRequestDto>(`${BASE}/${id}`, body);
+  return httpClient.put<ShopChangeRequestDto>(API_ENDPOINTS.SHOP_CHANGE_REQUESTS.BY_ID(id), body);
 }
 
 export function reviewShopChangeRequest(
@@ -91,5 +90,5 @@ export function reviewShopChangeRequest(
   status: Exclude<ShopChangeStatus, 'Pending'>,
   comment: string | null
 ) {
-  return httpClient.put<ShopChangeRequestDto>(`${BASE}/${id}/status`, { status, comment });
+  return httpClient.put<ShopChangeRequestDto>(API_ENDPOINTS.SHOP_CHANGE_REQUESTS.STATUS(id), { status, comment });
 }

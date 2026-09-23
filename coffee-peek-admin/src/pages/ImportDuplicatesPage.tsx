@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   decideDuplicateSuggestion,
   DuplicateCandidateSide,
@@ -10,6 +10,7 @@ import {
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { Pagination } from '../components/ui/Pagination';
 import { ImportTabs, SourceBadge } from '../components/import/catalogControls';
 import { useToast } from '../contexts/ToastContext';
 import {
@@ -60,22 +61,26 @@ const SideCard: React.FC<{ side: DuplicateCandidateSide; label: string }> = ({ s
           : 'нет координат'}
       </p>
       <div className="flex flex-wrap gap-2 mt-2 text-xs">
-        <a
-          href={maps.googleMaps}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline"
-        >
-          Google
-        </a>
-        <a
-          href={maps.yandexMaps}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline"
-        >
-          Яндекс
-        </a>
+        {maps.googleMaps && (
+          <a
+            href={maps.googleMaps}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            Google
+          </a>
+        )}
+        {maps.yandexMaps && (
+          <a
+            href={maps.yandexMaps}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            Яндекс
+          </a>
+        )}
         {side.resultingShopId && (
           <Link to={`/published-shops/${side.resultingShopId}`} className="text-primary hover:underline">
             В каталоге
@@ -136,29 +141,48 @@ const SuggestionCard: React.FC<{
 export const ImportDuplicatesPage: React.FC = () => {
   const { showToast } = useToast();
   const qc = useQueryClient();
-  const [decidingId, setDecidingId] = useState<string | null>(null);
+  // Per-card busy state: a card stays busy until its own request AND the follow-up refetch settle.
+  const [decidingIds, setDecidingIds] = useState<Set<string>>(() => new Set());
+  const [page, setPage] = useState(1);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['admin', 'import', 'duplicates', { status: 'Pending' }],
+    queryKey: ['admin', 'import', 'duplicates', { status: 'Pending', page }],
     queryFn: () =>
-      getDuplicateSuggestions({ status: 'Pending', page: 1, pageSize: 50 }).then((r) => r.data),
+      getDuplicateSuggestions({ status: 'Pending', page, pageSize: 50 }).then((r) => r.data),
+    placeholderData: keepPreviousData,
   });
 
   const decideMutation = useMutation({
     mutationFn: ({ id, accept }: { id: string; accept: boolean }) =>
       decideDuplicateSuggestion(id, accept),
-    onMutate: ({ id }) => setDecidingId(id),
-    onSuccess: (_, { accept }) => {
+    onSuccess: async (_, { accept }) => {
       showToast(accept ? 'Объединено как одно место' : 'Отмечено как разные', 'success');
-      void qc.invalidateQueries({ queryKey: ['admin', 'import'] });
+      await qc.invalidateQueries({ queryKey: ['admin', 'import'] });
     },
     onError: (err: { message?: string }) => {
       showToast(err?.message ?? 'Не удалось сохранить решение', 'error');
     },
-    onSettled: () => setDecidingId(null),
+    onSettled: (_data, _err, { id }) =>
+      setDecidingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      }),
   });
 
+  const decide = (id: string, accept: boolean) => {
+    if (decidingIds.has(id)) return;
+    setDecidingIds((prev) => new Set(prev).add(id));
+    decideMutation.mutate({ id, accept });
+  };
+
   const items = data?.items ?? [];
+  const totalPages = data?.totalPages ?? 1;
+
+  // Deciding the last pairs of the last page shrinks totalPages — step back instead of showing empty.
+  useEffect(() => {
+    if (data && page > data.totalPages) setPage(Math.max(1, data.totalPages));
+  }, [data, page]);
 
   return (
     <div className="page-container max-w-5xl">
@@ -193,15 +217,17 @@ export const ImportDuplicatesPage: React.FC = () => {
         <div className="space-y-4">
           <p className="text-xs text-text-muted dark:text-stone-500">
             В выборке: {data?.totalCount ?? items.length}
+            {totalPages > 1 && ` · стр. ${page} из ${totalPages}`}
           </p>
           {items.map((item) => (
             <SuggestionCard
               key={item.id}
               item={item}
-              busy={decideMutation.isPending && decidingId === item.id}
-              onDecide={(id, accept) => decideMutation.mutate({ id, accept })}
+              busy={decidingIds.has(item.id)}
+              onDecide={decide}
             />
           ))}
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
     </div>

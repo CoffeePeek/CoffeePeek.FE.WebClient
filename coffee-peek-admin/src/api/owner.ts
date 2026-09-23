@@ -9,8 +9,8 @@ import {
   PublishedShop,
   PublishedShopContacts,
   PublishedShopLocation,
+  toPublishedApiSchedules,
 } from './admin';
-import { localTimeToUtc, uiDayToDotNetName } from '../utils/dayOfWeek';
 
 export interface UpdateOwnerShopRequest {
   name?: string;
@@ -27,36 +27,6 @@ export interface UpdateOwnerShopRequest {
     roasterIds?: string[];
     brewMethodIds?: string[];
   };
-}
-
-function toBackendTime(value: string): string {
-  if (!value) return '00:00:00';
-  const [hours = '00', minutes = '00'] = value.split(':');
-  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
-}
-
-function toOwnerApiSchedules(schedules: AdminShopSchedule[]) {
-  return schedules.map((schedule) => {
-    if (schedule.isClosed || !schedule.openTime || !schedule.closeTime) {
-      return {
-        dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
-        isClosed: Boolean(schedule.isClosed),
-        intervals: [],
-      };
-    }
-    const open = localTimeToUtc(schedule.dayOfWeek, schedule.openTime);
-    const close = localTimeToUtc(schedule.dayOfWeek, schedule.closeTime);
-    return {
-      dayOfWeek: uiDayToDotNetName(open.dayOfWeek),
-      isClosed: false,
-      intervals: [
-        {
-          openTime: toBackendTime(open.time),
-          closeTime: toBackendTime(close.time),
-        },
-      ],
-    };
-  });
 }
 
 export async function getOwnerShops(): Promise<ApiResponse<PublishedShop[]>> {
@@ -89,7 +59,7 @@ export async function updateOwnerShop(
   if (data.siteLink !== undefined) body.siteLink = data.siteLink;
   if (data.instagramLink !== undefined) body.instagramLink = data.instagramLink;
   if (data.location !== undefined) body.location = data.location;
-  if (data.schedules !== undefined) body.schedules = toOwnerApiSchedules(data.schedules);
+  if (data.schedules !== undefined) body.schedules = toPublishedApiSchedules(data.schedules);
   if (data.catalogs !== undefined) body.catalogs = data.catalogs;
 
   const response = await httpClient.put<Record<string, unknown>>(

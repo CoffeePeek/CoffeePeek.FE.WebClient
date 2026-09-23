@@ -122,7 +122,6 @@
   }
 }
 
-/* Tailwind preflight sets img { max-width: 100% }, which collapses Leaflet tiles */
 .maplibregl-map {
   z-index: 0;
   background: #1c1917;

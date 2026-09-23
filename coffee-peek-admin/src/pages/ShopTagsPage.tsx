@@ -143,6 +143,7 @@ export const ShopTagsPage: React.FC = () => {
       showToast('Тег создан', 'success');
       setCreateForm(emptyCreate);
       qc.invalidateQueries({ queryKey: ['admin', 'shop-tags'] });
+      qc.invalidateQueries({ queryKey: ['catalogs', 'shop-tags'] });
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка создания', 'error'),
   });
@@ -153,6 +154,7 @@ export const ShopTagsPage: React.FC = () => {
     onSuccess: () => {
       showToast('Тег обновлён', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'shop-tags'] });
+      qc.invalidateQueries({ queryKey: ['catalogs', 'shop-tags'] });
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка обновления', 'error'),
   });
@@ -163,6 +165,7 @@ export const ShopTagsPage: React.FC = () => {
       showToast('Тег деактивирован', 'success');
       setDeactivatingId(null);
       qc.invalidateQueries({ queryKey: ['admin', 'shop-tags'] });
+      qc.invalidateQueries({ queryKey: ['catalogs', 'shop-tags'] });
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
   });

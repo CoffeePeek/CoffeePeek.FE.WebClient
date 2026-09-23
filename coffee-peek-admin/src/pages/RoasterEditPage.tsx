@@ -9,6 +9,7 @@ import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../utils/errors';
 
 const fieldClass =
   'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body';
@@ -71,6 +72,24 @@ export const RoasterEditPage: React.FC = () => {
     );
   }, [roaster]);
 
+  // Revoke object URLs of new-photo previews once they leave the list (removed, or
+  // replaced by server photos after save) and on unmount.
+  const previewUrlsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const live = new Set(photoEntries.flatMap((entry) => (entry.kind === 'new' ? [entry.previewUrl] : [])));
+    previewUrlsRef.current.forEach((url) => {
+      if (!live.has(url)) URL.revokeObjectURL(url);
+    });
+    previewUrlsRef.current = live;
+  }, [photoEntries]);
+  useEffect(
+    () => () => {
+      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrlsRef.current = new Set();
+    },
+    []
+  );
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const newFiles = photoEntries.filter((e): e is Extract<PhotoEntry, { kind: 'new' }> => e.kind === 'new');
@@ -106,7 +125,7 @@ export const RoasterEditPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'catalogs', 'roasters'] });
       qc.invalidateQueries({ queryKey: ['catalogs'] });
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const deleteMutation = useMutation({
@@ -117,7 +136,7 @@ export const RoasterEditPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['catalogs'] });
       navigate('/catalogs?kind=roasters');
     },
-    onError: (err: any) => showToast(err?.message ?? 'Не удалось удалить обжарщика', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Не удалось удалить обжарщика'), 'error'),
   });
 
   const addFiles = (files: File[]) => {

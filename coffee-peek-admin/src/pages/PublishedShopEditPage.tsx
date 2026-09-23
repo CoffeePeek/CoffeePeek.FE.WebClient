@@ -23,6 +23,7 @@ import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { PhotoOrderEditor } from '../components/PhotoOrderEditor';
 import { PriceRangePicker } from '../components/PriceRangePicker';
 import { ScheduleEditor, getDefaultSchedules } from '../components/moderation/ScheduleEditor';
@@ -43,6 +44,13 @@ import {
   parsePublishedShopMenu,
   updatePublishedShopMenu,
 } from '../api/menu';
+import {
+  latitudeField,
+  longitudeField,
+  parseOptionalNumber,
+  publishedContactShape,
+  validateSchedules,
+} from '../utils/shopForm';
 
 const MAX_SHOP_TAGS = 20;
 
@@ -54,23 +62,12 @@ const schema = z.object({
   ownerUserId: z.string().optional(),
   cityId: z.string().optional(),
   address: z.string().optional(),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  email: z.string().optional(),
-  siteLink: z.string().optional(),
-  instagramLink: z.string().optional(),
+  latitude: latitudeField,
+  longitude: longitudeField,
+  ...publishedContactShape,
 });
 
 type FormData = z.infer<typeof schema>;
-
-function parseOptionalNumber(value?: string): number | null | undefined {
-  if (value === undefined) return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const num = Number(trimmed.replace(',', '.'));
-  return Number.isFinite(num) ? num : null;
-}
 
 export const PublishedShopEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -85,7 +82,10 @@ export const PublishedShopEditPage: React.FC = () => {
   const [beanIds, setBeanIds] = useState<string[]>([]);
   const [roasterIds, setRoasterIds] = useState<string[]>([]);
   const [brewMethodIds, setBrewMethodIds] = useState<string[]>([]);
-  const initializedMetadataShopId = useRef<string | null>(null);
+  const [schedulesTouched, setSchedulesTouched] = useState(false);
+  const [hadSchedules, setHadSchedules] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'hide' | 'removeOwner' | null>(null);
+  const initializedShopId = useRef<string | null>(null);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['admin', 'published-shop', id],
@@ -103,7 +103,7 @@ export const PublishedShopEditPage: React.FC = () => {
     },
   });
 
-  const { data: catalogTags = [] } = useQuery({
+  const { data: catalogTags = [], isError: catalogTagsError } = useQuery({
     queryKey: ['catalogs', 'shop-tags'],
     queryFn: () => getShopTags().then((r) => r.data ?? []),
     staleTime: 5 * 60 * 1000,
@@ -123,8 +123,10 @@ export const PublishedShopEditPage: React.FC = () => {
     defaultValues: { priceRange: 2, status: 'Active' },
   });
 
+  // Initialize once per shop: photo/owner/menu refetches must not wipe unsaved form edits.
   useEffect(() => {
-    if (!shop) return;
+    if (!shop || initializedShopId.current === shop.id) return;
+    initializedShopId.current = shop.id;
     reset({
       name: shop.name,
       description: shop.description ?? '',
@@ -147,20 +149,19 @@ export const PublishedShopEditPage: React.FC = () => {
       instagramLink: shop.contacts?.instagramLink ?? '',
     });
     setOwnerInput(shop.ownerUserId ?? '');
+    setHadSchedules(Boolean(shop.schedules?.length));
     setSchedules(shop.schedules?.length ? shop.schedules : getDefaultSchedules());
+    setSchedulesTouched(false);
     setEquipmentIds(shop.equipmentIds ?? []);
     setBeanIds(shop.beanIds ?? []);
     setRoasterIds(shop.roasterIds ?? []);
     setBrewMethodIds(shop.brewMethodIds ?? []);
-  }, [shop, reset]);
-
-  useEffect(() => {
-    if (!shop || initializedMetadataShopId.current === shop.id) return;
-    initializedMetadataShopId.current = shop.id;
     setFocus(shop.coffeeFocus);
     const fromTags = (shop.tags ?? []).map((tag) => tag.slug).filter(Boolean);
     setSelectedTagSlugs(fromTags.length ? fromTags : shop.tagSlugs ?? []);
-  }, [shop]);
+  }, [shop, reset]);
+
+  const sendSchedules = schedulesTouched || hadSchedules;
 
   const saveMutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -181,7 +182,8 @@ export const PublishedShopEditPage: React.FC = () => {
           siteLink: data.siteLink || null,
           instagramLink: data.instagramLink || null,
         },
-        schedules,
+        // Don't publish template hours for a shop that never had a schedule.
+        schedules: sendSchedules ? schedules : undefined,
         catalogs: {
           equipmentIds,
           beanIds,
@@ -190,6 +192,7 @@ export const PublishedShopEditPage: React.FC = () => {
         },
       }),
     onSuccess: (response) => {
+      if (sendSchedules) setHadSchedules(true);
       showToast('Кофейня обновлена', 'success');
       qc.setQueryData(['admin', 'published-shop', id], response.data);
       qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
@@ -199,8 +202,8 @@ export const PublishedShopEditPage: React.FC = () => {
 
   const ownerMutation = useMutation({
     mutationFn: (ownerUserId: string | null) => assignPublishedShopOwner(id!, ownerUserId),
-    onSuccess: () => {
-      showToast('Владелец назначен', 'success');
+    onSuccess: (_data, ownerUserId) => {
+      showToast(ownerUserId ? 'Владелец назначен' : 'Владелец снят', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] });
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
@@ -210,9 +213,9 @@ export const PublishedShopEditPage: React.FC = () => {
     mutationFn: (coffeeFocus: CoffeeFocus) => patchPublishedShopFocus(id!, coffeeFocus),
     onSuccess: (response) => {
       qc.setQueryData(['admin', 'published-shop', id], response.data);
-      showToast('Coffee focus сохранён', 'success');
+      showToast('Фокус кофейни сохранён', 'success');
     },
-    onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить focus', 'error'),
+    onError: (err: any) => showToast(err?.message ?? 'Не удалось сохранить фокус', 'error'),
   });
 
   const photoOrderMutation = useMutation({
@@ -249,12 +252,17 @@ export const PublishedShopEditPage: React.FC = () => {
   });
 
   const tagsMutation = useMutation({
-    mutationFn: (slugs: string[]) => {
+    mutationFn: async (slugs: string[]) => {
+      // PUT replaces the full set: never send a partial list (that would silently drop tags).
+      if (catalogTagsError || catalogTags.length === 0) {
+        throw new Error('Каталог тегов не загружен — теги не сохранены');
+      }
       const slugToId = new Map(catalogTags.map((tag) => [tag.slug, tag.id]));
-      const tagIds = slugs
-        .map((slug) => slugToId.get(slug))
-        .filter((tagId): tagId is string => Boolean(tagId));
-      return assignShopTags(id!, tagIds);
+      const missing = slugs.filter((slug) => !slugToId.has(slug));
+      if (missing.length) {
+        throw new Error(`Теги не найдены в каталоге: ${missing.join(', ')} — сохранение отменено`);
+      }
+      return assignShopTags(id!, slugs.map((slug) => slugToId.get(slug)!));
     },
     onSuccess: () => {
       showToast('Теги сохранены', 'success');
@@ -359,7 +367,17 @@ export const PublishedShopEditPage: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-5 items-start">
         <div className="space-y-5 min-w-0">
           <Card>
-            <form onSubmit={handleSubmit((data) => saveMutation.mutateAsync(data))} className="space-y-5">
+            <form
+              onSubmit={handleSubmit(async (data) => {
+                const scheduleError = sendSchedules ? validateSchedules(schedules) : null;
+                if (scheduleError) {
+                  showToast(scheduleError, 'error');
+                  return;
+                }
+                await saveMutation.mutateAsync(data);
+              })}
+              className="space-y-5"
+            >
               <h3 className="text-sm font-semibold text-text-main dark:text-white font-display">Карточка</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -428,12 +446,14 @@ export const PublishedShopEditPage: React.FC = () => {
                       Широта
                     </label>
                     <input {...register('latitude')} className={fieldClass} placeholder="53.9" />
+                    {errors.latitude && <p className="text-red-400 text-xs mt-1">{errors.latitude.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Долгота
                     </label>
                     <input {...register('longitude')} className={fieldClass} placeholder="27.56" />
+                    {errors.longitude && <p className="text-red-400 text-xs mt-1">{errors.longitude.message}</p>}
                   </div>
                 </div>
               </div>
@@ -452,25 +472,34 @@ export const PublishedShopEditPage: React.FC = () => {
                       Email
                     </label>
                     <input {...register('email')} className={fieldClass} />
+                    {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Сайт
                     </label>
                     <input {...register('siteLink')} className={fieldClass} />
+                    {errors.siteLink && <p className="text-red-400 text-xs mt-1">{errors.siteLink.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Instagram
                     </label>
                     <input {...register('instagramLink')} className={fieldClass} />
+                    {errors.instagramLink && <p className="text-red-400 text-xs mt-1">{errors.instagramLink.message}</p>}
                   </div>
                 </div>
               </div>
 
               <div className="border-t border-border-light dark:border-border-dark pt-4 space-y-3">
                 <h4 className="text-sm font-semibold text-text-main dark:text-white font-display">Расписание</h4>
-                <ScheduleEditor value={schedules} onChange={setSchedules} />
+                <ScheduleEditor
+                  value={schedules}
+                  onChange={(next) => {
+                    setSchedules(next);
+                    setSchedulesTouched(true);
+                  }}
+                />
               </div>
 
               <div className="border-t border-border-light dark:border-border-dark pt-4 space-y-3">
@@ -537,7 +566,9 @@ export const PublishedShopEditPage: React.FC = () => {
               variant={shop.isHidden ? 'success' : 'danger'}
               size="sm"
               loading={visibilityMutation.isPending}
-              onClick={() => visibilityMutation.mutate(!shop.isHidden)}
+              onClick={() =>
+                shop.isHidden ? visibilityMutation.mutate(false) : setConfirmAction('hide')
+              }
               className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
             >
               {shop.isHidden ? 'Показать в приложении' : 'Скрыть из приложения'}
@@ -599,7 +630,11 @@ export const PublishedShopEditPage: React.FC = () => {
                 variant="secondary"
                 size="sm"
                 loading={ownerMutation.isPending}
-                onClick={() => ownerMutation.mutate(ownerInput.trim() || null)}
+                onClick={() =>
+                  !ownerInput.trim() && shop.ownerUserId
+                    ? setConfirmAction('removeOwner')
+                    : ownerMutation.mutate(ownerInput.trim() || null)
+                }
                 className="w-full sm:w-auto min-h-[44px] sm:min-h-0 self-start"
               >
                 Назначить
@@ -644,6 +679,32 @@ export const PublishedShopEditPage: React.FC = () => {
           />
         </Card>
       )}
+
+      <ConfirmModal
+        isOpen={confirmAction === 'hide'}
+        title="Скрыть кофейню?"
+        message="Кофейня пропадёт из поиска и с карты приложения, пока её снова не покажут."
+        confirmLabel="Скрыть"
+        variant="danger"
+        onConfirm={async () => {
+          await visibilityMutation.mutateAsync(true).catch(() => undefined);
+          setConfirmAction(null);
+        }}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+      <ConfirmModal
+        isOpen={confirmAction === 'removeOwner'}
+        title="Снять владельца?"
+        message="Текущий владелец потеряет доступ к управлению этой кофейней."
+        confirmLabel="Снять"
+        variant="danger"
+        onConfirm={async () => {
+          await ownerMutation.mutateAsync(null).catch(() => undefined);
+          setConfirmAction(null);
+        }}
+        onCancel={() => setConfirmAction(null)}
+      />
     </div>
   );
 };

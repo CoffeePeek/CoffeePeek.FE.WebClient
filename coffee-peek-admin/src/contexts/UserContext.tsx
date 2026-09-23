@@ -1,12 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { getUserRoles, getUserEmail, getUserId, isTokenExpired } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
-import { ensureFreshAccessToken } from '../api/core/interceptors';
+import { ensureFreshAccessToken, LOGGED_OUT_KEY } from '../api/core/interceptors';
 import { API_BASE_URL } from '../api/core/apiConfig';
 import { logout as apiLogout } from '../api/auth';
 import { queryClient } from '../lib/queryClient';
-
-const LOGGED_OUT_KEY = 'coffeepeek-admin:logged-out';
 
 export interface AppUser {
   id: string;

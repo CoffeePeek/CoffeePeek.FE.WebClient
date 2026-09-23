@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPublishedShopById } from '../api/admin';
 import { getPublishedShopMenu } from '../api/menu';
 import {
@@ -16,6 +16,7 @@ import { ChangeRequestPayloadView } from '../components/moderation/ChangeRequest
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { useToast } from '../contexts/ToastContext';
 import { sectionLabels } from './ShopChangeRequestsPage';
 
@@ -44,6 +45,8 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const qc = useQueryClient();
+  const [confirmApprove, setConfirmApprove] = useState(false);
   const [request, setRequest] = useState<ShopChangeRequestDto | null>(null);
   const [section, setSection] = useState<ShopChangeSection>('Description');
   const [payload, setPayload] = useState('{}');
@@ -54,22 +57,33 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
+    // Ignore responses for a previous id (fast navigation between requests).
+    let active = true;
+    setLoading(true);
+    setRequest(null);
     getShopChangeRequest(id)
       .then((response) => {
+        if (!active) return;
         setRequest(response.data);
         setSection(response.data.section);
         setPayload(JSON.stringify(response.data.payload, null, 2));
       })
-      .catch((error) =>
-        showToast(error instanceof Error ? error.message : 'Не удалось загрузить заявку', 'error')
-      )
-      .finally(() => setLoading(false));
+      .catch((error) => {
+        if (active) showToast(error instanceof Error ? error.message : 'Не удалось загрузить заявку', 'error');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [id, showToast]);
 
   const parsedPayload = useMemo(() => parsePayloadText(payload), [payload]);
 
   const { data: shop } = useQuery({
-    queryKey: ['published-shop', request?.shopId],
+    // Same key/queryFn as PublishedShopEditPage, so approval invalidation refreshes both.
+    queryKey: ['admin', 'published-shop', request?.shopId],
     queryFn: () => getPublishedShopById(request!.shopId).then((r) => r.data),
     enabled: !!request?.shopId,
     retry: false,
@@ -83,7 +97,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
   });
 
   const { data: menuBundle } = useQuery({
-    queryKey: ['published-shop-menu', request?.shopId],
+    queryKey: ['admin', 'published-shop-menu', request?.shopId],
     queryFn: () => getPublishedShopMenu(request!.shopId).then((r) => r.data),
     enabled: !!request?.shopId && (section === 'Menu' || request?.section === 'Menu'),
     retry: false,
@@ -92,7 +106,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
   const parsePayload = (): ShopChangePayloadDto | null => {
     const value = parsePayloadText(payload);
     if (!value) {
-      showToast('Payload должен быть валидным JSON-объектом', 'error');
+      showToast('Данные заявки должны быть корректным JSON-объектом', 'error');
       return null;
     }
     return value;
@@ -130,6 +144,13 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
         await updateShopChangeRequest(id, { section, payload: parsed });
       }
       await reviewShopChangeRequest(id, status, reason || null);
+      if (request?.shopId) {
+        await Promise.all([
+          qc.invalidateQueries({ queryKey: ['admin', 'published-shop', request.shopId] }),
+          qc.invalidateQueries({ queryKey: ['admin', 'published-shop-menu', request.shopId] }),
+        ]);
+      }
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
       showToast(
         status === 'Approved' ? 'Изменение одобрено и применено' : 'Заявка отклонена',
         'success'
@@ -161,7 +182,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
           <p className="mt-1 text-sm text-text-muted dark:text-stone-400">Заявка {request.id}</p>
         </div>
         <Badge variant={request.status.toLowerCase() as 'pending' | 'approved' | 'rejected'}>
-          {request.status}
+          {({ Pending: 'На модерации', Approved: 'Одобрено', Rejected: 'Отклонено' } as Record<string, string>)[request.status] ?? request.status}
         </Badge>
       </div>
 
@@ -354,7 +375,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
           <div className="mt-4 flex flex-wrap gap-3">
             <Button
               variant="success"
-              onClick={() => void review('Approved')}
+              onClick={() => setConfirmApprove(true)}
               loading={action === 'approve'}
               disabled={action !== null}
             >
@@ -371,6 +392,19 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
           </div>
         </Card>
       )}
+
+      <ConfirmModal
+        isOpen={confirmApprove}
+        title="Одобрить и применить?"
+        message="Изменения сразу применятся к опубликованной кофейне."
+        confirmLabel="Одобрить и применить"
+        variant="success"
+        onConfirm={async () => {
+          await review('Approved');
+          setConfirmApprove(false);
+        }}
+        onCancel={() => setConfirmApprove(false)}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -26,29 +26,25 @@ import {
   COFFEE_SHOP_STATUS_LABELS,
   coffeeShopStatusBadgeVariant,
 } from '../constants/coffeeShopStatus';
+import {
+  latitudeField,
+  longitudeField,
+  parseOptionalNumber,
+  publishedContactShape,
+  validateSchedules,
+} from '../utils/shopForm';
 
 const schema = z.object({
   name: z.string().min(1, 'Обязательное поле'),
   description: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  email: z.string().email('Некорректный email').optional().or(z.literal('')),
-  siteLink: z.string().url('Некорректный URL').optional().or(z.literal('')),
-  instagramLink: z.string().optional(),
+  ...publishedContactShape,
   cityId: z.string().optional(),
   address: z.string().optional(),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
+  latitude: latitudeField,
+  longitude: longitudeField,
 });
 
 type FormData = z.infer<typeof schema>;
-
-function parseOptionalNumber(value?: string): number | null | undefined {
-  if (value === undefined) return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const num = Number(trimmed.replace(',', '.'));
-  return Number.isFinite(num) ? num : null;
-}
 
 export const OwnerShopEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +57,9 @@ export const OwnerShopEditPage: React.FC = () => {
   const [beanIds, setBeanIds] = useState<string[]>([]);
   const [roasterIds, setRoasterIds] = useState<string[]>([]);
   const [brewMethodIds, setBrewMethodIds] = useState<string[]>([]);
+  const [schedulesTouched, setSchedulesTouched] = useState(false);
+  const [hadSchedules, setHadSchedules] = useState(false);
+  const initializedShopId = useRef<string | null>(null);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['owner', 'shop', id],
@@ -77,8 +76,10 @@ export const OwnerShopEditPage: React.FC = () => {
     resolver: zodResolver(schema),
   });
 
+  // Initialize once per shop: photo refetches must not wipe unsaved form edits.
   useEffect(() => {
-    if (!shop) return;
+    if (!shop || initializedShopId.current === shop.id) return;
+    initializedShopId.current = shop.id;
     reset({
       name: shop.name,
       description: shop.description ?? '',
@@ -97,12 +98,16 @@ export const OwnerShopEditPage: React.FC = () => {
           ? String(shop.location.longitude)
           : '',
     });
+    setHadSchedules(Boolean(shop.schedules?.length));
     setSchedules(shop.schedules?.length ? shop.schedules : getDefaultSchedules());
+    setSchedulesTouched(false);
     setEquipmentIds(shop.equipmentIds ?? []);
     setBeanIds(shop.beanIds ?? []);
     setRoasterIds(shop.roasterIds ?? []);
     setBrewMethodIds(shop.brewMethodIds ?? []);
   }, [shop, reset]);
+
+  const sendSchedules = schedulesTouched || hadSchedules;
 
   const saveMutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -119,7 +124,8 @@ export const OwnerShopEditPage: React.FC = () => {
           latitude: parseOptionalNumber(data.latitude),
           longitude: parseOptionalNumber(data.longitude),
         },
-        schedules,
+        // Don't publish template hours for a shop that never had a schedule.
+        schedules: sendSchedules ? schedules : undefined,
         catalogs: {
           equipmentIds,
           beanIds,
@@ -128,6 +134,7 @@ export const OwnerShopEditPage: React.FC = () => {
         },
       }),
     onSuccess: (response) => {
+      if (sendSchedules) setHadSchedules(true);
       showToast('Изменения сохранены', 'success');
       qc.setQueryData(['owner', 'shop', id], response.data);
       qc.invalidateQueries({ queryKey: ['owner'] });
@@ -199,7 +206,14 @@ export const OwnerShopEditPage: React.FC = () => {
 
       <Card>
         <form
-          onSubmit={handleSubmit((data) => saveMutation.mutateAsync(data))}
+          onSubmit={handleSubmit(async (data) => {
+            const scheduleError = sendSchedules ? validateSchedules(schedules) : null;
+            if (scheduleError) {
+              showToast(scheduleError, 'error');
+              return;
+            }
+            await saveMutation.mutateAsync(data);
+          })}
           className="space-y-5"
         >
           <div>
@@ -231,6 +245,7 @@ export const OwnerShopEditPage: React.FC = () => {
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Instagram</label>
               <input {...register('instagramLink')} className={fieldClass} />
+              {errors.instagramLink && <p className="text-red-400 text-xs mt-1">{errors.instagramLink.message}</p>}
             </div>
           </div>
 
@@ -255,17 +270,25 @@ export const OwnerShopEditPage: React.FC = () => {
               <div>
                 <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Широта</label>
                 <input {...register('latitude')} className={fieldClass} />
+                {errors.latitude && <p className="text-red-400 text-xs mt-1">{errors.latitude.message}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Долгота</label>
                 <input {...register('longitude')} className={fieldClass} />
+                {errors.longitude && <p className="text-red-400 text-xs mt-1">{errors.longitude.message}</p>}
               </div>
             </div>
           </div>
 
           <div className="border-t border-border-light dark:border-border-dark pt-4 space-y-3">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display">Расписание</h3>
-            <ScheduleEditor value={schedules} onChange={setSchedules} />
+            <ScheduleEditor
+              value={schedules}
+              onChange={(next) => {
+                setSchedules(next);
+                setSchedulesTouched(true);
+              }}
+            />
           </div>
 
           <div className="border-t border-border-light dark:border-border-dark pt-4 space-y-3">

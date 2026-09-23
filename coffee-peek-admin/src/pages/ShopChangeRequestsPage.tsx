@@ -44,7 +44,7 @@ function useEntityLabels(items: ShopChangeRequestDto[]) {
 
   const shopQueries = useQueries({
     queries: shopIds.map((shopId) => ({
-      queryKey: ['published-shop', shopId],
+      queryKey: ['admin', 'published-shop', shopId],
       queryFn: () => getPublishedShopById(shopId).then((r) => r.data),
       staleTime: 5 * 60 * 1000,
       retry: false,

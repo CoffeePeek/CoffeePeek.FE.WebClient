@@ -43,6 +43,21 @@ export interface ApiError {
   errorCode?: string;
 }
 
+/** Ошибка HTTP-запроса: наследник Error, но с полями ApiError для существующих обработчиков. */
+export class ApiRequestError extends Error implements ApiError {
+  readonly status: number;
+  readonly errors?: Record<string, string[]>;
+  readonly errorCode?: string;
+
+  constructor(status: number, message: string, errors?: Record<string, string[]>, errorCode?: string) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.status = status;
+    this.errors = errors;
+    this.errorCode = errorCode;
+  }
+}
+
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 export interface RequestOptions extends RequestInit {

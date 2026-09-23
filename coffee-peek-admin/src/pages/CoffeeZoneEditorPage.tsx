@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -23,6 +23,7 @@ import { CoffeeZoneMap } from '../components/coffee-zones/CoffeeZoneMap';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { useToast } from '../contexts/ToastContext';
 import { useCatalogs } from '../hooks/useCatalogs';
 
@@ -36,6 +37,29 @@ const MIN_POINTS = 3;
 const MAX_POINTS = 100;
 
 type ZoneForm = z.infer<typeof zoneSchema>;
+
+function segmentsIntersect(a: GeoPoint, b: GeoPoint, c: GeoPoint, d: GeoPoint): boolean {
+  const cross = (p: GeoPoint, q: GeoPoint, r: GeoPoint) =>
+    (q.longitude - p.longitude) * (r.latitude - p.latitude) - (q.latitude - p.latitude) * (r.longitude - p.longitude);
+  const d1 = cross(c, d, a);
+  const d2 = cross(c, d, b);
+  const d3 = cross(a, b, c);
+  const d4 = cross(a, b, d);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+}
+
+/** Proper crossings between non-adjacent edges of the closed ring. O(n²) — fine up to MAX_POINTS (100). */
+function isSelfIntersecting(points: GeoPoint[]): boolean {
+  const n = points.length;
+  if (n < 4) return false;
+  for (let i = 0; i < n; i += 1) {
+    for (let j = i + 2; j < n; j += 1) {
+      if (i === 0 && j === n - 1) continue; // first and last edges share a vertex
+      if (segmentsIntersect(points[i], points[(i + 1) % n], points[j], points[(j + 1) % n])) return true;
+    }
+  }
+  return false;
+}
 
 const inputClass = 'w-full rounded-lg border border-border-light bg-white px-3 py-2 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border-dark dark:bg-surface-dark dark:text-white';
 
@@ -57,6 +81,8 @@ export function CoffeeZoneEditorPage() {
   const [minShops, setMinShops] = useState(4);
   // Kept outside react-hook-form: setValue clones arrays, and the map relies on reference identity to tell its own edits from loads.
   const [polygon, setPolygon] = useState<GeoPoint[]>([]);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const initializedZoneId = useRef<string | null>(null);
 
   const form = useForm<ZoneForm>({
     resolver: zodResolver(zoneSchema),
@@ -80,7 +106,9 @@ export function CoffeeZoneEditorPage() {
 
   useEffect(() => {
     const zone = zoneQuery.data;
-    if (!zone) return;
+    // Initialize once per zone: refetches after membership changes must not wipe an unsaved contour.
+    if (!zone || initializedZoneId.current === zone.id) return;
+    initializedZoneId.current = zone.id;
     form.reset({
       cityId: zone.cityId,
       name: zone.name,
@@ -137,10 +165,19 @@ export function CoffeeZoneEditorPage() {
     setCandidates([]);
   }, [cityId]);
 
-  const selectCandidate = (candidate: CoffeeZoneCandidate) => setPolygon(candidate.polygon);
+  const selectCandidate = (candidate: CoffeeZoneCandidate) => {
+    if (polygon.length > 0 && !window.confirm('Заменить текущий контур контуром кандидата?')) return;
+    setPolygon(candidate.polygon);
+    // Hide candidates once one is picked so map clicks edit the contour again.
+    setCandidates([]);
+  };
 
   const onSubmit = form.handleSubmit((values) => {
     if (!pointCountValid) return;
+    if (isSelfIntersecting(polygon)) {
+      showToast('Контур пересекает сам себя — переставьте точки', 'error');
+      return;
+    }
     if (tooLarge && !window.confirm(`Точки зоны удалены от центра до ${Math.round(extentMeters)} м (лимит ${ZONE_MAX_EXTENT_METERS} м). Сервер, скорее всего, отклонит зону. Всё равно сохранить?`)) return;
     saveMutation.mutate({ ...values, description: values.description.trim() || null, polygon });
   });
@@ -196,7 +233,7 @@ export function CoffeeZoneEditorPage() {
           <Card>
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-display text-sm font-semibold text-text-main dark:text-white">Контур</h3>
-              <Button type="button" variant="ghost" size="sm" disabled={polygon.length === 0} onClick={() => setPolygon([])}>Очистить</Button>
+              <Button type="button" variant="ghost" size="sm" disabled={polygon.length === 0} onClick={() => setConfirmClear(true)}>Очистить</Button>
             </div>
             <p className={`mt-2 text-sm ${pointCountValid ? 'text-text-main dark:text-white' : 'text-red-400'}`}>Точек: {polygon.length} (от {MIN_POINTS} до {MAX_POINTS})</p>
             {polygon.length < MIN_POINTS && <p className="mt-1 text-xs text-text-muted dark:text-stone-400">Добавьте ещё {MIN_POINTS - polygon.length}, чтобы сохранить зону.</p>}
@@ -244,6 +281,19 @@ export function CoffeeZoneEditorPage() {
           )}
         </div>
       </form>
+
+      <ConfirmModal
+        isOpen={confirmClear}
+        title="Очистить контур?"
+        message={`Все точки контура (${polygon.length}) будут удалены. Изменения применятся только после сохранения.`}
+        confirmLabel="Очистить"
+        variant="danger"
+        onConfirm={() => {
+          setPolygon([]);
+          setConfirmClear(false);
+        }}
+        onCancel={() => setConfirmClear(false)}
+      />
     </div>
   );
 }

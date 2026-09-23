@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
@@ -13,6 +13,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 15;
 type SortKey = 'name' | 'address' | 'description' | 'status';
@@ -51,6 +52,7 @@ const SortButton: React.FC<{
   <button
     type="button"
     onClick={() => onSort(column)}
+    title="Сортировка на текущей странице"
     className="inline-flex items-center gap-1 text-xs font-medium text-text-muted dark:text-stone-400 hover:text-text-main dark:hover:text-white font-body"
   >
     {label}
@@ -93,7 +95,7 @@ export const ShopsModerationPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'shops'] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -104,7 +106,7 @@ export const ShopsModerationPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'shops'] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const setParam = (key: string, value: string) => {
@@ -113,6 +115,15 @@ export const ShopsModerationPage: React.FC = () => {
     if (key !== 'page') next.delete('page');
     setSearchParams(next);
   };
+
+  // After acting on the last item of page N>1 the page becomes empty — step back instead of stranding the user.
+  useEffect(() => {
+    if (data && page > 1 && !data.items.length) {
+      const next = new URLSearchParams(searchParams);
+      next.set('page', String(page - 1));
+      setSearchParams(next, { replace: true });
+    }
+  }, [data, page, searchParams, setSearchParams]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +152,7 @@ export const ShopsModerationPage: React.FC = () => {
         <h2 className="page-header-title">Пользовательская модерация</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           {data ? `Всего: ${data.totalCount}` : 'Загрузка...'}
+          {data && sortKey && ' · сортировка на странице'}
         </p>
       </div>
 
@@ -252,20 +264,20 @@ export const ShopsModerationPage: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
-                    <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-16" />
-                    <th className="text-left px-4 py-3">
+                    <th scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-16" />
+                    <th scope="col" className="text-left px-4 py-3">
                       <SortButton label="Название" column="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="text-left px-4 py-3">
+                    <th scope="col" className="text-left px-4 py-3">
                       <SortButton label="Адрес" column="address" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="text-left px-4 py-3">
+                    <th scope="col" className="text-left px-4 py-3">
                       <SortButton label="Описание" column="description" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="text-left px-4 py-3">
+                    <th scope="col" className="text-left px-4 py-3">
                       <SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-[7.25rem]">
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-[7.25rem]">
                       Действия
                     </th>
                   </tr>

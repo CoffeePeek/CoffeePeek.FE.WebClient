@@ -5,8 +5,7 @@ import {
   localTimeToUtc,
   normalizeTime24,
 } from '../../utils/dayOfWeek';
-
-const DAY_NAMES = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+import { DAY_NAMES } from '../../utils/shopForm';
 
 interface ScheduleEditorProps {
   value: AdminShopSchedule[];
@@ -64,7 +63,14 @@ export const ScheduleEditor: React.FC<ScheduleEditorProps> = ({ value, onChange 
                 <input
                   type="checkbox"
                   checked={schedule.isClosed ?? false}
-                  onChange={(e) => updateDay(schedule.dayOfWeek, { isClosed: e.target.checked })}
+                  onChange={(e) =>
+                    updateDay(schedule.dayOfWeek, {
+                      isClosed: e.target.checked,
+                      // Reopening a day that had no hours: start from a sensible template instead of empty fields.
+                      ...(!e.target.checked && !schedule.openTime ? { openTime: '08:00' } : {}),
+                      ...(!e.target.checked && !schedule.closeTime ? { closeTime: '22:00' } : {}),
+                    })
+                  }
                   className="rounded border-border-light dark:border-border-dark"
                 />
                 Выходной
@@ -72,14 +78,14 @@ export const ScheduleEditor: React.FC<ScheduleEditorProps> = ({ value, onChange 
               <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                 <TimeInput
                   label={`Открытие, ${DAY_NAMES[schedule.dayOfWeek]}`}
-                  value={schedule.openTime || '08:00'}
+                  value={schedule.openTime}
                   disabled={schedule.isClosed}
                   onChange={(openTime) => updateDay(schedule.dayOfWeek, { openTime, isClosed: false })}
                 />
                 <span className="text-text-muted dark:text-stone-500" aria-hidden="true">—</span>
                 <TimeInput
                   label={`Закрытие, ${DAY_NAMES[schedule.dayOfWeek]}`}
-                  value={schedule.closeTime || '22:00'}
+                  value={schedule.closeTime}
                   disabled={schedule.isClosed}
                   onChange={(closeTime) => updateDay(schedule.dayOfWeek, { closeTime, isClosed: false })}
                 />
@@ -92,7 +98,9 @@ export const ScheduleEditor: React.FC<ScheduleEditorProps> = ({ value, onChange 
                     UTC в базе: {DAY_NAMES[openUtc.dayOfWeek]}, {openUtc.time} — {closeUtc.time}
                   </span>
                 ) : (
-                  <span className="text-red-500 dark:text-red-400">Введите время как HH:mm</span>
+                  <span className="text-red-500 dark:text-red-400">
+                    Введите время как HH:mm — иначе сохранение будет заблокировано
+                  </span>
                 )}
               </div>
             </div>

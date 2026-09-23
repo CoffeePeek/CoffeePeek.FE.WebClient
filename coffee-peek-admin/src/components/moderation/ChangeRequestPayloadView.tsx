@@ -185,8 +185,8 @@ function MenuItemsView({
 
   const formatItem = (item: {
     availability: MenuItemAvailability;
-    price: number | null;
-    volumeMl: number | null;
+    price?: number | null;
+    volumeMl?: number | null;
   }) => {
     const parts = [AVAIL_LABELS[item.availability] ?? item.availability];
     if (item.price != null) parts.push(formatMenuPrice(item.price, currentMenu?.currency ?? 'BYN'));
@@ -272,7 +272,7 @@ export const ChangeRequestPayloadView: React.FC<ChangeRequestPayloadViewProps> =
 }) => {
   const { data: catalogs } = useCatalogs();
   const { data: tags = [] } = useQuery({
-    queryKey: ['shop-tags-catalog'],
+    queryKey: ['catalogs', 'shop-tags'],
     queryFn: () => getShopTags().then((r) => r.data ?? []),
     staleTime: 5 * 60 * 1000,
   });

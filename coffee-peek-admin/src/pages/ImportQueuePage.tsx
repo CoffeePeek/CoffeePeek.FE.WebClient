@@ -5,6 +5,7 @@ import {
   decideImportCandidate,
   getImportCandidate,
   getImportCandidates,
+  ImportCandidatesPage,
   patchImportCandidate,
   attachImportCandidateMenuPhotos,
   parseImportCandidateMenu,
@@ -34,6 +35,7 @@ import {
   isClosedPermanently,
   isUsableShopName,
   normalizeInstagramUrl,
+  publishTagSlugs,
 } from '../constants/catalogIngest';
 import {
   YANDEX_TO_OURS,
@@ -41,6 +43,7 @@ import {
   displayFacts,
   dossierSoftWarning,
   parseWorkspacePanel,
+  safeHttpUrl,
   suggestedFocusFromSignals,
   yandexChipApplies,
 } from '../utils/importDossier';
@@ -48,9 +51,28 @@ import { ImportInboxPage } from './ImportInboxPage';
 import { ImportStatsPage } from './ImportStatsPage';
 
 function openBlank(url?: string) {
-  if (!url) return;
-  window.open(url, '_blank', 'noopener,noreferrer');
+  const safe = safeHttpUrl(url);
+  if (!safe) return;
+  window.open(safe, '_blank', 'noopener,noreferrer');
 }
+
+type DecideStatus = 'Published' | 'Rejected' | 'Skipped';
+interface DecideVars {
+  /** Captured at mutate time — the dossier on screen may change while the request is in flight. */
+  candidateId: string;
+  page: number;
+  status: DecideStatus;
+  coffeeFocus?: CoffeeFocus;
+  tagSlugs: string[];
+  overrideClosed?: boolean;
+  rejectReason?: RejectReason;
+}
+
+/** Enter on these must keep its native meaning (activate button / follow link). */
+const NATIVE_ENTER_TARGETS = 'button, a[href], [role="button"], [role="link"], summary';
+/** Keys pressed inside these never reach the dossier shortcuts. */
+const SHORTCUT_BLOCKED_TARGETS =
+  '[contenteditable]:not([contenteditable="false"]), [role="dialog"], [aria-modal="true"]';
 
 const pillOff =
   'inline-flex items-center rounded-full px-2.5 py-[5px] text-[13px] font-medium font-body border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-text-main dark:text-white hover:border-text-muted dark:hover:border-stone-500 transition-colors';
@@ -78,6 +100,10 @@ export const ImportQueuePage: React.FC = () => {
   const [patchAvailable, setPatchAvailable] = useState<boolean | null>(null);
   const [confirmPublishClosed, setConfirmPublishClosed] = useState(false);
   const [rejectPickerOpen, setRejectPickerOpen] = useState(false);
+  /** True between a successful decision and landing on the next dossier. */
+  const [advancing, setAdvancing] = useState(false);
+  const idRef = useRef(id);
+  idRef.current = id;
 
   const queueQuery = useQuery({
     queryKey: ['admin', 'import', 'queue', queuePage],
@@ -172,22 +198,42 @@ export const ImportQueuePage: React.FC = () => {
     if (first) goToCandidate(first.id);
   }, [id, panel, queueItems, queueQuery.isLoading]);
 
-  const afterDecide = async (decidedId: string) => {
-    const remaining = queueItems.filter((item) => item.id !== decidedId);
-    const nextSamePage = remaining[currentIndex] ?? remaining[0];
+  /**
+   * Everything about the decided item comes from the snapshot taken at mutate time
+   * (`remaining` = that page minus the item, `index` = its position there).
+   */
+  const afterDecide = async (
+    decidedId: string,
+    page: number,
+    remaining: ImportCandidatesPage['items'],
+    index: number,
+    pages: number
+  ) => {
+    const nextSamePage = (index >= 0 ? remaining[index] : undefined) ?? remaining[0];
     if (nextSamePage) {
-      goToCandidate(nextSamePage.id);
+      goToCandidate(nextSamePage.id, page);
       return;
     }
-    if (queuePage < totalPages) {
-      const nextPage = await getImportCandidates({
-        status: 'Pending',
-        page: queuePage + 1,
-        pageSize: IMPORT_QUEUE_PAGE_SIZE,
-      });
+    if (page < pages) {
+      let nextPage;
+      try {
+        nextPage = await getImportCandidates({
+          status: 'Pending',
+          page: page + 1,
+          pageSize: IMPORT_QUEUE_PAGE_SIZE,
+        });
+      } catch (err) {
+        showToast(
+          (err as { message?: string })?.message ?? 'Не удалось загрузить следующую страницу очереди',
+          'error'
+        );
+        return;
+      }
+      // The admin may have opened another dossier while we were fetching — don't yank them away.
+      if (idRef.current !== decidedId) return;
       const first = nextPage.data.items.find((item) => item.id !== decidedId) ?? nextPage.data.items[0];
       if (first) {
-        goToCandidate(first.id, queuePage + 1);
+        goToCandidate(first.id, page + 1);
         return;
       }
     }
@@ -197,42 +243,31 @@ export const ImportQueuePage: React.FC = () => {
   };
 
   const decideMutation = useMutation({
-    mutationFn: ({
-      status,
-      overrideClosed,
-      rejectReason,
-    }: {
-      status: 'Published' | 'Rejected' | 'Skipped';
-      overrideClosed?: boolean;
-      rejectReason?: RejectReason;
-    }) => {
-      const slugs =
-        focus === 'specialty'
-          ? Array.from(new Set([...tagSlugs, 'specialty']))
-          : tagSlugs.filter((slug) => slug !== 'specialty');
-      return decideImportCandidate(id!, {
+    mutationFn: ({ candidateId, status, coffeeFocus, tagSlugs: slugs, overrideClosed, rejectReason }: DecideVars) =>
+      decideImportCandidate(candidateId, {
         status,
-        coffeeFocus: status === 'Published' ? focus : undefined,
+        coffeeFocus: status === 'Published' ? coffeeFocus : undefined,
         tagSlugs: status === 'Published' ? slugs : undefined,
         overrideClosed: status === 'Published' ? overrideClosed : undefined,
         rejectReason: status === 'Rejected' ? rejectReason : undefined,
-      });
-    },
-    onMutate: async ({ status }) => {
+      }),
+    onMutate: async ({ candidateId, page }) => {
       await qc.cancelQueries({ queryKey: ['admin', 'import', 'queue'] });
-      const key = ['admin', 'import', 'queue', queuePage] as const;
-      const previous = qc.getQueryData(key);
-      qc.setQueryData(key, (old: typeof queueQuery.data) => {
-        if (!old || !id) return old;
+      const key = ['admin', 'import', 'queue', page] as const;
+      const previous = qc.getQueryData<ImportCandidatesPage>(key);
+      const index = previous?.items.findIndex((item) => item.id === candidateId) ?? -1;
+      const remaining = previous?.items.filter((item) => item.id !== candidateId) ?? [];
+      qc.setQueryData(key, (old: ImportCandidatesPage | undefined) => {
+        if (!old) return old;
         return {
           ...old,
-          items: old.items.filter((item) => item.id !== id),
+          items: old.items.filter((item) => item.id !== candidateId),
           totalCount: Math.max(0, old.totalCount - 1),
         };
       });
-      return { previous, status };
+      return { previous, index, remaining, totalPages: previous?.totalPages ?? 1 };
     },
-    onSuccess: (_, { status, rejectReason }) => {
+    onSuccess: async (_, { candidateId, page, status, rejectReason }, ctx) => {
       const messages = {
         Published: 'В ленте',
         Rejected: rejectReason
@@ -243,29 +278,56 @@ export const ImportQueuePage: React.FC = () => {
       showToast(messages[status], 'success');
       setRejectPickerOpen(false);
       void qc.invalidateQueries({ queryKey: ['admin', 'import'] });
-      if (id) void afterDecide(id);
+      // Only advance if the decided dossier is still the one on screen.
+      if (idRef.current !== candidateId) return;
+      setAdvancing(true);
+      try {
+        await afterDecide(candidateId, page, ctx?.remaining ?? [], ctx?.index ?? -1, ctx?.totalPages ?? 1);
+      } finally {
+        setAdvancing(false);
+      }
     },
-    onError: (err: { message?: string }, _vars, ctx) => {
+    onError: (err: { message?: string }, { page }, ctx) => {
       if (ctx?.previous) {
-        qc.setQueryData(['admin', 'import', 'queue', queuePage], ctx.previous);
+        qc.setQueryData(['admin', 'import', 'queue', page], ctx.previous);
       }
       showToast(err?.message ?? 'Ошибка решения', 'error');
     },
   });
 
+  const busy = decideMutation.isPending || advancing;
+
+  const decide = (vars: Pick<DecideVars, 'status' | 'overrideClosed' | 'rejectReason'>) => {
+    if (!id || busy) return;
+    decideMutation.mutate({
+      ...vars,
+      candidateId: id,
+      page: queuePage,
+      coffeeFocus: focus,
+      tagSlugs: publishTagSlugs(tagSlugs, focus),
+    });
+  };
+
   const tryPatchContacts = async (fields: {
     instagram?: string;
     phone?: string;
     website?: string;
-  }) => {
-    if (!id || patchAvailable === false) return;
-    const result = await patchImportCandidate(id, fields);
-    if (result.patchMissing) {
-      setPatchAvailable(false);
-      return;
+  }): Promise<'saved' | 'missing' | 'error'> => {
+    if (!id) return 'error';
+    if (patchAvailable === false) return 'missing';
+    try {
+      const result = await patchImportCandidate(id, fields);
+      if (result.patchMissing) {
+        setPatchAvailable(false);
+        return 'missing';
+      }
+      setPatchAvailable(true);
+      if (result.data) qc.setQueryData(['admin', 'import', 'candidate', id], result.data);
+      return 'saved';
+    } catch (err) {
+      showToast((err as { message?: string })?.message ?? 'Не удалось сохранить контакты', 'error');
+      return 'error';
     }
-    setPatchAvailable(true);
-    if (result.data) qc.setQueryData(['admin', 'import', 'candidate', id], result.data);
   };
 
   const applyInstagram = async () => {
@@ -276,15 +338,19 @@ export const ImportQueuePage: React.FC = () => {
     }
     setInstagramDraft(normalized);
     setIgPaste('');
-    showToast('Instagram сохранён локально', 'success');
-    await tryPatchContacts({ instagram: normalized });
+    const result = await tryPatchContacts({ instagram: normalized });
+    if (result === 'saved') showToast('Instagram сохранён', 'success');
+    else if (result === 'missing') showToast('Instagram только локально — PATCH контактов ещё нет на бэке', 'info');
   };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!id || decideMutation.isPending || panel === 'stats') return;
+      if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (!id || busy || decided || confirmPublishClosed || panel === 'stats') return;
       const target = event.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+      if (target?.isContentEditable || target?.closest?.(SHORTCUT_BLOCKED_TARGETS)) return;
+      if (event.key === 'Enter' && target?.closest?.(NATIVE_ENTER_TARGETS)) return;
 
       if (rejectPickerOpen) {
         if (event.key === 'Escape') {
@@ -295,7 +361,7 @@ export const ImportQueuePage: React.FC = () => {
         const reason = REJECT_REASON_OPTIONS.find((opt) => opt.key === event.key)?.value;
         if (reason) {
           event.preventDefault();
-          decideMutation.mutate({ status: 'Rejected', rejectReason: reason });
+          decide({ status: 'Rejected', rejectReason: reason });
         }
         return;
       }
@@ -305,7 +371,7 @@ export const ImportQueuePage: React.FC = () => {
       if (event.key === '3') setFocus('cafe');
       if (event.key === 's' || event.key === 'S') {
         event.preventDefault();
-        decideMutation.mutate({ status: 'Skipped' });
+        decide({ status: 'Skipped' });
       }
       if (event.key === 'r' || event.key === 'R') {
         event.preventDefault();
@@ -315,12 +381,12 @@ export const ImportQueuePage: React.FC = () => {
         event.preventDefault();
         if (!canPublish) return;
         if (needsOverride) setConfirmPublishClosed(true);
-        else decideMutation.mutate({ status: 'Published' });
+        else decide({ status: 'Published' });
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [id, canPublish, needsOverride, decideMutation, rejectPickerOpen, panel]);
+  });
 
   const title = candidate ? displayShopName(candidate.name, candidate.brand) : '';
   const facts = candidate ? displayFacts(candidate) : [];
@@ -429,7 +495,7 @@ export const ImportQueuePage: React.FC = () => {
       totalPages={totalPages}
       totalCount={totalCount}
       loading={queueQuery.isLoading}
-      onSelect={(nextId) => goToCandidate(nextId)}
+      onSelect={(nextId) => !busy && goToCandidate(nextId)}
       onPageChange={setQueuePage}
     />
   );
@@ -493,7 +559,7 @@ export const ImportQueuePage: React.FC = () => {
           {panel === 'map' && <DossierMap candidate={candidate} />}
           {panel === 'list' && (
             <div className="flex-1 min-h-0">
-              <ImportInboxPage embedded selectedId={id} />
+              <ImportInboxPage selectedId={id} />
             </div>
           )}
           {panel === 'stats' && (
@@ -559,7 +625,7 @@ export const ImportQueuePage: React.FC = () => {
                       <p className="text-[11px] text-text-muted">карточка Instagram · не поиск по имени</p>
                     </div>
                     <a
-                      href={instagram}
+                      href={normalizeInstagramUrl(instagram)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="shrink-0 px-3 py-1.5 rounded-[10px] text-[13px] font-medium border border-border-light dark:border-border-dark hover:bg-background-light dark:hover:bg-white/5"
@@ -788,7 +854,7 @@ export const ImportQueuePage: React.FC = () => {
               <div className="flex flex-wrap gap-1.5">
                 {candidate.research.yandexMaps && (
                   <a
-                    href={candidate.research.yandexMaps}
+                    href={safeHttpUrl(candidate.research.yandexMaps)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={pillOff}
@@ -797,13 +863,13 @@ export const ImportQueuePage: React.FC = () => {
                   </a>
                 )}
                 {candidate.research.googleMaps && (
-                  <a href={candidate.research.googleMaps} target="_blank" rel="noopener noreferrer" className={pillOff}>
+                  <a href={safeHttpUrl(candidate.research.googleMaps)} target="_blank" rel="noopener noreferrer" className={pillOff}>
                     Google · пин
                   </a>
                 )}
                 {candidate.research.osmHistory && (
                   <a
-                    href={candidate.research.osmHistory}
+                    href={safeHttpUrl(candidate.research.osmHistory)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={pillOff}
@@ -819,11 +885,11 @@ export const ImportQueuePage: React.FC = () => {
             <Button
               variant="primary"
               disabled={!canPublish || Boolean(decided)}
-              loading={decideMutation.isPending}
+              loading={busy}
               onClick={() =>
                 needsOverride
                   ? setConfirmPublishClosed(true)
-                  : decideMutation.mutate({ status: 'Published' })
+                  : decide({ status: 'Published' })
               }
               className="min-h-[48px] rounded-[10px] text-sm"
             >
@@ -832,15 +898,15 @@ export const ImportQueuePage: React.FC = () => {
             <Button
               variant="secondary"
               disabled={Boolean(decided)}
-              loading={decideMutation.isPending}
-              onClick={() => decideMutation.mutate({ status: 'Skipped' })}
+              loading={busy}
+              onClick={() => decide({ status: 'Skipped' })}
               className="min-h-[48px] rounded-[10px] text-sm"
             >
               Пропуск
             </Button>
             <button
               type="button"
-              disabled={Boolean(decided) || decideMutation.isPending}
+              disabled={Boolean(decided) || busy}
               onClick={() => setRejectPickerOpen(true)}
               className="col-span-2 min-h-[40px] rounded-[10px] text-sm font-semibold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50"
             >
@@ -880,8 +946,8 @@ export const ImportQueuePage: React.FC = () => {
                 <button
                   key={opt.value}
                   type="button"
-                  disabled={decideMutation.isPending}
-                  onClick={() => decideMutation.mutate({ status: 'Rejected', rejectReason: opt.value })}
+                  disabled={busy}
+                  onClick={() => decide({ status: 'Rejected', rejectReason: opt.value })}
                   className={[
                     'flex flex-col items-start gap-0.5 rounded-xl border px-3 py-3 text-left min-h-[56px] transition-colors',
                     closed && opt.value === 'closed'
@@ -901,7 +967,7 @@ export const ImportQueuePage: React.FC = () => {
               size="sm"
               className="mt-3 w-full min-h-[44px]"
               onClick={() => setRejectPickerOpen(false)}
-              disabled={decideMutation.isPending}
+              disabled={busy}
             >
               Отмена
             </Button>
@@ -918,7 +984,7 @@ export const ImportQueuePage: React.FC = () => {
         onCancel={() => setConfirmPublishClosed(false)}
         onConfirm={() => {
           setConfirmPublishClosed(false);
-          decideMutation.mutate({ status: 'Published', overrideClosed: true });
+          decide({ status: 'Published', overrideClosed: true });
         }}
       />
     </div>

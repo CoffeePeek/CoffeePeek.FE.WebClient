@@ -14,6 +14,7 @@ import { Card } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { useToast } from '../contexts/ToastContext';
 import { useCatalogs } from '../hooks/useCatalogs';
+import { getErrorMessage } from '../utils/errors';
 
 const statusMeta: Record<CoffeeZoneStatus, { label: string; variant: BadgeVariant }> = {
   Draft: { label: 'Черновик', variant: 'pending' },
@@ -61,7 +62,7 @@ export function CoffeeZonesPage() {
       setPendingAction(null);
       queryClient.invalidateQueries({ queryKey: ['admin', 'coffee-zones'] });
     },
-    onError: (error: any) => showToast(error?.message ?? 'Не удалось изменить статус', 'error'),
+    onError: (error) => showToast(getErrorMessage(error, 'Не удалось изменить статус'), 'error'),
   });
 
   const cities = catalogs?.cities ?? [];
@@ -111,7 +112,7 @@ export function CoffeeZonesPage() {
               <thead>
                 <tr className="border-b border-border-light dark:border-border-dark">
                   {['Название', 'Город', 'Статус', 'Контур', 'Кофейни', 'Действия'].map((label) => (
-                    <th key={label} className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400">{label}</th>
+                    <th scope="col" key={label} className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400">{label}</th>
                   ))}
                 </tr>
               </thead>

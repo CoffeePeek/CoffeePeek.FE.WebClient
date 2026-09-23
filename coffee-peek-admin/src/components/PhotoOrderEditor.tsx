@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { PublishedShopPhoto } from '../api/admin';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 interface PhotoOrderEditorProps {
   photos: PublishedShopPhoto[];
@@ -31,6 +32,16 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Callers pass mutateAsync: keep rejections handled and show them inline (callers may also toast).
+  const run = (action: () => Promise<unknown>, fallback: string) => {
+    setError(null);
+    return action().catch((err: unknown) => {
+      setError((err as { message?: string } | null)?.message || fallback);
+    });
+  };
 
   useEffect(() => {
     setLoadedPhotos(photos);
@@ -80,7 +91,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
                 onChange={(e) => {
                   const files = Array.from(e.target.files ?? []);
                   e.target.value = '';
-                  if (files.length) void onAddFiles(files);
+                  if (files.length) void run(() => onAddFiles(files), 'Не удалось добавить фото');
                 }}
               />
               <Button
@@ -100,7 +111,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
               size="sm"
               loading={isDeleting}
               disabled={!selectedIds.length || busy}
-              onClick={() => void onDelete(selectedIds)}
+              onClick={() => setConfirmDelete(true)}
             >
               Удалить выбранные
             </Button>
@@ -110,12 +121,16 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
             size="sm"
             loading={isSaving}
             disabled={!dirty || !orderedPhotos.length || busy}
-            onClick={() => onSave(orderedPhotos.map((photo) => photo.id))}
+            onClick={() =>
+              void run(() => onSave(orderedPhotos.map((photo) => photo.id)), 'Не удалось сохранить порядок')
+            }
           >
             Сохранить порядок
           </Button>
         </div>
       </div>
+
+      {error && <p className="mb-3 text-xs text-red-500 dark:text-red-400 font-body">{error}</p>}
 
       {!orderedPhotos.length ? (
         <p className="text-xs text-text-muted dark:text-stone-400 font-body">В галерее пока нет фотографий.</p>
@@ -193,6 +208,21 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
             </li>
           ))}
         </ol>
+      )}
+
+      {onDelete && (
+        <ConfirmModal
+          isOpen={confirmDelete}
+          title="Удалить выбранные фото?"
+          message={`Будет удалено фотографий: ${selectedIds.length}. Это действие нельзя отменить.`}
+          confirmLabel="Удалить"
+          variant="danger"
+          onConfirm={async () => {
+            await run(() => onDelete(selectedIds), 'Не удалось удалить фото');
+            setConfirmDelete(false);
+          }}
+          onCancel={() => setConfirmDelete(false)}
+        />
       )}
     </Card>
   );

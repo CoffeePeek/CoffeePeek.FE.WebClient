@@ -149,12 +149,12 @@ export const AuditModerationPage: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
-                    <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Дата</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Тип</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Сущность</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Действие</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Модератор</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Комментарий</th>
+                    <th scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Дата</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Тип</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Сущность</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Действие</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Модератор</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Комментарий</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">
