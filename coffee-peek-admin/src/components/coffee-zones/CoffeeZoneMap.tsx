@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import type { Map as LeafletMap, Polygon } from 'leaflet';
+import { useEffect, useRef, useState } from 'react';
+import * as maplibregl from 'maplibre-gl';
+import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl';
+import type { Feature, FeatureCollection } from 'geojson';
 import type { CoffeeZoneCandidate, CoffeeZoneMember, GeoPoint } from '../../api/coffeeZones';
-import { createOsmMap } from '../../map/osmMap';
+import { createOsmMap, dotElement } from '../../map/osmMap';
 
 interface CoffeeZoneMapProps {
   polygon: GeoPoint[];
@@ -13,23 +14,27 @@ interface CoffeeZoneMapProps {
 }
 
 const MAX_POINTS = 100;
-
-const candidateIcon = L.divIcon({
-  className: '',
-  html: '<span style="display:block;width:18px;height:18px;border-radius:9999px;background:#f59e0b;border:3px solid white;box-shadow:0 2px 8px #0008"></span>',
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
-
-const vertexIcon = L.divIcon({
-  className: '',
-  html: '<span style="display:block;width:14px;height:14px;border-radius:9999px;background:#f59e0b;border:2px solid white;box-shadow:0 1px 4px #0008;cursor:move"></span>',
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
-});
+const ZONE_SOURCE = 'coffeepeek-zone';
+const CANDIDATES_SOURCE = 'coffeepeek-candidates';
+const CANDIDATES_FILL = 'coffeepeek-candidates-fill';
 
 const round = (value: number) => Number(value.toFixed(6));
-const toLatLngs = (points: GeoPoint[]): L.LatLngTuple[] => points.map((p) => [p.latitude, p.longitude]);
+const toRing = (points: GeoPoint[]): [number, number][] => points.map((p) => [p.longitude, p.latitude]);
+
+function polygonFeature(ring: [number, number][], properties: Record<string, unknown> = {}): Feature {
+  // GeoJSON rings must be closed; the API polygon is not.
+  const closed = ring.length > 0 ? [...ring, ring[0]] : [];
+  return { type: 'Feature', properties, geometry: { type: 'Polygon', coordinates: [closed] } };
+}
+
+function collection(features: Feature[]): FeatureCollection {
+  return { type: 'FeatureCollection', features };
+}
+
+function stopDomEvent(event: Event) {
+  event.preventDefault();
+  event.stopPropagation();
+}
 
 export function CoffeeZoneMap({
   polygon,
@@ -39,11 +44,12 @@ export function CoffeeZoneMap({
   onCandidateSelect,
 }: CoffeeZoneMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
-  const shapeRef = useRef<Polygon | null>(null);
-  const vertexLayerRef = useRef<L.LayerGroup | null>(null);
-  const extraLayerRef = useRef<L.LayerGroup | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const [styleLoaded, setStyleLoaded] = useState(false);
+  const vertexMarkersRef = useRef<Marker[]>([]);
+  const extraMarkersRef = useRef<Marker[]>([]);
   const polygonRef = useRef(polygon);
+  const candidatesRef = useRef(candidates);
   // Last polygon this component emitted; any other value came from outside (load / candidate) and gets fitted.
   const emittedRef = useRef<GeoPoint[] | null>(null);
   const onPolygonChangeRef = useRef(onPolygonChange);
@@ -59,108 +65,115 @@ export function CoffeeZoneMap({
     onPolygonChangeRef.current(next);
   };
 
+  const setZoneShape = (ring: [number, number][]) => {
+    (mapRef.current?.getSource(ZONE_SOURCE) as GeoJSONSource | undefined)?.setData(polygonFeature(ring));
+  };
+
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = createOsmMap(containerRef.current, { center: [53.9, 27.5667], zoom: 14, dark: true });
-    shapeRef.current = L.polygon([], {
-      color: '#f59e0b',
-      weight: 2,
-      opacity: 0.9,
-      fillColor: '#f59e0b',
-      fillOpacity: 0.18,
-    }).addTo(map);
-    extraLayerRef.current = L.layerGroup().addTo(map);
-    vertexLayerRef.current = L.layerGroup().addTo(map);
+    const map = createOsmMap(containerRef.current, { zoom: 14, dark: true });
 
-    map.on('click', (event: L.LeafletMouseEvent) => {
+    map.on('load', () => {
+      map.addSource(CANDIDATES_SOURCE, { type: 'geojson', data: collection([]) });
+      map.addLayer({ id: CANDIDATES_FILL, type: 'fill', source: CANDIDATES_SOURCE, paint: { 'fill-color': '#f59e0b', 'fill-opacity': 0.05 } });
+      map.addLayer({ id: 'coffeepeek-candidates-line', type: 'line', source: CANDIDATES_SOURCE, paint: { 'line-color': '#f59e0b', 'line-width': 1, 'line-dasharray': [2, 2] } });
+      map.addSource(ZONE_SOURCE, { type: 'geojson', data: polygonFeature([]) });
+      map.addLayer({ id: 'coffeepeek-zone-fill', type: 'fill', source: ZONE_SOURCE, paint: { 'fill-color': '#f59e0b', 'fill-opacity': 0.18 } });
+      map.addLayer({ id: 'coffeepeek-zone-line', type: 'line', source: ZONE_SOURCE, paint: { 'line-color': '#f59e0b', 'line-width': 2, 'line-opacity': 0.9 } });
+      setStyleLoaded(true);
+    });
+
+    map.on('click', (event) => {
+      const hit = map.getLayer(CANDIDATES_FILL) ? map.queryRenderedFeatures(event.point, { layers: [CANDIDATES_FILL] })[0] : undefined;
+      if (hit) {
+        const candidate = candidatesRef.current[Number(hit.properties.index)];
+        if (candidate) onCandidateSelectRef.current?.(candidate);
+        return;
+      }
       if (polygonRef.current.length >= MAX_POINTS) return;
-      emit([...polygonRef.current, { latitude: round(event.latlng.lat), longitude: round(event.latlng.lng) }]);
+      emit([...polygonRef.current, { latitude: round(event.lngLat.lat), longitude: round(event.lngLat.lng) }]);
     });
 
     mapRef.current = map;
     return () => {
       map.remove();
       mapRef.current = null;
-      shapeRef.current = null;
-      vertexLayerRef.current = null;
-      extraLayerRef.current = null;
+      vertexMarkersRef.current = [];
+      extraMarkersRef.current = [];
     };
   }, []);
 
   useEffect(() => {
     polygonRef.current = polygon;
     const map = mapRef.current;
-    const shape = shapeRef.current;
-    const vertices = vertexLayerRef.current;
-    if (!map || !shape || !vertices) return;
+    if (!map || !styleLoaded) return;
 
-    shape.setLatLngs(toLatLngs(polygon));
-    vertices.clearLayers();
-    polygon.forEach((point, index) => {
-      const marker = L.marker([point.latitude, point.longitude], {
-        draggable: true,
-        icon: vertexIcon,
-        title: `Точка ${index + 1} — перетащите, клик удаляет`,
-      });
+    setZoneShape(toRing(polygon));
+    vertexMarkersRef.current.forEach((marker) => marker.remove());
+    vertexMarkersRef.current = polygon.map((point, index) => {
+      const element = dotElement('width:14px;height:14px;background:#f59e0b;border:2px solid white;cursor:move', `Точка ${index + 1} — перетащите, клик удаляет`);
+      const marker = new maplibregl.Marker({ element, draggable: true }).setLngLat([point.longitude, point.latitude]).addTo(map);
       const remove = () => emit(polygonRef.current.filter((_, i) => i !== index));
+      let dragged = false;
+
+      marker.on('dragstart', () => { dragged = true; });
       marker.on('drag', () => {
-        const latLngs = toLatLngs(polygonRef.current);
-        const { lat, lng } = marker.getLatLng();
-        latLngs[index] = [lat, lng];
-        shape.setLatLngs(latLngs);
+        const ring = toRing(polygonRef.current);
+        const { lng, lat } = marker.getLngLat();
+        ring[index] = [lng, lat];
+        setZoneShape(ring);
       });
       marker.on('dragend', () => {
-        const { lat, lng } = marker.getLatLng();
+        const { lng, lat } = marker.getLngLat();
         emit(polygonRef.current.map((p, i) => (i === index ? { latitude: round(lat), longitude: round(lng) } : p)));
       });
-      // Leaflet suppresses the click that follows a drag, so this only fires on a real click.
-      marker.on('click', remove);
-      marker.on('contextmenu', (event) => {
-        L.DomEvent.preventDefault(event.originalEvent);
+      // Marker clicks bubble to the map (which would add a point), and the browser also fires a click after a drag.
+      element.addEventListener('click', (event) => {
+        stopDomEvent(event);
+        if (dragged) { dragged = false; return; }
         remove();
       });
-      vertices.addLayer(marker);
+      element.addEventListener('contextmenu', (event) => {
+        stopDomEvent(event);
+        remove();
+      });
+      return marker;
     });
 
     if (polygon !== emittedRef.current && polygon.length > 0) {
-      map.fitBounds(L.latLngBounds(toLatLngs(polygon)), { padding: [40, 40], maxZoom: 16, animate: false });
+      const bounds = new maplibregl.LngLatBounds();
+      toRing(polygon).forEach((coordinate) => bounds.extend(coordinate));
+      map.fitBounds(bounds, { padding: 40, maxZoom: 16, animate: false });
     }
-  }, [polygon]);
+  }, [polygon, styleLoaded]);
 
   useEffect(() => {
-    const layer = extraLayerRef.current;
-    if (!layer) return;
-    layer.clearLayers();
+    candidatesRef.current = candidates;
+    const map = mapRef.current;
+    if (!map || !styleLoaded) return;
 
-    members.forEach((member) => {
-      L.circleMarker([member.latitude, member.longitude], {
-        radius: 6,
-        color: member.isPrimary ? '#f59e0b' : member.overrideKind === 'Exclude' ? '#ef4444' : '#ffffff',
-        weight: 2,
-        fillColor: member.isAutomatic ? '#22c55e' : '#60a5fa',
-        fillOpacity: 0.9,
-      }).bindTooltip(member.name).addTo(layer);
-    });
+    (map.getSource(CANDIDATES_SOURCE) as GeoJSONSource).setData(
+      collection(candidates.map((candidate, index) => polygonFeature(toRing(candidate.polygon), { index }))),
+    );
 
-    candidates.forEach((candidate, index) => {
-      const label = `Кандидат ${index + 1} · ${candidate.shopCount} кофеен`;
-      const select = (event: L.LeafletMouseEvent) => {
-        L.DomEvent.stopPropagation(event);
-        onCandidateSelectRef.current?.(candidate);
-      };
-      L.polygon(toLatLngs(candidate.polygon), {
-        color: '#f59e0b',
-        weight: 1,
-        dashArray: '4 4',
-        fillOpacity: 0.05,
-        bubblingMouseEvents: false,
-      }).bindTooltip(label).on('click', select).addTo(layer);
-      L.marker([candidate.centerLatitude, candidate.centerLongitude], { icon: candidateIcon, title: label })
-        .bindTooltip(label)
-        .on('click', select)
-        .addTo(layer);
-    });
-  }, [candidates, members]);
+    extraMarkersRef.current.forEach((marker) => marker.remove());
+    extraMarkersRef.current = [
+      ...members.map((member) => {
+        const border = member.isPrimary ? '#f59e0b' : member.overrideKind === 'Exclude' ? '#ef4444' : '#ffffff';
+        const fill = member.isAutomatic ? '#22c55e' : '#60a5fa';
+        const element = dotElement(`width:12px;height:12px;background:${fill};border:2px solid ${border}`, member.name);
+        return new maplibregl.Marker({ element }).setLngLat([member.longitude, member.latitude]).addTo(map);
+      }),
+      ...candidates.map((candidate, index) => {
+        const element = dotElement('width:18px;height:18px;background:#f59e0b;border:3px solid white;cursor:pointer', `Кандидат ${index + 1} · ${candidate.shopCount} кофеен`);
+        element.addEventListener('click', (event) => {
+          stopDomEvent(event);
+          onCandidateSelectRef.current?.(candidate);
+        });
+        return new maplibregl.Marker({ element }).setLngLat([candidate.centerLongitude, candidate.centerLatitude]).addTo(map);
+      }),
+    ];
+  }, [candidates, members, styleLoaded]);
 
   return (
     <div className="relative h-[420px] overflow-hidden rounded-xl border border-border-light dark:border-border-dark">
