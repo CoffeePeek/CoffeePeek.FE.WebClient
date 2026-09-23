@@ -199,6 +199,9 @@ export const PublishedShopsPage: React.FC = () => {
                   <tr className="border-b border-border-light dark:border-border-dark">
                     <SortHeader sort="name" className="pl-5" {...sortProps}>Название</SortHeader>
                     <SortHeader sort="coffeeFocus" {...sortProps}>Фокус</SortHeader>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400 font-body">
+                      Заполненность
+                    </th>
                     <SortHeader sort="status" {...sortProps}>Статус</SortHeader>
                     <SortHeader sort="createdAtUtc" {...sortProps}>Создана</SortHeader>
                     <th scope="col" className="px-4 py-3" />
@@ -215,6 +218,9 @@ export const PublishedShopsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <FocusBadge focus={shop.coffeeFocus} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="info">{shop.dataCompletenessScore}%</Badge>
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>

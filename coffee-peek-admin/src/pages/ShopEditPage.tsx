@@ -249,6 +249,7 @@ export const ShopEditPage: React.FC = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="page-header-title text-xl sm:text-2xl">{shop.name}</h2>
               <Badge variant={statusToBadgeVariant(shop.status)}>{statusLabels[shop.status]}</Badge>
+              <Badge variant="info">Заполнено: {shop.dataCompletenessScore}%</Badge>
             </div>
             <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-1 break-words">
               {shop.address}

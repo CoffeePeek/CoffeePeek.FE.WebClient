@@ -51,7 +51,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
   const photos = extractPhotos(shop);
   const raw = shop as unknown as Record<string, unknown>;
   const brewMethods = Array.isArray(raw.brewMethods) ? raw.brewMethods as Array<{ id?: string; name: string }> : [];
-  const roasters = Array.isArray(raw.roasters) ? raw.roasters as Array<{ id?: string; name: string }> : [];
+  const roasters = Array.isArray(raw.roasters) ? raw.roasters as Array<{ id?: string; name: string; photoUrl?: string | null }> : [];
   const openNow = isShopOpenNow(shop);
   const priceTier = getPriceRangeTier(shop.priceRange);
   const address = shop.location?.address || shop.address || shop.cityName || '';
@@ -108,11 +108,31 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
             type="button"
             aria-label={favorite ? 'Убрать из избранного' : 'Добавить в избранное'}
             onClick={event => { event.stopPropagation(); toggleFavorite(shop.id); }}
-            className="flex h-12 w-12 items-center justify-center rounded-full border-0 bg-black/70 backdrop-blur-md transition-transform hover:scale-105"
+            className="flex h-14 w-14 items-center justify-center rounded-full border-0 bg-black/75 backdrop-blur-md transition-transform hover:scale-105"
           >
-            <AppIcon name="favorite" filled={favorite} size={27} color={favorite ? '#FB7185' : '#FFFFFF'} />
+            <AppIcon name="favorite" filled={favorite} size={34} color={favorite ? '#FB7185' : '#FFFFFF'} />
           </button>
         </div>
+
+        {roasters.length > 0 && (
+          <div className="absolute bottom-3 right-4 flex -space-x-3" aria-label={`Обжарщики: ${roasters.map(roaster => roaster.name).join(', ')}`}>
+            {roasters.slice(0, 3).map((roaster, index) => (
+              <span
+                key={roaster.id ?? `${roaster.name}-${index}`}
+                title={roaster.name}
+                className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-[3px] bg-white text-sm font-extrabold text-stone-800 shadow-lg"
+                style={{ borderColor: colors.surface, zIndex: index + 1 }}
+              >
+                {roaster.photoUrl
+                  ? <img src={roaster.photoUrl} alt={roaster.name} className="h-full w-full object-cover" loading="lazy" />
+                  : roaster.name.slice(0, 2).toUpperCase()}
+              </span>
+            ))}
+            {roasters.length > 3 && (
+              <span className="relative flex h-12 w-12 items-center justify-center rounded-full border-[3px] bg-stone-900 text-xs font-bold text-white shadow-lg" style={{ borderColor: colors.surface, zIndex: 4 }}>+{roasters.length - 3}</span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="px-5 pb-5 pt-4">
@@ -138,12 +158,6 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
             <AppIcon name="location_on" size={18} color={COLORS.primary} style={{ flexShrink: 0 }} />
             <span className="truncate">{address}</span>
             {distance !== null && <span className="shrink-0">· {formatDistance(distance)} от вас</span>}
-          </p>
-        )}
-
-        {roasters.length > 0 && (
-          <p className="mt-3 truncate text-sm" style={{ color: colors.textSecondary }}>
-            <span className="font-semibold" style={{ color: colors.textPrimary }}>Обжарщики:</span> {roasters.map(roaster => roaster.name).join(', ')}
           </p>
         )}
 

@@ -195,6 +195,7 @@ export const PublishedShopEditPage: React.FC = () => {
       if (sendSchedules) setHadSchedules(true);
       showToast('Кофейня обновлена', 'success');
       qc.setQueryData(['admin', 'published-shop', id], response.data);
+      qc.invalidateQueries({ queryKey: ['admin', 'published-shop', id] });
       qc.invalidateQueries({ queryKey: ['admin', 'published-shops'] });
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
@@ -354,6 +355,7 @@ export const PublishedShopEditPage: React.FC = () => {
             <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>
               {COFFEE_SHOP_STATUS_LABELS[shop.status]}
             </Badge>
+            <Badge variant="info">Заполнено: {shop.dataCompletenessScore}%</Badge>
             {shop.isHidden && <Badge variant="rejected">Скрыта</Badge>}
           </div>
           <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1">

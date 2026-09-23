@@ -44,7 +44,7 @@ const AuthField: React.FC<AuthFieldProps> = ({ icon, type = 'text', placeholder,
           type={type} placeholder={placeholder} value={value} onChange={onChange} autoFocus={autoFocus}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
           style={{
-            width: '100%', height: 50, borderRadius: 12,
+            width: '100%', height: 50, borderRadius: 999,
             border: `1px solid ${error ? '#EF4444' : focused ? '#D4A84B' : dark ? '#3D2F28' : 'rgba(158,123,54,.4)'}`,
             background: dark ? 'rgba(255,255,255,0.03)' : '#fff',
             boxShadow: focused ? '0 0 0 4px rgba(234,179,8,0.08)' : 'none',
@@ -248,7 +248,7 @@ const LoginPage: React.FC = () => {
                     alignItems: 'center',
                     gap: 6,
                     padding: '6px 12px',
-                    borderRadius: 8,
+                    borderRadius: 999,
                     border: `1px solid ${dark ? 'rgba(234,179,8,0.4)' : 'rgba(212,168,75,0.5)'}`,
                     background: dark ? 'rgba(234,179,8,0.12)' : 'rgba(212,168,75,0.12)',
                     color: gold,
@@ -380,7 +380,7 @@ const LoginPage: React.FC = () => {
             </div>
 
             <button type="submit" disabled={isLoading || !password}
-              style={{ width: '100%', height: 48, borderRadius: 12, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'pointer', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>
+              style={{ width: '100%', height: 48, borderRadius: 999, background: gold, color: '#1A1412', border: 'none', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 15, cursor: isLoading || !password ? 'not-allowed' : 'pointer', opacity: !password ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 6px -4px rgba(180,140,75,.2), 0 10px 15px -3px rgba(180,140,75,.2)', transition: 'opacity .2s' }}>
               {isLoading ? (
                 <><span style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: 99, display: 'inline-block', animation: 'spin 1s linear infinite' }} />Входим…</>
               ) : 'Войти'}

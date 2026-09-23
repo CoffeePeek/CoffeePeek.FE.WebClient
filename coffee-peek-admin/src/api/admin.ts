@@ -49,6 +49,7 @@ interface BackendShopPhoto {
 interface BackendModerationShop {
   id: string;
   name: string;
+  dataCompletenessScore: number;
   address?: string | null;
   addressIsValidated?: boolean;
   description?: string | null;
@@ -135,6 +136,7 @@ export interface AdminShopSchedule {
 export interface AdminCoffeeShop {
   id: string;
   name: string;
+  dataCompletenessScore: number;
   address: string;
   cityId?: string;
   cityName?: string;
@@ -290,6 +292,7 @@ export interface PublishedShopContacts {
 export interface PublishedShop {
   id: string;
   name: string;
+  dataCompletenessScore: number;
   cityId: string;
   status: CoffeeShopStatus;
   creatorId: string;
@@ -448,6 +451,7 @@ function mapShopToAdmin(shop: BackendModerationShop): AdminCoffeeShop {
   return {
     id: shop.id,
     name: shop.name,
+    dataCompletenessScore: shop.dataCompletenessScore,
     address: shop.address ?? '',
     cityId: shop.cityId ?? undefined,
     userId: shop.userId,
@@ -997,6 +1001,10 @@ export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
   return {
     id: String(shop.id ?? shop.Id ?? ''),
     name: String(shop.name ?? shop.Name ?? ''),
+    dataCompletenessScore: pickNumber(
+      shop.dataCompletenessScore,
+      shop.DataCompletenessScore
+    ) ?? 0,
     cityId,
     status: mapEnumStatus<CoffeeShopStatus>(
       (shop.status ?? shop.Status) as CoffeeShopStatus | number,

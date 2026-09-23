@@ -401,6 +401,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     dark: isDark,
     onApplyFilters: handleApplyFilters,
     resultCount: totalItems || shops.length,
+    hasLocation: userLocation !== null,
   };
 
   return (
@@ -449,7 +450,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
         {/* ── Shop grid: 1 / 2 / 3 cols beside sidebar ── */}
         <div>
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-5 pb-12">
               <ShopCardSkeleton count={8} />
             </div>
           ) : shops.length === 0 ? (
@@ -463,7 +464,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-12 sm:pb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-5 pb-12 sm:pb-12">
               {shops.map((shop) => (
                 <ShopCard key={shop.id} shop={shop} colors={colors} userLocation={userLocation} onSelect={openShopDetails} />
               ))}
@@ -483,7 +484,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
               </div>
             )}
             {isLoadingMore && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-5">
                 <ShopCardSkeleton count={4} />
               </div>
             )}

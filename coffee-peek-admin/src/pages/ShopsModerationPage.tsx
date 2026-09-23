@@ -222,6 +222,9 @@ export const ShopsModerationPage: React.FC = () => {
                         {statusLabels[shop.status]}
                       </Badge>
                     </div>
+                    <div className="mt-2">
+                      <Badge variant="info">Заполнено: {shop.dataCompletenessScore}%</Badge>
+                    </div>
                     <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1 line-clamp-2">
                       {shop.address}
                     </p>
@@ -274,6 +277,9 @@ export const ShopsModerationPage: React.FC = () => {
                     <th scope="col" className="text-left px-4 py-3">
                       <SortButton label="Описание" column="description" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
+                      Заполненность
+                    </th>
                     <th scope="col" className="text-left px-4 py-3">
                       <SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
@@ -312,6 +318,9 @@ export const ShopsModerationPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 text-text-muted dark:text-stone-400 max-w-[260px] font-body">
                         <span className="line-clamp-3">{shop.description || '—'}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="info">{shop.dataCompletenessScore}%</Badge>
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant={statusToBadgeVariant(shop.status)}>

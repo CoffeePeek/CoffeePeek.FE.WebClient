@@ -1,37 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
-  changePassword, deleteUser, getProfile, updateAbout, updateAvatar, updateEmail, updateUsername,
+  changePassword, deleteUser, getProfile,
   type UserProfile,
 } from '../api/auth';
 import { getCities, type City } from '../api/coffeeshop';
-import { getAvatarUploadUrl } from '../api/photos';
 import WobbleRing from '../components/WobbleRing';
 import { useTheme } from '../contexts/ThemeContext';
-import { useUser } from '../contexts/UserContext';
 import { useLocalCity } from '../hooks/useLocalCity';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { logger } from '../utils/logger';
 import {
   CaretRight, DeviceMobile, Factory, Gear, Lock, MapPin, Moon, Plus,
-  ShareNetwork, ShieldCheck, Sun, User, WarningCircle,
+  ShareNetwork, ShieldCheck, Sun, WarningCircle,
 } from '@phosphor-icons/react';
 
-type OpenPanel = 'profile' | 'password' | null;
+type OpenPanel = 'password' | null;
 type Colors = { bg: string; surface: string; border: string; text: string; muted: string; gold: string };
 
 const SettingsPage: React.FC = () => {
   usePageTitle('Настройки');
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { theme, setTheme } = useTheme();
-  const { updateUserProfile } = useUser();
   const { cityId, setCityId } = useLocalCity();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [cities, setCities] = useState<City[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [openPanel, setOpenPanel] = useState<OpenPanel>(searchParams.get('edit') === 'profile' ? 'profile' : null);
+  const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -94,8 +90,6 @@ const SettingsPage: React.FC = () => {
         </SettingsSection>
 
         <SettingsSection title="Аккаунт" colors={colors}>
-          <SettingsRow title="Личные данные" subtitle="Имя, email, описание и фотография" Icon={User} color="#7CC4E8" iconBg="rgba(56,153,211,.16)" colors={colors} onClick={() => setOpenPanel(openPanel === 'profile' ? null : 'profile')} />
-          {openPanel === 'profile' && profile && <ProfileEditor profile={profile} colors={colors} onSaved={next => { setProfile(next); updateUserProfile(next); setOpenPanel(null); showMessage('Профиль сохранён'); }} onError={setError} />}
           <SettingsRow title="Сменить пароль" subtitle="Обновить пароль для входа в аккаунт" Icon={Lock} color="#79D2B2" iconBg="rgba(27,155,111,.16)" colors={colors} onClick={() => setOpenPanel(openPanel === 'password' ? null : 'password')} />
           {openPanel === 'password' && <PasswordEditor colors={colors} onSaved={() => { setOpenPanel(null); showMessage('Пароль изменён'); }} onError={setError} />}
         </SettingsSection>
@@ -152,43 +146,6 @@ const SettingsRow: React.FC<SettingsRowProps> = ({ title, subtitle, Icon, color,
 const ThemeButton: React.FC<{ active: boolean; label: string; Icon: React.ComponentType<{ size?: number }>; onClick: () => void; colors: Colors }> = ({ active, label, Icon, onClick, colors }) => (
   <button type="button" aria-pressed={active} onClick={onClick} className="flex min-h-9 items-center gap-1 rounded-lg px-2.5 text-xs font-bold" style={{ background: active ? colors.gold : 'transparent', color: active ? '#1A1412' : colors.muted }}><Icon size={14} /><span className="hidden sm:inline">{label}</span></button>
 );
-
-const ProfileEditor: React.FC<{ profile: UserProfile; colors: Colors; onSaved: (profile: UserProfile) => void; onError: (message: string) => void }> = ({ profile, colors, onSaved, onError }) => {
-  const [userName, setUserName] = useState(profile.userName);
-  const [email, setEmail] = useState(profile.email);
-  const [about, setAbout] = useState(profile.about ?? '');
-  const [avatar, setAvatar] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const save = async () => {
-    if (!userName.trim() || !/^\S+@\S+\.\S+$/.test(email)) return onError('Проверьте имя и email');
-    if (avatar && (!avatar.type.startsWith('image/') || avatar.size > 5 * 1024 * 1024)) return onError('Выберите изображение размером до 5 МБ');
-    setIsSaving(true);
-    try {
-      const updates: Promise<unknown>[] = [];
-      if (userName.trim() !== profile.userName) updates.push(updateUsername({ username: userName.trim() }));
-      if (email.trim() !== profile.email) updates.push(updateEmail({ email: email.trim() }));
-      if (about.trim() !== (profile.about ?? '')) updates.push(updateAbout({ about: about.trim() }));
-      if (avatar) {
-        const upload = await getAvatarUploadUrl({ fileName: avatar.name, contentType: avatar.type, sizeBytes: avatar.size });
-        if (!upload.data) throw new Error('Не удалось подготовить загрузку фотографии');
-        const response = await fetch(upload.data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': avatar.type }, body: avatar });
-        if (!response.ok) throw new Error('Не удалось загрузить фотографию');
-        updates.push(updateAvatar({ uploadedPhoto: { fileName: avatar.name, contentType: avatar.type, storageKey: upload.data.storageKey, size: avatar.size } }));
-      }
-      await Promise.all(updates);
-      onSaved((await getProfile()).data);
-    } catch (cause) { onError(getErrorMessage(cause)); } finally { setIsSaving(false); }
-  };
-
-  return <div className="space-y-3 border-t px-4 py-5 sm:px-6" style={{ borderColor: colors.border, background: colors.bg }}>
-    <input value={userName} onChange={event => setUserName(event.target.value)} placeholder="Имя" style={inputStyle(colors)} />
-    <input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email" style={inputStyle(colors)} />
-    <textarea value={about} onChange={event => setAbout(event.target.value)} placeholder="О себе" rows={3} style={{ ...inputStyle(colors), paddingTop: 12, resize: 'vertical' }} />
-    <label className="block text-sm" style={{ color: colors.muted }}>Фотография профиля<input type="file" accept="image/*" onChange={event => setAvatar(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm" /></label>
-    <button type="button" disabled={isSaving} onClick={() => { void save(); }} className="min-h-11 w-full rounded-xl px-4 font-bold disabled:opacity-60" style={{ background: colors.gold, color: '#1A1412' }}>{isSaving ? 'Сохраняем…' : 'Сохранить'}</button>
-  </div>;
-};
 
 const PasswordEditor: React.FC<{ colors: Colors; onSaved: () => void; onError: (message: string) => void }> = ({ colors, onSaved, onError }) => {
   const [currentPassword, setCurrentPassword] = useState('');

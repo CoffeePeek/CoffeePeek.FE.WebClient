@@ -38,10 +38,10 @@ const Header: React.FC = () => {
   const gold = COLORS.primary;
   const goldWarm = '#D4A84B';
 
-  const allNav = user ? [...AUTH_NAV] : [...PUBLIC_NAV];
+  const allNav = [...PUBLIC_NAV];
 
   const currentPath = location.pathname + location.search;
-  const currentId = allNav.find(n => n.match(currentPath))?.id ?? '';
+  const currentId = (user ? AUTH_NAV : PUBLIC_NAV).find(n => n.match(currentPath))?.id ?? '';
 
   const bg = isDark ? 'rgba(45,36,31,0.88)' : 'rgba(255,255,255,0.88)';
   const borderColor = isDark ? '#3D2F28' : '#E7E5E4';
@@ -159,6 +159,9 @@ const Header: React.FC = () => {
                         <DropdownItem icon={<User size={18} color={mutedColor} />} label="Профиль" hoverBg={hoverBg}
                           textColor={textColor} mutedColor={mutedColor}
                           onClick={() => { navigate('/profile'); setProfileOpen(false); }} />
+                        <DropdownItem icon={<Gear size={18} color={mutedColor} />} label="Настройки" hoverBg={hoverBg}
+                          textColor={textColor} mutedColor={mutedColor}
+                          onClick={() => { navigate('/settings'); setProfileOpen(false); }} />
                       </div>
 
                       <div style={{ borderTop: `1px solid ${borderColor}`, padding: '6px 0' }}>
