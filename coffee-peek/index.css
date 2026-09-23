@@ -184,7 +184,3 @@ html {
   animation: shimmer 2s infinite linear;
   background-size: 1000px 100%;
 }
-
-.leaflet-container img {
-  max-width: none !important;
-}

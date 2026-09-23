@@ -118,10 +118,13 @@ const EditCoffeeShopPage: React.FC = () => {
   useEffect(() => {
     if (!shopId) return;
     let active = true;
+    // Переход /shops/A/edit → /shops/B/edit: не показываем и не отправляем форму A, пока грузится B.
+    setLoading(true);
     Promise.all([
       getCoffeeShopById(shopId), getShopTags(), getRoasters(), getEquipments(), getBrewMethods(), getMenuDrinks(),
     ]).then(([shopResponse, tags, roasters, equipment, brewMethods, menuDrinks]) => {
       if (!active) return;
+      if (!shopResponse.success || !shopResponse.data) throw new Error(shopResponse.message || 'Кофейня не найдена');
       const current = shopResponse.data;
       setShop(current);
       setDescription(current.description ?? '');

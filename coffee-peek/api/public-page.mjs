@@ -51,8 +51,8 @@ function replaceMeta(html, { title, description, canonical, type = 'website', im
   ].filter(Boolean).join('\n    ');
 
   return html
-    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`)
-    .replace('</head>', `    ${tags}\n</head>`);
+    .replace(/<title>[\s\S]*?<\/title>/i, () => `<title>${escapeHtml(title)}</title>`)
+    .replace('</head>', () => `    ${tags}\n</head>`);
 }
 
 function serverContent(content) {
@@ -64,7 +64,8 @@ function serverContent(content) {
 }
 
 function injectContent(html, content) {
-  return html.replace('<body>', `<body>\n${serverContent(content)}`);
+  // Функции-замены: `$&` / `$'` / "$`" в названиях кофеен иначе раскрываются в куски шаблона.
+  return html.replace('<body>', () => `<body>\n${serverContent(content)}`);
 }
 
 function pageLayout(title, intro, body) {

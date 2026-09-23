@@ -108,7 +108,7 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
         markersRef.current.push(marker);
       });
 
-      void ensureMapPinMascots().then(() => {
+      void ensureMapPinMascots().catch(() => {}).then(() => {
         if (mapInstanceRef.current !== map || version !== paintVersion) return;
         data.shops.forEach((shop) => {
           const selected = previewIdRef.current === shop.id;

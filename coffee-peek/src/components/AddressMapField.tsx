@@ -79,13 +79,16 @@ export const AddressMapField: React.FC<AddressMapFieldProps> = ({
   const [locating, setLocating] = useState(false);
   const [geoHint, setGeoHint] = useState<string | null>(null);
 
+  const geocodeSeqRef = useRef(0);
   const applyCoords = useCallback(
     async (next: LatLng, fillAddress: boolean) => {
       setCoords(next);
       onCoordsChange?.(next);
       if (!fillAddress) return;
+      // Поздний ответ по старой точке не должен перезаписать адрес новой.
+      const seq = ++geocodeSeqRef.current;
       const address = await reverseGeocode(next.lat, next.lng);
-      if (address) onChange(address);
+      if (address && seq === geocodeSeqRef.current) onChange(address);
     },
     [onChange, onCoordsChange],
   );

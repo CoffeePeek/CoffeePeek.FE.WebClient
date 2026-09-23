@@ -105,10 +105,11 @@ class HttpClient {
       if (canRefresh) {
         const hadSession = !!TokenManager.getAccessToken();
         const refreshed = await tryRefreshAccessToken(this.baseURL);
-        if (refreshed) {
+        if (refreshed === 'ok') {
           return this.request<T>(endpoint, { ...options, _retry: true });
         }
-        if (hadSession) {
+        // Сеть/5xx/429 при refresh — сессия может быть жива, не разлогиниваем.
+        if (hadSession && refreshed === 'rejected') {
           TokenManager.clearTokens();
           emitSessionInvalidated('session_revoked');
         }

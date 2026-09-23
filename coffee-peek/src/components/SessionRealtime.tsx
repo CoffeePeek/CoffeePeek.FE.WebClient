@@ -9,18 +9,23 @@ const SessionRealtime: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const handlingRef = useRef(false);
+  // Путь читаем через ref: иначе хаб переподключается на каждой навигации.
+  const pathnameRef = useRef(location.pathname);
+  pathnameRef.current = location.pathname;
 
   useEffect(() => {
+    // Сбрасываем защиту от повторного выхода только для новой сессии.
+    if (user?.id) handlingRef.current = false;
+
     const endSession = (reason: string) => {
       if (handlingRef.current) return;
       handlingRef.current = true;
       void stopSessionHub();
       clearSession();
       const loginPath = `/login?reason=${encodeURIComponent(reason)}`;
-      if (!location.pathname.startsWith('/login')) {
+      if (!pathnameRef.current.startsWith('/login')) {
         navigate(loginPath, { replace: true });
       }
-      handlingRef.current = false;
     };
 
     const unsubscribe = subscribeSessionInvalidated(endSession);
@@ -38,7 +43,7 @@ const SessionRealtime: React.FC = () => {
       unsubscribe();
       void stopSessionHub();
     };
-  }, [user?.id, clearSession, navigate, location.pathname]);
+  }, [user?.id, clearSession, navigate]);
 
   return null;
 };

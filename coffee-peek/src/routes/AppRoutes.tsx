@@ -6,6 +6,7 @@ import WobbleRing from '../components/WobbleRing';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AuthenticatedLayout } from '../components/layouts/AuthenticatedLayout';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // Lazy load pages; retry via full reload if a deploy invalidated hashed chunks
 const LandingPage = lazyWithRetry(() => import('../pages/LandingPage'));
@@ -59,6 +60,7 @@ const LogoutRoute = () => {
 
 export const AppRoutes: React.FC = () => {
   return (
+    <ErrorBoundary>
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
         {/* Public routes */}
@@ -242,6 +244,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="*" element={<Navigate to="/error" replace />} />
       </Routes>
     </Suspense>
+    </ErrorBoundary>
   );
 };
 

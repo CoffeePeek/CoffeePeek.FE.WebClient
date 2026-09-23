@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { resetPassword } from '../api/auth';
-import { TokenManager } from '../api/core/httpClient';
+import { useUser } from '../contexts/UserContext';
 import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AppIcon } from '../components/icons';
@@ -11,6 +11,7 @@ import Mascot from '../components/Mascot';
 const ResetPasswordPage: React.FC = () => {
   usePageTitle('Новый пароль');
   const navigate = useNavigate();
+  const { clearSession } = useUser();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
 
@@ -45,8 +46,8 @@ const ResetPasswordPage: React.FC = () => {
     setIsLoading(true);
     try {
       await resetPassword({ token, newPassword });
-      // After reset all sessions are cleared — force re-login
-      TokenManager.clearTokens();
+      // After reset all sessions are cleared — force re-login (and drop user state/cache, not just the token)
+      clearSession();
       setDone(true);
     } catch (err) {
       setError(getPasswordErrorMessage(err) ?? getErrorMessage(err));

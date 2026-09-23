@@ -307,11 +307,12 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
       const errorMsg = getErrorMessage(err);
       setError(errorMsg);
       logger.error('CoffeeShopList: Ошибка при загрузке кофеен:', err);
+      // Иначе observer сразу перезапустит упавший запрос и будет долбить API в цикле.
+      setHasMore(false);
       if (!append) {
         setAllShops([]);
         setShops([]);
         setTotalItems(0);
-        setHasMore(false);
       }
     } finally {
       if (requestId === requestIdRef.current) {
@@ -478,6 +479,18 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
             </div>
           )}
           <div ref={loadMoreRef} className="pb-8">
+            {error && allShops.length > 0 && !isLoadingMore && (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg text-sm font-medium border"
+                  style={{ borderColor: `${COLORS.error}30`, color: COLORS.error }}
+                  onClick={() => void loadShops(page + 1, true)}
+                >
+                  Повторить загрузку
+                </button>
+              </div>
+            )}
             {isLoadingMore && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 <ShopCardSkeleton count={4} />
