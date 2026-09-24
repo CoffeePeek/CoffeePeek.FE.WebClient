@@ -90,16 +90,16 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/15" />
 
         {shop.isNew && (
-          <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-2 text-sm font-bold text-white backdrop-blur-md">
-            <AppIcon name="auto_awesome" size={17} color={COLORS.primary} />
+          <span className="absolute left-3 top-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-black/70 px-3 text-xs font-bold text-white backdrop-blur-md">
+            <AppIcon name="auto_awesome" size={15} color={COLORS.primary} />
             Новое
           </span>
         )}
 
-        <div className="absolute right-4 top-4 flex items-center gap-2">
+        <div className="absolute right-3 top-3 flex items-center gap-1.5">
           {showRating && (
-            <span className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-black/70 px-3.5 text-sm font-bold text-white backdrop-blur-md" aria-label={`Рейтинг ${shop.rating?.toFixed(1)}`}>
-              <StarIcon filled size={18} color={COLORS.primary} />
+            <span className="inline-flex h-9 items-center gap-1.5 rounded-full bg-black/70 px-3 text-xs font-bold text-white backdrop-blur-md" aria-label={`Рейтинг ${shop.rating?.toFixed(1)}`}>
+              <StarIcon filled size={16} color={COLORS.primary} />
               {shop.rating?.toFixed(1)}
               {shop.reviewCount ? <span className="font-medium text-white/75">({shop.reviewCount})</span> : null}
             </span>
@@ -108,9 +108,9 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
             type="button"
             aria-label={favorite ? 'Убрать из избранного' : 'Добавить в избранное'}
             onClick={event => { event.stopPropagation(); toggleFavorite(shop.id); }}
-            className="flex h-14 w-14 items-center justify-center rounded-full border-0 bg-black/75 backdrop-blur-md transition-transform hover:scale-105"
+            className="flex h-9 w-9 items-center justify-center rounded-full border-0 bg-black/75 backdrop-blur-md transition-transform hover:scale-105"
           >
-            <AppIcon name="favorite" filled={favorite} size={34} color={favorite ? '#FB7185' : '#FFFFFF'} />
+            <AppIcon name="favorite" filled={favorite} size={22} color={favorite ? '#FB7185' : '#FFFFFF'} />
           </button>
         </div>
 
@@ -135,26 +135,26 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
         )}
       </div>
 
-      <div className="px-5 pb-5 pt-4">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="min-w-0 flex-1 truncate text-[22px] font-extrabold tracking-[-0.02em]" style={{ color: colors.textPrimary }}>{shop.name}</h3>
+      <div className="px-4 pb-4 pt-3">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="min-w-0 flex-1 truncate text-xl font-extrabold tracking-[-0.02em]" style={{ color: colors.textPrimary }}>{shop.name}</h3>
           {openNow !== undefined && (
-            <span className="mt-0.5 inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-extrabold uppercase" style={{ background: openNow ? 'rgba(34,197,94,.16)' : 'rgba(239,68,68,.14)', color: openNow ? '#22C55E' : '#EF4444' }}>
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'currentColor' }} />
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-extrabold uppercase" style={{ background: openNow ? 'rgba(34,197,94,.16)' : 'rgba(239,68,68,.14)', color: openNow ? '#22C55E' : '#EF4444' }}>
+              <span className="h-2 w-2 rounded-full" style={{ background: 'currentColor' }} />
               {openNow ? 'Открыто' : 'Закрыто'}
             </span>
           )}
         </div>
 
         {brewMethods.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2" aria-label="Методы заваривания">
+          <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Методы заваривания">
             {brewMethods.slice(0, 2).map((method, index) => <InfoChip key={method.id ?? `${method.name}-${index}`} colors={colors}>{method.name}</InfoChip>)}
             {brewMethods.length > 2 && <InfoChip colors={colors}>+{brewMethods.length - 2}</InfoChip>}
           </div>
         )}
 
         {(address || distance !== null) && (
-          <p className="mt-4 flex min-w-0 items-center gap-1.5 text-sm" style={{ color: colors.textSecondary }}>
+          <p className="mt-3 flex min-w-0 items-center gap-1.5 text-sm" style={{ color: colors.textSecondary }}>
             <AppIcon name="location_on" size={18} color={COLORS.primary} style={{ flexShrink: 0 }} />
             <span className="truncate">{address}</span>
             {distance !== null && <span className="shrink-0">· {formatDistance(distance)} от вас</span>}
@@ -162,7 +162,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
         )}
 
         {(type || priceTier) && (
-          <div className="mt-4 flex items-center gap-2 border-t pt-4 text-sm" style={{ borderColor: colors.border, color: colors.textSecondary }}>
+          <div className="mt-3 flex items-center gap-2 border-t pt-3 text-sm" style={{ borderColor: colors.border, color: colors.textSecondary }}>
             {type && <span>{type}</span>}
             {type && priceTier && <span>·</span>}
             {priceTier && <span className="inline-flex items-center gap-2" aria-label={`Уровень стоимости ${priceTier}`}><span>Стоимость</span><BeanPriceMarks count={priceTier} size={14} color={COLORS.primary} /></span>}
@@ -177,7 +177,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
 ShopCard.displayName = 'ShopCard';
 
 const InfoChip: React.FC<{ colors: ShopCardColors; children: React.ReactNode }> = ({ colors, children }) => (
-  <span className="inline-flex min-h-9 items-center rounded-full border px-3 text-sm font-medium" style={{ borderColor: colors.border, background: colors.background, color: colors.textSecondary }}>{children}</span>
+  <span className="inline-flex min-h-8 items-center rounded-full border px-3 text-sm font-medium" style={{ borderColor: colors.border, background: colors.background, color: colors.textSecondary }}>{children}</span>
 );
 
 const CaretArrow: React.FC<{ color: string }> = ({ color }) => (
