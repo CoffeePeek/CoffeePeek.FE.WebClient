@@ -267,7 +267,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
 
   const chipBase: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 5,
-    minHeight: 46, padding: '10px 16px', borderRadius: 999, whiteSpace: 'nowrap',
+    minHeight: 40, padding: '7px 14px', borderRadius: 999, whiteSpace: 'nowrap',
     fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14,
     cursor: 'pointer', transition: 'all .15s', border: '1px solid',
     flexShrink: 0,
