@@ -50,7 +50,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
     <div className="mx-auto max-w-[1680px] px-4 sm:px-6 lg:px-8">
 
       {/* ── Desktop ───────────────────────────────────────────── */}
-      <div className="hidden lg:block pt-6 pb-4">
+      <div className="hidden py-1 lg:block">
         <div style={{ position: 'relative' }}>
           <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
             <AppIcon name="search" size={18} color={goldWarm} />
@@ -60,7 +60,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
             onChange={e => onSearchChange(e.target.value)}
             maxLength={100}
             placeholder="Поиск кофейни…"
-            style={{ width: '100%', height: 64, borderRadius: 999, border: `1px solid ${inputBorder}`, background: inputBg, padding: '0 18px 0 48px', fontSize: 15, fontFamily: '"Manrope"', color: dark ? '#fff' : '#1C1917', outline: 'none', boxSizing: 'border-box' as const }}
+            style={{ width: '100%', height: 44, borderRadius: 999, border: `1px solid ${inputBorder}`, background: inputBg, padding: '0 18px 0 48px', fontSize: 15, fontFamily: '"Manrope"', color: dark ? '#fff' : '#1C1917', outline: 'none', boxSizing: 'border-box' as const }}
           />
         </div>
       </div>

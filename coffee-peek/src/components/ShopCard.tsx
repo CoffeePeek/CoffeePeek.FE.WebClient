@@ -8,6 +8,7 @@ import { getPriceRangeTier } from '../utils/priceRange';
 import { isShopOpenNow } from '../utils/shopUtils';
 import { AppIcon, BeanPriceMarks, StarIcon } from './icons';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
+import { Heart } from '@/components/Icon';
 
 interface ShopCardColors {
   surface: string;
@@ -110,7 +111,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
             onClick={event => { event.stopPropagation(); toggleFavorite(shop.id); }}
             className="flex h-9 w-9 items-center justify-center rounded-full border-0 bg-black/75 backdrop-blur-md transition-transform hover:scale-105"
           >
-            <AppIcon name="favorite" filled={favorite} size={22} color={favorite ? '#FB7185' : '#FFFFFF'} />
+            <Heart size={24} weight={favorite ? 'fill' : 'bold'} color={favorite ? '#FB7185' : '#FFFFFF'} />
           </button>
         </div>
 
