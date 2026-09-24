@@ -154,11 +154,9 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <ProfilePage />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
+            <AuthenticatedLayout>
+              <ProfilePage />
+            </AuthenticatedLayout>
           }
         />
 
@@ -218,11 +216,9 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="/settings"
           element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <SettingsPage />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
+            <AuthenticatedLayout>
+              <SettingsPage />
+            </AuthenticatedLayout>
           }
         />
 

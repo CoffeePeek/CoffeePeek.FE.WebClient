@@ -6,7 +6,9 @@ import {
 } from '../api/auth';
 import { getCities, type City } from '../api/coffeeshop';
 import WobbleRing from '../components/WobbleRing';
+import GuestAuthCard from '../components/GuestAuthCard';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUser } from '../contexts/UserContext';
 import { useLocalCity } from '../hooks/useLocalCity';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler';
@@ -23,6 +25,8 @@ const SettingsPage: React.FC = () => {
   usePageTitle('Настройки');
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { user, isLoading: isUserLoading } = useUser();
+  const userId = user?.id;
   const { cityId, setCityId } = useLocalCity();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [cities, setCities] = useState<City[]>([]);
@@ -32,9 +36,12 @@ const SettingsPage: React.FC = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([getProfile(), getCities()])
-      .then(([profileResponse, citiesResponse]) => {
-        setProfile(profileResponse.data);
+    if (isUserLoading) return;
+    setIsLoading(true);
+    const profileRequest = user ? getProfile().then(response => response.data) : Promise.resolve(null);
+    Promise.all([profileRequest, getCities()])
+      .then(([profileData, citiesResponse]) => {
+        setProfile(profileData);
         const raw = citiesResponse.data as unknown;
         const list = Array.isArray(raw) ? raw : ((raw as { cities?: City[] })?.cities ?? []);
         setCities(list);
@@ -45,7 +52,7 @@ const SettingsPage: React.FC = () => {
         setError(getErrorMessage(cause));
       })
       .finally(() => setIsLoading(false));
-  }, [cityId, setCityId]);
+  }, [cityId, isUserLoading, setCityId, userId]);
 
   const isDark = theme === 'dark';
   const colors: Colors = {
@@ -73,7 +80,7 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isUserLoading) {
     return <div className="flex min-h-[70vh] items-center justify-center" style={{ background: colors.bg }}><WobbleRing size={48} /></div>;
   }
 
@@ -82,17 +89,19 @@ const SettingsPage: React.FC = () => {
       <div className="mx-auto w-full max-w-[680px]">
         <h1 className="mb-6 text-[26px] font-extrabold sm:text-3xl" style={{ color: colors.text }}>Настройки</h1>
 
+        {!user && <div className="mb-6"><GuestAuthCard {...colors} /></div>}
+
         {(message || error) && <div className="mb-5 rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: error ? 'rgba(239,68,68,.45)' : colors.border, color: error ? '#EF4444' : colors.text, background: colors.surface }}>{error || message}</div>}
 
-        <SettingsSection title="Добавить" colors={colors}>
+        {user && <SettingsSection title="Добавить" colors={colors}>
           <SettingsRow title="Добавить кофейню" subtitle="Предложить новое место для CoffeePeek" Icon={Plus} color="#D8A743" iconBg="rgba(202,145,28,.16)" colors={colors} onClick={() => navigate('/coffee-shops/new')} />
           <SettingsRow title="Добавить обжарщика" subtitle="Помогите сообществу открыть новых обжарщиков" Icon={Factory} color="#74C98B" iconBg="rgba(65,158,88,.18)" colors={colors} onClick={() => navigate('/roasters/new')} />
-        </SettingsSection>
+        </SettingsSection>}
 
-        <SettingsSection title="Аккаунт" colors={colors}>
+        {user && <SettingsSection title="Аккаунт" colors={colors}>
           <SettingsRow title="Сменить пароль" subtitle="Обновить пароль для входа в аккаунт" Icon={Lock} color="#79D2B2" iconBg="rgba(27,155,111,.16)" colors={colors} onClick={() => setOpenPanel(openPanel === 'password' ? null : 'password')} />
           {openPanel === 'password' && <PasswordEditor colors={colors} onSaved={() => { setOpenPanel(null); showMessage('Пароль изменён'); }} onError={setError} />}
-        </SettingsSection>
+        </SettingsSection>}
 
         <SettingsSection title="Настройки" colors={colors}>
           <SettingsRow title="Город" subtitle="Определяет, какие кофейни показывать в первую очередь" Icon={MapPin} color="#71D5D0" iconBg="rgba(38,170,166,.17)" colors={colors}>
@@ -116,7 +125,7 @@ const SettingsPage: React.FC = () => {
           <SettingsRow title="Условия использования" Icon={ShieldCheck} color="#79D2B2" iconBg="rgba(27,155,111,.16)" colors={colors} onClick={() => navigate('/terms')} />
           <SettingsRow title="Политика конфиденциальности" Icon={Lock} color="#79D2B2" iconBg="rgba(27,155,111,.16)" colors={colors} onClick={() => navigate('/privacy')} />
           <SettingsRow title="Поделиться" Icon={ShareNetwork} color="#6CCBE4" iconBg="rgba(32,163,193,.17)" colors={colors} onClick={() => { void shareApp(); }} />
-          <DeleteAccountRow colors={colors} email={profile?.email} onError={setError} />
+          {user && <DeleteAccountRow colors={colors} email={profile?.email} onError={setError} />}
         </SettingsSection>
       </div>
     </main>

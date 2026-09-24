@@ -5,6 +5,7 @@ import {
 } from '../api/auth';
 import { getAvatarUploadUrl } from '../api/photos';
 import WobbleRing from '../components/WobbleRing';
+import GuestAuthCard from '../components/GuestAuthCard';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useTheme } from '../contexts/ThemeContext';
@@ -25,7 +26,8 @@ const ProfilePage: React.FC = () => {
   usePageTitle('Профиль');
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const { logout, updateUserProfile } = useUser();
+  const { user, isLoading: isUserLoading, logout, updateUserProfile } = useUser();
+  const userId = user?.id;
   const { favoriteIds } = useLocalFavorites();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,13 +38,20 @@ const ProfilePage: React.FC = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (isUserLoading) return;
+    if (!user) {
+      setProfile(null);
+      setIsLoading(false);
+      return;
+    }
     let cancelled = false;
+    setIsLoading(true);
     getProfile()
       .then(response => { if (!cancelled) setProfile(response.data); })
       .catch(error => logger.error('Error loading profile:', error))
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [isUserLoading, userId]);
 
   const isDark = theme === 'dark';
   const colors: ProfileColors = {
@@ -54,8 +63,28 @@ const ProfilePage: React.FC = () => {
     gold: '#EAB308',
   };
 
-  if (isLoading) {
+  const activities = [
+    { title: 'Избранные кофейни', subtitle: 'Кофейни, которые вы сохранили', Icon: Heart, color: '#FB7185', bg: 'rgba(244,63,94,.16)', route: '/shops?filter=favorite' },
+    { title: 'Мои отзывы', subtitle: 'Ваши оценки и отзывы о кофейнях', Icon: ChatCircleText, color: '#D58AE8', bg: 'rgba(192,82,214,.16)', route: '/reviews' },
+    { title: 'Чекины', subtitle: 'Места, которые вы уже посетили', Icon: MapPin, color: '#68B9E8', bg: 'rgba(56,153,211,.16)', route: '/check-ins' },
+    { title: 'Мои правки кофеен', subtitle: 'Заявки, которые вы отправили на модерацию', Icon: NotePencil, color: '#D8A743', bg: 'rgba(202,145,28,.16)', route: '/shop-change-requests' },
+  ];
+
+  if (isLoading || isUserLoading) {
     return <div className="flex min-h-[70vh] items-center justify-center" style={{ background: colors.bg }}><WobbleRing size={48} /></div>;
+  }
+
+  if (!user) {
+    return (
+      <main className="min-h-screen px-5 pb-12 pt-8 sm:px-8" style={{ background: colors.bg }}>
+        <div className="mx-auto w-full max-w-[680px]">
+          <h1 className="mb-6 text-[26px] font-extrabold sm:text-3xl" style={{ color: colors.text }}>Профиль</h1>
+          <GuestAuthCard {...colors} />
+          <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider sm:mt-6" style={{ color: colors.muted }}>Моя активность</p>
+          <ProfileActivityList activities={activities.slice(0, 3)} colors={colors} onNavigate={navigate} />
+        </div>
+      </main>
+    );
   }
 
   if (!profile) {
@@ -103,13 +132,6 @@ const ProfilePage: React.FC = () => {
       setIsSaving(false);
     }
   };
-  const activities = [
-    { title: 'Избранные кофейни', subtitle: 'Кофейни, которые вы сохранили', Icon: Heart, color: '#FB7185', bg: 'rgba(244,63,94,.16)', route: '/shops?filter=favorite' },
-    { title: 'Мои отзывы', subtitle: 'Ваши оценки и отзывы о кофейнях', Icon: ChatCircleText, color: '#D58AE8', bg: 'rgba(192,82,214,.16)', route: '/reviews' },
-    { title: 'Чекины', subtitle: 'Места, которые вы уже посетили', Icon: MapPin, color: '#68B9E8', bg: 'rgba(56,153,211,.16)', route: '/check-ins' },
-    { title: 'Мои правки кофеен', subtitle: 'Заявки, которые вы отправили на модерацию', Icon: NotePencil, color: '#D8A743', bg: 'rgba(202,145,28,.16)', route: '/shop-change-requests' },
-  ];
-
   return (
     <main className="min-h-screen px-5 pb-12 pt-8 sm:px-8" style={{ background: colors.bg }}>
       <div className="mx-auto w-full max-w-[680px]">
@@ -174,24 +196,7 @@ const ProfilePage: React.FC = () => {
         ) : profile.about ? <p className="mt-4 text-sm leading-relaxed sm:mt-5 sm:text-base" style={{ color: colors.muted }}>{profile.about}</p> : null}
 
         <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider sm:mt-6" style={{ color: colors.muted }}>Моя активность</p>
-        <section className="overflow-hidden rounded-[20px] border sm:rounded-3xl" style={{ borderColor: colors.border, background: colors.surface }}>
-          {activities.map(({ title, subtitle, Icon, color, bg, route }, index) => (
-            <button
-              key={title}
-              type="button"
-              onClick={() => navigate(route)}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-opacity hover:opacity-80 sm:px-5 sm:py-3.5"
-              style={{ borderTop: index ? `1px solid ${colors.border}` : undefined }}
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: bg, color }}><Icon className="h-[22px] w-[22px]" /></span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-base font-medium" style={{ color: colors.text }}>{title}</span>
-                <span className="mt-0.5 block text-xs leading-snug" style={{ color: colors.muted }}>{subtitle}</span>
-              </span>
-              <CaretRight className="h-5 w-5" color={colors.muted} />
-            </button>
-          ))}
-        </section>
+        <ProfileActivityList activities={activities} colors={colors} onNavigate={navigate} />
 
         <button
           type="button"
@@ -215,5 +220,19 @@ const ProfileStat: React.FC<{ value: number; label: string; text: string; muted:
 );
 
 type ProfileColors = { bg: string; surface: string; border: string; text: string; muted: string; gold: string };
+
+type ProfileActivity = { title: string; subtitle: string; Icon: React.ComponentType<{ className?: string }>; color: string; bg: string; route: string };
+
+const ProfileActivityList: React.FC<{ activities: ProfileActivity[]; colors: ProfileColors; onNavigate: (route: string) => void }> = ({ activities, colors, onNavigate }) => (
+  <section className="overflow-hidden rounded-[20px] border sm:rounded-3xl" style={{ borderColor: colors.border, background: colors.surface }}>
+    {activities.map(({ title, subtitle, Icon, color, bg, route }, index) => (
+      <button key={title} type="button" onClick={() => onNavigate(route)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-opacity hover:opacity-80 sm:px-5 sm:py-3.5" style={{ borderTop: index ? `1px solid ${colors.border}` : undefined }}>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: bg, color }}><Icon className="h-[22px] w-[22px]" /></span>
+        <span className="min-w-0 flex-1"><span className="block text-base font-medium" style={{ color: colors.text }}>{title}</span><span className="mt-0.5 block text-xs leading-snug" style={{ color: colors.muted }}>{subtitle}</span></span>
+        <CaretRight className="h-5 w-5" color={colors.muted} />
+      </button>
+    ))}
+  </section>
+);
 
 export default ProfilePage;
