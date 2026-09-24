@@ -171,11 +171,11 @@ const CoffeeShopPage: React.FC = () => {
         ) : <ShopPhotoPlaceholder fontSize={24} />}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/65" />
         <div className="absolute inset-x-5 top-5 flex items-center justify-between gap-3 lg:hidden">
-          <CircleButton label="Назад" onClick={() => navigate(-1)}><ArrowLeft weight="bold" /></CircleButton>
+          <CircleButton label="Назад" onClick={() => navigate(-1)}><ArrowLeft /></CircleButton>
           <div className="flex gap-2">
-            <CircleButton label="Предложить изменение" onClick={handleEditShop}><NotePencil weight="bold" /></CircleButton>
-            <CircleButton label={shopIsFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} onClick={handleToggleFavorite} pressed={shopIsFavorite}><Heart weight={shopIsFavorite ? 'fill' : 'bold'} color={shopIsFavorite ? colors.gold : 'currentColor'} /></CircleButton>
-            <CircleButton label="Поделиться" onClick={() => { void handleShare(); }}><ShareNetwork weight="bold" /></CircleButton>
+            <CircleButton label="Предложить изменение" onClick={handleEditShop}><NotePencil /></CircleButton>
+            <CircleButton label={shopIsFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} onClick={handleToggleFavorite} pressed={shopIsFavorite}><Heart weight={shopIsFavorite ? 'fill' : 'regular'} color={shopIsFavorite ? colors.gold : 'currentColor'} /></CircleButton>
+            <CircleButton label="Поделиться" onClick={() => { void handleShare(); }}><ShareNetwork /></CircleButton>
           </div>
         </div>
         <div className="absolute inset-x-5 bottom-5 flex items-end justify-between gap-3 text-white">

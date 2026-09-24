@@ -332,7 +332,7 @@ export interface RoasterDetails {
   location?: { address?: string | null; latitude?: number | null; longitude?: number | null } | null;
   contact?: { instagramLink?: string | null; siteLink?: string | null } | null;
   photos: ShortPhotoMetadataDto[];
-  shops: Array<{ id: string; name: string }>;
+  shops: Array<{ id: string; name: string; photoUrl?: string | null }>;
 }
 
 export interface BrewMethod {
