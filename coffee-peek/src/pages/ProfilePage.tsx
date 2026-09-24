@@ -113,8 +113,8 @@ const ProfilePage: React.FC = () => {
   return (
     <main className="min-h-screen px-5 pb-12 pt-8 sm:px-8" style={{ background: colors.bg }}>
       <div className="mx-auto w-full max-w-[680px]">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-extrabold" style={{ color: colors.text }}>Профиль</h1>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h1 className="text-[26px] font-extrabold" style={{ color: colors.text }}>Профиль</h1>
           <div className="flex items-center gap-2">
             {isEditing && (
               <button type="button" onClick={cancelEditing} disabled={isSaving} className="min-h-11 rounded-full border px-4 text-sm font-bold" style={{ borderColor: colors.border, background: colors.surface, color: colors.text }}>Отмена</button>
@@ -134,8 +134,8 @@ const ProfilePage: React.FC = () => {
 
         {error && <div className="mb-5 rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(239,68,68,.45)', background: colors.surface, color: '#EF4444' }}>{error}</div>}
 
-        <section className="grid grid-cols-[104px_1fr] gap-5 sm:grid-cols-[120px_1fr] sm:gap-6">
-          <div className="h-[104px] w-[104px] sm:h-[120px] sm:w-[120px]">
+        <section className="grid grid-cols-[96px_1fr] gap-4 sm:grid-cols-[120px_1fr] sm:gap-6">
+          <div className="h-24 w-24 sm:h-[120px] sm:w-[120px]">
             <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border" style={{ borderColor: colors.border, background: `${colors.gold}18` }}>
               {profile.avatarUrl
                 ? <img src={profile.avatarUrl} alt={profile.userName} className="h-full w-full object-cover" />
@@ -157,11 +157,11 @@ const ProfilePage: React.FC = () => {
               </>
             ) : (
               <>
-                <h2 className="truncate text-2xl font-extrabold" style={{ color: colors.text }}>{profile.userName}</h2>
+                <h2 className="truncate text-xl font-extrabold sm:text-2xl" style={{ color: colors.text }}>{profile.userName}</h2>
                 <p className="mt-1 truncate text-sm sm:text-base" style={{ color: colors.muted }}>{profile.email}</p>
               </>
             )}
-            <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:mt-4 sm:gap-3">
               <ProfileStat value={profile.reviewCount ?? 0} label="Отзывы" text={colors.text} muted={colors.muted} />
               <ProfileStat value={profile.checkInCount ?? 0} label="Чекины" text={colors.text} muted={colors.muted} />
               <ProfileStat value={profile.addedShopsCount ?? favoriteIds.size} label="Кофейни" text={colors.text} muted={colors.muted} />
@@ -171,24 +171,24 @@ const ProfilePage: React.FC = () => {
 
         {isEditing ? (
           <textarea aria-label="О себе" value={draft.about} onChange={event => setDraft(value => ({ ...value, about: event.target.value }))} placeholder="Расскажите о себе" rows={2} className="mt-5 w-full resize-y rounded-xl border px-3 py-2 text-base outline-none" style={{ borderColor: colors.border, background: colors.surface, color: colors.text }} />
-        ) : profile.about ? <p className="mt-5 text-base leading-relaxed" style={{ color: colors.muted }}>{profile.about}</p> : null}
+        ) : profile.about ? <p className="mt-4 text-sm leading-relaxed sm:mt-5 sm:text-base" style={{ color: colors.muted }}>{profile.about}</p> : null}
 
-        <p className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider" style={{ color: colors.muted }}>Моя активность</p>
-        <section className="overflow-hidden rounded-3xl border" style={{ borderColor: colors.border, background: colors.surface }}>
+        <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider sm:mt-6" style={{ color: colors.muted }}>Моя активность</p>
+        <section className="overflow-hidden rounded-[20px] border sm:rounded-3xl" style={{ borderColor: colors.border, background: colors.surface }}>
           {activities.map(({ title, subtitle, Icon, color, bg, route }, index) => (
             <button
               key={title}
               type="button"
               onClick={() => navigate(route)}
-              className="flex w-full items-center gap-4 px-4 py-5 text-left transition-opacity hover:opacity-80 sm:gap-3 sm:px-5 sm:py-3.5"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-opacity hover:opacity-80 sm:px-5 sm:py-3.5"
               style={{ borderTop: index ? `1px solid ${colors.border}` : undefined }}
             >
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl sm:h-11 sm:w-11 sm:rounded-xl" style={{ background: bg, color }}><Icon className="h-7 w-7 sm:h-[22px] sm:w-[22px]" /></span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: bg, color }}><Icon className="h-[22px] w-[22px]" /></span>
               <span className="min-w-0 flex-1">
-                <span className="block text-lg font-medium sm:text-base" style={{ color: colors.text }}>{title}</span>
-                <span className="mt-0.5 block text-sm leading-snug sm:text-xs" style={{ color: colors.muted }}>{subtitle}</span>
+                <span className="block text-base font-medium" style={{ color: colors.text }}>{title}</span>
+                <span className="mt-0.5 block text-xs leading-snug" style={{ color: colors.muted }}>{subtitle}</span>
               </span>
-              <CaretRight className="h-[25px] w-[25px] sm:h-5 sm:w-5" color={colors.muted} />
+              <CaretRight className="h-5 w-5" color={colors.muted} />
             </button>
           ))}
         </section>
@@ -209,7 +209,7 @@ const ProfilePage: React.FC = () => {
 
 const ProfileStat: React.FC<{ value: number; label: string; text: string; muted: string }> = ({ value, label, text, muted }) => (
   <div>
-    <strong className="block text-xl" style={{ color: text }}>{value}</strong>
+    <strong className="block text-lg sm:text-xl" style={{ color: text }}>{value}</strong>
     <span className="text-xs sm:text-sm" style={{ color: muted }}>{label}</span>
   </div>
 );

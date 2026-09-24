@@ -31,10 +31,10 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-        gap: 3,
+        gap: 2,
         width: '100%',
-        padding: 3,
-        borderRadius: 14,
+        padding: 0,
+        borderRadius: 12,
         background: track,
         boxSizing: 'border-box',
       }}
@@ -53,7 +53,7 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
               minHeight: 44,
               padding: '0 8px',
               border: 'none',
-              borderRadius: 11,
+              borderRadius: 10,
               background: active ? gold : 'transparent',
               color: active ? '#1A1412' : muted,
               boxShadow: active ? '0 2px 8px rgba(0,0,0,.16)' : 'none',

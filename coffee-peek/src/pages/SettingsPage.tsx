@@ -78,9 +78,9 @@ const SettingsPage: React.FC = () => {
   }
 
   return (
-    <main className="min-h-screen px-5 pb-12 pt-8 sm:px-8 sm:pt-12" style={{ background: colors.bg }}>
-      <div className="mx-auto w-full max-w-[820px]">
-        <h1 className="mb-9 text-3xl font-extrabold sm:text-4xl" style={{ color: colors.text }}>Настройки</h1>
+    <main className="min-h-screen px-5 pb-12 pt-8 sm:px-8" style={{ background: colors.bg }}>
+      <div className="mx-auto w-full max-w-[680px]">
+        <h1 className="mb-6 text-[26px] font-extrabold sm:text-3xl" style={{ color: colors.text }}>Настройки</h1>
 
         {(message || error) && <div className="mb-5 rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: error ? 'rgba(239,68,68,.45)' : colors.border, color: error ? '#EF4444' : colors.text, background: colors.surface }}>{error || message}</div>}
 
@@ -124,10 +124,10 @@ const SettingsPage: React.FC = () => {
 };
 
 const SettingsSection: React.FC<{ title: string; description?: string; colors: Colors; children: React.ReactNode }> = ({ title, description, colors, children }) => (
-  <section className="mb-8">
-    <h2 className="mb-3 text-sm font-medium uppercase tracking-wider" style={{ color: colors.muted }}>{title}</h2>
-    {description && <p className="-mt-1 mb-4 text-sm leading-relaxed" style={{ color: colors.muted }}>{description}</p>}
-    <div className="overflow-hidden rounded-[28px] border [&>*+*]:border-t [&>*+*]:border-[var(--settings-border)]" style={{ borderColor: colors.border, background: colors.surface, '--settings-border': colors.border } as React.CSSProperties}>{children}</div>
+  <section className="mb-5 sm:mb-6">
+    <h2 className="mb-2 text-xs font-medium uppercase tracking-wider" style={{ color: colors.muted }}>{title}</h2>
+    {description && <p className="mb-3 text-xs leading-relaxed" style={{ color: colors.muted }}>{description}</p>}
+    <div className="overflow-hidden rounded-[20px] border [&>*+*]:border-t [&>*+*]:border-[var(--settings-border)] sm:rounded-3xl" style={{ borderColor: colors.border, background: colors.surface, '--settings-border': colors.border } as React.CSSProperties}>{children}</div>
   </section>
 );
 
@@ -137,10 +137,10 @@ interface SettingsRowProps {
 }
 
 const SettingsRow: React.FC<SettingsRowProps> = ({ title, subtitle, Icon, color, iconBg, colors, onClick, children }) => {
-  const content = <><span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ color, background: iconBg }}><Icon size={28} /></span><span className="min-w-0 flex-1"><span className="block text-lg font-medium sm:text-xl" style={{ color: colors.text }}>{title}</span>{subtitle && <span className="mt-0.5 block text-sm leading-snug" style={{ color: colors.muted }}>{subtitle}</span>}</span>{children ?? (onClick && <CaretRight size={25} color={colors.muted} />)}</>;
+  const content = <><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ color, background: iconBg }}><Icon size={22} /></span><span className="min-w-0 flex-1"><span className="block text-base font-medium" style={{ color: colors.text }}>{title}</span>{subtitle && <span className="mt-0.5 block text-xs leading-snug" style={{ color: colors.muted }}>{subtitle}</span>}</span>{children ?? (onClick && <CaretRight size={20} color={colors.muted} />)}</>;
   return onClick
-    ? <button type="button" onClick={onClick} className="flex w-full items-center gap-4 px-4 py-5 text-left transition-opacity hover:opacity-80 sm:px-6">{content}</button>
-    : <div className="flex w-full items-center gap-4 px-4 py-5 sm:px-6">{content}</div>;
+    ? <button type="button" onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-opacity hover:opacity-80 sm:px-5 sm:py-3.5">{content}</button>
+    : <div className="flex w-full items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5">{content}</div>;
 };
 
 const ThemeButton: React.FC<{ active: boolean; label: string; Icon: React.ComponentType<{ size?: number }>; onClick: () => void; colors: Colors }> = ({ active, label, Icon, onClick, colors }) => (
@@ -160,7 +160,7 @@ const PasswordEditor: React.FC<{ colors: Colors; onSaved: () => void; onError: (
     catch (cause) { onError(getPasswordErrorMessage(cause) ?? getErrorMessage(cause)); }
     finally { setIsSaving(false); }
   };
-  return <div className="space-y-3 border-t px-4 py-5 sm:px-6" style={{ borderColor: colors.border, background: colors.bg }}>
+  return <div className="space-y-3 border-t px-4 py-4 sm:px-5" style={{ borderColor: colors.border, background: colors.bg }}>
     <input type="password" autoComplete="current-password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} placeholder="Текущий пароль" style={inputStyle(colors)} />
     <input type="password" autoComplete="new-password" value={newPassword} onChange={event => setNewPassword(event.target.value)} placeholder="Новый пароль" style={inputStyle(colors)} />
     <input type="password" autoComplete="new-password" value={confirmation} onChange={event => setConfirmation(event.target.value)} placeholder="Повторите новый пароль" style={inputStyle(colors)} />
@@ -172,8 +172,8 @@ const DeleteAccountRow: React.FC<{ colors: Colors; email?: string; onError: (mes
   const [confirming, setConfirming] = useState(false);
   const [sent, setSent] = useState(false);
   const remove = async () => { try { await deleteUser(); setSent(true); } catch (cause) { onError(getErrorMessage(cause)); } };
-  if (sent) return <div className="px-5 py-5 text-sm leading-relaxed" style={{ color: colors.muted }}>Ссылка для подтверждения удаления отправлена{email ? ` на ${email}` : ''}.</div>;
-  return <div className="flex items-center gap-4 px-4 py-5 sm:px-6"><span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-red-400" style={{ background: 'rgba(239,68,68,.14)' }}><WarningCircle size={28} /></span><span className="min-w-0 flex-1"><span className="block text-lg font-medium sm:text-xl" style={{ color: colors.text }}>Удалить аккаунт</span><span className="mt-0.5 block text-sm" style={{ color: colors.muted }}>{confirming ? 'Подтвердите отправку письма' : 'Удаление подтверждается по email'}</span></span><button type="button" onClick={() => confirming ? void remove() : setConfirming(true)} className="rounded-xl border px-3 py-2 text-sm font-bold" style={{ borderColor: 'rgba(239,68,68,.35)', color: '#EF4444' }}>{confirming ? 'Подтвердить' : 'Удалить'}</button></div>;
+  if (sent) return <div className="px-4 py-4 text-xs leading-relaxed" style={{ color: colors.muted }}>Ссылка для подтверждения удаления отправлена{email ? ` на ${email}` : ''}.</div>;
+  return <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-red-400" style={{ background: 'rgba(239,68,68,.14)' }}><WarningCircle size={22} /></span><span className="min-w-0 flex-1"><span className="block text-base font-medium" style={{ color: colors.text }}>Удалить аккаунт</span><span className="mt-0.5 block text-xs" style={{ color: colors.muted }}>{confirming ? 'Подтвердите отправку письма' : 'Удаление подтверждается по email'}</span></span><button type="button" onClick={() => confirming ? void remove() : setConfirming(true)} className="min-h-11 rounded-xl border px-3 text-xs font-bold" style={{ borderColor: 'rgba(239,68,68,.35)', color: '#EF4444' }}>{confirming ? 'Подтвердить' : 'Удалить'}</button></div>;
 };
 
 const inputStyle = (colors: Colors): React.CSSProperties => ({ width: '100%', minHeight: 46, borderRadius: 12, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text, padding: '0 14px', outline: 'none' });
