@@ -67,12 +67,9 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
   const chipBtn = `inline-flex items-center gap-2 h-10 px-3.5 rounded-full font-semibold border ${borderColor} ${textMain} hover:border-[#D4A84B]/50 transition-all`;
 
   return (
-    <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0`}>
-      <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 mb-4`}>
-        <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full shrink-0" />
-        Контакты
-      </h2>
-      <div className="flex flex-wrap items-center gap-3 min-w-0">
+    <section className="min-w-0">
+      <h2 className={`mb-3 text-2xl font-bold ${textMain}`}>Контакты</h2>
+      <div className={`${cardBg} flex flex-wrap items-center gap-3 rounded-[24px] border p-4 sm:p-5 ${borderColor}`}>
         {contact.phone && (
           <div
             className={`inline-flex items-center h-10 max-w-full min-w-0 rounded-full border ${borderColor} overflow-hidden`}
@@ -127,6 +124,6 @@ export const ContactButtons: React.FC<ContactButtonsProps> = ({
           </a>
         )}
       </div>
-    </div>
+    </section>
   );
 };

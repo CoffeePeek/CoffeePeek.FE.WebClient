@@ -48,12 +48,9 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   };
 
   return (
-    <div className="pt-8 border-t border-[#E8E4E1]">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
-        <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 min-w-0`}>
-          <span className={`w-1.5 h-8 ${themeClasses.primary.bg} rounded-full shrink-0`} />
-          Отзывы
-        </h2>
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className={`text-2xl font-bold ${textMain}`}>Отзывы</h2>
         {user && (
           <button
             onClick={onWriteOrEditReview}
@@ -69,7 +66,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
       {isLoading ? (
         <ReviewCardSkeleton count={3} />
       ) : reviews.length > 0 ? (
-        <div className="space-y-6">
+        <div className="flex snap-x gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible">
           {reviews.map((review) => {
             const userProfile = usersCache.get(review.userId);
             const displayName = userProfile?.userName || review.userName || 'Анонимный пользователь';
@@ -83,8 +80,8 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             const avgReviewRating = (review.ratingCoffee + review.ratingService + review.ratingPlace) / 3;
 
             return (
-              <div key={review.id} className={`${cardBg} p-5 sm:p-8 rounded-3xl border ${borderColor} hover:shadow-lg transition-all`}>
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+              <div key={review.id} className={`${cardBg} min-w-[88%] snap-start rounded-[24px] border p-5 transition-all sm:min-w-0 ${borderColor}`}>
+                <div className="mb-4 flex items-start justify-between gap-3">
                   <button
                     onClick={() => handleNavigateToUserProfile(review.userId)}
                     className="flex items-center gap-4 hover:opacity-80 transition-opacity min-w-0"
@@ -105,7 +102,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                       </p>
                     </div>
                   </button>
-                  <div className="flex items-center gap-2 shrink-0 sm:pl-4">
+                  <div className="hidden items-center gap-2 sm:flex sm:pl-4">
                     <div className={`flex ${themeClasses.primary.text}`}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <StarIcon key={star} filled={star <= avgReviewRating} size={20} />
@@ -116,10 +113,14 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     </span>
                   </div>
                 </div>
+                <div className="mb-4 grid grid-cols-3 gap-2">
+                  {[['Аура', review.ratingPlace], ['Сервис', review.ratingService], ['Кофе', review.ratingCoffee]].map(([label, rating]) => <div key={String(label)} className="rounded-2xl bg-black/[.03] px-2 py-3 text-center dark:bg-white/[.05]"><span className={`block text-xs ${textMuted}`}>{label}</span><strong className={textMain}>{rating}</strong></div>)}
+                </div>
+                <div className="mb-4 flex items-center gap-2 sm:hidden"><div className={`flex ${themeClasses.primary.text}`}>{[1, 2, 3, 4, 5].map(star => <StarIcon key={star} filled={star <= avgReviewRating} size={20} />)}</div><span className={`text-lg font-bold ${textMain}`}>{avgReviewRating.toFixed(1)}</span></div>
                 {review.header && (
                   <h5 className={`font-bold ${textMain} mb-2`}>{review.header}</h5>
                 )}
-                <p className={`${textMuted} leading-loose italic`}>"{review.comment}"</p>
+                <p className={`${textMuted} leading-relaxed`}>"{review.comment}"</p>
               </div>
             );
           })}

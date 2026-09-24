@@ -71,19 +71,9 @@ export const ShopMenuSection: React.FC<ShopMenuSectionProps> = ({
       : null;
 
   return (
-    <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor} min-w-0 space-y-5`}>
-      <div>
-        <h2 className={`text-xl sm:text-2xl font-extended font-bold ${textMain} flex items-center gap-3 mb-1`}>
-          <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full" />
-          Меню
-        </h2>
-        {captured && (
-          <p className={`text-xs leading-snug ${textMuted}`}>
-            Актуально на {captured}
-            {updated ? ` · обновлено ${updated}` : ''}
-          </p>
-        )}
-      </div>
+    <section className="min-w-0">
+      <h2 className={`mb-3 text-2xl font-bold ${textMain}`}>Меню</h2>
+      <div className={`${cardBg} space-y-5 rounded-[24px] border p-4 sm:p-6 ${borderColor}`}>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <DrinkGroup title="Эспрессо" items={grouped.espresso} textMain={textMain} textMuted={textMuted} />
@@ -91,20 +81,18 @@ export const ShopMenuSection: React.FC<ShopMenuSectionProps> = ({
       </div>
 
       {photos.length > 0 && (
-        <div>
-          <h3 className={`font-bold ${textMain} mb-3`}>Фото меню</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {photos.map((photo, index) => (
               <button
                 key={photo.id ?? photo.storageKey ?? index}
                 type="button"
                 onClick={() => setLightboxIndex(index)}
-                className="block rounded-xl overflow-hidden aspect-[3/4] bg-black/5"
+                className="relative block aspect-[3/4] overflow-hidden rounded-2xl bg-black/5"
               >
                 <img src={photo.fullUrl ?? ''} alt="Фото меню" className="w-full h-full object-cover" />
+                {index === 0 && captured && <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3 pb-3 pt-8 text-left text-xs text-white">Актуально на {captured}{updated ? <><br />Обновлено {updated}</> : null}</span>}
               </button>
             ))}
-          </div>
         </div>
       )}
 
@@ -120,6 +108,7 @@ export const ShopMenuSection: React.FC<ShopMenuSectionProps> = ({
           onClose={() => setLightboxIndex(null)}
         />
       )}
-    </div>
+      </div>
+    </section>
   );
 };
