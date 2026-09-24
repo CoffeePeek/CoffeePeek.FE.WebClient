@@ -50,7 +50,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
     <div className="mx-auto max-w-[1680px] px-4 sm:px-6 lg:px-8">
 
       {/* ── Desktop ───────────────────────────────────────────── */}
-      <div className="hidden py-1 lg:block">
+      <div className="hidden pb-1 pt-4 lg:block">
         <div style={{ position: 'relative' }}>
           <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
             <AppIcon name="search" size={18} color={goldWarm} />

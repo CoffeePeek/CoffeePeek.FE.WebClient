@@ -17,7 +17,6 @@ interface ShopHeaderProps {
   onToggleFavorite: () => void;
   onCheckIn?: () => void;
   onReportIssue?: () => void;
-  textMain: string;
   textMuted: string;
   borderColor: string;
 }
@@ -57,7 +56,6 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   onToggleFavorite,
   onCheckIn,
   onReportIssue,
-  textMain,
   textMuted,
   borderColor,
 }) => {
@@ -81,11 +79,8 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   };
 
   return (
-    <div className="mb-4 flex min-w-0 flex-col gap-4 lg:mb-6 lg:flex-row lg:flex-wrap lg:items-start lg:justify-between">
+    <div className="mb-4 hidden min-w-0 flex-col gap-4 lg:mb-6 lg:flex lg:flex-row lg:flex-wrap lg:items-start lg:justify-between">
       <div className="min-w-0 w-full sm:flex-1">
-        <h1 className={`mb-2 break-words text-2xl font-bold tracking-tight sm:text-3xl lg:text-5xl ${textMain}`}>
-          {shop.name}
-        </h1>
         <div className="hidden min-w-0 flex-wrap items-center gap-2 text-sm lg:flex lg:gap-3">
           <span className={`${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-3 py-1 rounded-lg flex items-center gap-1 shrink-0`}>
             <StarIcon filled size={14} />

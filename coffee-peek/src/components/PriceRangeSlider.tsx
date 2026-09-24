@@ -33,8 +33,9 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
         gap: 2,
         width: '100%',
-        padding: 0,
-        borderRadius: 12,
+        padding: 2,
+        borderRadius: 999,
+        overflow: 'hidden',
         background: track,
         boxSizing: 'border-box',
       }}
@@ -50,10 +51,10 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
             onClick={() => onChange(active && allowClear ? undefined : option.value)}
             style={{
               minWidth: 0,
-              minHeight: 44,
+              minHeight: 30,
               padding: '0 8px',
               border: 'none',
-              borderRadius: 10,
+              borderRadius: 999,
               background: active ? gold : 'transparent',
               color: active ? '#1A1412' : muted,
               boxShadow: active ? '0 2px 8px rgba(0,0,0,.16)' : 'none',

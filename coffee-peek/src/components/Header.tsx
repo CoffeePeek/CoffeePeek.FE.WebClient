@@ -54,7 +54,7 @@ const Header: React.FC = () => {
   const avatarUrl = user?.avatarUrl;
 
   const navBtn = (active: boolean): React.CSSProperties => ({
-    minHeight: 44, padding: '0 16px', borderRadius: 999,
+    minHeight: 34, padding: '0 14px', borderRadius: 999,
     border: 'none',
     background: active ? (isDark ? 'rgba(255,255,255,0.12)' : '#fff') : 'transparent',
     color: active ? gold : mutedColor,
@@ -89,7 +89,7 @@ const Header: React.FC = () => {
           <nav
             className="hidden lg:flex"
             aria-label="Основные разделы"
-            style={{ flexShrink: 0, height: 48, justifyContent: 'center', gap: 2, padding: 2, borderRadius: 999, background: isDark ? 'rgba(255,255,255,.07)' : 'rgba(120,113,108,.09)', border: `1px solid ${borderColor}` }}
+            style={{ flexShrink: 0, height: 38, justifyContent: 'center', gap: 2, padding: 2, borderRadius: 999, background: isDark ? 'rgba(255,255,255,.07)' : 'rgba(120,113,108,.09)', border: `1px solid ${borderColor}` }}
           >
             {allNav.map(({ id, label, route, Icon }) => (
               <button key={id} onClick={() => navigate(route)} style={navBtn(currentId === id)} aria-current={currentId === id ? 'page' : undefined}>
@@ -183,11 +183,11 @@ const Header: React.FC = () => {
               /* ── Login / Register ── */
               <div className="hidden lg:flex" style={{ gap: 8, alignItems: 'center' }}>
                 <button onClick={() => navigate('/login')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ minHeight: 38, padding: '0 16px', borderRadius: 999, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
                   Войти
                 </button>
                 <button onClick={() => navigate('/register')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ minHeight: 38, padding: '0 16px', borderRadius: 999, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
                   Регистрация
                 </button>
               </div>

@@ -171,15 +171,16 @@ const CoffeeShopPage: React.FC = () => {
         ) : <ShopPhotoPlaceholder fontSize={24} />}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/65" />
         <div className="absolute inset-x-5 top-5 flex items-center justify-between gap-3 lg:hidden">
-          <CircleButton label="Назад" onClick={() => navigate(-1)}><ArrowLeft size={25} /></CircleButton>
+          <CircleButton label="Назад" onClick={() => navigate(-1)}><ArrowLeft weight="bold" /></CircleButton>
           <div className="flex gap-2">
-            <CircleButton label="Предложить изменение" onClick={handleEditShop}><NotePencil size={23} /></CircleButton>
-            <CircleButton label={shopIsFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} onClick={handleToggleFavorite} pressed={shopIsFavorite}><Heart size={24} weight={shopIsFavorite ? 'fill' : 'regular'} color={shopIsFavorite ? colors.gold : 'currentColor'} /></CircleButton>
-            <CircleButton label="Поделиться" onClick={() => { void handleShare(); }}><ShareNetwork size={23} /></CircleButton>
+            <CircleButton label="Предложить изменение" onClick={handleEditShop}><NotePencil weight="bold" /></CircleButton>
+            <CircleButton label={shopIsFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} onClick={handleToggleFavorite} pressed={shopIsFavorite}><Heart weight={shopIsFavorite ? 'fill' : 'bold'} color={shopIsFavorite ? colors.gold : 'currentColor'} /></CircleButton>
+            <CircleButton label="Поделиться" onClick={() => { void handleShare(); }}><ShareNetwork weight="bold" /></CircleButton>
           </div>
         </div>
         <div className="absolute inset-x-5 bottom-5 flex items-end justify-between gap-3 text-white">
           <div className="min-w-0 space-y-1 text-sm font-semibold drop-shadow">
+            <h1 className="truncate text-2xl font-extrabold sm:text-3xl">{shop.name}</h1>
             <p className="flex items-center gap-2"><MapPin size={20} weight="fill" /><span className="truncate">{shop.location?.address || 'Адрес не указан'}</span></p>
             {distance && <p className="flex items-center gap-2"><NavigationArrow size={20} weight="fill" />{distance} от вас</p>}
           </div>
@@ -189,7 +190,7 @@ const CoffeeShopPage: React.FC = () => {
 
       <main className="mx-auto max-w-[920px] space-y-7 px-4 py-6 sm:px-6 sm:py-8">
         <section>
-          <ShopHeader shop={shop} avgRating={shop.rating || 0} reviewsTotalCount={reviewsTotalCount} isFavorite={shopIsFavorite} isCheckingFavorite={false} onToggleFavorite={handleToggleFavorite} onCheckIn={handleCheckIn} onReportIssue={() => setShowReportModal(true)} textMain={textMain} textMuted={textMuted} borderColor={borderColor} />
+          <ShopHeader shop={shop} avgRating={shop.rating || 0} reviewsTotalCount={reviewsTotalCount} isFavorite={shopIsFavorite} isCheckingFavorite={false} onToggleFavorite={handleToggleFavorite} onCheckIn={handleCheckIn} onReportIssue={() => setShowReportModal(true)} textMuted={textMuted} borderColor={borderColor} />
           <div className="grid grid-cols-3 gap-2.5">
             <div className="rounded-[22px] p-4" style={{ background: isDark ? '#382F1E' : '#FFF9E8', color: colors.text }}><div className="flex items-center gap-2"><Star size={23} weight="fill" color={colors.gold} /><strong className="text-lg sm:text-xl">{(shop.rating || 0).toFixed(1)}</strong></div><p className="mt-1 text-xs" style={{ color: colors.muted }}>{reviewsTotalCount} отзывов</p></div>
             <div className="rounded-[22px] p-4" style={{ background: status?.isOpen ? (isDark ? '#183B2A' : '#DCF7E7') : (isDark ? '#442727' : '#FEE2E2'), color: status?.isOpen ? '#22C55E' : '#EF4444' }}><strong className="block text-sm sm:text-xl">● {status?.isOpen ? 'Открыта' : 'Закрыта'}</strong>{statusTime && <p className="mt-1 text-xs opacity-75">{status?.isOpen ? 'до' : 'с'} {statusTime}</p>}</div>
@@ -227,7 +228,7 @@ const CoffeeShopPage: React.FC = () => {
 };
 
 const CircleButton: React.FC<{ label: string; onClick: () => void; pressed?: boolean; children: React.ReactNode }> = ({ label, onClick, pressed, children }) => (
-  <button type="button" onClick={onClick} aria-label={label} aria-pressed={pressed} className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-stone-900 shadow-lg backdrop-blur">{children}</button>
+  <button type="button" onClick={onClick} aria-label={label} aria-pressed={pressed} className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-stone-900 shadow-lg backdrop-blur [&_svg]:h-7 [&_svg]:w-7 [&_svg]:shrink-0">{children}</button>
 );
 
 const SectionTitle: React.FC<{ colors: DetailColors; children: React.ReactNode }> = ({ colors, children }) => (
@@ -239,14 +240,14 @@ const HoursCard: React.FC<{ shop: DetailedCoffeeShop; schedules: ReturnType<type
   const currentDay = getCurrentDayOfWeek();
   const today = schedules.find(schedule => schedule.dayOfWeek === currentDay);
   return (
-    <section>
-      <button type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} className="flex min-h-[76px] w-full items-center gap-4 rounded-[24px] border px-5 text-left" style={{ background: colors.surface, borderColor: colors.border, color: colors.text }}>
+    <section className="overflow-hidden rounded-[24px] border" style={{ background: colors.surface, borderColor: colors.border }}>
+      <button type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} className="flex min-h-[76px] w-full items-center gap-4 border-0 bg-transparent px-5 text-left" style={{ color: colors.text }}>
         <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: `${colors.gold}18`, color: colors.gold }}><Clock size={24} /></span>
         <strong className="flex-1 text-lg">Часы работы</strong>
-        <span className="text-sm tabular-nums" style={{ color: colors.muted }}>{today?.openTime && today?.closeTime ? `${today.openTime}–${today.closeTime}` : shop.isOpen ? 'Открыто' : 'Закрыто'}</span>
+        {!open && <span className="text-sm tabular-nums" style={{ color: colors.muted }}>{today?.openTime && today?.closeTime ? `${today.openTime}–${today.closeTime}` : shop.isOpen ? 'Открыто' : 'Закрыто'}</span>}
         <CaretDown size={18} className={open ? 'rotate-180' : ''} />
       </button>
-      {open && <div className="mt-2 grid grid-cols-[40px_1fr] gap-y-2 rounded-[20px] border p-4 text-sm" style={{ background: colors.surface, borderColor: colors.border }}>{schedules.map(schedule => <React.Fragment key={schedule.dayOfWeek}><span style={{ color: schedule.dayOfWeek === currentDay ? colors.gold : colors.muted }}>{formatDayOfWeekShort(schedule.dayOfWeek)}</span><span className="tabular-nums" style={{ color: colors.text }}>{schedule.openTime && schedule.closeTime ? `${schedule.openTime}–${schedule.closeTime}` : 'Закрыто'}</span></React.Fragment>)}</div>}
+      {open && <div className="grid grid-cols-[40px_1fr] gap-y-2 border-t py-4 pl-[84px] pr-5 text-sm" style={{ borderColor: colors.border }}>{schedules.map(schedule => <React.Fragment key={schedule.dayOfWeek}><span style={{ color: schedule.dayOfWeek === currentDay ? colors.gold : colors.muted }}>{formatDayOfWeekShort(schedule.dayOfWeek)}</span><span className="tabular-nums" style={{ color: colors.text }}>{schedule.openTime && schedule.closeTime ? `${schedule.openTime}–${schedule.closeTime}` : 'Закрыто'}</span></React.Fragment>)}</div>}
     </section>
   );
 };
