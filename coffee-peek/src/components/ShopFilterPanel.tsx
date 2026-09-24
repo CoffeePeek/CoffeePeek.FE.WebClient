@@ -123,23 +123,19 @@ const FilterAccordion: React.FC<{
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div>
+    <div style={{ borderBottom: `1px solid ${borderColor}` }}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-          padding: '12px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+          minHeight: 48, padding: '0 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
         }}
       >
-        <span style={{
-          fontFamily: '"Manrope"', fontSize: 13, fontWeight: 700,
-          color: textPrimary, letterSpacing: '-0.01em',
-        }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: '"Manrope"', fontSize: 13, fontWeight: 700, color: textPrimary, letterSpacing: '-0.01em' }}>
           {title}
-          {count > 0 && (
-            <span style={{ marginLeft: 6, color: COLORS.primary, fontWeight: 700 }}>{count}</span>
-          )}
+          {count > 0 && <span style={{ minWidth: 20, height: 20, padding: '0 6px', borderRadius: 999, background: `${COLORS.primary}1F`, color: COLORS.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>{count}</span>}
         </span>
         <CaretDown
           size={14}
@@ -147,19 +143,17 @@ const FilterAccordion: React.FC<{
           style={{ transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none', flexShrink: 0 }}
         />
       </button>
-      {open && <div style={{ paddingBottom: 14 }}>{children}</div>}
+      {open && <div style={{ padding: '0 10px 12px' }}>{children}</div>}
     </div>
   );
 };
 
-const CheckMark: React.FC<{ checked: boolean; gold: string; borderColor: string }> = ({ checked, gold, borderColor }) => (
+const CheckMark: React.FC<{ checked: boolean; gold: string }> = ({ checked, gold }) => (
   <span style={{
-    width: 16, height: 16, borderRadius: 4, flexShrink: 0,
-    border: `1.5px solid ${checked ? gold : borderColor}`,
-    background: checked ? gold : 'transparent',
+    width: 22, height: 22, flexShrink: 0,
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   }}>
-    {checked ? <Check size={11} color="#1A1412" weight="bold" /> : null}
+    {checked ? <Check size={17} color={gold} weight="bold" /> : null}
   </span>
 );
 
@@ -175,19 +169,20 @@ const OptionRow: React.FC<{
   <button
     type="button"
     onClick={onClick}
+    aria-pressed={checked}
     style={{
       width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-      padding: '6px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+      minHeight: 44, padding: '7px 8px', background: checked ? `${gold}12` : 'transparent', border: 'none', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
     }}
   >
-    <CheckMark checked={checked} gold={gold} borderColor={borderColor} />
     {icon}
     <span style={{
       fontFamily: '"Manrope"', fontSize: 13, fontWeight: checked ? 700 : 500,
-      color: checked ? gold : textPrimary, minWidth: 0,
+      color: textPrimary, minWidth: 0, flex: 1,
     }}>
       {label}
     </span>
+    <CheckMark checked={checked} gold={gold} />
   </button>
 );
 
@@ -220,7 +215,7 @@ const ExpandableOptions: React.FC<{
           type="button"
           onClick={() => setExpanded((v) => !v)}
           style={{
-            marginTop: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+            minHeight: 44, marginTop: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px',
             fontFamily: '"Manrope"', fontSize: 12, fontWeight: 600, color: COLORS.primary,
           }}
         >
@@ -267,17 +262,20 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
 
   const chipBase: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 5,
-    minHeight: 40, padding: '7px 14px', borderRadius: 999, whiteSpace: 'nowrap',
+    minHeight: 44, padding: 3, borderRadius: 999, whiteSpace: 'nowrap',
     fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14,
-    cursor: 'pointer', transition: 'all .15s', border: '1px solid',
+    cursor: 'pointer', transition: 'all .15s', border: 'none', background: 'transparent',
     flexShrink: 0,
   };
 
-  const quickChipStyle = (active: boolean): React.CSSProperties => ({
-    ...chipBase,
+  const quickChipContentStyle = (active: boolean): React.CSSProperties => ({
+    minHeight: 38, padding: '0 14px', borderRadius: 999,
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
     background: active ? `${gold}18` : (dark ? '#2B211C' : '#fff'),
     color: textPrimary,
-    borderColor: active ? gold : borderColor,
+    border: `1px solid ${active ? `${gold}80` : borderColor}`,
+    boxShadow: active ? `0 2px 8px ${gold}18` : (dark ? '0 2px 8px rgba(0,0,0,.14)' : '0 2px 8px rgba(28,25,23,.06)'),
+    transition: 'all .2s',
   });
 
   const current = {
@@ -304,19 +302,17 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
               onQuickChange(id);
               if (id === 'all' && filters.coffeeFocus) patch({ coffeeFocus: undefined });
             }}
-            style={quickChipStyle(active)}
+            aria-pressed={active}
+            style={chipBase}
           >
-            {id === 'all' ? (
-              <AllGridIcon color={goldWarm} />
-            ) : (
-              <Icon
-                size={14}
-                weight="regular"
-                color={goldWarm}
-                style={{ display: 'block', flexShrink: 0, overflow: 'visible', background: 'transparent' }}
-              />
-            )}
-            {label}
+            <span style={quickChipContentStyle(active)}>
+              {id === 'all' ? (
+                <AllGridIcon color={goldWarm} />
+              ) : (
+                <Icon size={14} weight={active ? 'bold' : 'regular'} color={goldWarm} style={{ display: 'block', flexShrink: 0, overflow: 'visible', background: 'transparent' }} />
+              )}
+              {label}
+            </span>
           </button>
         );
       })}
@@ -328,9 +324,10 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             key={value}
             type="button"
             onClick={() => patch({ coffeeFocus: active ? undefined : value })}
-            style={quickChipStyle(active)}
+            aria-pressed={active}
+            style={chipBase}
           >
-            {label}
+            <span style={quickChipContentStyle(active)}>{label}</span>
           </button>
         );
       })}
@@ -339,7 +336,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
 
   if (mode === 'quick') {
     return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center', justifyContent: 'center', paddingBottom: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'center', paddingBottom: 16 }}>
         {statusAndFocusChips}
       </div>
     );
@@ -351,7 +348,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
     return (
       <div style={{ paddingBottom: 10 }}>
         <div className="overflow-x-auto no-scrollbar" style={{ minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {statusAndFocusChips}
           </div>
         </div>
@@ -393,7 +390,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
                 appliedTags.forEach((tag) => onTagToggle(tag.id));
                 onApplyFilters({ priceRange: undefined, coffeeFocus: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] });
               }}
-              style={{ ...chipBase, background: 'transparent', color: muted, borderColor: 'transparent', fontSize: 11 }}
+              style={{ minHeight: 44, padding: '0 10px', background: 'transparent', color: muted, border: 'none', borderRadius: 999, fontFamily: '"Manrope"', fontSize: 11, cursor: 'pointer' }}
             >
               Сбросить всё
             </button>
@@ -408,19 +405,20 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
   return (
     <div>
       {onClose && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 10, borderBottom: `1px solid ${borderColor}` }}>
-          <span style={{ fontFamily: '"Manrope"', fontWeight: 700, fontSize: 16, color: textPrimary }}>Фильтры</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, marginBottom: 8 }}>
+          <span style={{ fontFamily: '"Manrope"', fontWeight: 750, fontSize: 20, color: textPrimary }}>Фильтры</span>
           <button
             type="button"
             onClick={onClose}
             aria-label="Закрыть фильтры"
-            style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${borderColor}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textPrimary, padding: 0, flexShrink: 0 }}
+            style={{ width: 44, height: 44, borderRadius: 999, border: 'none', background: dark ? 'rgba(255,255,255,.08)' : 'rgba(120,113,108,.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textPrimary, padding: 0, flexShrink: 0 }}
           >
             <CloseIcon color={textPrimary} size={16} />
           </button>
         </div>
       )}
 
+      <div style={{ overflow: 'hidden', borderRadius: 18, border: `1px solid ${borderColor}`, background: dark ? 'rgba(255,255,255,.035)' : 'rgba(255,255,255,.78)', boxShadow: dark ? '0 8px 24px rgba(0,0,0,.12)' : '0 8px 24px rgba(28,25,23,.05)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
       {shopTags.length > 0 && (
         <FilterAccordion title="Особенности" count={selectedTagIds.length} defaultOpen={selectedTagIds.length > 0} {...accordionProps}>
           {shopTags.map((tag) => (
@@ -498,6 +496,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
           />
         </FilterAccordion>
       )}
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '16px 0 4px' }}>
         {hasApplied && (
@@ -505,7 +504,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             type="button"
             onClick={() => onApplyFilters({ priceRange: undefined, coffeeFocus: undefined, equipments: [], beans: [], roasters: [], brewMethods: [] })}
             style={{
-              width: '100%', height: 40, borderRadius: 10, border: `1px solid ${borderColor}`,
+              width: '100%', height: 44, borderRadius: 12, border: `1px solid ${borderColor}`,
               background: 'transparent', color: muted, cursor: 'pointer',
               fontFamily: '"Manrope"', fontWeight: 600, fontSize: 13,
             }}
@@ -518,7 +517,7 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             type="button"
             onClick={onClose}
             style={{
-              width: '100%', height: 44, borderRadius: 10, border: 'none',
+              width: '100%', height: 48, borderRadius: 14, border: 'none',
               background: gold, color: '#1A1412', cursor: 'pointer',
               fontFamily: '"Manrope"', fontWeight: 700, fontSize: 14,
             }}

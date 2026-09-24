@@ -505,8 +505,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
           onClick={() => setShowFilters(false)}
         />
         <aside
-          className="absolute left-0 top-0 bottom-0 w-[min(86vw,340px)] overflow-y-auto p-4"
-          style={{ background: colors.surface, borderRight: `1px solid ${colors.border}` }}
+          className="absolute inset-x-0 bottom-0 max-h-[min(86dvh,760px)] overflow-y-auto rounded-t-[28px] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          style={{ background: colors.surface, borderTop: `1px solid ${colors.border}`, boxShadow: '0 -16px 48px rgba(0,0,0,.18)' }}
         >
           <ShopFilterPanel
             mode="sidebar"
