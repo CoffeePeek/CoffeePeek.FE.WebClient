@@ -1,5 +1,14 @@
 import { useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
-import { getMenuUploadUrls, getShopUploadUrls, UploadUrlRequest, UploadUrlResponse } from '../api/photos';
+import {
+  getMenuUploadUrls,
+  getReviewUploadUrls,
+  getShopUploadUrls,
+  MAX_CHECKIN_PHOTOS,
+  photoContentType,
+  putPhotoToStorage,
+  UploadUrlRequest,
+  UploadUrlResponse,
+} from '../api/photos';
 import { ApiResponse } from '../api/core/types';
 import { TokenManager } from '../api/core/httpClient';
 import { isApiRequestError } from '../api/core/apiError';
@@ -74,7 +83,7 @@ export function usePhotoUpload(options?: {
     try {
       const uploadRequests = selectedFiles.map((file) => ({
         fileName: file.name,
-        contentType: file.type,
+        contentType: photoContentType(file),
         sizeBytes: file.size,
       }));
 
@@ -95,13 +104,7 @@ export function usePhotoUpload(options?: {
       const uploadPromises = selectedFiles.map(async (file, index) => {
         const { uploadUrl, storageKey } = uploadUrlsResponse.data[index];
 
-        const uploadResponse = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type,
-          },
-        });
+        const uploadResponse = await putPhotoToStorage(uploadUrl, file);
 
         if (uploadResponse.status === 429) {
           setError(RATE_LIMIT_MESSAGE);
@@ -114,7 +117,7 @@ export function usePhotoUpload(options?: {
 
         return {
           fileName: file.name,
-          contentType: file.type,
+          contentType: photoContentType(file),
           storageKey,
           size: file.size,
         };
@@ -141,4 +144,8 @@ export function usePhotoUpload(options?: {
 
 export function useMenuPhotoUpload(): UsePhotoUploadReturn {
   return usePhotoUpload({ getUrls: getMenuUploadUrls, maxFiles: 4 });
+}
+
+export function useCheckInPhotoUpload(): UsePhotoUploadReturn {
+  return usePhotoUpload({ getUrls: getReviewUploadUrls, maxFiles: MAX_CHECKIN_PHOTOS });
 }

@@ -69,7 +69,8 @@ async function uploadPhotoFiles(
       const uploaded = await fetch(slot.uploadUrl, {
         method: 'PUT',
         body: file,
-        headers: { 'Content-Type': file.type || 'image/jpeg' },
+        // Both headers are signed by the presign; mismatch → 403 SignatureDoesNotMatch.
+        headers: { 'Content-Type': file.type || 'image/jpeg', 'x-amz-tagging': 'is_permanent=False' },
       });
       if (!uploaded.ok) throw new Error(`Ошибка загрузки ${file.name}`);
       return {

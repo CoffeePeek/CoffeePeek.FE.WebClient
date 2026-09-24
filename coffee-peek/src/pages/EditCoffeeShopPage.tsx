@@ -14,7 +14,7 @@ import {
   type UpdateShopMenuItemRequest,
 } from '../api';
 import { getMenuDrinks, type CoffeeDrinkDefinitionDto } from '../api/menu';
-import { getMenuUploadUrls, getShopUploadUrls } from '../api/photos';
+import { getMenuUploadUrls, getShopUploadUrls, putPhotoToStorage } from '../api/photos';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { getThemeClasses } from '../utils/theme';
@@ -45,11 +45,7 @@ async function uploadFiles(
   return Promise.all(files.map(async (file, index) => {
     const slot = response.data[index];
     if (!slot?.uploadUrl || !slot.storageKey) throw new Error(`Не удалось подготовить ${file.name}`);
-    const result = await fetch(slot.uploadUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type || 'image/jpeg' },
-      body: file,
-    });
+    const result = await putPhotoToStorage(slot.uploadUrl, file);
     if (!result.ok) throw new Error(`Не удалось загрузить ${file.name}`);
     return {
       fileName: file.name,

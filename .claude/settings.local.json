@@ -91,7 +91,8 @@
       "Bash(curl -s https://api.coffeepeek.by/moderation/openapi/v1.json -o moderation_openapi.json)",
       "Bash(npx eslint *)",
       "Bash(npx -y esbuild --loader=ts --format=esm)",
-      "Bash(grep -E '^\\(vitest|esbuild|tsx\\)$')"
+      "Bash(grep -E '^\\(vitest|esbuild|tsx\\)$')",
+      "Bash(npm test *)"
     ]
   }
 }

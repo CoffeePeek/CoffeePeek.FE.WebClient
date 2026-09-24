@@ -60,6 +60,21 @@ const ReviewCard: React.FC<{
         <p className="text-sm text-text-main dark:text-stone-300 font-body mb-3 line-clamp-3">
           {review.comment}
         </p>
+        {review.photos.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 mb-3">
+            {review.photos.map((photo) => (
+              <a
+                key={photo.storageKey}
+                href={photo.fullUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 rounded-lg overflow-hidden border border-border-light dark:border-border-dark"
+              >
+                <img src={photo.fullUrl} alt={photo.fileName ?? 'Фото отзыва'} loading="lazy" className="w-20 h-20 object-cover" />
+              </a>
+            ))}
+          </div>
+        )}
         <div className="space-y-1">
           <StarRow label="Кофе" value={review.ratingCoffee} />
           <StarRow label="Сервис" value={review.ratingService} />

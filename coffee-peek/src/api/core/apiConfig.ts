@@ -74,6 +74,7 @@ export const API_ENDPOINTS = {
   PHOTOS: {
     AVATAR: "/api/photos/avatar",
     SHOP: "/api/photos/shop",
+    REVIEW: "/api/photos/review",
     MENU: "/api/Photos/menu",
     ROASTER: "/api/Photos/roaster",
   },

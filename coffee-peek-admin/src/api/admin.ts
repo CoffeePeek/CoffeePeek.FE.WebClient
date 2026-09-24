@@ -83,6 +83,19 @@ interface BackendModerationReview {
   rejectedReason?: string | null;
   createdAt: string;
   moderationStatus: ModerationStatus | number;
+  photos?: PhotoMetadataDto[] | null;
+}
+
+export interface PhotoMetadataDto {
+  id: string;
+  fileName: string;
+  contentType: string;
+  storageKey: string;
+  fullUrl: string | null;
+  sizeBytes: number;
+  ownerId: string;
+  uploadedAt: string;
+  sortIndex: number;
 }
 
 interface GetAllModerationShopsResponse {
@@ -204,6 +217,7 @@ export interface AdminReview {
   ratingPlace: number;
   status: ModerationStatus;
   createdAtUtc: string;
+  photos: { fileName?: string; storageKey: string; fullUrl: string }[];
 }
 
 export type ShopIssueCategory =
@@ -496,6 +510,10 @@ function mapReviewToAdmin(review: BackendModerationReview): AdminReview {
     ratingPlace: review.rating?.place ?? 0,
     status: mapModerationStatus(review.moderationStatus),
     createdAtUtc: review.createdAt,
+    // fullUrl is null when the media public endpoint isn't configured — nothing to render then.
+    photos: [...(review.photos ?? [])]
+      .sort((a, b) => a.sortIndex - b.sortIndex)
+      .flatMap((p) => (p.fullUrl ? [{ fileName: p.fileName, storageKey: p.storageKey, fullUrl: p.fullUrl }] : [])),
   };
 }
 
@@ -721,7 +739,7 @@ export async function getModerationReviews(
 export async function approveReview(id: string, data?: ModerationActionRequest): Promise<ApiResponse<void>> {
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
-    moderationStatus: 1, // Approved
+    moderationStatus: 'Approved',
     comment: data?.comment?.trim() || null,
     rejectReason: null,
   });
@@ -731,7 +749,7 @@ export async function rejectReview(id: string, data?: ModerationActionRequest): 
   const reason = data?.comment?.trim() || null;
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
-    moderationStatus: 2, // Rejected
+    moderationStatus: 'Rejected',
     comment: reason,
     rejectReason: reason,
   });
