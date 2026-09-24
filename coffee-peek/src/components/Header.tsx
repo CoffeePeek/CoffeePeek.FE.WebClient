@@ -64,6 +64,7 @@ const Header: React.FC = () => {
   });
 
   return (
+    <>
     <header className="lg:border-b" style={{ background: bg, borderColor, position: 'sticky', top: 0, zIndex: 1100, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
       <div className="relative mx-auto hidden max-w-7xl px-4 sm:px-6 lg:block lg:px-8">
         <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 12 }}>
@@ -74,7 +75,7 @@ const Header: React.FC = () => {
               type="button"
               className="logo-btn"
               onClick={() => navigate(user ? '/shops' : '/')}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+              style={{ display: 'flex', height: 48, alignItems: 'center', gap: 8, cursor: 'pointer' }}
             >
               <LogoMark size={HEADER_LOGO_SIZE} />
               <span style={{ fontFamily: '"Manrope"', fontWeight: 800, fontSize: 20, letterSpacing: '-0.045em', color: textColor }}>
@@ -87,7 +88,7 @@ const Header: React.FC = () => {
           <nav
             className="hidden lg:flex"
             aria-label="Основные разделы"
-            style={{ flexShrink: 0, justifyContent: 'center', gap: 2, padding: 4, borderRadius: 999, background: isDark ? 'rgba(255,255,255,.07)' : 'rgba(120,113,108,.09)', border: `1px solid ${borderColor}` }}
+            style={{ flexShrink: 0, height: 48, justifyContent: 'center', gap: 2, padding: 2, borderRadius: 999, background: isDark ? 'rgba(255,255,255,.07)' : 'rgba(120,113,108,.09)', border: `1px solid ${borderColor}` }}
           >
             {allNav.map(({ id, label, route, Icon }) => (
               <button key={id} onClick={() => navigate(route)} style={navBtn(currentId === id)} aria-current={currentId === id ? 'page' : undefined}>
@@ -105,15 +106,15 @@ const Header: React.FC = () => {
                 <button
                   onClick={() => setProfileOpen(o => !o)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '5px 10px 5px 5px', borderRadius: 99,
+                    display: 'flex', height: 48, alignItems: 'center', gap: 8,
+                    padding: '0 10px 0 6px', borderRadius: 99,
                     border: `1px solid ${profileOpen ? gold : borderColor}`,
                     background: profileOpen ? `${gold}12` : (isDark ? 'rgba(255,255,255,0.04)' : '#fff'),
                     cursor: 'pointer', transition: 'all .15s',
                   }}
                 >
                   {/* Avatar */}
-                  <div style={{ width: 30, height: 30, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
                     <span style={{ fontFamily: '"Manrope"', fontWeight: 800, fontSize: 13, color: goldWarm }}>{initial}</span>
                     {avatarUrl && (
                       <img
@@ -196,6 +197,7 @@ const Header: React.FC = () => {
           </div>
         </div>
       </div>
+    </header>
       <nav
         className="fixed inset-x-0 bottom-0 z-[1200] grid grid-cols-4 border-t lg:hidden"
         aria-label="Основная навигация"
@@ -220,7 +222,7 @@ const Header: React.FC = () => {
           );
         })}
       </nav>
-    </header>
+    </>
   );
 };
 

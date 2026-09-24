@@ -51,11 +51,6 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
 
       {/* ── Desktop ───────────────────────────────────────────── */}
       <div className="hidden lg:block pt-6 pb-4">
-        {/* Title — centered, own row */}
-        <h1 style={{ margin: '0 0 16px', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 26, lineHeight: 1.1, letterSpacing: '-0.02em', color: dark ? '#fff' : '#1C1917', textAlign: 'center' }}>
-          Кофейни рядом
-        </h1>
-
         <div style={{ position: 'relative' }}>
           <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
             <AppIcon name="search" size={18} color={goldWarm} />
@@ -65,7 +60,7 @@ const ShopSearchBar: React.FC<ShopSearchBarProps> = ({
             onChange={e => onSearchChange(e.target.value)}
             maxLength={100}
             placeholder="Поиск кофейни…"
-            style={{ width: '100%', height: 52, borderRadius: 999, border: `1px solid ${inputBorder}`, background: inputBg, padding: '0 18px 0 48px', fontSize: 15, fontFamily: '"Manrope"', color: dark ? '#fff' : '#1C1917', outline: 'none', boxSizing: 'border-box' as const }}
+            style={{ width: '100%', height: 64, borderRadius: 999, border: `1px solid ${inputBorder}`, background: inputBg, padding: '0 18px 0 48px', fontSize: 15, fontFamily: '"Manrope"', color: dark ? '#fff' : '#1C1917', outline: 'none', boxSizing: 'border-box' as const }}
           />
         </div>
       </div>
