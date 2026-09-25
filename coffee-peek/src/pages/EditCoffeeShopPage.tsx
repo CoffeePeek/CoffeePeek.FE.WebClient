@@ -201,7 +201,7 @@ const EditCoffeeShopPage: React.FC = () => {
     try {
       await createShopChangeRequest({ shopId, section, payload: await buildPayload() });
       showToast('Изменения отправлены на модерацию', 'success');
-      navigate('/shop-change-requests');
+      navigate('/my/edits?status=Pending');
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Не удалось отправить изменения', 'error');
     } finally {

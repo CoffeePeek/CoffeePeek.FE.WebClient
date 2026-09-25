@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   getProfile, updateAbout, updateAvatar, updateEmail, updateUsername, type UserProfile,
 } from '../api/auth';
 import { getAvatarUploadUrl } from '../api/photos';
 import WobbleRing from '../components/WobbleRing';
 import GuestAuthCard from '../components/GuestAuthCard';
-import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
@@ -28,7 +27,6 @@ const ProfilePage: React.FC = () => {
   const { theme } = useTheme();
   const { user, isLoading: isUserLoading, logout, updateUserProfile } = useUser();
   const userId = user?.id;
-  const { favoriteIds } = useLocalFavorites();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -65,9 +63,9 @@ const ProfilePage: React.FC = () => {
 
   const activities = [
     { title: 'Избранные кофейни', subtitle: 'Кофейни, которые вы сохранили', Icon: Heart, color: '#FB7185', bg: 'rgba(244,63,94,.16)', route: '/shops?filter=favorite' },
-    { title: 'Мои отзывы', subtitle: 'Ваши оценки и отзывы о кофейнях', Icon: ChatCircleText, color: '#D58AE8', bg: 'rgba(192,82,214,.16)', route: '/reviews' },
+    { title: 'Мои отзывы', subtitle: 'Ваши оценки и отзывы о кофейнях', Icon: ChatCircleText, color: '#D58AE8', bg: 'rgba(192,82,214,.16)', route: '/my/reviews' },
     { title: 'Чекины', subtitle: 'Места, которые вы уже посетили', Icon: MapPin, color: '#68B9E8', bg: 'rgba(56,153,211,.16)', route: '/check-ins' },
-    { title: 'Мои правки кофеен', subtitle: 'Заявки, которые вы отправили на модерацию', Icon: NotePencil, color: '#D8A743', bg: 'rgba(202,145,28,.16)', route: '/shop-change-requests' },
+    { title: 'Мои правки кофеен', subtitle: 'Заявки, которые вы отправили на модерацию', Icon: NotePencil, color: '#D8A743', bg: 'rgba(202,145,28,.16)', route: '/my/edits' },
   ];
 
   if (isLoading || isUserLoading) {
@@ -184,9 +182,9 @@ const ProfilePage: React.FC = () => {
               </>
             )}
             <div className="mt-3 grid grid-cols-3 gap-2 sm:mt-4 sm:gap-3">
-              <ProfileStat value={profile.reviewCount ?? 0} label="Отзывы" text={colors.text} muted={colors.muted} />
-              <ProfileStat value={profile.checkInCount ?? 0} label="Чекины" text={colors.text} muted={colors.muted} />
-              <ProfileStat value={profile.addedShopsCount ?? favoriteIds.size} label="Кофейни" text={colors.text} muted={colors.muted} />
+              <ProfileStat value={profile.reviewCount ?? 0} label="Отзывы" to="/my/reviews" text={colors.text} muted={colors.muted} />
+              <ProfileStat value={profile.checkInCount ?? 0} label="Чекины" to="/check-ins" text={colors.text} muted={colors.muted} />
+              <ProfileStat value={profile.addedShopsCount ?? 0} label="Кофейни" to="/my/shops" text={colors.text} muted={colors.muted} />
             </div>
           </div>
         </section>
@@ -212,11 +210,11 @@ const ProfilePage: React.FC = () => {
   );
 };
 
-const ProfileStat: React.FC<{ value: number; label: string; text: string; muted: string }> = ({ value, label, text, muted }) => (
-  <div>
+const ProfileStat: React.FC<{ value: number; label: string; to: string; text: string; muted: string }> = ({ value, label, to, text, muted }) => (
+  <Link to={to} className="block rounded-xl transition-opacity hover:opacity-80">
     <strong className="block text-lg sm:text-xl" style={{ color: text }}>{value}</strong>
     <span className="text-xs sm:text-sm" style={{ color: muted }}>{label}</span>
-  </div>
+  </Link>
 );
 
 type ProfileColors = { bg: string; surface: string; border: string; text: string; muted: string; gold: string };

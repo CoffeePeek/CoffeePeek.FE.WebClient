@@ -34,7 +34,7 @@ const CheckInsPage = lazyWithRetry(() => import('../pages/CheckInsPage'));
 const ReviewsPage = lazyWithRetry(() => import('../pages/ReviewsPage'));
 const DownloadPage = lazyWithRetry(() => import('../pages/DownloadPage'));
 const EditCoffeeShopPage = lazyWithRetry(() => import('../pages/EditCoffeeShopPage'));
-const ShopChangeRequestsPage = lazyWithRetry(() => import('../pages/ShopChangeRequestsPage'));
+const MyContributionsPage = lazyWithRetry(() => import('../pages/MyContributionsPage'));
 
 const LoadingFallback = () => {
   const { theme } = useTheme();
@@ -129,11 +129,11 @@ export const AppRoutes: React.FC = () => {
         />
 
         <Route
-          path="/shop-change-requests"
+          path="/my/:kind"
           element={
             <ProtectedRoute>
               <AuthenticatedLayout>
-                <ShopChangeRequestsPage />
+                <MyContributionsPage />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }
@@ -246,6 +246,7 @@ export const AppRoutes: React.FC = () => {
 
         {/* Legacy redirects */}
         <Route path="/coffeeshops" element={<Navigate to="/shops" replace />} />
+        <Route path="/shop-change-requests" element={<Navigate to="/my/edits" replace />} />
         <Route path="/map" element={<Navigate to="/dashboard?page=map" replace />} />
 
         {/* 404 */}

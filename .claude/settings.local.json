@@ -92,7 +92,9 @@
       "Bash(npx eslint *)",
       "Bash(npx -y esbuild --loader=ts --format=esm)",
       "Bash(grep -E '^\\(vitest|esbuild|tsx\\)$')",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(grep -v -E '\\\\.\\(svg|png|jpg|ico\\)$')",
+      "Bash(git rm *)"
     ]
   }
 }

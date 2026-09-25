@@ -15,7 +15,7 @@ import { getErrorMessage, getPasswordErrorMessage } from '../utils/errorHandler'
 import { logger } from '../utils/logger';
 import {
   CaretRight, DeviceMobile, Factory, Gear, Lock, MapPin, Moon, Plus,
-  ShareNetwork, ShieldCheck, Sun, WarningCircle,
+  ShareNetwork, ShieldCheck, Storefront, Sun, WarningCircle,
 } from '@phosphor-icons/react';
 
 type OpenPanel = 'password' | null;
@@ -96,6 +96,8 @@ const SettingsPage: React.FC = () => {
         {user && <SettingsSection title="Добавить" colors={colors}>
           <SettingsRow title="Добавить кофейню" subtitle="Предложить новое место для CoffeePeek" Icon={Plus} color="#D8A743" iconBg="rgba(202,145,28,.16)" colors={colors} onClick={() => navigate('/coffee-shops/new')} />
           <SettingsRow title="Добавить обжарщика" subtitle="Помогите сообществу открыть новых обжарщиков" Icon={Factory} color="#74C98B" iconBg="rgba(65,158,88,.18)" colors={colors} onClick={() => navigate('/roasters/new')} />
+          <SettingsRow title="Мои кофейни" subtitle="Добавленные вами кофейни и их статус модерации" Icon={Storefront} color="#D8A743" iconBg="rgba(202,145,28,.16)" colors={colors} onClick={() => navigate('/my/shops')} />
+          <SettingsRow title="Мои обжарщики" subtitle="Добавленные вами обжарщики и их статус модерации" Icon={Factory} color="#74C98B" iconBg="rgba(65,158,88,.18)" colors={colors} onClick={() => navigate('/my/roasters')} />
         </SettingsSection>}
 
         {user && <SettingsSection title="Аккаунт" colors={colors}>

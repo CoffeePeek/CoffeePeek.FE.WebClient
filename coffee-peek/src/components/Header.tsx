@@ -14,7 +14,7 @@ const PUBLIC_NAV = [
 
 const AUTH_NAV = [
   ...PUBLIC_NAV,
-  { id: 'profile',  label: 'Профиль',   route: '/profile',  Icon: User, match: (p: string) => ['/profile', '/reviews', '/check-ins', '/shop-change-requests'].some(route => p.startsWith(route)) },
+  { id: 'profile',  label: 'Профиль',   route: '/profile',  Icon: User, match: (p: string) => ['/profile', '/reviews', '/check-ins', '/my/'].some(route => p.startsWith(route)) },
   { id: 'settings', label: 'Настройки', route: '/settings', Icon: Gear, match: (p: string) => p.startsWith('/settings') },
 ] as const;
 
