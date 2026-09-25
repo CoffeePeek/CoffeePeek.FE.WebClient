@@ -87,7 +87,7 @@ function renderHome() {
 function renderShopCards(shops) {
   return `<ul style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;padding:0;list-style:none">${shops.map((shop) => {
     const address = shop.location?.address || 'Адрес уточняется';
-    const photo = shop.photos?.[0]?.fullUrl;
+    const photo = shop.photos?.[0]?.urls?.card || shop.photos?.[0]?.fullUrl;
     return `<li style="border:1px solid #3D2F28;border-radius:16px;overflow:hidden;background:#2D241F">
       ${photo ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(shop.name)}" width="640" height="360" style="display:block;width:100%;height:180px;object-fit:cover">` : ''}
       <div style="padding:18px"><h2 style="font-size:20px;margin:0 0 8px"><a href="/shops/${escapeHtml(shop.id)}" style="color:#fff">${escapeHtml(shop.name)}</a></h2>
@@ -195,7 +195,7 @@ export async function renderPublicPage(request) {
   const title = `${shop.name}${city ? `, ${city}` : ''} — CoffeePeek`;
   const description = (shop.description || `${shop.name}: ${address}. Рейтинг, отзывы, меню и информация о кофейне на CoffeePeek.`).slice(0, 160);
   const canonical = `${SITE_URL}/shops/${shop.id}`;
-  const image = shop.photos?.[0]?.fullUrl;
+  const image = shop.photos?.[0]?.urls?.detail || shop.photos?.[0]?.fullUrl;
   let html = replaceMeta(shell, { title, description, canonical, type: 'business.business', image });
   html = injectContent(html, `${renderShopDetails(shop)}${jsonLd({ '@context': 'https://schema.org', '@type': 'CafeOrCoffeeShop', name: shop.name, description, url: canonical, image, address: { '@type': 'PostalAddress', streetAddress: address, addressLocality: city, addressCountry: 'BY' }, geo: shop.location?.latitude != null ? { '@type': 'GeoCoordinates', latitude: shop.location.latitude, longitude: shop.location.longitude } : undefined, aggregateRating: shop.reviewCount ? { '@type': 'AggregateRating', ratingValue: shop.rating, reviewCount: shop.reviewCount } : undefined })}`);
   return { html, status: 200 };

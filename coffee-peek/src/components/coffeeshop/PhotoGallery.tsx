@@ -34,7 +34,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ shop }) => {
     >
       <div
         className="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-        style={{ backgroundImage: `url(${getPhotoUrl(photos[index])})` }}
+        style={{ backgroundImage: `url(${getPhotoUrl(photos[index], 'detail')})` }}
       />
       <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
       {showAllBadge && photoCount > 3 && (

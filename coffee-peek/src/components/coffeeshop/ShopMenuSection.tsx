@@ -6,6 +6,7 @@ import {
   ShopMenuItemDto,
 } from '../../api/menu';
 import PhotoLightbox from '../PhotoLightbox';
+import { getPhotoUrl } from '../../api/coffeeshop';
 
 interface ShopMenuSectionProps {
   menu: ShopMenuDto | null | undefined;
@@ -89,7 +90,8 @@ export const ShopMenuSection: React.FC<ShopMenuSectionProps> = ({
                 onClick={() => setLightboxIndex(index)}
                 className="relative block aspect-[3/4] overflow-hidden rounded-2xl bg-black/5"
               >
-                <img src={photo.fullUrl ?? ''} alt="Фото меню" className="w-full h-full object-cover" />
+                {/* detail, not card: card is a 4:3 crop and these tiles are portrait */}
+                <img src={getPhotoUrl(photo, 'detail')} alt="Фото меню" className="w-full h-full object-cover" />
                 {index === 0 && captured && <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3 pb-3 pt-8 text-left text-xs text-white">Актуально на {captured}{updated ? <><br />Обновлено {updated}</> : null}</span>}
               </button>
             ))}
@@ -98,11 +100,7 @@ export const ShopMenuSection: React.FC<ShopMenuSectionProps> = ({
 
       {lightboxIndex !== null && photos.length > 0 && (
         <PhotoLightbox
-          images={photos.map((photo) => ({
-            fileName: photo.fileName,
-            storageKey: photo.storageKey,
-            fullUrl: photo.fullUrl,
-          }))}
+          images={photos}
           shopName="Меню"
           initialIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}

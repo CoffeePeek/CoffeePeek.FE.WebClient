@@ -12,12 +12,23 @@ import type { ShopMenuDto } from './menu';
 
 // ==================== Types ====================
 
+// imgproxy variants; without the proxy configured all four equal fullUrl.
+export interface PhotoUrlsDto {
+  thumbnail: string; // 240×180, cropped
+  card: string; // 600×450, cropped
+  detail: string; // ≤1200 longest side, fitted
+  fullscreen: string; // ≤1920 longest side, fitted
+}
+
+export type PhotoVariant = keyof PhotoUrlsDto;
+
 // DTO для фотографий
 export interface ShortPhotoMetadataDto {
   id?: string;
   fileName: string;
   storageKey: string;
   fullUrl: string | null;
+  urls?: PhotoUrlsDto | null;
   sortIndex?: number;
 }
 
@@ -27,6 +38,7 @@ export interface PhotoMetadataDto {
   contentType: string;
   storageKey: string;
   fullUrl: string | null;
+  urls?: PhotoUrlsDto | null;
   sizeBytes: number;
   ownerId: string;
   uploadedAt: string; // ISO date string
@@ -34,13 +46,17 @@ export interface PhotoMetadataDto {
 }
 
 /**
- * Формирует полный URL фотографии из storageKey
+ * URL нужного размера; фолбэк на fullUrl для DTO без urls (аватары, обжарщики, старые ответы).
  */
-export function getPhotoUrl(photo: PhotoMetadataDto | ShortPhotoMetadataDto): string {
-  // The media service only returns photos via a ready-to-use fullUrl (presigned/CDN);
+export function getPhotoUrl(
+  photo: { fullUrl?: string | null; urls?: PhotoUrlsDto | null },
+  variant: PhotoVariant,
+): string {
+  // The media service only returns photos via ready-to-use URLs (presigned/CDN);
   // there is no GET-photo-by-storageKey endpoint to fall back to.
-  if (photo.fullUrl) {
-    return photo.fullUrl;
+  const url = photo.urls?.[variant] || photo.fullUrl;
+  if (url) {
+    return url;
   }
 
   logger.warn('[getPhotoUrl] Missing fullUrl for photo:', photo);

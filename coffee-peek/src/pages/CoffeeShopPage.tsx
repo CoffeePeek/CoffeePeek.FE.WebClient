@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { CheckInDto, DetailedCoffeeShop } from '../api/coffeeshop';
+import { getPhotoUrl } from '../api/coffeeshop';
 import CheckInModal from '../components/CheckInModal';
 import GuestAuthCard from '../components/GuestAuthCard';
 import { ContactButtons } from '../components/coffeeshop/ContactButtons';
@@ -123,7 +124,7 @@ const CoffeeShopPage: React.FC = () => {
   const shopBasicInfo = {
     name: shop.name,
     address: shop.location?.address || 'Адрес не указан',
-    photo: shop.photos?.[0]?.fullUrl || '',
+    photo: shop.photos?.[0] ? getPhotoUrl(shop.photos[0], 'card') : '',
     averageRating: shop.rating,
   };
 

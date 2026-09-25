@@ -5,6 +5,7 @@ import {
   getBrewMethods,
   getCoffeeShopById,
   getEquipments,
+  getPhotoUrl,
   getRoasters,
   getShopTags,
   type DetailedCoffeeShop,
@@ -256,7 +257,7 @@ const EditCoffeeShopPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {shop.photos?.map((photo) => photo.id && (
                   <label key={photo.id} className="relative cursor-pointer">
-                    <img src={photo.fullUrl ?? ''} alt={photo.fileName} className="aspect-square w-full rounded-xl object-cover" />
+                    <img src={getPhotoUrl(photo, 'thumbnail')} alt={photo.fileName} className="aspect-square w-full rounded-xl object-cover" />
                     <input type="checkbox" checked={retainedPhotos.includes(photo.id)} onChange={(e) => setRetainedPhotos(e.target.checked ? [...retainedPhotos, photo.id!] : retainedPhotos.filter((id) => id !== photo.id))} className="absolute left-2 top-2 h-5 w-5" />
                     {retainedPhotos.includes(photo.id) && <span className="absolute bottom-2 right-2 flex gap-1">
                       <button type="button" aria-label="Переместить фото раньше" onClick={(e) => { e.preventDefault(); movePhoto('shop', photo.id!, -1); }} className="rounded bg-black/70 px-2 py-1 text-white">←</button>
@@ -288,7 +289,7 @@ const EditCoffeeShopPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {shop.menu?.photos.map((photo) => photo.id && (
                   <label key={photo.id} className="relative cursor-pointer">
-                    <img src={photo.fullUrl ?? ''} alt={photo.fileName} className="aspect-square w-full rounded-xl object-cover" />
+                    <img src={getPhotoUrl(photo, 'thumbnail')} alt={photo.fileName} className="aspect-square w-full rounded-xl object-cover" />
                     <input type="checkbox" checked={retainedMenuPhotos.includes(photo.id)} onChange={(e) => setRetainedMenuPhotos(e.target.checked ? [...retainedMenuPhotos, photo.id!] : retainedMenuPhotos.filter((id) => id !== photo.id))} className="absolute left-2 top-2 h-5 w-5" />
                     {retainedMenuPhotos.includes(photo.id) && <span className="absolute bottom-2 right-2 flex gap-1">
                       <button type="button" aria-label="Переместить фото меню раньше" onClick={(e) => { e.preventDefault(); movePhoto('menu', photo.id!, -1); }} className="rounded bg-black/70 px-2 py-1 text-white">←</button>

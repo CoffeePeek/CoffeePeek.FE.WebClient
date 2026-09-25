@@ -30,7 +30,7 @@ function extractPhotos(shop: CoffeeShop): string[] {
   if (Array.isArray(raw.photos)) {
     return raw.photos.map(photo => {
       if (typeof photo === 'string') return photo;
-      if (photo && typeof photo === 'object') return getPhotoUrl(photo as Parameters<typeof getPhotoUrl>[0]);
+      if (photo && typeof photo === 'object') return getPhotoUrl(photo as Parameters<typeof getPhotoUrl>[0], 'card');
       return '';
     }).filter(Boolean);
   }

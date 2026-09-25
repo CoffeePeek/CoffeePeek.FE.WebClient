@@ -579,7 +579,7 @@ const CreateReviewPage: React.FC = () => {
                     {reviewPhotos.map((photo, index) => (
                       <div key={photo.storageKey || index} className="relative group">
                         <img
-                          src={getPhotoUrl(photo)}
+                          src={getPhotoUrl(photo, 'thumbnail')}
                           alt={`Review photo ${index + 1}`}
                           className="w-full h-24 object-cover rounded-xl"
                         />

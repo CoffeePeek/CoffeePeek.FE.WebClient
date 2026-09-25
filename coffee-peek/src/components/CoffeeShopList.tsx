@@ -43,7 +43,7 @@ function extractList<T>(data: unknown, ...keys: string[]): T[] {
 function normalizeShopPhoto(p: unknown): string {
   if (typeof p === 'string') return p;
   if (p && typeof p === 'object' && ('fullUrl' in p || 'storageKey' in p)) {
-    return getPhotoUrl(p as Parameters<typeof getPhotoUrl>[0]);
+    return getPhotoUrl(p as Parameters<typeof getPhotoUrl>[0], 'card');
   }
   return '';
 }

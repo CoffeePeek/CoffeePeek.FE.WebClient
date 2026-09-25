@@ -141,7 +141,7 @@ const ReviewsPage: React.FC = () => {
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12, opacity: isFetching ? 0.7 : 1, transition: 'opacity .2s' }}>
               {items.map((item) => {
                 const avg = (item.ratingCoffee + item.ratingService + item.ratingPlace) / 3;
-                const photos = (item.photos ?? []).filter((photo) => getPhotoUrl(photo));
+                const photos = (item.photos ?? []).filter((photo) => getPhotoUrl(photo, 'thumbnail'));
                 const shopId = item.coffeeShopId;
 
                 return (
@@ -234,7 +234,7 @@ const ReviewsPage: React.FC = () => {
                         {photos.map((photo) => (
                           <img
                             key={photo.storageKey || photo.fullUrl || photo.fileName}
-                            src={getPhotoUrl(photo)}
+                            src={getPhotoUrl(photo, 'thumbnail')}
                             alt=""
                             style={{
                               width: 64, height: 64, objectFit: 'cover', borderRadius: 10,

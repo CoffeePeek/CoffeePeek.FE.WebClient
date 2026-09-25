@@ -10,6 +10,7 @@ import Mascot from '../components/Mascot';
 import { getErrorMessage } from '../utils/errorHandler';
 import { formatCheckInDate } from '../utils/checkInForm';
 import PhotoLightbox from '../components/PhotoLightbox';
+import { getPhotoUrl, type ShortPhotoMetadataDto } from '../api/coffeeshop';
 
 const PAGE_SIZE = 10;
 
@@ -22,7 +23,7 @@ const CheckInsPage: React.FC = () => {
   const gold = COLORS.primary;
 
   const [page, setPage] = useState(1);
-  const [gallery, setGallery] = useState<{ images: string[]; shopName: string; initialIndex: number } | null>(null);
+  const [gallery, setGallery] = useState<{ images: ShortPhotoMetadataDto[]; shopName: string; initialIndex: number } | null>(null);
   const { data, isLoading, isFetching, error, refetch } = useCheckIns(page, PAGE_SIZE);
 
   const items = data?.items ?? [];
@@ -192,10 +193,10 @@ const CheckInsPage: React.FC = () => {
                             key={photo.id ?? photo.storageKey}
                             type="button"
                             aria-label={`Открыть фото ${index + 1} из чекина`}
-                            onClick={() => setGallery({ images: photos.map((p) => p.fullUrl!), shopName: item.shopName || 'Кофейня', initialIndex: index })}
+                            onClick={() => setGallery({ images: photos, shopName: item.shopName || 'Кофейня', initialIndex: index })}
                             className="w-24 h-24 shrink-0 rounded-xl overflow-hidden p-0 border-0"
                           >
-                            <img src={photo.fullUrl!} alt={`Фото посещения: ${item.shopName || 'Кофейня'}`} loading="lazy" className="w-full h-full object-cover" />
+                            <img src={getPhotoUrl(photo, 'thumbnail')}alt={`Фото посещения: ${item.shopName || 'Кофейня'}`} loading="lazy" className="w-full h-full object-cover" />
                           </button>
                         ))}
                     </div>

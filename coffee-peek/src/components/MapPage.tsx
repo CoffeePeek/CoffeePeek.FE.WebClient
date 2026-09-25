@@ -4,8 +4,8 @@ import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
-import { getMapSearch, getMapZones, getCoffeeShopById } from '../api/coffeeshop';
-import type { DetailedCoffeeShop, MapSearchData, MapShop } from '../api/coffeeshop';
+import { getMapSearch, getMapZones, getCoffeeShopById, getPhotoUrl } from '../api/coffeeshop';
+import type { DetailedCoffeeShop, MapSearchData, MapShop, PhotoUrlsDto } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
 import { ArrowRight, Star, Crosshair, NavigationArrow, MagnifyingGlass, X, Polygon } from '@/components/Icon';
 import Button from './Button';
@@ -443,8 +443,8 @@ const MapPage: React.FC = () => {
                         selectedShopDetails?.photos &&
                           Array.isArray(selectedShopDetails.photos) &&
                           selectedShopDetails.photos.length > 0
-                          ? selectedShopDetails.photos.map((p: { fullUrl?: string } | string) =>
-                            typeof p === 'string' ? p : p.fullUrl || '',
+                          ? selectedShopDetails.photos.map((p: { fullUrl?: string | null; urls?: PhotoUrlsDto | null } | string) =>
+                            typeof p === 'string' ? p : getPhotoUrl(p, 'thumbnail'),
                           )
                           : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
                             ? selectedShopDetails.imageUrls
