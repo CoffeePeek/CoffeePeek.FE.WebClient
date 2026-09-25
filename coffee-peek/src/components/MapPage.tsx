@@ -4,7 +4,7 @@ import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
-import { getMapSearch, getMapZones, getCoffeeShopById, getPhotoUrl } from '../api/coffeeshop';
+import { getMapShops, getMapZones, getCoffeeShopById, getPhotoUrl } from '../api/coffeeshop';
 import type { DetailedCoffeeShop, MapSearchData, MapShop, PhotoUrlsDto } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
 import { ArrowRight, Star, Crosshair, NavigationArrow, MagnifyingGlass, X, Polygon } from '@/components/Icon';
@@ -13,14 +13,12 @@ import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
 import {
   applyOsmMapTheme,
-  coffeeClusterIcon,
   coffeeMapPinIcon,
   coffeeZoneLabelIcon,
   createOsmMap,
   ensureMapPinMascots,
   getMapBoundsBox,
   renderMapZones,
-  zoomToClusterBounds,
 } from '../map/osmMap';
 import { getCurrentDayOfWeek, toLocalSchedules } from '../utils/shopUtils';
 
@@ -49,14 +47,14 @@ const MapPage: React.FC = () => {
   const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
   const selectedIdRef = useRef<string | null>(null);
-  const mapDataRef = useRef<MapSearchData>({ shops: [], clusters: [], zones: [] });
+  const mapDataRef = useRef<MapSearchData>({ shops: [], zones: [] });
   const paintMapRef = useRef<(data: MapSearchData) => void>(() => undefined);
   const mapRequestRef = useRef<AbortController | null>(null);
   const themeRef = useRef(theme);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mapData, setMapData] = useState<MapSearchData>({ shops: [], clusters: [], zones: [] });
+  const [mapData, setMapData] = useState<MapSearchData>({ shops: [], zones: [] });
   const [shopsLoaded, setShopsLoaded] = useState(false);
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
   const [selectedShopDetails, setSelectedShopDetails] = useState<DetailedCoffeeShop | null>(null);
@@ -75,14 +73,12 @@ const MapPage: React.FC = () => {
     mapRequestRef.current = controller;
     try {
       const bounds = getMapBoundsBox(map);
-      const response = await getMapSearch(bounds, map.getZoom(), controller.signal);
+      // Shops and zones come from different server zoom bands, so fetch both to show every pin plus zones at any zoom.
+      const [response, zones] = await Promise.all([
+        getMapShops(bounds, controller.signal),
+        showZonesRef.current ? getMapZones(bounds, controller.signal).catch(() => []) : [],
+      ]);
       if (mapRequestRef.current !== controller) return null;
-      let zones = Array.isArray(response.data?.zones) ? response.data.zones : [];
-      // The server only includes zones in its zone zoom band; fetch them separately so they stay visible at every zoom.
-      if (zones.length === 0 && showZonesRef.current) {
-        zones = await getMapZones(bounds, controller.signal).catch(() => []);
-        if (mapRequestRef.current !== controller) return null;
-      }
       const shops = Array.isArray(response.data?.shops)
         ? response.data.shops.map((shop: MapShop) => ({
           id: shop.id,
@@ -95,7 +91,6 @@ const MapPage: React.FC = () => {
         : [];
       const nextData: MapSearchData = {
         shops,
-        clusters: Array.isArray(response.data?.clusters) ? response.data.clusters : [],
         zones,
         isTruncated: response.data?.isTruncated === true,
       };
@@ -192,16 +187,6 @@ const MapPage: React.FC = () => {
       zones.forEach((zone) => {
         const marker = new maplibregl.Marker({ element: coffeeZoneLabelIcon(zone), anchor: 'center' })
           .setLngLat([zone.longitude, zone.latitude])
-          .addTo(map);
-        markersRef.current.push(marker);
-      });
-
-      (data.clusters ?? []).forEach((cluster) => {
-        const element = coffeeClusterIcon(cluster.count);
-        element.title = `Кофеен: ${cluster.count}`;
-        element.addEventListener('click', () => zoomToClusterBounds(map, cluster.bounds));
-        const marker = new maplibregl.Marker({ element, anchor: 'center' })
-          .setLngLat([cluster.longitude, cluster.latitude])
           .addTo(map);
         markersRef.current.push(marker);
       });
@@ -351,7 +336,6 @@ const MapPage: React.FC = () => {
 
       {shopsLoaded
         && mapData.shops.length === 0
-        && (mapData.clusters?.length ?? 0) === 0
         && (mapData.zones?.length ?? 0) === 0
         && !isLoading && (
         <div

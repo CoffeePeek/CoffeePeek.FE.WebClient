@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
-import { getCoffeeShopById, getMapSearch } from '../api/coffeeshop';
+import { getCoffeeShopById, getMapShops, getMapZones } from '../api/coffeeshop';
 import type { MapSearchData, MapShop } from '../api/coffeeshop';
 import { COLORS, getThemeColors } from '../constants/colors';
 import { useTheme } from '../contexts/ThemeContext';
@@ -10,14 +10,12 @@ import { AppIcon, StarIcon } from './icons';
 import WobbleRing from './WobbleRing';
 import {
   MINSK_CENTER,
-  coffeeClusterIcon,
   coffeeMapPinIcon,
   coffeeZoneLabelIcon,
   createOsmMap,
   ensureMapPinMascots,
   getMapBoundsBox,
   renderMapZones,
-  zoomToClusterBounds,
 } from '../map/osmMap';
 
 const MAP_ROUTE = '/dashboard?page=map';
@@ -37,7 +35,7 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
-  const mapDataRef = useRef<MapSearchData>({ shops: [], clusters: [], zones: [] });
+  const mapDataRef = useRef<MapSearchData>({ shops: [], zones: [] });
   const mapRequestRef = useRef<AbortController | null>(null);
   const initStartedRef = useRef(false);
   const previewIdRef = useRef<string | null>(null);
@@ -98,15 +96,6 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
           .addTo(map);
         markersRef.current.push(marker);
       });
-      (data.clusters ?? []).forEach((cluster) => {
-        const element = coffeeClusterIcon(cluster.count);
-        element.title = `Кофеен: ${cluster.count}`;
-        element.addEventListener('click', () => zoomToClusterBounds(map, cluster.bounds));
-        const marker = new maplibregl.Marker({ element, anchor: 'center' })
-          .setLngLat([cluster.longitude, cluster.latitude])
-          .addTo(map);
-        markersRef.current.push(marker);
-      });
 
       void ensureMapPinMascots().catch(() => {}).then(() => {
         if (mapInstanceRef.current !== map || version !== paintVersion) return;
@@ -135,14 +124,19 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
       const controller = new AbortController();
       mapRequestRef.current = controller;
       try {
-        const response = await getMapSearch(getMapBoundsBox(map), map.getZoom(), controller.signal);
+        const bounds = getMapBoundsBox(map);
+        const [response, zones] = await Promise.all([
+          getMapShops(bounds, controller.signal),
+          getMapZones(bounds, controller.signal).catch(() => []),
+        ]);
         if (cancelled || mapRequestRef.current !== controller) return;
         if (!response.data.shops.some((shop) => shop.id === previewIdRef.current)) {
           previewIdRef.current = null;
           setPreview(null);
         }
-        mapDataRef.current = response.data;
-        addMarkers(map, response.data);
+        const data = { ...response.data, zones };
+        mapDataRef.current = data;
+        addMarkers(map, data);
         setError(response.data.isTruncated ? 'Приблизьте карту, чтобы увидеть все кофейни' : null);
       } catch (err: unknown) {
         if ((err as { name?: string })?.name === 'AbortError') return;

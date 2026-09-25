@@ -116,21 +116,6 @@ export interface MapShop {
   primaryZoneId?: string;
 }
 
-export interface MapBounds {
-  minLatitude: number;
-  minLongitude: number;
-  maxLatitude: number;
-  maxLongitude: number;
-}
-
-export interface MapCluster {
-  id: string;
-  latitude: number;
-  longitude: number;
-  count: number;
-  bounds: MapBounds;
-}
-
 export interface MapCoffeeZone {
   id: string;
   name: string;
@@ -144,7 +129,6 @@ export interface MapCoffeeZone {
 
 export interface MapSearchData {
   shops: MapShop[];
-  clusters?: MapCluster[];
   zones?: MapCoffeeZone[];
   isTruncated?: boolean;
 }
@@ -580,8 +564,8 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
-/** Loads the server-selected map representation for the current viewport. */
-export async function getMapSearch(
+/** Loads the server-selected map representation for the viewport at the given zoom. */
+async function getMapSearch(
   bounds: MapViewportBounds,
   zoom: number,
   signal?: AbortSignal,
@@ -605,16 +589,20 @@ export async function getMapSearch(
     message: responses[0]?.message ?? '',
     data: {
       shops: uniqueById(data.flatMap((part) => part.shops ?? [])),
-      // Cluster ids are opaque and only meaningful for the request that produced them.
-      clusters: data.flatMap((part) => part.clusters ?? []),
       zones: uniqueById(data.flatMap((part) => part.zones ?? [])),
       isTruncated: data.some((part) => part.isTruncated === true),
     },
   };
 }
 
-// ponytail: mirrors the server's MapClustering:ZoneMaxZoom; the map endpoint only returns zones at that zoom band.
+// ponytail: mirrors the server's MapClustering:ZoneMaxZoom; at or below it the endpoint returns zones + clusters,
+// above it individual shops (capped at MaxResponseItems, see isTruncated).
 const MAP_ZONES_ZOOM = 13;
+
+/** Loads individual shops for the viewport at any zoom, bypassing server-side clustering. */
+export async function getMapShops(bounds: MapViewportBounds, signal?: AbortSignal): Promise<ApiResponse<MapSearchData>> {
+  return getMapSearch(bounds, MAP_ZONES_ZOOM + 1, signal);
+}
 
 /** Loads published zones for the viewport regardless of the current zoom. */
 export async function getMapZones(bounds: MapViewportBounds, signal?: AbortSignal): Promise<MapCoffeeZone[]> {

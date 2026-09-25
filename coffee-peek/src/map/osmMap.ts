@@ -385,28 +385,6 @@ export function coffeeDetailIcon(focus?: unknown): HTMLElement {
   return element;
 }
 
-export function coffeeClusterIcon(count: number): HTMLElement {
-  const label = count > 99 ? '99+' : String(count);
-  const size = count < 10 ? 49 : count < 100 ? 55 : 60;
-  const element = document.createElement('div');
-  element.className = 'coffee-map-cluster';
-  element.style.width = `${size}px`;
-  element.style.height = `${size}px`;
-  // A lone shop gets a cup instead of "1"; phosphor Coffee (bold) path inlined because markers are raw DOM.
-  const content = count === 1
-    ? '<svg class="coffee-cluster-count" width="22" height="22" viewBox="0 0 256 256" fill="currentColor"><path d="M212,76H32A12,12,0,0,0,20,88v48a100.24,100.24,0,0,0,26.73,68H32a12,12,0,0,0,0,24H208a12,12,0,0,0,0-24H193.27a100.75,100.75,0,0,0,20-32A44,44,0,0,0,256,128v-8A44.05,44.05,0,0,0,212,76Zm-16,60a76.27,76.27,0,0,1-42,68H86a76.27,76.27,0,0,1-42-68V100H196Zm36-8a20,20,0,0,1-12.57,18.55A97.17,97.17,0,0,0,220,136V101.68A20,20,0,0,1,232,120ZM68,48V24a12,12,0,0,1,24,0V48a12,12,0,0,1-24,0Zm40,0V24a12,12,0,0,1,24,0V48a12,12,0,0,1-24,0Zm40,0V24a12,12,0,0,1,24,0V48a12,12,0,0,1-24,0Z"/></svg>'
-    : `<span class="coffee-cluster-count">${label}</span>`;
-  element.innerHTML = `<div class="coffee-cluster-shell" aria-hidden="true">${content}</div>`;
-  return element;
-}
-
-export type MapClusterBoundsLike = {
-  minLatitude: number;
-  minLongitude: number;
-  maxLatitude: number;
-  maxLongitude: number;
-};
-
 export type MapZoneLike = {
   id: string;
   name: string;
@@ -499,25 +477,4 @@ export function coffeeZoneLabelIcon(zone: MapZoneLike): HTMLElement {
   count.title = `Кофеен в зоне: ${zone.shopCount}`;
   element.append(name, count);
   return element;
-}
-
-/** Fits a server cluster's bounds, or zooms one level for a point-like cluster. */
-export function zoomToClusterBounds(map: MapLibreMap, bounds: MapClusterBoundsLike): void {
-  const isPoint = bounds.minLatitude === bounds.maxLatitude
-    && bounds.minLongitude === bounds.maxLongitude;
-  if (isPoint) {
-    map.easeTo({
-      center: [bounds.minLongitude, bounds.minLatitude],
-      zoom: Math.min(map.getZoom() + 1, 22),
-      duration: 350,
-    });
-    return;
-  }
-  map.fitBounds(
-    [
-      [bounds.minLongitude, bounds.minLatitude],
-      [bounds.maxLongitude, bounds.maxLatitude],
-    ],
-    { padding: 48, maxZoom: 22, duration: 350 },
-  );
 }

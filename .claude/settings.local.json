@@ -94,7 +94,9 @@
       "Bash(grep -E '^\\(vitest|esbuild|tsx\\)$')",
       "Bash(npm test *)",
       "Bash(grep -v -E '\\\\.\\(svg|png|jpg|ico\\)$')",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Read(//c/Users/User/RiderProjects//**)",
+      "Read(//c/Users/User/RiderProjects/CoffeePeek-FE/**)"
     ]
   }
 }
