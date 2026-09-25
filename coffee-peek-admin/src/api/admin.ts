@@ -1,5 +1,5 @@
 import { httpClient } from './core/httpClient';
-import { API_ENDPOINTS } from './core/apiConfig';
+import { API_ENDPOINTS, buildUrlWithParams } from './core/apiConfig';
 import { ApiResponse, PaginatedMeta, PaginatedResponse } from './core/types';
 import type { PriceRangeLevel } from '../constants/priceRange';
 import { parsePriceRange, toPriceRangeLevel } from '../constants/priceRange';
@@ -271,12 +271,80 @@ export interface UpdateUserRoleRequest {
 export interface OverviewStats {
   totalUsers: number;
   usersRegisteredToday: number;
+  /** activeUsers + blockedUsers + deletedUsers = totalUsers */
+  activeUsers: number;
+  /** Blocked and not deleted. */
+  blockedUsers: number;
+  deletedUsers: number;
+  /** Rolling 24h / 7d / 30d, counted by login or token refresh. */
+  dailyActiveUsers: number;
+  weeklyActiveUsers: number;
+  monthlyActiveUsers: number;
+  emailConfirmedUsers: number;
+  googleUsers: number;
   totalCoffeeShops: number;
   totalReviews: number;
   pendingModerationShops: number;
   pendingModerationReviews: number;
   newCoffeeShopsToday: number;
   newReviewsToday: number;
+  import: { pending: number; published: number; rejected: number; skipped: number; inFeed: number };
+  /** false → shop-service numbers are placeholders. */
+  shopsAvailable: boolean;
+  /** false → moderation-service numbers are placeholders. */
+  moderationAvailable: boolean;
+}
+
+export interface AdminDailyCount {
+  /** YYYY-MM-DD (UTC) */
+  date: string;
+  count: number;
+}
+
+export interface AdminUsersTimeseries {
+  days: number;
+  newUsers: AdminDailyCount[];
+}
+
+export interface AdminShopsTimeseries {
+  days: number;
+  newShops: AdminDailyCount[];
+  newReviews: AdminDailyCount[];
+  newCheckIns: AdminDailyCount[];
+}
+
+export interface AdminTopShop {
+  shopId: string;
+  name: string;
+  count: number;
+}
+
+export interface AdminShopsInsights {
+  ratings: {
+    totalReviews: number;
+    averageRating: number;
+    averagePlace: number;
+    averageService: number;
+    averageCoffee: number;
+    distribution: { stars: number; count: number }[];
+  };
+  topShopsByCheckIns30Days: AdminTopShop[];
+  topShopsByReviews: AdminTopShop[];
+  downloads: {
+    total: number;
+    last30Days: number;
+    byChannel: { channel: string; total: number; last30Days: number }[];
+    topCountries30Days: { country: string; count: number }[];
+  };
+}
+
+export type AdminModerationQueueName = 'shops' | 'reviews' | 'roasters' | 'changeRequests' | 'issueReports';
+
+export interface AdminModerationInsights {
+  sla: { reviewsModerated30Days: number; avgReviewModerationHours: number | null };
+  queues: { queue: AdminModerationQueueName; pending: number; oldestPendingHours: number | null }[];
+  oldestPendingHours: number | null;
+  topModerators30Days: { moderatorUserId: string; total: number; approved: number; rejected: number }[];
 }
 
 export interface ClearCacheResponse {
@@ -824,6 +892,22 @@ export async function getUserStats(): Promise<ApiResponse<UserStats>> {
 
 export async function getOverviewStats(): Promise<ApiResponse<OverviewStats>> {
   return httpClient.get<OverviewStats>(API_ENDPOINTS.ADMIN.STATS_OVERVIEW);
+}
+
+export async function getUsersTimeseries(days: number): Promise<ApiResponse<AdminUsersTimeseries>> {
+  return httpClient.get<AdminUsersTimeseries>(buildUrlWithParams(API_ENDPOINTS.ADMIN.STATS_USERS_TIMESERIES, { days }));
+}
+
+export async function getShopsTimeseries(days: number): Promise<ApiResponse<AdminShopsTimeseries>> {
+  return httpClient.get<AdminShopsTimeseries>(buildUrlWithParams(API_ENDPOINTS.ADMIN.STATS_SHOPS_TIMESERIES, { days }));
+}
+
+export async function getShopsInsights(): Promise<ApiResponse<AdminShopsInsights>> {
+  return httpClient.get<AdminShopsInsights>(API_ENDPOINTS.ADMIN.STATS_SHOPS_INSIGHTS);
+}
+
+export async function getModerationInsights(): Promise<ApiResponse<AdminModerationInsights>> {
+  return httpClient.get<AdminModerationInsights>(API_ENDPOINTS.ADMIN.STATS_MODERATION_INSIGHTS);
 }
 
 // ==================== Moderation audit ====================

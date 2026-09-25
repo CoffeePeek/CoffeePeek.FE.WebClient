@@ -16,6 +16,10 @@ export const API_ENDPOINTS = {
 
   ADMIN: {
     STATS_OVERVIEW: '/api/admin/stats/overview',
+    STATS_USERS_TIMESERIES: '/api/admin/stats/users/timeseries',
+    STATS_SHOPS_TIMESERIES: '/api/admin/stats/shops/timeseries',
+    STATS_SHOPS_INSIGHTS: '/api/admin/stats/shops/insights',
+    STATS_MODERATION_INSIGHTS: '/api/admin/stats/moderation/insights',
     USERS: '/api/admin/users',
     USER_STATS: '/api/admin/users/stats',
     USER_ROLE: (id: string) => `/api/admin/users/${encodeURIComponent(id)}/role`,
