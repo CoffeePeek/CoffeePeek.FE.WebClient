@@ -6,7 +6,12 @@ import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
 import { SendShopSuccessResponse } from './core/apiError';
-import { localTimeToUtc, normalizeDayOfWeek, utcTimeToLocal } from '../utils/shopUtils';
+import {
+  localTimeToUtc,
+  normalizeDayOfWeek,
+  uiDayToDotNetName,
+  utcTimeToLocal,
+} from '../utils/shopUtils';
 
 // ==================== Types ====================
 
@@ -29,7 +34,8 @@ export interface ShopScheduleIntervalDto {
  * Расписание работы кофейни (соответствует ScheduleDto на бэкенде)
  */
 export interface ScheduleDto {
-  dayOfWeek: number | string; // 0 = Monday … 6 = Sunday, or .NET name ("Monday")
+  // Outbound requests use names; responses may still contain legacy enum numbers.
+  dayOfWeek: number | string;
   isClosed: boolean;
   intervals: ShopScheduleIntervalDto[] | null;
 }
@@ -184,7 +190,7 @@ export function transformSchedulesToBackend(
     const open = localTimeToUtc(schedule.dayOfWeek, schedule.openTime);
     const close = localTimeToUtc(schedule.dayOfWeek, schedule.closeTime);
     return {
-      dayOfWeek: open.dayOfWeek,
+      dayOfWeek: uiDayToDotNetName(open.dayOfWeek),
       isClosed: false,
       intervals: [
         {

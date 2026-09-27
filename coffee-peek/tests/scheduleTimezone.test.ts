@@ -1,4 +1,4 @@
-import { localTimeToUtc, utcTimeToLocal } from '../src/utils/shopUtils';
+import { localTimeToUtc, uiDayToDotNetName, utcTimeToLocal } from '../src/utils/shopUtils';
 
 // offsetMinutes follows Date.getTimezoneOffset(): negative = ahead of UTC (e.g. Minsk UTC+3 = -180).
 const MINSK = -180;
@@ -21,4 +21,15 @@ test('utcTimeToLocal reverses localTimeToUtc', () => {
     const utc = localTimeToUtc(dayOfWeek, time, MINSK);
     expect(utcTimeToLocal(utc.dayOfWeek, utc.time, MINSK)).toEqual({ dayOfWeek, time });
   }
+});
+
+test('serializes schedule days using System.DayOfWeek names', () => {
+  expect(uiDayToDotNetName(0)).toBe('Monday');
+  expect(uiDayToDotNetName(6)).toBe('Sunday');
+});
+
+test('serializes the UTC day when timezone conversion crosses midnight', () => {
+  const utc = localTimeToUtc(0, '02:00', MINSK);
+  expect(uiDayToDotNetName(utc.dayOfWeek)).toBe('Sunday');
+  expect(utc.time).toBe('23:00');
 });

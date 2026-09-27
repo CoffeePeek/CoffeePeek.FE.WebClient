@@ -9,6 +9,28 @@ export function getCurrentDayOfWeek(): number {
   return day === 0 ? 6 : day - 1;
 }
 
+const UI_DAY_TO_DOTNET_NAME = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+] as const;
+
+/**
+ * Converts the UI schedule index (0 = Monday) to the wire representation used
+ * by System.DayOfWeek. Sending the UI index as a number is unsafe because
+ * System.DayOfWeek uses 0 = Sunday.
+ */
+export function uiDayToDotNetName(
+  dayOfWeek: number
+): (typeof UI_DAY_TO_DOTNET_NAME)[number] {
+  const day = Math.trunc(dayOfWeek);
+  return UI_DAY_TO_DOTNET_NAME[day] ?? 'Monday';
+}
+
 /**
  * Нормализует день недели к 0 = Пн … 6 = Вс.
  * API может отдать число 0–6, ISO 1–7 или строку ("Monday" / .NET DayOfWeek).
