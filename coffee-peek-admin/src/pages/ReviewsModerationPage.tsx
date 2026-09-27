@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getModerationReviews, approveReview, rejectReview, ModerationStatus, AdminReview } from '../api/admin';
 import { useToast } from '../contexts/ToastContext';
 import { Badge, statusToBadgeVariant, statusLabels } from '../components/ui/Badge';
@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 15;
 
@@ -45,12 +46,35 @@ const ReviewCard: React.FC<{
           <Badge variant={statusToBadgeVariant(review.status)}>{statusLabels[review.status]}</Badge>
         </div>
         <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-2">
-          {review.authorName ?? review.authorEmail} · {review.shopName} ·{' '}
+          {review.authorName ?? review.authorEmail} ·{' '}
+          <Link
+            to={`/coffee-shops/${review.shopId}`}
+            title={`Открыть кофейню ${review.shopName}`}
+            className="font-medium text-blue-600 underline decoration-blue-600/30 underline-offset-2 hover:text-blue-700 hover:decoration-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            {review.shopName}
+          </Link>{' '}
+          ·{' '}
           {new Date(review.createdAtUtc).toLocaleDateString('ru')}
         </p>
         <p className="text-sm text-text-main dark:text-stone-300 font-body mb-3 line-clamp-3">
           {review.comment}
         </p>
+        {review.photos.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 mb-3">
+            {review.photos.map((photo) => (
+              <a
+                key={photo.storageKey}
+                href={photo.fullUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 rounded-lg overflow-hidden border border-border-light dark:border-border-dark"
+              >
+                <img src={photo.fullUrl} alt={photo.fileName ?? 'Фото отзыва'} loading="lazy" className="w-20 h-20 object-cover" />
+              </a>
+            ))}
+          </div>
+        )}
         <div className="space-y-1">
           <StarRow label="Кофе" value={review.ratingCoffee} />
           <StarRow label="Сервис" value={review.ratingService} />
@@ -101,7 +125,7 @@ export const ReviewsModerationPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'reviews'] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -112,7 +136,7 @@ export const ReviewsModerationPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'reviews'] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const setParam = (key: string, value: string) => {
@@ -121,6 +145,15 @@ export const ReviewsModerationPage: React.FC = () => {
     if (key !== 'page') next.delete('page');
     setSearchParams(next);
   };
+
+  // After acting on the last item of page N>1 the page becomes empty — step back instead of stranding the user.
+  useEffect(() => {
+    if (data && page > 1 && !data.items.length) {
+      const next = new URLSearchParams(searchParams);
+      next.set('page', String(page - 1));
+      setSearchParams(next, { replace: true });
+    }
+  }, [data, page, searchParams, setSearchParams]);
 
   return (
     <div className="page-container">

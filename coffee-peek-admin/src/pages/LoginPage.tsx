@@ -9,6 +9,10 @@ import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
 import LogoMark from '../components/LogoMark';
 import { forceLogoutMessage } from '../realtime/forceLogout';
+import { getUserRoles } from '../utils/jwt';
+
+// Роли, у которых есть страницы в панели (см. ProtectedRoute / Sidebar).
+const STAFF_ROLES = ['Admin', 'Moderator', 'Owner'];
 
 const schema = z.object({
   email: z.string().email('Введите корректный email'),
@@ -30,7 +34,7 @@ const EyeIcon = ({ open }: { open: boolean }) => (
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { updateUserFromToken } = useUser();
+  const { updateUserFromToken, logout } = useUser();
   const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const sessionMessage = forceLogoutMessage(searchParams.get('reason') || undefined);
@@ -46,6 +50,13 @@ export const LoginPage: React.FC = () => {
     try {
       const response = await login(data);
       if (response.data?.accessToken) {
+        const roles = getUserRoles(response.data.accessToken);
+        if (!roles.some((role) => STAFF_ROLES.includes(role))) {
+          // Не пускаем в панель и отзываем только что созданную сессию.
+          await logout();
+          showToast('У этого аккаунта нет доступа к панели', 'error');
+          return;
+        }
         updateUserFromToken(response.data.accessToken);
         navigate('/dashboard', { replace: true });
       }

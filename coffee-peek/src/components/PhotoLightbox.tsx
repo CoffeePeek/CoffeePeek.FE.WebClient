@@ -14,7 +14,7 @@ interface PhotoLightboxProps {
 
 function toUrl(img: PhotoInput): string {
   if (img && typeof img === 'object' && ('fullUrl' in img || 'storageKey' in img)) {
-    return getPhotoUrl(img as PhotoMetadataDto | ShortPhotoMetadataDto);
+    return getPhotoUrl(img as PhotoMetadataDto | ShortPhotoMetadataDto, 'fullscreen');
   }
   if (typeof img === 'string') return img.trim();
   return img ? String(img).trim() : '';

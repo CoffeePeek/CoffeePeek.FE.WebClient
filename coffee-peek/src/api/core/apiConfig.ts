@@ -18,7 +18,7 @@ export const API_ENDPOINTS = {
 
   USER: {
     BASE: "/api/users",
-    BY_ID: (id: string) => `/api/users/${id}`,
+    BY_ID: (id: string) => `/api/users/${encodeURIComponent(id)}`,
     PROFILE: "/api/users/me",
     EMAIL_EXISTS: "/api/users/exists",
     UPDATE_ABOUT: "/api/users/me/about",
@@ -30,14 +30,16 @@ export const API_ENDPOINTS = {
     PASSWORD_FORGOT: "/api/users/password/forgot",
     PASSWORD_RESET: "/api/users/password/reset",
     DELETE: "/api/users/me",
+    DELETION_CONFIRMATION: "/api/users/me/deletion-confirmation",
+    DELETION_REQUEST: "/api/users/me/deletion-request",
     EMAIL_CONFIRMATION: "/api/users/me/email-confirmation",
-    REVIEWS: (userId: string) => `/api/users/${userId}/reviews`,
+    REVIEWS: (userId: string) => `/api/users/${encodeURIComponent(userId)}/reviews`,
     EMAIL_CONFIRMATION_RESEND: "/api/users/email-confirmation/resend",
   },
 
   COFFEE_SHOP: {
     BASE: "/api/CoffeeShops",
-    BY_ID: (id: string) => `/api/CoffeeShops/${id}`,
+    BY_ID: (id: string) => `/api/CoffeeShops/${encodeURIComponent(id)}`,
   },
 
   MENU: {
@@ -58,11 +60,11 @@ export const API_ENDPOINTS = {
   },
 
   ROASTERS: {
-    BY_ID: (id: string) => `/api/roasters/${id}`,
+    BY_ID: (id: string) => `/api/roasters/${encodeURIComponent(id)}`,
   },
 
   REVIEW: {
-    BY_ID: (reviewId: string) => `/api/CoffeeShopReviews/${reviewId}`,
+    BY_ID: (reviewId: string) => `/api/CoffeeShopReviews/${encodeURIComponent(reviewId)}`,
   },
 
   CHECK_IN: {
@@ -72,6 +74,7 @@ export const API_ENDPOINTS = {
   PHOTOS: {
     AVATAR: "/api/photos/avatar",
     SHOP: "/api/photos/shop",
+    REVIEW: "/api/photos/review",
     MENU: "/api/Photos/menu",
     ROASTER: "/api/Photos/roaster",
   },
@@ -80,7 +83,7 @@ export const API_ENDPOINTS = {
     SHOP: "/api/ModerationShops",
     UPLOAD_URLS: "/api/Moderation/upload-urls",
     REVIEWS: "/api/ModerationReviews",
-    REVIEW_UPDATE: (reviewId: string) => `/api/ModerationReviews/${reviewId}`,
+    REVIEW_UPDATE: (reviewId: string) => `/api/ModerationReviews/${encodeURIComponent(reviewId)}`,
     ROASTER: "/api/ModerationRoasters",
   },
 

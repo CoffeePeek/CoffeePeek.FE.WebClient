@@ -4,7 +4,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getThemeColors } from '../constants/colors';
 import { useRequireAuth } from '../hooks/useRequireAuth';
 import { useToast } from '../contexts/ToastContext';
-import { usePhotoUpload } from '../hooks/usePhotoUpload';
+import { useCheckInPhotoUpload } from '../hooks/usePhotoUpload';
+import { MAX_CHECKIN_PHOTOS } from '../api/photos';
 import { logger } from '../utils/logger';
 import { buildCheckInRequest, CheckInValidationError } from '../utils/checkInForm';
 import { useCreateCheckIn } from '../hooks/queries/useCheckIns';
@@ -41,7 +42,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
     setSelectedFiles,
     uploadPhotos,
     clearFiles,
-  } = usePhotoUpload();
+  } = useCheckInPhotoUpload();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,7 +55,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
   useEffect(() => {
     if (!draft) return;
-    setSelectedFiles(draft.selectedFiles);
+    setSelectedFiles(draft.selectedFiles.slice(0, MAX_CHECKIN_PHOTOS));
   }, [draft?.coffeeShopId, setSelectedFiles]);
 
   if (!isOpen || !shop || !draft) return null;
@@ -66,7 +67,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
-    const nextFiles = [...selectedFiles, ...Array.from(event.target.files)];
+    const nextFiles = [...selectedFiles, ...Array.from(event.target.files)].slice(0, MAX_CHECKIN_PHOTOS);
     setSelectedFiles(nextFiles);
     updateDraft({ selectedFiles: nextFiles });
     event.target.value = '';

@@ -220,7 +220,6 @@
 }
 
 .coffee-map-pin,
-.coffee-map-cluster,
 .coffee-map-zone-label {
   outline: none !important;
   background: none !important;
@@ -230,8 +229,6 @@
 }
 .coffee-map-pin:focus,
 .coffee-map-pin:focus-visible,
-.coffee-map-cluster:focus,
-.coffee-map-cluster:focus-visible,
 .coffee-map-zone-label:focus,
 .coffee-map-zone-label:focus-visible {
   outline: none !important;
@@ -296,31 +293,6 @@
   box-shadow:
     0 0 0 2px rgba(234, 179, 8, 0.45),
     0 2px 8px rgba(26, 20, 18, 0.35);
-}
-
-.coffee-map-cluster .coffee-cluster-shell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  border-radius: 999px;
-  background: rgba(234, 179, 8, 0.92);
-  color: #1a1412;
-  border: 2px solid #ffffff;
-  box-shadow:
-    0 2px 10px rgba(26, 20, 18, 0.35),
-    0 0 0 1px rgba(26, 20, 18, 0.1);
-  font-family: "Manrope", system-ui, sans-serif;
-  font-weight: 800;
-  font-size: 13px;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  cursor: pointer;
-}
-
-.coffee-map-cluster .coffee-cluster-count {
-  pointer-events: none;
 }
 
 .coffee-map-zone-label {

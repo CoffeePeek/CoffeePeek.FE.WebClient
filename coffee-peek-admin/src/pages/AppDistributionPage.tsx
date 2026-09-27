@@ -276,13 +276,13 @@ export const AppDistributionPage: React.FC = () => {
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase text-text-muted dark:bg-white/5 dark:text-stone-400">
               <tr>
-                <th className="px-4 py-3">Версия</th>
-                <th className="px-4 py-3">Код</th>
-                <th className="px-4 py-3">Файл</th>
-                <th className="px-4 py-3">Размер</th>
-                <th className="px-4 py-3">Дата релиза</th>
-                <th className="px-4 py-3">Статус</th>
-                <th className="px-4 py-3 text-right">Действие</th>
+                <th scope="col" className="px-4 py-3">Версия</th>
+                <th scope="col" className="px-4 py-3">Код</th>
+                <th scope="col" className="px-4 py-3">Файл</th>
+                <th scope="col" className="px-4 py-3">Размер</th>
+                <th scope="col" className="px-4 py-3">Дата релиза</th>
+                <th scope="col" className="px-4 py-3">Статус</th>
+                <th scope="col" className="px-4 py-3 text-right">Действие</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-light dark:divide-border-dark">

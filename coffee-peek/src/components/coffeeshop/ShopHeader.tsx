@@ -6,6 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { getThemeClasses } from '../../utils/theme';
 import { AppIcon, StarIcon, BeanPriceMarks } from '../icons';
 import { getPriceRangeTier } from '../../utils/priceRange';
+import { isShopOpenNow } from '../../utils/shopUtils';
 
 interface ShopHeaderProps {
   shop: DetailedCoffeeShop;
@@ -16,7 +17,6 @@ interface ShopHeaderProps {
   onToggleFavorite: () => void;
   onCheckIn?: () => void;
   onReportIssue?: () => void;
-  textMain: string;
   textMuted: string;
   borderColor: string;
 }
@@ -56,7 +56,6 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   onToggleFavorite,
   onCheckIn,
   onReportIssue,
-  textMain,
   textMuted,
   borderColor,
 }) => {
@@ -65,6 +64,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   const themeClasses = getThemeClasses(theme);
   const priceTiers = getPriceRangeTier(shop.priceRange);
   const iconMuted = theme === 'dark' ? '#E7E5E4' : '#44403C';
+  const openNow = isShopOpenNow(shop);
 
   const handleShare = async () => {
     const url = `${window.location.origin}/shops/${shop.id}`;
@@ -79,12 +79,9 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4 mb-6 min-w-0">
+    <div className="mb-4 hidden min-w-0 flex-col gap-4 lg:mb-6 lg:flex lg:flex-row lg:flex-wrap lg:items-start lg:justify-between">
       <div className="min-w-0 w-full sm:flex-1">
-        <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-extended font-bold ${textMain} mb-2 tracking-tight break-words`}>
-          {shop.name}
-        </h1>
-        <div className="flex items-center gap-2 sm:gap-3 text-sm flex-wrap min-w-0">
+        <div className="hidden min-w-0 flex-wrap items-center gap-2 text-sm lg:flex lg:gap-3">
           <span className={`${themeClasses.primary.bgLight} ${themeClasses.primary.text} font-bold px-3 py-1 rounded-lg flex items-center gap-1 shrink-0`}>
             <StarIcon filled size={14} />
             {avgRating.toFixed(1)}
@@ -97,7 +94,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
               Новая
             </span>
           )}
-          {shop.isOpen && (
+          {openNow && (
             <span className="bg-green-500/20 text-green-400 font-bold px-2 py-1 rounded-lg text-xs uppercase tracking-wider shrink-0">
               Открыта
             </span>
@@ -108,7 +105,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
         </div>
       </div>
 
-      <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+      <div className="hidden gap-2 lg:flex lg:w-auto lg:gap-3">
         {onCheckIn && (
           <button
             onClick={onCheckIn}

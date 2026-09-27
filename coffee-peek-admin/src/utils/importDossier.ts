@@ -89,10 +89,22 @@ export function dossierSoftWarning(candidate: ImportCandidate): string | undefin
   return undefined;
 }
 
+/** Returns the URL only if it parses as absolute http:/https:, otherwise undefined. */
+export function safeHttpUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function pickSafeUrl(url: string | undefined, fallback: string): string {
-  if (!url) return fallback;
-  if (looksLikeNameSearch(url)) return fallback;
-  return url;
+  const safe = safeHttpUrl(url);
+  if (!safe) return fallback;
+  if (looksLikeNameSearch(safe)) return fallback;
+  return safe;
 }
 
 export function mapTabSrc(candidate: ImportCandidate): { embed: string; openUrl: string } {
@@ -103,7 +115,7 @@ export function mapTabSrc(candidate: ImportCandidate): { embed: string; openUrl:
     lat && lon ? `https://yandex.ru/map-widget/v1/?ll=${lon},${lat}&z=18&pt=${lon},${lat},pm2rdm` : '';
   return {
     embed: pickSafeUrl(candidate.research.yandexEmbed, fallback),
-    openUrl: candidate.research.yandexMaps || fallback,
+    openUrl: safeHttpUrl(candidate.research.yandexMaps) || fallback,
   };
 }
 

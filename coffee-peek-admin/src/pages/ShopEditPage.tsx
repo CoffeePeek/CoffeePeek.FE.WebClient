@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -28,6 +28,8 @@ import {
   parseModerationShopMenu,
   updateModerationShopMenu,
 } from '../api/menu';
+import { getUserPublicProfile } from '../api/users';
+import { moderationContactShape, validateSchedules } from '../utils/shopForm';
 
 const schema = z.object({
   name: z.string().min(1, 'Обязательное поле'),
@@ -35,10 +37,7 @@ const schema = z.object({
   description: z.string().optional(),
   cityId: z.string().optional(),
   priceRange: z.coerce.number().min(1).max(4).optional().or(z.literal('')),
-  phone: z.string().optional(),
-  email: z.string().email('Некорректный email').optional().or(z.literal('')),
-  website: z.string().url('Некорректный URL').optional().or(z.literal('')),
-  instagram: z.string().optional(),
+  ...moderationContactShape,
 });
 
 type FormData = z.infer<typeof schema>;
@@ -56,6 +55,18 @@ export const ShopEditPage: React.FC = () => {
   const [coffeeBeanIds, setCoffeeBeanIds] = useState<string[]>([]);
   const [roasterIds, setRoasterIds] = useState<string[]>([]);
   const [brewMethodIds, setBrewMethodIds] = useState<string[]>([]);
+  const [profileExpanded, setProfileExpanded] = useState(false);
+  // Edits outside react-hook-form (schedule, catalogs); schedules are only sent if touched or already stored.
+  const [extraDirty, setExtraDirty] = useState(false);
+  const [schedulesTouched, setSchedulesTouched] = useState(false);
+  const [hadSchedules, setHadSchedules] = useState(false);
+  const initializedShopIdRef = useRef<string | null>(null);
+  const markDirty =
+    <T,>(setter: (value: T) => void) =>
+    (value: T) => {
+      setter(value);
+      setExtraDirty(true);
+    };
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ['admin', 'shop', id],
@@ -65,6 +76,16 @@ export const ShopEditPage: React.FC = () => {
       const status = query.state.data?.menu?.parseStatus;
       return status === 'Pending' || status === 'Running' ? 2500 : false;
     },
+  });
+
+  const {
+    data: authorProfile,
+    isLoading: authorProfileLoading,
+    isError: authorProfileError,
+  } = useQuery({
+    queryKey: ['public-user-profile', shop?.userId],
+    queryFn: () => getUserPublicProfile(shop!.userId!).then((response) => response.data),
+    enabled: profileExpanded && !!shop?.userId,
   });
 
   const { data: catalogs, isLoading: catalogsLoading } = useCatalogs();
@@ -80,11 +101,13 @@ export const ShopEditPage: React.FC = () => {
     reset,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  // Initialize once per shop: refetches (menu parse polling, saves) must not wipe unsaved edits.
   useEffect(() => {
-    if (!shop) return;
+    if (!shop || initializedShopIdRef.current === shop.id) return;
+    initializedShopIdRef.current = shop.id;
 
     reset({
       name: shop.name,
@@ -98,12 +121,17 @@ export const ShopEditPage: React.FC = () => {
       instagram: shop.shopContact?.instagram ?? '',
     });
 
+    setHadSchedules(Boolean(shop.schedules?.length));
     setSchedules(shop.schedules?.length ? shop.schedules : getDefaultSchedules());
+    setSchedulesTouched(false);
     setEquipmentIds(shop.equipmentIds ?? []);
     setCoffeeBeanIds(shop.coffeeBeanIds ?? []);
     setRoasterIds(shop.roasterIds ?? []);
     setBrewMethodIds(shop.brewMethodIds ?? []);
+    setExtraDirty(false);
   }, [shop, reset]);
+
+  const sendSchedules = schedulesTouched || hadSchedules;
 
   const updateMutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -111,21 +139,27 @@ export const ShopEditPage: React.FC = () => {
         name: data.name,
         address: data.address,
         description: data.description,
-        cityId: data.cityId || undefined,
+        // '' clears the stored value (FormData '' binds to null on the backend).
+        cityId: data.cityId ?? '',
+        // PriceRange is a non-nullable enum on the backend, so it cannot be cleared.
         priceRange: data.priceRange ? Number(data.priceRange) : undefined,
         shopContact: {
-          phone: data.phone || undefined,
-          email: data.email || undefined,
-          website: data.website || undefined,
-          instagram: data.instagram || undefined,
+          phone: data.phone ?? '',
+          email: data.email ?? '',
+          website: data.website ?? '',
+          instagram: data.instagram ?? '',
         },
-        schedules,
+        // Don't publish template hours for a shop that never had a schedule.
+        schedules: sendSchedules ? schedules : undefined,
         equipmentIds,
         coffeeBeanIds,
         roasterIds,
         brewMethodIds,
       }),
-    onSuccess: () => {
+    onSuccess: (_response, data) => {
+      reset(data);
+      setExtraDirty(false);
+      if (sendSchedules) setHadSchedules(true);
       showToast('Кофейня обновлена', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'shop', id] });
       qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'shops'] });
@@ -148,6 +182,8 @@ export const ShopEditPage: React.FC = () => {
     mutationFn: (comment?: string) => rejectShop(id!, comment ? { comment } : undefined),
     onSuccess: () => {
       showToast('Кофейня отклонена', 'success');
+      qc.invalidateQueries({ queryKey: ['admin', 'shop', id] });
+      qc.invalidateQueries({ queryKey: ['admin', 'moderation', 'shops'] });
       navigate('/shops');
     },
     onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
@@ -174,6 +210,25 @@ export const ShopEditPage: React.FC = () => {
     );
   }
 
+  const requestAction = (action: PendingAction) => {
+    if (
+      (isDirty || extraDirty) &&
+      !window.confirm('Есть несохранённые изменения — продолжить без сохранения?')
+    ) {
+      return;
+    }
+    setPendingAction(action);
+  };
+
+  const submitForm = handleSubmit((data) => {
+    const scheduleError = sendSchedules ? validateSchedules(schedules) : null;
+    if (scheduleError) {
+      showToast(scheduleError, 'error');
+      return;
+    }
+    updateMutation.mutate(data);
+  });
+
   const inputClass =
     'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#1A1412] text-text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 font-body';
 
@@ -194,6 +249,7 @@ export const ShopEditPage: React.FC = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="page-header-title text-xl sm:text-2xl">{shop.name}</h2>
               <Badge variant={statusToBadgeVariant(shop.status)}>{statusLabels[shop.status]}</Badge>
+              <Badge variant="info">Заполнено: {shop.dataCompletenessScore}%</Badge>
             </div>
             <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-1 break-words">
               {shop.address}
@@ -207,7 +263,7 @@ export const ShopEditPage: React.FC = () => {
               variant="success"
               size="sm"
               loading={approveMutation.isPending}
-              onClick={() => setPendingAction('approve')}
+              onClick={() => requestAction('approve')}
               className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
             >
               Одобрить
@@ -216,7 +272,7 @@ export const ShopEditPage: React.FC = () => {
               variant="danger"
               size="sm"
               loading={rejectMutation.isPending}
-              onClick={() => setPendingAction('reject')}
+              onClick={() => requestAction('reject')}
               className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
             >
               Отклонить
@@ -240,7 +296,19 @@ export const ShopEditPage: React.FC = () => {
             </h3>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm font-body">
               <MetaItem label="ID заявки" value={shop.id} mono />
-              <MetaItem label="ID автора" value={shop.userId ?? '—'} mono />
+              <div>
+                <MetaItem label="ID автора" value={shop.userId ?? '—'} mono />
+                {shop.userId && (
+                  <button
+                    type="button"
+                    aria-expanded={profileExpanded}
+                    onClick={() => setProfileExpanded((expanded) => !expanded)}
+                    className="mt-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {profileExpanded ? 'Скрыть профиль' : 'Показать профиль'}
+                  </button>
+                )}
+              </div>
               <MetaItem label="Город" value={cityName ?? (shop.cityId ? 'Загрузка...' : '—')} />
               <MetaItem
                 label="Адрес проверен"
@@ -252,6 +320,49 @@ export const ShopEditPage: React.FC = () => {
               />
               <MetaItem label="Фото" value={String(shop.photos?.length ?? 0)} />
             </dl>
+            {profileExpanded && shop.userId && (
+              <div className="mt-4 rounded-lg border border-border-light dark:border-border-dark bg-gray-50 dark:bg-white/5 p-3">
+                {authorProfileLoading ? (
+                  <p className="text-sm text-text-muted dark:text-stone-400 font-body">
+                    Загрузка профиля...
+                  </p>
+                ) : authorProfileError ? (
+                  <p className="text-sm text-red-500 dark:text-red-400 font-body">
+                    Не удалось загрузить профиль пользователя
+                  </p>
+                ) : authorProfile ? (
+                  <div className="flex items-start gap-3">
+                    {authorProfile.avatarUrl ? (
+                      <img
+                        src={authorProfile.avatarUrl}
+                        alt=""
+                        className="h-12 w-12 shrink-0 rounded-full object-cover border border-border-light dark:border-border-dark"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 shrink-0 rounded-full bg-gray-200 dark:bg-white/10" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-medium text-text-main dark:text-white font-body break-words">
+                        {authorProfile.nickname || authorProfile.userName}
+                      </p>
+                      {authorProfile.nickname && (
+                        <p className="text-xs text-text-muted dark:text-stone-400 font-body">
+                          @{authorProfile.userName}
+                        </p>
+                      )}
+                      {authorProfile.about && (
+                        <p className="mt-2 text-sm text-text-muted dark:text-stone-300 font-body whitespace-pre-wrap">
+                          {authorProfile.about}
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs text-text-muted dark:text-stone-400 font-body">
+                        Отзывов: {authorProfile.reviewCount ?? 0} · Отметок: {authorProfile.checkInCount ?? 0}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
             {shop.description && (
               <div className="mt-4 pt-4 border-t border-border-light dark:border-border-dark">
                 <p className="text-xs font-medium text-text-muted dark:text-stone-400 mb-1">Описание от автора</p>
@@ -264,7 +375,7 @@ export const ShopEditPage: React.FC = () => {
         </div>
 
         <form
-          onSubmit={handleSubmit((data) => updateMutation.mutate(data))}
+          onSubmit={submitForm}
           className="space-y-5"
         >
           <Card>
@@ -328,7 +439,14 @@ export const ShopEditPage: React.FC = () => {
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-4">
               Расписание работы
             </h3>
-            <ScheduleEditor value={schedules} onChange={setSchedules} />
+            <ScheduleEditor
+              value={schedules}
+              onChange={(next) => {
+                setSchedules(next);
+                setSchedulesTouched(true);
+                setExtraDirty(true);
+              }}
+            />
           </Card>
 
           <Card>
@@ -347,25 +465,25 @@ export const ShopEditPage: React.FC = () => {
                     subtitle: [item.brand, item.model].filter(Boolean).join(' '),
                   }))}
                   selectedIds={equipmentIds}
-                  onChange={setEquipmentIds}
+                  onChange={markDirty(setEquipmentIds)}
                 />
                 <CatalogMultiSelect
                   label="Кофейные зёрна"
                   items={(catalogs?.beans ?? []).map((item) => ({ id: item.id, name: item.name }))}
                   selectedIds={coffeeBeanIds}
-                  onChange={setCoffeeBeanIds}
+                  onChange={markDirty(setCoffeeBeanIds)}
                 />
                 <CatalogMultiSelect
                   label="Обжарщики"
                   items={(catalogs?.roasters ?? []).map((item) => ({ id: item.id, name: item.name }))}
                   selectedIds={roasterIds}
-                  onChange={setRoasterIds}
+                  onChange={markDirty(setRoasterIds)}
                 />
                 <CatalogMultiSelect
                   label="Методы заваривания"
                   items={(catalogs?.brewMethods ?? []).map((item) => ({ id: item.id, name: item.name }))}
                   selectedIds={brewMethodIds}
-                  onChange={setBrewMethodIds}
+                  onChange={markDirty(setBrewMethodIds)}
                 />
               </div>
             )}

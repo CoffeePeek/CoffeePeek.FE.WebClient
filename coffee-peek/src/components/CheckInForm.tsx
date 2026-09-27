@@ -6,6 +6,7 @@ import { StarIcon } from './icons';
 import { Camera, Check, MapPin, X } from './Icon';
 import WobbleRing from './WobbleRing';
 import { CHECK_IN_LIMITS, todayInputValue } from '../utils/checkInForm';
+import { MAX_CHECKIN_PHOTOS } from '../api/photos';
 
 interface RatingColumn {
   key: 'coffee' | 'service' | 'place';
@@ -195,17 +196,17 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
 
       <div className="space-y-1.5">
         <p className="font-body text-[13px]" style={{ color: colors.textSecondary }}>
-          Фото (необязательно)
+          Фото (необязательно, до {MAX_CHECKIN_PHOTOS})
         </p>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          <label
+          {selectedFiles.length < MAX_CHECKIN_PHOTOS && <label
             htmlFor="checkin-photos"
             className="w-16 h-16 shrink-0 rounded-xl border border-dashed flex items-center justify-center cursor-pointer"
             style={{ borderColor: colors.border, backgroundColor: isDark ? colors.surface : '#FFFFFF', color: colors.textSecondary }}
             aria-label="Добавить фото"
           >
             <Camera size={22} />
-          </label>
+          </label>}
           <input
             id="checkin-photos"
             type="file"

@@ -7,6 +7,7 @@ import {
   DuplicateSuggestionStatus,
   GoogleBusinessStatus,
   ImportSource,
+  KnownQueueStatus,
   QueueStatus,
   RejectReason,
   BUCKET_TO_API,
@@ -24,7 +25,7 @@ import {
   parseImportSource,
   parseRejectReason,
 } from '../constants/catalogIngest';
-import { parseFacts, parseSuggestedTags } from '../utils/importDossier';
+import { parseFacts, parseSuggestedTags, safeHttpUrl } from '../utils/importDossier';
 import {
   AttachMenuPhotosRequest,
   ShopMenuDto,
@@ -87,7 +88,7 @@ export interface ImportCandidate {
 }
 
 export interface ImportCandidatesQuery {
-  status?: QueueStatus;
+  status?: KnownQueueStatus;
   bucket?: CollectorBucket;
   focus?: CoffeeFocus;
   search?: string;
@@ -201,10 +202,10 @@ function asRecord(value: unknown): Record<string, unknown> {
 }
 
 function mapQueueStatus(value: unknown): QueueStatus {
-  const labels: QueueStatus[] = ['Pending', 'Skipped', 'Published', 'Rejected'];
-  if (typeof value === 'number') return labels[value] ?? 'Pending';
-  if (typeof value === 'string' && labels.includes(value as QueueStatus)) return value as QueueStatus;
-  return 'Pending';
+  const labels: KnownQueueStatus[] = ['Pending', 'Skipped', 'Published', 'Rejected'];
+  if (typeof value === 'number') return labels[value] ?? 'Unknown';
+  if (typeof value === 'string' && labels.includes(value as KnownQueueStatus)) return value as KnownQueueStatus;
+  return 'Unknown';
 }
 
 export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCandidate {
@@ -217,7 +218,7 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
   const instagram = asString(pick(raw, 'instagram', 'Instagram'));
   const website = asString(pick(raw, 'website', 'Website'));
   const externalId = asString(pick(raw, 'externalId', 'ExternalId')) ?? '';
-  const googleMapsUri = asString(pick(raw, 'googleMapsUri', 'GoogleMapsUri'));
+  const googleMapsUri = safeHttpUrl(asString(pick(raw, 'googleMapsUri', 'GoogleMapsUri')));
   const source =
     parseImportSource(pick(raw, 'source', 'Source')) ??
     asString(pick(raw, 'source', 'Source')) ??
@@ -236,7 +237,7 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
     source,
   });
   const pickLink = (...keys: string[]) => {
-    const value = asString(pick(apiLinks, ...keys));
+    const value = safeHttpUrl(asString(pick(apiLinks, ...keys)));
     if (!value || looksLikeNameSearch(value)) return undefined;
     return value;
   };
@@ -419,13 +420,6 @@ export async function patchImportCandidate(
   }
 }
 
-export async function refreshCandidateGoogle(id: string): Promise<ApiResponse<ImportCandidate>> {
-  const response = await httpClient.post<Record<string, unknown>>(
-    API_ENDPOINTS.ADMIN.IMPORT_CANDIDATE_GOOGLE(id)
-  );
-  return { ...response, data: mapImportCandidate(asRecord(response.data)) };
-}
-
 export async function decideImportCandidate(
   id: string,
   body: DecideCandidateRequest
@@ -555,7 +549,7 @@ function mapDuplicateSuggestion(rawInput: unknown): DuplicateSuggestion {
 
 export async function getDuplicateSuggestions(
   params: {
-    status?: DuplicateSuggestionStatus;
+    status?: Exclude<DuplicateSuggestionStatus, 'Unknown'>;
     page?: number;
     pageSize?: number;
   } = {}

@@ -20,10 +20,11 @@ import { Button } from '../components/ui/Button';
 import { Card, StatCard } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 20;
 
-const ROLES: UserRole[] = ['User', 'Moderator', 'Admin', 'Owner'];
+const ROLES: UserRole[] = ['User', 'Moderator', 'Admin', 'Owner', 'Employee', 'Roaster'];
 
 const ROLE_COLORS: Record<UserRole, string> = {
   User: 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-stone-300',
@@ -77,9 +78,9 @@ const UserSessionsModal: React.FC<{
       setRevokingSessionId(null);
       qc.invalidateQueries({ queryKey: ['admin', 'users', user?.id, 'sessions'] });
     },
-    onError: (err: any) => {
+    onError: (err) => {
       setRevokingSessionId(null);
-      showToast(err?.message ?? 'Ошибка', 'error');
+      showToast(getErrorMessage(err, 'Ошибка'), 'error');
     },
   });
 
@@ -90,7 +91,7 @@ const UserSessionsModal: React.FC<{
       setConfirmRevokeAll(false);
       qc.invalidateQueries({ queryKey: ['admin', 'users', user?.id, 'sessions'] });
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   if (!user) return null;
@@ -238,6 +239,8 @@ const EditRoleModal: React.FC<{
     try {
       await onSave(user.id, role);
       onClose();
+    } catch {
+      // Error toast is shown by the mutation's onError.
     } finally {
       setLoading(false);
     }
@@ -327,7 +330,7 @@ export const UsersPage: React.FC = () => {
       showToast('Роль обновлена', 'success');
       qc.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const blockMutation = useMutation({
@@ -337,7 +340,7 @@ export const UsersPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'users'] });
       setBlockingUser(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const revokeAllMutation = useMutation({
@@ -350,7 +353,7 @@ export const UsersPage: React.FC = () => {
         qc.invalidateQueries({ queryKey: ['admin', 'users', sessionsUser.id, 'sessions'] });
       }
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const deleteMutation = useMutation({
@@ -360,7 +363,7 @@ export const UsersPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'users'] });
       setDeletingUserId(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const setParam = (key: string, value: string) => {
@@ -440,13 +443,13 @@ export const UsersPage: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light dark:border-border-dark">
-                    <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Пользователь</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Роли</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Отзывов</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Чекинов</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Кофеен</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Дата</th>
-                    <th className="px-4 py-3" />
+                    <th scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Пользователь</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Роли</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Отзывов</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Чекинов</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Кофеен</th>
+                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Дата</th>
+                    <th scope="col" className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-light dark:divide-border-dark">
@@ -465,7 +468,7 @@ export const UsersPage: React.FC = () => {
                             <p className="font-medium text-text-main dark:text-white truncate max-w-[160px] font-body text-xs flex items-center gap-1.5">
                               {user.userName ?? user.email}
                               {user.isBlocked && (
-                                <Badge variant="rejected">Blocked</Badge>
+                                <Badge variant="rejected">Заблокирован</Badge>
                               )}
                             </p>
                             {user.userName && (
@@ -553,13 +556,16 @@ export const UsersPage: React.FC = () => {
         )}
       </Card>
 
-      <EditRoleModal
-        user={editingUser}
-        onSave={async (id, role) => {
-          await updateRoleMutation.mutateAsync({ id, role });
-        }}
-        onClose={() => setEditingUser(null)}
-      />
+      {editingUser && (
+        <EditRoleModal
+          key={editingUser.id}
+          user={editingUser}
+          onSave={async (id, role) => {
+            await updateRoleMutation.mutateAsync({ id, role });
+          }}
+          onClose={() => setEditingUser(null)}
+        />
+      )}
 
       <UserSessionsModal
         user={sessionsUser}

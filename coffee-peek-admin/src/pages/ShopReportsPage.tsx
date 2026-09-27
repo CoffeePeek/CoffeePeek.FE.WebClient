@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   getShopIssueReports,
   updateShopIssueReportStatus,
@@ -14,6 +14,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 20;
 
@@ -70,7 +71,14 @@ const ReportCard: React.FC<{
           <Badge variant={STATUS_BADGE[report.status]}>{STATUS_LABELS[report.status]}</Badge>
         </div>
         <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-2">
-          Кофейня {report.shopId} · {new Date(report.createdAtUtc).toLocaleDateString('ru')}
+          Кофейня{' '}
+          <Link
+            to={`/coffee-shops/${report.shopId}`}
+            className="font-mono text-primary hover:underline break-all"
+          >
+            {report.shopId}
+          </Link>
+          {' '}· {new Date(report.createdAtUtc).toLocaleDateString('ru')}
         </p>
         {report.description && (
           <p className="text-sm text-text-main dark:text-stone-300 font-body">{report.description}</p>
@@ -121,7 +129,7 @@ export const ShopReportsPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'shop-reports'] });
       setPendingAction(null);
     },
-    onError: (err: any) => showToast(err?.message ?? 'Ошибка', 'error'),
+    onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
   const setParam = (key: string, value: string) => {
@@ -130,6 +138,15 @@ export const ShopReportsPage: React.FC = () => {
     if (key !== 'page') next.delete('page');
     setSearchParams(next);
   };
+
+  // After acting on the last item of page N>1 the page becomes empty — step back instead of stranding the user.
+  useEffect(() => {
+    if (data && page > 1 && !data.items.length) {
+      const next = new URLSearchParams(searchParams);
+      next.set('page', String(page - 1));
+      setSearchParams(next, { replace: true });
+    }
+  }, [data, page, searchParams, setSearchParams]);
 
   return (
     <div className="page-container">

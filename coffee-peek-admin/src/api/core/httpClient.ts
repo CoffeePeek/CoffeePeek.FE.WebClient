@@ -1,4 +1,4 @@
-import { ApiResponse, ApiConfig, RequestOptions } from './types';
+import { ApiResponse, ApiConfig, RequestOptions, ApiRequestError } from './types';
 import { API_BASE_URL, buildUrlWithParams } from './apiConfig';
 import {
   requestInterceptor,
@@ -7,10 +7,9 @@ import {
   TokenManager,
   isAuthTokenEndpoint,
   tryRefreshAccessToken,
-  ensureFreshAccessToken,
+  ensureFreshAccessTokenResult,
   pickAuthTokens,
 } from './interceptors';
-import { isTokenExpired } from '../../utils/jwt';
 import { emitSessionInvalidated } from '../../realtime/forceLogout';
 
 class HttpClient {
@@ -30,14 +29,14 @@ class HttpClient {
     const fullUrl = `${this.baseURL}${urlWithParams}`;
 
     if (!_retry && !skipAuthHeader && !isAuthTokenEndpoint(endpoint)) {
-      const fresh = await ensureFreshAccessToken(this.baseURL);
-      const access = TokenManager.getAccessToken();
-      if (!fresh && (!access || isTokenExpired(access))) {
-        if (access) {
+      const refreshed = await ensureFreshAccessTokenResult(this.baseURL);
+      // Разлогиниваем только если сервер отверг refresh; сеть/5xx/429 — сессия может быть жива.
+      if (refreshed === 'rejected') {
+        if (TokenManager.getAccessToken()) {
           TokenManager.clearTokens();
           emitSessionInvalidated('session_revoked');
         }
-        throw { status: 401, message: 'Не авторизован' };
+        throw new ApiRequestError(401, 'Не авторизован');
       }
     }
 
@@ -59,10 +58,11 @@ class HttpClient {
       if (canRefresh) {
         const hadSession = !!TokenManager.getAccessToken();
         const refreshed = await tryRefreshAccessToken(this.baseURL);
-        if (refreshed) {
+        if (refreshed === 'ok') {
           return this.request<T>(endpoint, { ...options, _retry: true });
         }
-        if (hadSession) {
+        // Сеть/5xx/429 при refresh — сессия может быть жива, не разлогиниваем.
+        if (hadSession && refreshed === 'rejected') {
           TokenManager.clearTokens();
           emitSessionInvalidated('session_revoked');
         }

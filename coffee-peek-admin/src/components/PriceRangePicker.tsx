@@ -79,20 +79,3 @@ export const PriceRangePicker: React.FC<PriceRangePickerProps> = ({
     </div>
   );
 };
-
-export const PriceRangeDisplay: React.FC<{ value: unknown }> = ({ value }) => {
-  const selected = parsePriceRange(value);
-  if (!selected) return <span>—</span>;
-
-  const option =
-    PRICE_RANGE_PICKER_OPTIONS.find((item) => item.value === (selected === 4 ? 3 : selected)) ??
-    PRICE_RANGE_PICKER_OPTIONS.find((item) => item.value === selected);
-  if (!option) return <span>{String(value)}</span>;
-
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span className="hidden sm:inline">{option.label}</span>
-      <span className="sm:hidden">{option.labelShort}</span>
-    </span>
-  );
-};

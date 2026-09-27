@@ -41,7 +41,7 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ images, shopName, isCardV
     .map(img => {
       // Если это объект PhotoMetadataDto или ShortPhotoMetadataDto
       if (img && typeof img === 'object' && ('fullUrl' in img || 'storageKey' in img)) {
-        return getPhotoUrl(img as PhotoMetadataDto | ShortPhotoMetadataDto);
+        return getPhotoUrl(img as PhotoMetadataDto | ShortPhotoMetadataDto, 'detail');
       }
       // Если это строка (старый формат)
       if (typeof img === 'string') {

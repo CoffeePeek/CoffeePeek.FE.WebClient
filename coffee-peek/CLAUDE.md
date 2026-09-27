@@ -10,7 +10,7 @@ npm run build     # Production build via Vite
 npm run preview   # Preview production build locally
 ```
 
-No test or lint scripts are configured in package.json. ESLint is configured (`eslint.config.js`) and can be run manually with `npx eslint src/`.
+Tests: `npm test` (Jest, `tests/*.test.ts`) and `npm run test:ssr` (node:test for `api/public-page.mjs`). No lint script; `eslint.config.js` exists but its packages aren't installed.
 
 ## Architecture
 
@@ -18,10 +18,9 @@ No test or lint scripts are configured in package.json. ESLint is configured (`e
 
 ### State Management
 
-Three layers:
+Two layers:
 1. **React Context** — `UserContext` (auth, roles), `ThemeContext` (dark/light), `ToastContext` (notifications)
-2. **React Query v5** — all server state; configured in `src/lib/queryClient.ts` with staleTime=5min, gcTime=10min
-3. **React Hook Form + Zod** — form state and validation
+2. **React Query v5** — all server state; configured in `src/lib/queryClient.ts` with staleTime=5min, gcTime=10min
 
 ### API Layer (`src/api/`)
 
@@ -30,7 +29,7 @@ All HTTP communication goes through `src/api/core/httpClient.ts` — a centraliz
 - Transparent token refresh on 401 responses
 - Normalizing responses to `{ success, data, message }`
 
-Token management is handled by `TokenManager` in `src/api/core/interceptors.ts` (tokens stored in localStorage). API modules (`auth.ts`, `coffeeshop.ts`, `user.ts`, etc.) call the shared client — never `fetch` directly.
+Token management is handled by `TokenManager` in `src/api/core/interceptors.ts` (access token in memory, refresh token in an HttpOnly cookie). API modules (`auth.ts`, `coffeeshop.ts`, `user.ts`, etc.) call the shared client — never `fetch` directly.
 
 ### Routing (`src/routes/`)
 

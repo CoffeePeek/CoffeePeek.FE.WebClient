@@ -34,7 +34,7 @@ export const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ childr
           </Link>
         </div>
       )}
-      <div className="min-h-screen">
+      <div className="min-h-screen pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
         {children}
       </div>
     </div>

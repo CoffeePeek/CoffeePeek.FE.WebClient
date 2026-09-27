@@ -25,7 +25,8 @@ src/design-system/
 | `brand.primaryHover` | `#FACC15` | `brand_primary_hover` | Hover кнопок |
 | `brand.primaryDark` | `#CA8A04` | `brand_primary_dark` | Pressed state |
 | `brand.primaryLight` | `#FEF3C7` | `brand_primary_light` | Фон бейджей |
-| `brand.goldWarm` | `#D4A84B` | `brand_gold_warm` | Аватары, декор |
+| `brand.goldWarm` | `#D4A84B` | `brand_gold_warm` |
+ Аватары, декор |
 | `brand.goldWarmSoft` | `#F8F1DD` | `brand_gold_warm_soft` | Мягкий фон |
 
 ## Семантические цвета

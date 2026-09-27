@@ -134,7 +134,7 @@ const UserProfilePage: React.FC = () => {
   const textMuted = themeClasses.text.secondary;
 
   if (userId && user?.id === userId) {
-    return <Navigate to="/settings" replace />;
+    return <Navigate to="/profile" replace />;
   }
 
   if (isLoadingProfile) {

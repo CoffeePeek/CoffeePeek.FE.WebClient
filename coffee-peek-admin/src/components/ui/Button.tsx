@@ -31,10 +31,12 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   children,
   className = '',
+  type = 'button',
   ...props
 }) => {
   return (
     <button
+      type={type}
       disabled={disabled || loading}
       className={`inline-flex items-center justify-center gap-2 rounded-lg transition-colors font-body disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}

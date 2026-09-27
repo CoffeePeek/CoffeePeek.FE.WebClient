@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { PublishedShopPhoto } from '../api/admin';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 interface PhotoOrderEditorProps {
   photos: PublishedShopPhoto[];
@@ -29,6 +30,18 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
   const [loadedPhotos, setLoadedPhotos] = useState(photos);
   const [orderedPhotos, setOrderedPhotos] = useState(photos);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Callers pass mutateAsync: keep rejections handled and show them inline (callers may also toast).
+  const run = (action: () => Promise<unknown>, fallback: string) => {
+    setError(null);
+    return action().catch((err: unknown) => {
+      setError((err as { message?: string } | null)?.message || fallback);
+    });
+  };
 
   useEffect(() => {
     setLoadedPhotos(photos);
@@ -36,9 +49,11 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
     setSelectedIds((current) => current.filter((id) => photos.some((photo) => photo.id === id)));
   }, [photos]);
 
-  const move = (from: number, to: number) => {
-    if (to < 0 || to >= orderedPhotos.length) return;
+  const move = (draggedPhotoId: string, targetPhotoId: string) => {
     setOrderedPhotos((current) => {
+      const from = current.findIndex((photo) => photo.id === draggedPhotoId);
+      const to = current.findIndex((photo) => photo.id === targetPhotoId);
+      if (from < 0 || to < 0 || from === to) return current;
       const next = [...current];
       const [photo] = next.splice(from, 1);
       next.splice(to, 0, photo);
@@ -61,7 +76,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
         <div>
           <h3 className="text-sm font-semibold text-text-main dark:text-white font-display">Галерея</h3>
           <p className="mt-1 text-xs text-text-muted dark:text-stone-400 font-body">
-            Первая фотография — обложка. Можно менять порядок, добавлять и удалять.
+            Первая фотография — обложка. Перетаскивайте карточки, чтобы изменить порядок.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -76,7 +91,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
                 onChange={(e) => {
                   const files = Array.from(e.target.files ?? []);
                   e.target.value = '';
-                  if (files.length) void onAddFiles(files);
+                  if (files.length) void run(() => onAddFiles(files), 'Не удалось добавить фото');
                 }}
               />
               <Button
@@ -96,7 +111,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
               size="sm"
               loading={isDeleting}
               disabled={!selectedIds.length || busy}
-              onClick={() => void onDelete(selectedIds)}
+              onClick={() => setConfirmDelete(true)}
             >
               Удалить выбранные
             </Button>
@@ -106,21 +121,55 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
             size="sm"
             loading={isSaving}
             disabled={!dirty || !orderedPhotos.length || busy}
-            onClick={() => onSave(orderedPhotos.map((photo) => photo.id))}
+            onClick={() =>
+              void run(() => onSave(orderedPhotos.map((photo) => photo.id)), 'Не удалось сохранить порядок')
+            }
           >
             Сохранить порядок
           </Button>
         </div>
       </div>
 
+      {error && <p className="mb-3 text-xs text-red-500 dark:text-red-400 font-body">{error}</p>}
+
       {!orderedPhotos.length ? (
         <p className="text-xs text-text-muted dark:text-stone-400 font-body">В галерее пока нет фотографий.</p>
       ) : (
-        <ol className="space-y-2">
+        <ol className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {orderedPhotos.map((photo, index) => (
             <li
               key={photo.id}
-              className="flex items-center gap-3 rounded-lg border border-border-light p-2 dark:border-border-dark"
+              draggable={!busy}
+              onDragStart={(event) => {
+                setDraggedId(photo.id);
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', photo.id);
+              }}
+              onDragEnter={() => {
+                if (draggedId && draggedId !== photo.id) setDragOverId(photo.id);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                const sourceId = draggedId ?? event.dataTransfer.getData('text/plain');
+                if (sourceId) move(sourceId, photo.id);
+                setDraggedId(null);
+                setDragOverId(null);
+              }}
+              onDragEnd={() => {
+                setDraggedId(null);
+                setDragOverId(null);
+              }}
+              className={`flex min-w-0 cursor-grab items-center gap-3 rounded-xl border p-3 transition active:cursor-grabbing ${
+                draggedId === photo.id
+                  ? 'opacity-50 border-primary'
+                  : dragOverId === photo.id
+                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                    : 'border-border-light dark:border-border-dark'
+              }`}
             >
               {onDelete && (
                 <input
@@ -134,7 +183,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
               <img
                 src={photo.fullUrl}
                 alt={photo.fileName || `Фото ${index + 1}`}
-                className="h-14 w-14 rounded object-cover bg-gray-100 dark:bg-white/5"
+                className="h-24 w-24 shrink-0 rounded-lg object-cover bg-gray-100 dark:bg-white/5 lg:h-28 lg:w-28"
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -149,29 +198,31 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
                   {photo.fileName || photo.storageKey}
                 </p>
               </div>
-              <div className="flex shrink-0 gap-1">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={index === 0 || busy}
-                  onClick={() => move(index, index - 1)}
-                  aria-label="Переместить выше"
-                >
-                  ↑
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={index === orderedPhotos.length - 1 || busy}
-                  onClick={() => move(index, index + 1)}
-                  aria-label="Переместить ниже"
-                >
-                  ↓
-                </Button>
-              </div>
+              <span
+                aria-hidden="true"
+                className="shrink-0 select-none text-xl leading-none text-text-muted dark:text-stone-500"
+                title="Перетащить"
+              >
+                ⠿
+              </span>
             </li>
           ))}
         </ol>
+      )}
+
+      {onDelete && (
+        <ConfirmModal
+          isOpen={confirmDelete}
+          title="Удалить выбранные фото?"
+          message={`Будет удалено фотографий: ${selectedIds.length}. Это действие нельзя отменить.`}
+          confirmLabel="Удалить"
+          variant="danger"
+          onConfirm={async () => {
+            await run(() => onDelete(selectedIds), 'Не удалось удалить фото');
+            setConfirmDelete(false);
+          }}
+          onCancel={() => setConfirmDelete(false)}
+        />
       )}
     </Card>
   );

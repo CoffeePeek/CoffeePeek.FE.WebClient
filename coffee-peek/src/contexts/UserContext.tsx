@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { getUserRoles, getUserEmail, getUserId, isTokenExpired, isEmailVerified } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
-import { ensureFreshAccessToken } from '../api/core/interceptors';
+import { ensureFreshAccessToken, LOGGED_OUT_KEY } from '../api/core/interceptors';
 import { API_BASE_URL } from '../api/core/apiConfig';
-import { getProfile, type UserProfile } from '../api/auth';
+import { getProfile, logout as apiLogout, type UserProfile } from '../api/auth';
+import { queryClient } from '../lib/queryClient';
+
 
 export interface AppUser {
   id: string | null;
@@ -19,7 +21,8 @@ interface UserContextType {
   isLoading: boolean;
   updateUserFromToken: (token: string) => void;
   updateUserProfile: (profile: UserProfile) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
+  clearSession: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -48,6 +51,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       return;
     }
 
+    localStorage.removeItem(LOGGED_OUT_KEY);
     const roles = getUserRoles(token);
     const email = getUserEmail(token);
     const id = getUserId(token);
@@ -70,16 +74,33 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     } : currentUser);
   }, []);
 
-  const logout = useCallback(() => {
+  const clearSession = useCallback(() => {
+    localStorage.setItem(LOGGED_OUT_KEY, '1');
     TokenManager.clearTokens();
+    queryClient.clear();
     setUser(null);
   }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await apiLogout();
+    } catch {
+      // Keep the browser logged out even if the server is temporarily unavailable.
+    } finally {
+      clearSession();
+    }
+  }, [clearSession]);
 
   useEffect(() => {
     let cancelled = false;
 
     const restoreSession = async () => {
       try {
+        if (localStorage.getItem(LOGGED_OUT_KEY) === '1') {
+          TokenManager.clearTokens();
+          setUser(null);
+          return;
+        }
         const fresh = await ensureFreshAccessToken(API_BASE_URL);
         if (cancelled) return;
         const token = TokenManager.getAccessToken();
@@ -101,6 +122,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Детали кофеен содержат пользовательские поля (canCreateReview, userCheckIns) —
+  // при смене пользователя кэш анонимной/чужой версии устаревает.
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: ['coffeeShops'] });
+    void queryClient.invalidateQueries({ queryKey: ['reviews'] });
+  }, [userId]);
+
   useEffect(() => {
     if (userId === undefined) return;
 
@@ -121,7 +149,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   }, [userId, updateUserProfile]);
 
   return (
-    <UserContext.Provider value={{ user, isLoading, updateUserFromToken, updateUserProfile, logout }}>
+    <UserContext.Provider value={{ user, isLoading, updateUserFromToken, updateUserProfile, logout, clearSession }}>
       {children}
     </UserContext.Provider>
   );

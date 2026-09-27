@@ -51,6 +51,41 @@ export async function getShopUploadUrls(
 }
 
 /**
+ * Presign for check-in / review photos (keys `reviews/…`).
+ * POST /api/photos/review
+ */
+export async function getReviewUploadUrls(
+  requests: UploadUrlRequest[]
+): Promise<ApiResponse<UploadUrlResponse[]>> {
+  return httpClient.post<UploadUrlResponse[]>(
+    API_ENDPOINTS.PHOTOS.REVIEW,
+    requests,
+    { requiresAuth: true }
+  );
+}
+
+/** Content-Type sent at presign; the PUT must repeat it exactly. */
+export const photoContentType = (file: File) => file.type || 'image/jpeg';
+
+/**
+ * PUT to a presigned MinIO URL from /api/photos/{shop,review,menu,roaster}.
+ * Both headers are part of the signature — any mismatch → 403 SignatureDoesNotMatch.
+ */
+export function putPhotoToStorage(uploadUrl: string, file: File): Promise<Response> {
+  return fetch(uploadUrl, {
+    method: 'PUT',
+    body: file,
+    headers: {
+      'Content-Type': photoContentType(file),
+      'x-amz-tagging': 'is_permanent=False',
+    },
+  });
+}
+
+/** Server limit for POST /api/checkins. */
+export const MAX_CHECKIN_PHOTOS = 5;
+
+/**
  * Presign for menu photos. Do not use PHOTOS.SHOP for menus.
  * POST /api/Photos/menu
  */

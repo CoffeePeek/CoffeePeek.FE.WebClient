@@ -1,6 +1,7 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
 import { ApiResponse } from './core/types';
+import { apiDayOfWeekToUi } from '../utils/dayOfWeek';
 
 export interface BrowseCoffeeShop {
   id: string;
@@ -42,25 +43,114 @@ interface GetCoffeeShopsResponse {
   pageSize?: number;
 }
 
+type UnknownRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): UnknownRecord | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as UnknownRecord
+    : undefined;
+}
+
+function firstValue(record: UnknownRecord, ...keys: string[]): unknown {
+  for (const key of keys) {
+    if (record[key] !== undefined && record[key] !== null) return record[key];
+  }
+  return undefined;
+}
+
+function firstString(record: UnknownRecord, ...keys: string[]): string | undefined {
+  const value = firstValue(record, ...keys);
+  if (value === undefined || value === null) return undefined;
+  const text = String(value).trim();
+  return text || undefined;
+}
+
+function firstNumber(record: UnknownRecord, ...keys: string[]): number | undefined {
+  const value = firstValue(record, ...keys);
+  if (value === undefined || value === null || value === '') return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function unwrapShop(raw: UnknownRecord): UnknownRecord {
+  const wrapped = firstValue(
+    raw,
+    'shopDto',
+    'ShopDto',
+    'coffeeShop',
+    'CoffeeShop',
+    'shop',
+    'Shop',
+    'item',
+    'Item'
+  );
+  return asRecord(wrapped) ?? raw;
+}
+
+function normalizePhotos(raw: UnknownRecord): BrowseCoffeeShopDetails['photos'] {
+  const value = firstValue(raw, 'photos', 'Photos', 'shopPhotos', 'ShopPhotos');
+  if (!Array.isArray(value)) return undefined;
+  return value.map((photo) => {
+    if (typeof photo === 'string') return { fullUrl: photo };
+    const record = asRecord(photo);
+    return {
+      fullUrl: record
+        ? firstString(record, 'fullUrl', 'FullUrl', 'url', 'Url', 'thumbnailUrl', 'ThumbnailUrl') ?? null
+        : null,
+    };
+  });
+}
+
+function normalizeSchedules(raw: UnknownRecord): BrowseCoffeeShopDetails['schedules'] {
+  const value = firstValue(raw, 'schedules', 'Schedules');
+  if (!Array.isArray(value)) return undefined;
+  return value.flatMap((item) => {
+    const schedule = asRecord(item);
+    if (!schedule) return [];
+    const isClosed = Boolean(firstValue(schedule, 'isClosed', 'IsClosed'));
+    const intervals = firstValue(schedule, 'intervals', 'Intervals');
+    const interval = Array.isArray(intervals) ? asRecord(intervals[0]) : undefined;
+    const openTime = firstString(
+      interval ?? schedule,
+      'openTime',
+      'OpenTime'
+    )?.substring(0, 5);
+    const closeTime = firstString(
+      interval ?? schedule,
+      'closeTime',
+      'CloseTime'
+    )?.substring(0, 5);
+    return [{
+      dayOfWeek: apiDayOfWeekToUi(
+        firstValue(schedule, 'dayOfWeek', 'DayOfWeek') as number | string | undefined
+      ),
+      openTime: isClosed ? undefined : openTime,
+      closeTime: isClosed ? undefined : closeTime,
+    }];
+  });
+}
+
 function mapBrowseShop(raw: Record<string, unknown>): BrowseCoffeeShop {
-  const photos = raw.photos as Array<{ fullUrl?: string | null }> | undefined;
-  const shopPhotos = raw.shopPhotos as string[] | undefined;
-  const imageUrl =
-    photos?.[0]?.fullUrl ??
-    shopPhotos?.[0] ??
-    (raw.imageUrl as string | undefined);
+  const shop = unwrapShop(raw);
+  const location = asRecord(firstValue(shop, 'location', 'Location'));
+  const city = asRecord(firstValue(shop, 'city', 'City'));
+  const photos = normalizePhotos(shop);
+  const imageUrl = photos?.find((photo) => photo.fullUrl)?.fullUrl
+    ?? firstString(shop, 'imageUrl', 'ImageUrl');
 
   return {
-    id: String(raw.id),
-    name: String(raw.name ?? raw.title ?? 'Кофейня'),
+    id: firstString(shop, 'id', 'Id') ?? '',
+    name: firstString(shop, 'name', 'Name', 'title', 'Title') ?? 'Кофейня',
     address:
-      (raw.address as string | undefined) ??
-      (raw.location as { address?: string } | undefined)?.address,
-    description: raw.description as string | undefined,
-    cityName: raw.cityName as string | undefined,
-    rating: raw.rating as number | undefined,
-    reviewCount: raw.reviewCount as number | undefined,
-    imageUrl,
+      firstString(shop, 'address', 'Address')
+      ?? (location ? firstString(location, 'address', 'Address') : undefined),
+    description: firstString(shop, 'description', 'Description'),
+    cityName:
+      firstString(shop, 'cityName', 'CityName')
+      ?? (city ? firstString(city, 'name', 'Name') : undefined),
+    rating: firstNumber(shop, 'rating', 'Rating', 'averageRating', 'AverageRating'),
+    reviewCount: firstNumber(shop, 'reviewCount', 'ReviewCount', 'reviewsCount', 'ReviewsCount'),
+    imageUrl: imageUrl ?? undefined,
   };
 }
 
@@ -100,16 +190,32 @@ export async function getBrowseCoffeeShopById(
     { requiresAuth: false }
   );
 
-  const mapped = mapBrowseShop(response.data ?? {});
+  const raw = unwrapShop(response.data ?? {});
+  const mapped = mapBrowseShop(raw);
+  const locationRaw = asRecord(firstValue(raw, 'location', 'Location'));
+  const contactRaw = asRecord(firstValue(raw, 'shopContact', 'ShopContact', 'contacts', 'Contacts'));
+  const photos = normalizePhotos(raw);
+  const imageUrlsValue = firstValue(raw, 'imageUrls', 'ImageUrls');
   return {
     ...response,
     data: {
       ...mapped,
-      schedules: response.data?.schedules as BrowseCoffeeShopDetails['schedules'],
-      location: response.data?.location as BrowseCoffeeShopDetails['location'],
-      photos: response.data?.photos as BrowseCoffeeShopDetails['photos'],
-      imageUrls: response.data?.imageUrls as string[] | undefined,
-      shopContact: response.data?.shopContact as BrowseCoffeeShopDetails['shopContact'],
+      schedules: normalizeSchedules(raw),
+      location: locationRaw ? {
+        address: firstString(locationRaw, 'address', 'Address'),
+        latitude: firstNumber(locationRaw, 'latitude', 'Latitude', 'lat', 'Lat'),
+        longitude: firstNumber(locationRaw, 'longitude', 'Longitude', 'lon', 'Lon', 'lng', 'Lng'),
+      } : undefined,
+      photos,
+      imageUrls: Array.isArray(imageUrlsValue)
+        ? imageUrlsValue.map(String).filter(Boolean)
+        : undefined,
+      shopContact: contactRaw ? {
+        phone: firstString(contactRaw, 'phone', 'Phone', 'phoneNumber', 'PhoneNumber'),
+        email: firstString(contactRaw, 'email', 'Email'),
+        website: firstString(contactRaw, 'website', 'Website', 'siteLink', 'SiteLink'),
+        instagram: firstString(contactRaw, 'instagram', 'Instagram', 'instagramLink', 'InstagramLink'),
+      } : undefined,
     },
   };
 }

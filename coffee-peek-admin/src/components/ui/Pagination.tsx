@@ -18,7 +18,7 @@ export const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPage
   });
 
   return (
-    <div className="flex items-center justify-center gap-1 mt-2 sm:mt-4 flex-wrap">
+    <nav aria-label="Пагинация" className="flex items-center justify-center gap-1 mt-2 sm:mt-4 flex-wrap">
       <Button
         variant="ghost"
         size="sm"
@@ -39,6 +39,7 @@ export const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPage
             key={p}
             variant={p === page ? 'primary' : 'ghost'}
             size="sm"
+            aria-current={p === page ? 'page' : undefined}
             onClick={() => onPageChange(p)}
           >
             {p}
@@ -55,6 +56,6 @@ export const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPage
       >
         →
       </Button>
-    </div>
+    </nav>
   );
 };

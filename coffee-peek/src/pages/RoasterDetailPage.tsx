@@ -50,51 +50,46 @@ const RoasterDetailPage: React.FC = () => {
   }
 
   const websiteHref = roaster.contact?.siteLink ? toWebsiteHref(roaster.contact.siteLink) : undefined;
+  const websiteLabel = roaster.contact?.siteLink?.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   return (
-    <div className={`min-h-screen ${bgClass} font-body overflow-x-hidden`}>
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
-        <div className="h-[220px] sm:h-[280px] md:h-[380px] rounded-3xl overflow-hidden">
+    <div className={`min-h-screen ${bgClass} overflow-x-hidden font-body`}>
+      <section className="mx-auto max-w-[920px] sm:px-6 sm:pt-6">
+        <div className="h-[260px] overflow-hidden bg-white sm:h-[340px] sm:rounded-[28px]">
           <PhotoCarousel images={roaster.photos} shopName={roaster.name} />
         </div>
       </section>
 
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pb-12 space-y-6 sm:space-y-8">
-        <div>
-          <h1 className={`text-2xl sm:text-4xl font-extended font-bold ${textMain}`}>{roaster.name}</h1>
+      <main className="mx-auto max-w-[920px] space-y-8 px-4 py-7 pb-28 sm:px-6 sm:py-9">
+        <section>
+          <h1 className={`text-3xl font-bold tracking-tight sm:text-4xl ${textMain}`}>{roaster.name}</h1>
           {roaster.location?.address && (
-            <p className={`mt-2 flex items-center gap-2 ${textMuted}`}>
+            <p className={`mt-3 flex items-center gap-2 text-sm ${textMuted}`}>
               <AppIcon name="pin_drop" size={18} color="#D4A84B" />
               {roaster.location.address}
             </p>
           )}
-        </div>
+        </section>
 
         {roaster.about && (
-          <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor}`}>
-            <h2 className={`text-xl font-extended font-bold ${textMain} flex items-center gap-3 mb-4`}>
-              <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full shrink-0" />
-              О компании
-            </h2>
-            <p className={`${textMuted} leading-relaxed`}>{roaster.about}</p>
-          </div>
+          <section>
+            <h2 className={`mb-3 text-xl font-bold ${textMain}`}>Об обжарщике</h2>
+            <p className={`${textMuted} text-base leading-relaxed sm:text-lg`}>{roaster.about}</p>
+          </section>
         )}
 
         {(roaster.contact?.instagramLink || websiteHref) && (
-          <div className={`${cardBg} p-4 sm:p-6 rounded-3xl border ${borderColor}`}>
-            <h2 className={`text-xl font-extended font-bold ${textMain} flex items-center gap-3 mb-4`}>
-              <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full shrink-0" />
-              Контакты
-            </h2>
+          <section>
+            <h2 className={`mb-3 text-xl font-bold ${textMain}`}>Ссылки</h2>
             <div className="flex flex-wrap items-center gap-3">
               {roaster.contact?.instagramLink && (
                 <a
                   href={instagramUrl(roaster.contact.instagramLink)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-full font-semibold border ${borderColor} ${textMain} hover:border-[#D4A84B]/50 transition-all`}
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-semibold transition-colors hover:border-[#D4A84B]/60 ${borderColor} ${textMain}`}
                 >
-                  <AppIcon name="photo_camera" size={18} color="#D4A84B" />
+                  <AppIcon name="photo_camera" size={20} color="currentColor" />
                   {instagramHandle(roaster.contact.instagramLink)}
                 </a>
               )}
@@ -103,36 +98,37 @@ const RoasterDetailPage: React.FC = () => {
                   href={websiteHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-full font-semibold border ${borderColor} ${textMain} hover:border-[#D4A84B]/50 transition-all`}
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-semibold transition-colors hover:border-[#D4A84B]/60 ${borderColor} ${textMain}`}
                 >
-                  <AppIcon name="language" size={18} color="#D4A84B" />
-                  Сайт
+                  <AppIcon name="language" size={20} color="currentColor" />
+                  {websiteLabel || 'Сайт'}
                 </a>
               )}
             </div>
-          </div>
+          </section>
         )}
 
         {roaster.shops.length > 0 && (
-          <div>
-            <h2 className={`text-xl font-extended font-bold ${textMain} flex items-center gap-3 mb-4`}>
-              <span className="w-1.5 h-8 bg-[#D4A84B] rounded-full shrink-0" />
-              Кофейни
-            </h2>
-            <div className="flex flex-wrap gap-2">
+          <section>
+            <h2 className={`mb-4 text-2xl font-bold ${textMain}`}>Где используют</h2>
+            <div className="space-y-2.5">
               {roaster.shops.map((shop) => (
                 <Link
                   key={shop.id}
                   to={`/shops/${shop.id}`}
-                  className="px-4 py-2 bg-[#F8F1DD] text-[#D4A84B] rounded-xl text-sm font-semibold border border-[#D4A84B]/20 hover:border-[#D4A84B]/50 transition-colors"
+                  className={`flex min-h-[86px] items-center gap-4 rounded-[22px] border p-3 transition-colors hover:border-[#D4A84B]/60 ${cardBg} ${borderColor} ${textMain}`}
                 >
-                  {shop.name}
+                  {shop.photoUrl
+                    ? <img src={shop.photoUrl} alt="" className="h-16 w-16 shrink-0 rounded-2xl object-cover" />
+                    : <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-xl font-bold text-stone-700">{shop.name.charAt(0)}</span>}
+                  <span className="min-w-0 flex-1 truncate text-lg font-semibold">{shop.name}</span>
+                  <AppIcon name="chevron_right" size={24} color="currentColor" />
                 </Link>
               ))}
             </div>
-          </div>
+          </section>
         )}
-      </section>
+      </main>
     </div>
   );
 };

@@ -81,7 +81,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           theme: dark ? 'filled_black' : 'outline',
           size: 'large',
           text: 'signin_with',
-          shape: 'rectangular',
+          shape: 'pill',
           width,
           locale: 'ru',
         });
@@ -118,7 +118,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         style={{
           position: 'absolute',
           inset: 0,
-          borderRadius: 12,
+          borderRadius: 999,
           background: dark ? 'rgba(255,255,255,0.04)' : '#F9F8F6',
           color: textPrimary,
           border: `1px solid ${cardBorder}`,

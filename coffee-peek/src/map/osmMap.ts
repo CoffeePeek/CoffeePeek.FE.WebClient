@@ -251,13 +251,19 @@ export function ensureMapPinMascots(): Promise<void> {
         const img = await loadImage(mascot);
         mascotCanvases.set(mascot, knockOutBlack(img));
       }),
-    ).then(() => {
-    });
+    ).then(
+      () => {},
+      (err) => {
+        // Не кэшируем провал: следующий вызов попробует снова, иначе пинов не будет до перезагрузки.
+        mascotsPromise = null;
+        throw err;
+      },
+    );
   }
   return mascotsPromise;
 }
 
-void ensureMapPinMascots();
+ensureMapPinMascots().catch(() => {});
 
 function pinDiameter(selected: boolean, detail?: boolean): number {
   if (detail) return PIN_SIZE_DETAIL;
@@ -379,24 +385,6 @@ export function coffeeDetailIcon(focus?: unknown): HTMLElement {
   return element;
 }
 
-export function coffeeClusterIcon(count: number): HTMLElement {
-  const label = count > 99 ? '99+' : String(count);
-  const size = count < 10 ? 49 : count < 100 ? 55 : 60;
-  const element = document.createElement('div');
-  element.className = 'coffee-map-cluster';
-  element.style.width = `${size}px`;
-  element.style.height = `${size}px`;
-  element.innerHTML = `<div class="coffee-cluster-shell" aria-hidden="true"><span class="coffee-cluster-count">${label}</span></div>`;
-  return element;
-}
-
-export type MapClusterBoundsLike = {
-  minLatitude: number;
-  minLongitude: number;
-  maxLatitude: number;
-  maxLongitude: number;
-};
-
 export type MapZoneLike = {
   id: string;
   name: string;
@@ -404,6 +392,7 @@ export type MapZoneLike = {
   longitude: number;
   radiusMeters: number;
   shopCount: number;
+  polygon?: { latitude: number; longitude: number }[];
 };
 
 const ZONES_SOURCE_ID = 'coffeepeek-zones';
@@ -411,6 +400,10 @@ const ZONES_FILL_LAYER_ID = 'coffeepeek-zones-fill';
 const ZONES_LINE_LAYER_ID = 'coffeepeek-zones-line';
 
 function zonePolygon(zone: MapZoneLike): [number, number][] {
+  if (zone.polygon && zone.polygon.length >= 3) {
+    const ring = zone.polygon.map((p): [number, number] => [Number(p.longitude), Number(p.latitude)]);
+    return [...ring, ring[0]];
+  }
   const earthRadiusMeters = 6_371_008.8;
   const angularDistance = Math.max(0, zone.radiusMeters) / earthRadiusMeters;
   const latitude = zone.latitude * Math.PI / 180;
@@ -436,7 +429,7 @@ function zonePolygon(zone: MapZoneLike): [number, number][] {
   return coordinates;
 }
 
-/** Adds or updates accurately sized zone circles below the HTML markers. */
+/** Adds or updates zone outlines (polygon, or bounding circle for legacy data) below the HTML markers. */
 export function renderMapZones(map: MapLibreMap, zones: MapZoneLike[], isDark: boolean): void {
   if (!map.isStyleLoaded()) return;
   const data = {
@@ -484,25 +477,4 @@ export function coffeeZoneLabelIcon(zone: MapZoneLike): HTMLElement {
   count.title = `Кофеен в зоне: ${zone.shopCount}`;
   element.append(name, count);
   return element;
-}
-
-/** Fits a server cluster's bounds, or zooms one level for a point-like cluster. */
-export function zoomToClusterBounds(map: MapLibreMap, bounds: MapClusterBoundsLike): void {
-  const isPoint = bounds.minLatitude === bounds.maxLatitude
-    && bounds.minLongitude === bounds.maxLongitude;
-  if (isPoint) {
-    map.easeTo({
-      center: [bounds.minLongitude, bounds.minLatitude],
-      zoom: Math.min(map.getZoom() + 1, 22),
-      duration: 350,
-    });
-    return;
-  }
-  map.fitBounds(
-    [
-      [bounds.minLongitude, bounds.minLatitude],
-      [bounds.maxLongitude, bounds.maxLatitude],
-    ],
-    { padding: 48, maxZoom: 22, duration: 350 },
-  );
 }

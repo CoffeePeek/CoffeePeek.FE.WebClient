@@ -1,12 +1,13 @@
 import { httpClient } from './core/httpClient';
-import { API_ENDPOINTS } from './core/apiConfig';
+import { API_ENDPOINTS, buildUrlWithParams } from './core/apiConfig';
 import { ApiResponse, PaginatedMeta, PaginatedResponse } from './core/types';
 import type { PriceRangeLevel } from '../constants/priceRange';
 import { parsePriceRange, toPriceRangeLevel } from '../constants/priceRange';
 import type { CoffeeFocus } from '../constants/catalogIngest';
 import { COFFEE_FOCUS_TO_API, parseCoffeeFocus } from '../constants/catalogIngest';
 import { mapShopMenu, ShopMenuDto } from './menu';
-import { apiDayOfWeekToUi, localTimeToUtc, uiDayToDotNetName, utcTimeToLocal } from '../utils/dayOfWeek';
+import { apiDayOfWeekToUi, uiDayToDotNetName } from '../utils/dayOfWeek';
+import { schedulesFromUtc, schedulesToUtc, type UtcScheduleEntry } from '../utils/shopForm';
 
 // ==================== Types ====================
 
@@ -48,6 +49,7 @@ interface BackendShopPhoto {
 interface BackendModerationShop {
   id: string;
   name: string;
+  dataCompletenessScore: number;
   address?: string | null;
   addressIsValidated?: boolean;
   description?: string | null;
@@ -81,6 +83,19 @@ interface BackendModerationReview {
   rejectedReason?: string | null;
   createdAt: string;
   moderationStatus: ModerationStatus | number;
+  photos?: PhotoMetadataDto[] | null;
+}
+
+export interface PhotoMetadataDto {
+  id: string;
+  fileName: string;
+  contentType: string;
+  storageKey: string;
+  fullUrl: string | null;
+  sizeBytes: number;
+  ownerId: string;
+  uploadedAt: string;
+  sortIndex: number;
 }
 
 interface GetAllModerationShopsResponse {
@@ -126,11 +141,15 @@ export interface AdminShopSchedule {
   isClosed?: boolean;
   openTime: string;
   closeTime: string;
+  utcDayOfWeek?: number;
+  openTimeUtc?: string;
+  closeTimeUtc?: string;
 }
 
 export interface AdminCoffeeShop {
   id: string;
   name: string;
+  dataCompletenessScore: number;
   address: string;
   cityId?: string;
   cityName?: string;
@@ -198,6 +217,7 @@ export interface AdminReview {
   ratingPlace: number;
   status: ModerationStatus;
   createdAtUtc: string;
+  photos: { fileName?: string; storageKey: string; fullUrl: string }[];
 }
 
 export type ShopIssueCategory =
@@ -251,12 +271,80 @@ export interface UpdateUserRoleRequest {
 export interface OverviewStats {
   totalUsers: number;
   usersRegisteredToday: number;
+  /** activeUsers + blockedUsers + deletedUsers = totalUsers */
+  activeUsers: number;
+  /** Blocked and not deleted. */
+  blockedUsers: number;
+  deletedUsers: number;
+  /** Rolling 24h / 7d / 30d, counted by login or token refresh. */
+  dailyActiveUsers: number;
+  weeklyActiveUsers: number;
+  monthlyActiveUsers: number;
+  emailConfirmedUsers: number;
+  googleUsers: number;
   totalCoffeeShops: number;
   totalReviews: number;
   pendingModerationShops: number;
   pendingModerationReviews: number;
   newCoffeeShopsToday: number;
   newReviewsToday: number;
+  import: { pending: number; published: number; rejected: number; skipped: number; inFeed: number };
+  /** false → shop-service numbers are placeholders. */
+  shopsAvailable: boolean;
+  /** false → moderation-service numbers are placeholders. */
+  moderationAvailable: boolean;
+}
+
+export interface AdminDailyCount {
+  /** YYYY-MM-DD (UTC) */
+  date: string;
+  count: number;
+}
+
+export interface AdminUsersTimeseries {
+  days: number;
+  newUsers: AdminDailyCount[];
+}
+
+export interface AdminShopsTimeseries {
+  days: number;
+  newShops: AdminDailyCount[];
+  newReviews: AdminDailyCount[];
+  newCheckIns: AdminDailyCount[];
+}
+
+export interface AdminTopShop {
+  shopId: string;
+  name: string;
+  count: number;
+}
+
+export interface AdminShopsInsights {
+  ratings: {
+    totalReviews: number;
+    averageRating: number;
+    averagePlace: number;
+    averageService: number;
+    averageCoffee: number;
+    distribution: { stars: number; count: number }[];
+  };
+  topShopsByCheckIns30Days: AdminTopShop[];
+  topShopsByReviews: AdminTopShop[];
+  downloads: {
+    total: number;
+    last30Days: number;
+    byChannel: { channel: string; total: number; last30Days: number }[];
+    topCountries30Days: { country: string; count: number }[];
+  };
+}
+
+export type AdminModerationQueueName = 'shops' | 'reviews' | 'roasters' | 'changeRequests' | 'issueReports';
+
+export interface AdminModerationInsights {
+  sla: { reviewsModerated30Days: number; avgReviewModerationHours: number | null };
+  queues: { queue: AdminModerationQueueName; pending: number; oldestPendingHours: number | null }[];
+  oldestPendingHours: number | null;
+  topModerators30Days: { moderatorUserId: string; total: number; approved: number; rejected: number }[];
 }
 
 export interface ClearCacheResponse {
@@ -286,6 +374,7 @@ export interface PublishedShopContacts {
 export interface PublishedShop {
   id: string;
   name: string;
+  dataCompletenessScore: number;
   cityId: string;
   status: CoffeeShopStatus;
   creatorId: string;
@@ -430,38 +519,21 @@ function formatTimeSpan(value: string | undefined): string {
 function mapBackendSchedules(schedules?: BackendSchedule[] | null): AdminShopSchedule[] {
   if (!schedules?.length) return [];
 
-  return schedules.map((schedule) => {
-    const dayOfWeek = apiDayOfWeekToUi(schedule.dayOfWeek);
-    if (schedule.isClosed) {
-      return {
-        dayOfWeek,
-        isClosed: true,
-        openTime: '',
-        closeTime: '',
-      };
-    }
-
-    const interval = schedule.intervals?.[0];
-    const openRaw = formatTimeSpan(interval?.openTime);
-    const closeRaw = formatTimeSpan(interval?.closeTime);
-    if (!openRaw || !closeRaw) {
-      return { dayOfWeek, isClosed: false, openTime: '', closeTime: '' };
-    }
-    const open = utcTimeToLocal(dayOfWeek, openRaw);
-    const close = utcTimeToLocal(dayOfWeek, closeRaw);
-    return {
-      dayOfWeek: open.dayOfWeek,
-      isClosed: false,
-      openTime: open.time,
-      closeTime: close.time,
-    };
-  });
+  return schedulesFromUtc(
+    schedules.map((schedule) => ({
+      dayOfWeek: apiDayOfWeekToUi(schedule.dayOfWeek),
+      isClosed: Boolean(schedule.isClosed),
+      openTime: formatTimeSpan(schedule.intervals?.[0]?.openTime),
+      closeTime: formatTimeSpan(schedule.intervals?.[0]?.closeTime),
+    }))
+  );
 }
 
 function mapShopToAdmin(shop: BackendModerationShop): AdminCoffeeShop {
   return {
     id: shop.id,
     name: shop.name,
+    dataCompletenessScore: shop.dataCompletenessScore,
     address: shop.address ?? '',
     cityId: shop.cityId ?? undefined,
     userId: shop.userId,
@@ -506,6 +578,10 @@ function mapReviewToAdmin(review: BackendModerationReview): AdminReview {
     ratingPlace: review.rating?.place ?? 0,
     status: mapModerationStatus(review.moderationStatus),
     createdAtUtc: review.createdAt,
+    // fullUrl is null when the media public endpoint isn't configured — nothing to render then.
+    photos: [...(review.photos ?? [])]
+      .sort((a, b) => a.sortIndex - b.sortIndex)
+      .flatMap((p) => (p.fullUrl ? [{ fileName: p.fileName, storageKey: p.storageKey, fullUrl: p.fullUrl }] : [])),
   };
 }
 
@@ -562,11 +638,14 @@ function buildModerationShopFormData(
   updates: UpdateCoffeeShopRequest
 ): FormData {
   const form = new FormData();
+  // A present update key wins even when '' (cleared); only missing keys fall back to the stored value.
+  const pick = (update: string | undefined, stored: string | null | undefined) =>
+    update !== undefined ? update : stored ?? '';
   const contact = {
-    phoneNumber: updates.shopContact?.phone ?? shop.shopContact?.phoneNumber ?? '',
-    email: updates.shopContact?.email ?? shop.shopContact?.email ?? '',
-    siteLink: updates.shopContact?.website ?? shop.shopContact?.siteLink ?? '',
-    instagramLink: updates.shopContact?.instagram ?? shop.shopContact?.instagramLink ?? '',
+    phoneNumber: pick(updates.shopContact?.phone, shop.shopContact?.phoneNumber),
+    email: pick(updates.shopContact?.email, shop.shopContact?.email),
+    siteLink: pick(updates.shopContact?.website, shop.shopContact?.siteLink),
+    instagramLink: pick(updates.shopContact?.instagram, shop.shopContact?.instagramLink),
   };
 
   appendFormValue(form, 'Id', shop.id);
@@ -584,26 +663,31 @@ function buildModerationShopFormData(
   appendFormValue(form, 'ShopContact.SiteLink', contact.siteLink);
   appendFormValue(form, 'ShopContact.InstagramLink', contact.instagramLink);
 
-  const schedules = updates.schedules ?? mapBackendSchedules(shop.schedules);
+  // No schedule update → resend the stored (already UTC) entries untouched instead of round-tripping them.
+  const schedules: UtcScheduleEntry[] = updates.schedules
+    ? schedulesToUtc(updates.schedules)
+    : (shop.schedules ?? []).map((schedule) => ({
+        dayOfWeek: apiDayOfWeekToUi(schedule.dayOfWeek),
+        isClosed: Boolean(schedule.isClosed),
+        openTime: formatTimeSpan(schedule.intervals?.[0]?.openTime),
+        closeTime: formatTimeSpan(schedule.intervals?.[0]?.closeTime),
+      }));
   schedules.forEach((schedule, scheduleIndex) => {
+    appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, uiDayToDotNetName(schedule.dayOfWeek));
     if (schedule.isClosed || !schedule.openTime || !schedule.closeTime) {
-      appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, uiDayToDotNetName(schedule.dayOfWeek));
-      appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, schedule.isClosed ?? false);
+      appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, schedule.isClosed);
       return;
     }
-    const open = localTimeToUtc(schedule.dayOfWeek, schedule.openTime);
-    const close = localTimeToUtc(schedule.dayOfWeek, schedule.closeTime);
-    appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, uiDayToDotNetName(open.dayOfWeek));
     appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, false);
     appendFormValue(
       form,
       `Schedules[${scheduleIndex}].Intervals[0].OpenTime`,
-      toBackendTime(open.time)
+      toBackendTime(schedule.openTime)
     );
     appendFormValue(
       form,
       `Schedules[${scheduleIndex}].Intervals[0].CloseTime`,
-      toBackendTime(close.time)
+      toBackendTime(schedule.closeTime)
     );
   });
 
@@ -720,21 +804,10 @@ export async function getModerationReviews(
   };
 }
 
-export async function getModerationReviewById(id: string): Promise<ApiResponse<AdminReview>> {
-  const response = await httpClient.get<BackendModerationReview>(
-    API_ENDPOINTS.MODERATION.REVIEW_BY_ID(id)
-  );
-
-  return {
-    ...response,
-    data: mapReviewToAdmin(response.data),
-  };
-}
-
 export async function approveReview(id: string, data?: ModerationActionRequest): Promise<ApiResponse<void>> {
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
-    moderationStatus: 1, // Approved
+    moderationStatus: 'Approved',
     comment: data?.comment?.trim() || null,
     rejectReason: null,
   });
@@ -744,7 +817,7 @@ export async function rejectReview(id: string, data?: ModerationActionRequest): 
   const reason = data?.comment?.trim() || null;
   return httpClient.put<void>(API_ENDPOINTS.MODERATION.REVIEWS, {
     moderationReviewId: id,
-    moderationStatus: 2, // Rejected
+    moderationStatus: 'Rejected',
     comment: reason,
     rejectReason: reason,
   });
@@ -821,6 +894,22 @@ export async function getOverviewStats(): Promise<ApiResponse<OverviewStats>> {
   return httpClient.get<OverviewStats>(API_ENDPOINTS.ADMIN.STATS_OVERVIEW);
 }
 
+export async function getUsersTimeseries(days: number): Promise<ApiResponse<AdminUsersTimeseries>> {
+  return httpClient.get<AdminUsersTimeseries>(buildUrlWithParams(API_ENDPOINTS.ADMIN.STATS_USERS_TIMESERIES, { days }));
+}
+
+export async function getShopsTimeseries(days: number): Promise<ApiResponse<AdminShopsTimeseries>> {
+  return httpClient.get<AdminShopsTimeseries>(buildUrlWithParams(API_ENDPOINTS.ADMIN.STATS_SHOPS_TIMESERIES, { days }));
+}
+
+export async function getShopsInsights(): Promise<ApiResponse<AdminShopsInsights>> {
+  return httpClient.get<AdminShopsInsights>(API_ENDPOINTS.ADMIN.STATS_SHOPS_INSIGHTS);
+}
+
+export async function getModerationInsights(): Promise<ApiResponse<AdminModerationInsights>> {
+  return httpClient.get<AdminModerationInsights>(API_ENDPOINTS.ADMIN.STATS_MODERATION_INSIGHTS);
+}
+
 // ==================== Moderation audit ====================
 
 interface GetModerationAuditLogResponse {
@@ -879,57 +968,44 @@ function pickNumber(...values: unknown[]): number | undefined {
 
 function mapPublishedSchedules(raw: unknown): AdminShopSchedule[] {
   if (!Array.isArray(raw)) return [];
-  return (raw as Record<string, unknown>[]).map((schedule) => {
-    const dayOfWeek = apiDayOfWeekToUi(
-      (schedule.dayOfWeek ?? schedule.DayOfWeek) as number | string | undefined
-    );
-    const isClosed = Boolean(schedule.isClosed ?? schedule.IsClosed);
-    const intervals = (schedule.intervals ?? schedule.Intervals) as
-      | Array<Record<string, unknown>>
-      | undefined;
-    const interval = Array.isArray(intervals) ? intervals[0] : undefined;
-    const openRaw = formatTimeSpan(
-      String(interval?.openTime ?? interval?.OpenTime ?? schedule.openTime ?? schedule.OpenTime ?? '')
-    );
-    const closeRaw = formatTimeSpan(
-      String(interval?.closeTime ?? interval?.CloseTime ?? schedule.closeTime ?? schedule.CloseTime ?? '')
-    );
-    if (isClosed || !openRaw || !closeRaw) {
-      return { dayOfWeek, isClosed, openTime: '', closeTime: '' };
-    }
-    const open = utcTimeToLocal(dayOfWeek, openRaw);
-    const close = utcTimeToLocal(dayOfWeek, closeRaw);
-    return {
-      dayOfWeek: open.dayOfWeek,
-      isClosed: false,
-      openTime: open.time,
-      closeTime: close.time,
-    };
-  });
+  return schedulesFromUtc(
+    (raw as Record<string, unknown>[]).map((schedule) => {
+      const intervals = (schedule.intervals ?? schedule.Intervals) as
+        | Array<Record<string, unknown>>
+        | undefined;
+      const interval = Array.isArray(intervals) ? intervals[0] : undefined;
+      return {
+        dayOfWeek: apiDayOfWeekToUi(
+          (schedule.dayOfWeek ?? schedule.DayOfWeek) as number | string | undefined
+        ),
+        isClosed: Boolean(schedule.isClosed ?? schedule.IsClosed),
+        openTime: formatTimeSpan(
+          String(interval?.openTime ?? interval?.OpenTime ?? schedule.openTime ?? schedule.OpenTime ?? '')
+        ),
+        closeTime: formatTimeSpan(
+          String(interval?.closeTime ?? interval?.CloseTime ?? schedule.closeTime ?? schedule.CloseTime ?? '')
+        ),
+      };
+    })
+  );
 }
 
-function toPublishedApiSchedules(schedules: AdminShopSchedule[]) {
-  return schedules.map((schedule) => {
-    if (schedule.isClosed || !schedule.openTime || !schedule.closeTime) {
-      return {
-        dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
-        isClosed: Boolean(schedule.isClosed),
-        intervals: [],
-      };
-    }
-    const open = localTimeToUtc(schedule.dayOfWeek, schedule.openTime);
-    const close = localTimeToUtc(schedule.dayOfWeek, schedule.closeTime);
-    return {
-      dayOfWeek: uiDayToDotNetName(open.dayOfWeek),
-      isClosed: false,
-      intervals: [
-        {
-          openTime: toBackendTime(open.time),
-          closeTime: toBackendTime(close.time),
-        },
-      ],
-    };
-  });
+/** Local week → JSON schedule DTOs (UTC, no duplicate days). Shared with the owner API. */
+export function toPublishedApiSchedules(schedules: AdminShopSchedule[]) {
+  return schedulesToUtc(schedules).map((schedule) =>
+    schedule.isClosed || !schedule.openTime || !schedule.closeTime
+      ? { dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek), isClosed: true, intervals: [] }
+      : {
+          dayOfWeek: uiDayToDotNetName(schedule.dayOfWeek),
+          isClosed: false,
+          intervals: [
+            {
+              openTime: toBackendTime(schedule.openTime),
+              closeTime: toBackendTime(schedule.closeTime),
+            },
+          ],
+        }
+  );
 }
 
 export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
@@ -1027,6 +1103,10 @@ export function mapPublishedShop(shop: Record<string, unknown>): PublishedShop {
   return {
     id: String(shop.id ?? shop.Id ?? ''),
     name: String(shop.name ?? shop.Name ?? ''),
+    dataCompletenessScore: pickNumber(
+      shop.dataCompletenessScore,
+      shop.DataCompletenessScore
+    ) ?? 0,
     cityId,
     status: mapEnumStatus<CoffeeShopStatus>(
       (shop.status ?? shop.Status) as CoffeeShopStatus | number,
@@ -1140,6 +1220,8 @@ export async function getPublishedShops(
     search?: string;
     status?: CoffeeShopStatus;
     importedFromFile?: boolean;
+    sortBy?: 'name' | 'coffeeFocus' | 'status' | 'createdAtUtc';
+    sortDirection?: 'asc' | 'desc';
   } = {}
 ): Promise<ApiResponse<PaginatedResult<PublishedShop>>> {
   const page = params.page ?? 1;
@@ -1153,6 +1235,8 @@ export async function getPublishedShops(
         search: params.search,
         status: params.status,
         importedFromFile: params.importedFromFile === true ? true : undefined,
+        sortBy: params.sortBy,
+        sortDirection: params.sortDirection,
       },
     }
   );
@@ -1273,17 +1357,6 @@ export async function patchPublishedShopFocus(
   return { ...response, data: mapPublishedShop(response.data) };
 }
 
-export async function updatePublishedShopTags(
-  id: string,
-  tagSlugs: string[]
-): Promise<ApiResponse<PublishedShop>> {
-  const response = await httpClient.put<Record<string, unknown>>(
-    API_ENDPOINTS.ADMIN.SHOP_TAGS_ASSIGN(id),
-    { tagSlugs }
-  );
-  return { ...response, data: mapPublishedShop(response.data) };
-}
-
 export async function setPublishedShopVisibility(
   id: string,
   hidden: boolean
@@ -1293,7 +1366,7 @@ export async function setPublishedShopVisibility(
     { hidden }
   );
   if (response.isSuccess === false) {
-    throw { message: response.message || 'Не удалось изменить видимость' };
+    throw new Error(response.message || 'Не удалось изменить видимость');
   }
   const raw = response.data;
   const looksLikeShop = raw && typeof raw === 'object' && (raw.id || raw.Id);

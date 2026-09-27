@@ -2,15 +2,20 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
-import { Icons } from '../constants';
 import { COLORS } from '../constants/colors';
-import { Gear, SignOut, CaretDown, MapPin, ChatCircleText } from '@/components/Icon';
+import { MagnifyingGlass, Gear, MapTrifold, SignOut, CaretDown, User } from '@/components/Icon';
 import ThemeToggle from './ThemeToggle';
 import LogoMark, { HEADER_LOGO_SIZE } from './LogoMark';
 
 const PUBLIC_NAV = [
-  { id: 'coffeeshops', label: 'Кофейни', route: '/shops',               match: (p: string) => p.startsWith('/shops')   },
-  { id: 'map',         label: 'Карта',   route: '/dashboard?page=map',  match: (p: string) => p.includes('map')        },
+  { id: 'coffeeshops', label: 'Поиск', route: '/shops',              Icon: MagnifyingGlass, match: (p: string) => p.startsWith('/shops') },
+  { id: 'map',         label: 'Карта',   route: '/dashboard?page=map', Icon: MapTrifold, match: (p: string) => p.includes('page=map') },
+] as const;
+
+const AUTH_NAV = [
+  ...PUBLIC_NAV,
+  { id: 'profile',  label: 'Профиль',   route: '/profile',  Icon: User, match: (p: string) => ['/profile', '/reviews', '/check-ins', '/my/'].some(route => p.startsWith(route)) },
+  { id: 'settings', label: 'Настройки', route: '/settings', Icon: Gear, match: (p: string) => p.startsWith('/settings') },
 ] as const;
 
 const Header: React.FC = () => {
@@ -18,8 +23,13 @@ const Header: React.FC = () => {
   const { user, logout } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  const handleLogout = async () => {
+    setProfileOpen(false);
+    await logout();
+    navigate('/');
+  };
 
   const isDark = theme === 'dark';
   const gold = COLORS.primary;
@@ -28,12 +38,10 @@ const Header: React.FC = () => {
   const allNav = [...PUBLIC_NAV];
 
   const currentPath = location.pathname + location.search;
-  const currentId = allNav.find(n => n.match(currentPath))?.id ?? '';
-  const isSettings = currentPath.startsWith('/settings');
-  const isCheckIns = location.pathname.startsWith('/check-ins');
-  const isReviews = location.pathname === '/reviews';
+  const isShopDetails = /^\/shops\/[^/]+$/.test(location.pathname);
+  const currentId = (user ? AUTH_NAV : PUBLIC_NAV).find(n => n.match(currentPath))?.id ?? '';
 
-  const bg = isDark ? 'rgba(45,36,31,0.88)' : 'rgba(255,255,255,0.88)';
+  const bg = isDark ? 'rgba(26,20,18,0.78)' : 'rgba(250,250,249,0.78)';
   const borderColor = isDark ? '#3D2F28' : '#E7E5E4';
   const textColor = isDark ? '#fff' : '#1C1917';
   const mutedColor = isDark ? '#A39E93' : '#78716C';
@@ -46,17 +54,20 @@ const Header: React.FC = () => {
   const avatarUrl = user?.avatarUrl;
 
   const navBtn = (active: boolean): React.CSSProperties => ({
-    padding: '7px 12px', borderRadius: 8,
-    border: active ? `1px solid ${gold}` : '1px solid transparent',
-    background: active ? (isDark ? '#1A1412' : '#fff') : 'transparent',
+    minHeight: 34, padding: '0 14px', borderRadius: 999,
+    border: 'none',
+    background: active ? (isDark ? 'rgba(255,255,255,0.12)' : '#fff') : 'transparent',
     color: active ? gold : mutedColor,
     fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14,
-    cursor: 'pointer', transition: 'all .15s',
+    cursor: 'pointer', transition: 'all .2s',
+    boxShadow: active ? (isDark ? '0 2px 10px rgba(0,0,0,.3)' : '0 2px 10px rgba(28,25,23,.12)') : 'none',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
   });
 
   return (
-    <header style={{ background: bg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 1100, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <>
+    <header className="lg:border-b" style={{ background: bg, borderColor, position: 'sticky', top: 0, zIndex: 1100, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
+      <div className="relative mx-auto hidden max-w-7xl px-4 sm:px-6 lg:block lg:px-8">
         <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 12 }}>
 
           {/* Left: logo — flex:1 so nav sits on the true horizontal center */}
@@ -65,7 +76,7 @@ const Header: React.FC = () => {
               type="button"
               className="logo-btn"
               onClick={() => navigate(user ? '/shops' : '/')}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+              style={{ display: 'flex', height: 48, alignItems: 'center', gap: 8, cursor: 'pointer' }}
             >
               <LogoMark size={HEADER_LOGO_SIZE} />
               <span style={{ fontFamily: '"Manrope"', fontWeight: 800, fontSize: 20, letterSpacing: '-0.045em', color: textColor }}>
@@ -75,9 +86,14 @@ const Header: React.FC = () => {
           </div>
 
           {/* Center: desktop nav — same axis as page titles in max-w-7xl */}
-          <nav className="hidden lg:flex" style={{ flexShrink: 0, justifyContent: 'center', gap: 4 }}>
-            {allNav.map(({ id, label, route }) => (
-              <button key={id} onClick={() => navigate(route)} style={navBtn(currentId === id)}>
+          <nav
+            className="hidden lg:flex"
+            aria-label="Основные разделы"
+            style={{ flexShrink: 0, height: 38, justifyContent: 'center', gap: 2, padding: 2, borderRadius: 999, background: isDark ? 'rgba(255,255,255,.07)' : 'rgba(120,113,108,.09)', border: `1px solid ${borderColor}` }}
+          >
+            {allNav.map(({ id, label, route, Icon }) => (
+              <button key={id} onClick={() => navigate(route)} style={navBtn(currentId === id)} aria-current={currentId === id ? 'page' : undefined}>
+                <Icon size={18} weight={currentId === id ? 'bold' : 'regular'} />
                 {label}
               </button>
             ))}
@@ -91,15 +107,15 @@ const Header: React.FC = () => {
                 <button
                   onClick={() => setProfileOpen(o => !o)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '5px 10px 5px 5px', borderRadius: 99,
+                    display: 'flex', height: 48, alignItems: 'center', gap: 8,
+                    padding: '0 10px 0 6px', borderRadius: 99,
                     border: `1px solid ${profileOpen ? gold : borderColor}`,
                     background: profileOpen ? `${gold}12` : (isDark ? 'rgba(255,255,255,0.04)' : '#fff'),
                     cursor: 'pointer', transition: 'all .15s',
                   }}
                 >
                   {/* Avatar */}
-                  <div style={{ width: 30, height: 30, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 99, background: `${gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
                     <span style={{ fontFamily: '"Manrope"', fontWeight: 800, fontSize: 13, color: goldWarm }}>{initial}</span>
                     {avatarUrl && (
                       <img
@@ -146,27 +162,18 @@ const Header: React.FC = () => {
 
                       {/* Menu */}
                       <div style={{ padding: '6px 0' }}>
-                        <DropdownItem icon={<MapPin size={18} color={isCheckIns ? gold : mutedColor} />} label="Чекины" hoverBg={hoverBg}
-                          textColor={isCheckIns ? gold : textColor}
-                          mutedColor={isCheckIns ? gold : mutedColor}
-                          activeBg={isCheckIns ? `${gold}10` : undefined}
-                          onClick={() => { navigate('/check-ins'); setProfileOpen(false); }} />
-                        <DropdownItem icon={<ChatCircleText size={18} color={isReviews ? gold : mutedColor} />} label="Отзывы" hoverBg={hoverBg}
-                          textColor={isReviews ? gold : textColor}
-                          mutedColor={isReviews ? gold : mutedColor}
-                          activeBg={isReviews ? `${gold}10` : undefined}
-                          onClick={() => { navigate('/reviews'); setProfileOpen(false); }} />
-                        <DropdownItem icon={<Gear size={18} color={isSettings ? gold : mutedColor} />} label="Настройки" hoverBg={hoverBg}
-                          textColor={isSettings ? gold : textColor}
-                          mutedColor={isSettings ? gold : mutedColor}
-                          activeBg={isSettings ? `${gold}10` : undefined}
+                        <DropdownItem icon={<User size={18} color={mutedColor} />} label="Профиль" hoverBg={hoverBg}
+                          textColor={textColor} mutedColor={mutedColor}
+                          onClick={() => { navigate('/profile'); setProfileOpen(false); }} />
+                        <DropdownItem icon={<Gear size={18} color={mutedColor} />} label="Настройки" hoverBg={hoverBg}
+                          textColor={textColor} mutedColor={mutedColor}
                           onClick={() => { navigate('/settings'); setProfileOpen(false); }} />
                       </div>
 
                       <div style={{ borderTop: `1px solid ${borderColor}`, padding: '6px 0' }}>
                         <DropdownItem icon={<SignOut size={18} color="#EF4444" />} label="Выйти" hoverBg="rgba(239,68,68,0.07)"
                           textColor="#EF4444" mutedColor="#EF4444"
-                          onClick={() => { logout(); navigate('/'); setProfileOpen(false); }} />
+                          onClick={() => { void handleLogout(); }} />
                       </div>
                     </div>
                   </>
@@ -176,11 +183,11 @@ const Header: React.FC = () => {
               /* ── Login / Register ── */
               <div className="hidden lg:flex" style={{ gap: 8, alignItems: 'center' }}>
                 <button onClick={() => navigate('/login')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ minHeight: 38, padding: '0 16px', borderRadius: 999, border: `1px solid ${borderColor}`, background: 'transparent', color: textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
                   Войти
                 </button>
                 <button onClick={() => navigate('/register')}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
+                  style={{ minHeight: 38, padding: '0 16px', borderRadius: 999, border: `1px solid ${gold}`, background: gold, color: '#1A1412', fontFamily: '"Manrope"', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}>
                   Регистрация
                 </button>
               </div>
@@ -188,80 +195,35 @@ const Header: React.FC = () => {
 
             {!user && <ThemeToggle size={36} />}
 
-            {/* Mobile hamburger */}
-            <div className="lg:hidden">
-              <button
-                onClick={() => setIsMobileMenuOpen(o => !o)}
-                style={{ padding: 8, borderRadius: 8, border: 'none', background: 'transparent', color: mutedColor, cursor: 'pointer' }}
-                aria-label={isMobileMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
-                aria-expanded={isMobileMenuOpen}
-                aria-controls="mobile-nav"
-              >
-                {isMobileMenuOpen ? <Icons.Close className="w-5 h-5" /> : <Icons.Menu className="w-5 h-5" />}
-              </button>
-            </div>
           </div>
         </div>
-
-        {/* Mobile nav — absolute overlay so it floats over the page instead of growing the header */}
-        {isMobileMenuOpen && (
-          <div
-            id="mobile-nav"
-            className="lg:hidden px-4 sm:px-6 lg:px-8"
-            style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1090, background: surfaceBg, borderTop: `1px solid ${borderColor}`, borderBottom: `1px solid ${borderColor}`, boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.5)' : '0 12px 40px rgba(0,0,0,0.14)', paddingTop: 8, paddingBottom: 16 }}
-          >
-            {/* Nav items */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {allNav.map(({ id, label, route }) => (
-                <button key={id} onClick={() => { navigate(route); setIsMobileMenuOpen(false); }}
-                  style={{ ...navBtn(currentId === id), width: '100%', textAlign: 'left', padding: '10px 12px' }}>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Auth actions */}
-            <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {user ? (
-                <>
-                  <button onClick={() => { navigate('/check-ins'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isCheckIns ? `${gold}12` : 'transparent', color: isCheckIns ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <MapPin size={18} color={isCheckIns ? gold : mutedColor} />
-                    Чекины
-                  </button>
-                  <button onClick={() => { navigate('/reviews'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isReviews ? `${gold}12` : 'transparent', color: isReviews ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <ChatCircleText size={18} color={isReviews ? gold : mutedColor} />
-                    Отзывы
-                  </button>
-                  <button onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: isSettings ? `${gold}12` : 'transparent', color: isSettings ? gold : textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <Gear size={18} color={isSettings ? gold : mutedColor} />
-                    Настройки
-                  </button>
-                  <button onClick={() => { logout(); navigate('/'); setIsMobileMenuOpen(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: '#EF4444', fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <SignOut size={18} color="#EF4444" />
-                    Выйти
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: textColor, fontFamily: '"Manrope"', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    Войти
-                  </button>
-                  <button onClick={() => { navigate('/register'); setIsMobileMenuOpen(false); }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: `${gold}15`, color: gold, fontFamily: '"Manrope"', fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    Регистрация
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </header>
+      <nav
+        className={`${isShopDetails ? 'hidden' : 'grid'} fixed inset-x-0 bottom-0 z-[1200] grid-cols-4 border-t lg:hidden`}
+        aria-label="Основная навигация"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)', background: bg, borderColor, backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', boxShadow: '0 -8px 28px rgba(0,0,0,.08)' }}
+      >
+        {AUTH_NAV.map(({ id, label, route, Icon }) => {
+          const active = currentId === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => navigate(route)}
+              className="flex min-h-[64px] flex-col items-center justify-center gap-0.5 border-0 bg-transparent"
+              style={{ color: active ? gold : mutedColor }}
+              aria-current={active ? 'page' : undefined}
+            >
+              <span className="flex h-8 min-w-11 items-center justify-center rounded-full" style={{ background: active ? `${gold}1F` : 'transparent' }}>
+                <Icon size={23} weight={active ? 'bold' : 'regular'} />
+              </span>
+              <span style={{ fontFamily: '"Manrope"', fontSize: 10, fontWeight: active ? 700 : 500 }}>{label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </>
   );
 };
 

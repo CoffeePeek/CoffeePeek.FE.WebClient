@@ -12,12 +12,23 @@ import type { ShopMenuDto } from './menu';
 
 // ==================== Types ====================
 
+// imgproxy variants; without the proxy configured all four equal fullUrl.
+export interface PhotoUrlsDto {
+  thumbnail: string; // 240×180, cropped
+  card: string; // 600×450, cropped
+  detail: string; // ≤1200 longest side, fitted
+  fullscreen: string; // ≤1920 longest side, fitted
+}
+
+export type PhotoVariant = keyof PhotoUrlsDto;
+
 // DTO для фотографий
 export interface ShortPhotoMetadataDto {
   id?: string;
   fileName: string;
   storageKey: string;
   fullUrl: string | null;
+  urls?: PhotoUrlsDto | null;
   sortIndex?: number;
 }
 
@@ -27,6 +38,7 @@ export interface PhotoMetadataDto {
   contentType: string;
   storageKey: string;
   fullUrl: string | null;
+  urls?: PhotoUrlsDto | null;
   sizeBytes: number;
   ownerId: string;
   uploadedAt: string; // ISO date string
@@ -34,13 +46,17 @@ export interface PhotoMetadataDto {
 }
 
 /**
- * Формирует полный URL фотографии из storageKey
+ * URL нужного размера; фолбэк на fullUrl для DTO без urls (аватары, обжарщики, старые ответы).
  */
-export function getPhotoUrl(photo: PhotoMetadataDto | ShortPhotoMetadataDto): string {
-  // The media service only returns photos via a ready-to-use fullUrl (presigned/CDN);
+export function getPhotoUrl(
+  photo: { fullUrl?: string | null; urls?: PhotoUrlsDto | null },
+  variant: PhotoVariant,
+): string {
+  // The media service only returns photos via ready-to-use URLs (presigned/CDN);
   // there is no GET-photo-by-storageKey endpoint to fall back to.
-  if (photo.fullUrl) {
-    return photo.fullUrl;
+  const url = photo.urls?.[variant] || photo.fullUrl;
+  if (url) {
+    return url;
   }
 
   logger.warn('[getPhotoUrl] Missing fullUrl for photo:', photo);
@@ -100,21 +116,6 @@ export interface MapShop {
   primaryZoneId?: string;
 }
 
-export interface MapBounds {
-  minLatitude: number;
-  minLongitude: number;
-  maxLatitude: number;
-  maxLongitude: number;
-}
-
-export interface MapCluster {
-  id: string;
-  latitude: number;
-  longitude: number;
-  count: number;
-  bounds: MapBounds;
-}
-
 export interface MapCoffeeZone {
   id: string;
   name: string;
@@ -123,11 +124,11 @@ export interface MapCoffeeZone {
   longitude: number;
   radiusMeters: number;
   shopCount: number;
+  polygon?: { latitude: number; longitude: number }[];
 }
 
 export interface MapSearchData {
   shops: MapShop[];
-  clusters?: MapCluster[];
   zones?: MapCoffeeZone[];
   isTruncated?: boolean;
 }
@@ -331,7 +332,7 @@ export interface RoasterDetails {
   location?: { address?: string | null; latitude?: number | null; longitude?: number | null } | null;
   contact?: { instagramLink?: string | null; siteLink?: string | null } | null;
   photos: ShortPhotoMetadataDto[];
-  shops: Array<{ id: string; name: string }>;
+  shops: Array<{ id: string; name: string; photoUrl?: string | null }>;
 }
 
 export interface BrewMethod {
@@ -563,8 +564,8 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
-/** Loads the server-selected map representation for the current viewport. */
-export async function getMapSearch(
+/** Loads the server-selected map representation for the viewport at the given zoom. */
+async function getMapSearch(
   bounds: MapViewportBounds,
   zoom: number,
   signal?: AbortSignal,
@@ -588,12 +589,25 @@ export async function getMapSearch(
     message: responses[0]?.message ?? '',
     data: {
       shops: uniqueById(data.flatMap((part) => part.shops ?? [])),
-      // Cluster ids are opaque and only meaningful for the request that produced them.
-      clusters: data.flatMap((part) => part.clusters ?? []),
       zones: uniqueById(data.flatMap((part) => part.zones ?? [])),
       isTruncated: data.some((part) => part.isTruncated === true),
     },
   };
+}
+
+// ponytail: mirrors the server's MapClustering:ZoneMaxZoom; at or below it the endpoint returns zones + clusters,
+// above it individual shops (capped at MaxResponseItems, see isTruncated).
+const MAP_ZONES_ZOOM = 13;
+
+/** Loads individual shops for the viewport at any zoom, bypassing server-side clustering. */
+export async function getMapShops(bounds: MapViewportBounds, signal?: AbortSignal): Promise<ApiResponse<MapSearchData>> {
+  return getMapSearch(bounds, MAP_ZONES_ZOOM + 1, signal);
+}
+
+/** Loads published zones for the viewport regardless of the current zoom. */
+export async function getMapZones(bounds: MapViewportBounds, signal?: AbortSignal): Promise<MapCoffeeZone[]> {
+  const response = await getMapSearch(bounds, MAP_ZONES_ZOOM, signal);
+  return response.data.zones ?? [];
 }
 
 /**

@@ -4,25 +4,23 @@ import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
-import { getMapSearch, getCoffeeShopById } from '../api/coffeeshop';
-import type { DetailedCoffeeShop, MapSearchData, MapShop } from '../api/coffeeshop';
+import { getMapShops, getMapZones, getCoffeeShopById, getPhotoUrl } from '../api/coffeeshop';
+import type { DetailedCoffeeShop, MapSearchData, MapShop, PhotoUrlsDto } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
-import { ArrowRight, Star, Plus, Minus, Crosshair, NavigationArrow, MagnifyingGlass, X } from '@/components/Icon';
+import { ArrowRight, Star, Crosshair, NavigationArrow, MagnifyingGlass, X, Polygon } from '@/components/Icon';
 import Button from './Button';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
 import {
   applyOsmMapTheme,
-  coffeeClusterIcon,
   coffeeMapPinIcon,
   coffeeZoneLabelIcon,
   createOsmMap,
   ensureMapPinMascots,
   getMapBoundsBox,
   renderMapZones,
-  zoomToClusterBounds,
 } from '../map/osmMap';
-import { getCurrentDayOfWeek, normalizeDayOfWeek } from '../utils/shopUtils';
+import { getCurrentDayOfWeek, toLocalSchedules } from '../utils/shopUtils';
 
 /** Opens a driving route to the shop in Yandex Maps (tries the mobile app first, falls back to the web map). */
 function openYandexRoute(from: { lat: number; lon: number } | null, toLat: number, toLon: number): void {
@@ -49,14 +47,14 @@ const MapPage: React.FC = () => {
   const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
   const selectedIdRef = useRef<string | null>(null);
-  const mapDataRef = useRef<MapSearchData>({ shops: [], clusters: [], zones: [] });
+  const mapDataRef = useRef<MapSearchData>({ shops: [], zones: [] });
   const paintMapRef = useRef<(data: MapSearchData) => void>(() => undefined);
   const mapRequestRef = useRef<AbortController | null>(null);
   const themeRef = useRef(theme);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mapData, setMapData] = useState<MapSearchData>({ shops: [], clusters: [], zones: [] });
+  const [mapData, setMapData] = useState<MapSearchData>({ shops: [], zones: [] });
   const [shopsLoaded, setShopsLoaded] = useState(false);
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
   const [selectedShopDetails, setSelectedShopDetails] = useState<DetailedCoffeeShop | null>(null);
@@ -66,13 +64,20 @@ const MapPage: React.FC = () => {
   const userMarkerRef = useRef<MapLibreMarker | null>(null);
   const [query, setQuery] = useState('');
   const queryRef = useRef('');
+  const [showZones, setShowZones] = useState(() => localStorage.getItem('mapShowZones') !== 'false');
+  const showZonesRef = useRef(showZones);
 
   const loadCoffeeShops = async (map: MapLibreMap) => {
     mapRequestRef.current?.abort();
     const controller = new AbortController();
     mapRequestRef.current = controller;
     try {
-      const response = await getMapSearch(getMapBoundsBox(map), map.getZoom(), controller.signal);
+      const bounds = getMapBoundsBox(map);
+      // Shops and zones come from different server zoom bands, so fetch both to show every pin plus zones at any zoom.
+      const [response, zones] = await Promise.all([
+        getMapShops(bounds, controller.signal),
+        showZonesRef.current ? getMapZones(bounds, controller.signal).catch(() => []) : [],
+      ]);
       if (mapRequestRef.current !== controller) return null;
       const shops = Array.isArray(response.data?.shops)
         ? response.data.shops.map((shop: MapShop) => ({
@@ -86,8 +91,7 @@ const MapPage: React.FC = () => {
         : [];
       const nextData: MapSearchData = {
         shops,
-        clusters: Array.isArray(response.data?.clusters) ? response.data.clusters : [],
-        zones: Array.isArray(response.data?.zones) ? response.data.zones : [],
+        zones,
         isTruncated: response.data?.isTruncated === true,
       };
 
@@ -104,17 +108,21 @@ const MapPage: React.FC = () => {
     }
   };
 
+  const detailsRequestRef = useRef<string | null>(null);
   const loadShopDetails = async (shopId: string) => {
+    // Быстрый клик A→B: ответ A не должен попасть в карточку B.
+    detailsRequestRef.current = shopId;
+    setSelectedShopDetails(null);
     setIsLoadingDetails(true);
     try {
       const response = await getCoffeeShopById(shopId);
-      if (response.success && response.data) {
+      if (detailsRequestRef.current === shopId && response.success && response.data) {
         setSelectedShopDetails(response.data);
       }
     } catch {
       /* name-only card is enough */
     } finally {
-      setIsLoadingDetails(false);
+      if (detailsRequestRef.current === shopId) setIsLoadingDetails(false);
     }
   };
 
@@ -173,21 +181,12 @@ const MapPage: React.FC = () => {
       if (!map) return;
       const version = ++paintVersion;
       clearMarkers();
-      renderMapZones(map, data.zones ?? [], themeRef.current === 'dark');
+      const zones = showZonesRef.current ? data.zones ?? [] : [];
+      renderMapZones(map, zones, themeRef.current === 'dark');
 
-      (data.zones ?? []).forEach((zone) => {
+      zones.forEach((zone) => {
         const marker = new maplibregl.Marker({ element: coffeeZoneLabelIcon(zone), anchor: 'center' })
           .setLngLat([zone.longitude, zone.latitude])
-          .addTo(map);
-        markersRef.current.push(marker);
-      });
-
-      (data.clusters ?? []).forEach((cluster) => {
-        const element = coffeeClusterIcon(cluster.count);
-        element.title = `Кофеен: ${cluster.count}`;
-        element.addEventListener('click', () => zoomToClusterBounds(map, cluster.bounds));
-        const marker = new maplibregl.Marker({ element, anchor: 'center' })
-          .setLngLat([cluster.longitude, cluster.latitude])
           .addTo(map);
         markersRef.current.push(marker);
       });
@@ -196,18 +195,28 @@ const MapPage: React.FC = () => {
       const visible = q
         ? data.shops.filter((shop) => shop.title.toLowerCase().includes(q))
         : data.shops;
-      void ensureMapPinMascots().then(() => {
+      void ensureMapPinMascots().catch(() => {}).then(() => {
         if (mapInstanceRef.current !== map || version !== paintVersion) return;
         visible.forEach((shop) => {
           const selected = selectedIdRef.current === shop.id;
           const element = coffeeMapPinIcon({ focus: shop.type, selected });
           element.title = shop.title;
           element.style.zIndex = selected ? '1000' : '0';
-          element.addEventListener('click', () => {
+          element.tabIndex = 0;
+          element.setAttribute('role', 'button');
+          element.setAttribute('aria-label', shop.title);
+          const select = () => {
             selectedIdRef.current = shop.id;
             setSelectedShop(shop);
             void loadShopDetails(shop.id);
             paintMap(mapDataRef.current);
+          };
+          element.addEventListener('click', select);
+          element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              select();
+            }
           });
           const marker = new maplibregl.Marker({ element, anchor: 'center' })
             .setLngLat([shop.longitude, shop.latitude])
@@ -263,12 +272,26 @@ const MapPage: React.FC = () => {
     paintMapRef.current(mapDataRef.current);
   }, [query]);
 
+  useEffect(() => {
+    showZonesRef.current = showZones;
+    localStorage.setItem('mapShowZones', String(showZones));
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    paintMapRef.current(mapDataRef.current);
+    if (showZones && (mapDataRef.current.zones?.length ?? 0) === 0) {
+      void loadCoffeeShops(map).then((loaded) => {
+        if (loaded) paintMapRef.current(loaded);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showZones]);
+
   const formatWorkingHours = (
     schedules?: Array<{ dayOfWeek: number | string; openTime?: string; closeTime?: string }>,
   ) => {
     if (!schedules || schedules.length === 0) return 'Часы работы не указаны';
     const today = getCurrentDayOfWeek();
-    const todaySchedule = schedules.find((s) => normalizeDayOfWeek(s.dayOfWeek) === today);
+    const todaySchedule = toLocalSchedules(schedules).find((s) => s.dayOfWeek === today);
     if (todaySchedule?.openTime && todaySchedule?.closeTime) {
       return `${todaySchedule.openTime} - ${todaySchedule.closeTime}`;
     }
@@ -313,7 +336,6 @@ const MapPage: React.FC = () => {
 
       {shopsLoaded
         && mapData.shops.length === 0
-        && (mapData.clusters?.length ?? 0) === 0
         && (mapData.zones?.length ?? 0) === 0
         && !isLoading && (
         <div
@@ -347,7 +369,7 @@ const MapPage: React.FC = () => {
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
       </div>
 
-      {/* App-style map controls: locate + zoom */}
+      {/* App-style map controls: locate + zones */}
       <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-[500] flex flex-col gap-2">
         <button
           type="button"
@@ -360,24 +382,16 @@ const MapPage: React.FC = () => {
             ? <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
             : <Crosshair size={20} weight="bold" />}
         </button>
-        <div className={`flex flex-col rounded-xl border overflow-hidden shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
-          <button
-            type="button"
-            onClick={() => mapInstanceRef.current?.zoomIn()}
-            aria-label="Приблизить"
-            className={`w-14 h-14 flex items-center justify-center active:scale-95 transition-all ${themeClasses.text.primary}`}
-          >
-            <Plus size={20} weight="bold" />
-          </button>
-          <button
-            type="button"
-            onClick={() => mapInstanceRef.current?.zoomOut()}
-            aria-label="Отдалить"
-            className={`w-14 h-14 flex items-center justify-center border-t active:scale-95 transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
-          >
-            <Minus size={20} weight="bold" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowZones((value) => !value)}
+          aria-label={showZones ? 'Скрыть кофейные зоны' : 'Показать кофейные зоны'}
+          aria-pressed={showZones}
+          title={showZones ? 'Скрыть кофейные зоны' : 'Показать кофейные зоны'}
+          className={`w-14 h-14 flex items-center justify-center rounded-xl border shadow-lg active:scale-95 transition-all ${themeClasses.bg.card} ${themeClasses.border.default} ${showZones ? 'text-[#EAB308]' : themeClasses.text.secondary}`}
+        >
+          <Polygon size={20} weight={showZones ? 'fill' : 'bold'} />
+        </button>
       </div>
 
       <button
@@ -413,8 +427,8 @@ const MapPage: React.FC = () => {
                         selectedShopDetails?.photos &&
                           Array.isArray(selectedShopDetails.photos) &&
                           selectedShopDetails.photos.length > 0
-                          ? selectedShopDetails.photos.map((p: { fullUrl?: string } | string) =>
-                            typeof p === 'string' ? p : p.fullUrl || '',
+                          ? selectedShopDetails.photos.map((p: { fullUrl?: string | null; urls?: PhotoUrlsDto | null } | string) =>
+                            typeof p === 'string' ? p : getPhotoUrl(p, 'thumbnail'),
                           )
                           : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
                             ? selectedShopDetails.imageUrls

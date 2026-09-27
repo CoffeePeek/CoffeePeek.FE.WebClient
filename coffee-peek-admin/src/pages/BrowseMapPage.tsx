@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import L from 'leaflet';
-import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
+import * as maplibregl from 'maplibre-gl';
+import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
 import {
   getCoffeeShopsByMapBounds,
   getBrowseCoffeeShopById,
@@ -13,8 +13,8 @@ import { coffeeCircleIcon, createOsmMap, getMapBoundsBox } from '../map/osmMap';
 
 export const BrowseMapPage: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<LeafletMap | null>(null);
-  const markersRef = useRef<LeafletMarker[]>([]);
+  const mapInstanceRef = useRef<MapLibreMap | null>(null);
+  const markersRef = useRef<MapLibreMarker[]>([]);
   const selectedIdRef = useRef<string | null>(null);
   const paintMarkersRef = useRef<(shopsList: MapShop[]) => void>(() => undefined);
 
@@ -26,16 +26,23 @@ export const BrowseMapPage: React.FC = () => {
   const [selectedDetails, setSelectedDetails] = useState<BrowseCoffeeShopDetails | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  const loadCoffeeShops = async (map: LeafletMap) => {
+  // Monotonic request ids: only the latest response of each kind may update state.
+  const boundsRequestIdRef = useRef(0);
+  const detailsRequestIdRef = useRef(0);
+
+  const loadCoffeeShops = async (map: MapLibreMap): Promise<MapShop[] | null> => {
+    const requestId = ++boundsRequestIdRef.current;
     try {
       const { minLat, minLon, maxLat, maxLon } = getMapBoundsBox(map);
       const response = await getCoffeeShopsByMapBounds(minLat, minLon, maxLat, maxLon);
+      if (requestId !== boundsRequestIdRef.current) return null;
       const shopsList = response.data?.shops ?? [];
       setShops(shopsList);
       setShopsLoaded(true);
       setError(null);
       return shopsList;
     } catch {
+      if (requestId !== boundsRequestIdRef.current) return null;
       setShopsLoaded(true);
       setError('Не удалось загрузить кофейни на карте');
       return [];
@@ -43,12 +50,16 @@ export const BrowseMapPage: React.FC = () => {
   };
 
   const loadShopDetails = async (shopId: string) => {
+    const requestId = ++detailsRequestIdRef.current;
+    setSelectedDetails(null);
     setIsLoadingDetails(true);
     try {
       const response = await getBrowseCoffeeShopById(shopId);
-      if (response.data) setSelectedDetails(response.data);
+      if (requestId === detailsRequestIdRef.current && response.data) setSelectedDetails(response.data);
+    } catch {
+      // Details are optional; the panel falls back to the map summary.
     } finally {
-      setIsLoadingDetails(false);
+      if (requestId === detailsRequestIdRef.current) setIsLoadingDetails(false);
     }
   };
 
@@ -60,14 +71,7 @@ export const BrowseMapPage: React.FC = () => {
     let updateTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const clearMarkers = () => {
-      const map = mapInstanceRef.current;
-      markersRef.current.forEach((marker) => {
-        try {
-          map?.removeLayer(marker);
-        } catch {
-          /* ignore */
-        }
-      });
+      markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
     };
 
@@ -78,17 +82,16 @@ export const BrowseMapPage: React.FC = () => {
       shopsList.forEach((shop) => {
         if (!shop.latitude || !shop.longitude) return;
         const selected = selectedIdRef.current === shop.id;
-        const marker = L.marker([shop.latitude, shop.longitude], {
-          icon: coffeeCircleIcon(selected),
-          title: shop.title,
-        });
-        marker.on('click', () => {
+        const element = coffeeCircleIcon(selected);
+        element.title = shop.title;
+        element.addEventListener('click', (event) => {
+          event.stopPropagation();
           selectedIdRef.current = shop.id;
           setSelectedShop(shop);
           void loadShopDetails(shop.id);
           paintMarkers(shopsList);
         });
-        marker.addTo(map);
+        const marker = new maplibregl.Marker({ element }).setLngLat([shop.longitude, shop.latitude]).addTo(map);
         markersRef.current.push(marker);
       });
     };
@@ -105,14 +108,14 @@ export const BrowseMapPage: React.FC = () => {
       clearTimeout(updateTimeout);
       updateTimeout = setTimeout(() => {
         void loadCoffeeShops(map).then((loaded) => {
-          if (!cancelled) paintMarkers(loaded);
+          if (!cancelled && loaded) paintMarkers(loaded);
         });
       }, 300);
     };
 
     updateTimeout = setTimeout(updateShops, 400);
+    // moveend also fires after zooming.
     map.on('moveend', updateShops);
-    map.on('zoomend', updateShops);
 
     return () => {
       cancelled = true;

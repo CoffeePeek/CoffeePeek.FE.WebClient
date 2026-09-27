@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { getOverviewStats } from '../api/admin';
 import { StatCard } from '../components/ui/Card';
+import { AdminStatsPanel } from '../components/dashboard/AdminStatsPanel';
 import { useUser } from '../contexts/UserContext';
 
 const IconUsers = () => (
@@ -49,11 +50,13 @@ const IconMap = () => (
 );
 
 export const DashboardPage: React.FC = () => {
-  const { user, isAdmin, isModerator } = useUser();
+  const { user, isAdmin, isModerator, isOwner } = useUser();
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'stats', 'overview'],
     queryFn: () => getOverviewStats().then((r) => r.data),
     staleTime: 1000 * 60,
+    // /api/admin/stats/overview is Admin-only; other roles would get 403.
+    enabled: isAdmin,
   });
 
   return (
@@ -64,18 +67,19 @@ export const DashboardPage: React.FC = () => {
           Добро пожаловать{user?.email ? `, ${user.email.split('@')[0]}` : ''}
         </h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-1">
-          {isAdmin ? 'Администратор' : isModerator ? 'Модератор' : 'Пользователь'} · CoffeePeek Admin
+          {isAdmin ? 'Администратор' : isModerator ? 'Модератор' : isOwner ? 'Владелец' : 'Пользователь'} · CoffeePeek Admin
         </p>
       </div>
 
-      {/* Stats */}
-      {isLoading ? (
+      {/* Stats (Admin only) */}
+      {!isAdmin ? null : isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-28 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
           ))}
         </div>
       ) : data ? (
+        <>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Пользователей"
@@ -83,26 +87,33 @@ export const DashboardPage: React.FC = () => {
             icon={<IconUsers />}
             subtitle={`+${data.usersRegisteredToday} сегодня`}
           />
+          {/* shopsAvailable / moderationAvailable = false → backend sends placeholder zeros */}
           <StatCard
             label="Кофеен"
-            value={data.totalCoffeeShops}
+            value={data.shopsAvailable ? data.totalCoffeeShops : '—'}
             icon={<IconShop />}
-            subtitle={`+${data.newCoffeeShopsToday} сегодня`}
+            subtitle={data.shopsAvailable ? `+${data.newCoffeeShopsToday} сегодня` : 'Сервис недоступен'}
           />
           <StatCard
             label="Отзывов"
-            value={data.totalReviews}
+            value={data.shopsAvailable ? data.totalReviews : '—'}
             icon={<IconReview />}
-            subtitle={data.newReviewsToday ? `+${data.newReviewsToday} сегодня` : undefined}
+            subtitle={!data.shopsAvailable ? 'Сервис недоступен' : data.newReviewsToday ? `+${data.newReviewsToday} сегодня` : undefined}
           />
           <StatCard
             label="На модерации"
-            value={data.pendingModerationShops + data.pendingModerationReviews}
+            value={data.moderationAvailable ? data.pendingModerationShops + data.pendingModerationReviews : '—'}
             icon={<IconPending />}
             color="text-yellow-500"
-            subtitle={`${data.pendingModerationShops} кофеен, ${data.pendingModerationReviews} отзывов`}
+            subtitle={
+              data.moderationAvailable
+                ? `${data.pendingModerationShops} кофеен, ${data.pendingModerationReviews} отзывов`
+                : 'Сервис недоступен'
+            }
           />
         </div>
+        <AdminStatsPanel overview={data} />
+        </>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {['Пользователей', 'Кофеен', 'Отзывов', 'На модерации'].map((label) => (
@@ -117,6 +128,15 @@ export const DashboardPage: React.FC = () => {
           Быстрые действия
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {isOwner && (
+            <QuickAction
+              to="/my-shops"
+              label="Мои кофейни"
+              description="Управление вашими кофейнями"
+              icon={<IconShop />}
+              color="text-primary"
+            />
+          )}
           {!isModerator && (
             <>
               <QuickAction

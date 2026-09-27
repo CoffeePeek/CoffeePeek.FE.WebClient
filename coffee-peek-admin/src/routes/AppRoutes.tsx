@@ -1,7 +1,8 @@
-import React, { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect, useRef } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
+import { useUser } from '../contexts/UserContext';
 
 const LoginPage = lazy(() => import('../pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
@@ -18,13 +19,14 @@ const PublishedShopsPage = lazy(() => import('../pages/PublishedShopsPage').then
 const PublishedShopEditPage = lazy(() => import('../pages/PublishedShopEditPage').then((m) => ({ default: m.PublishedShopEditPage })));
 const RoastersModerationPage = lazy(() => import('../pages/RoastersModerationPage').then((m) => ({ default: m.RoastersModerationPage })));
 const RoasterModerationDetailPage = lazy(() => import('../pages/RoasterModerationDetailPage').then((m) => ({ default: m.RoasterModerationDetailPage })));
-const PublishedRoastersPage = lazy(() => import('../pages/PublishedRoastersPage').then((m) => ({ default: m.PublishedRoastersPage })));
 const RoasterEditPage = lazy(() => import('../pages/RoasterEditPage').then((m) => ({ default: m.RoasterEditPage })));
 const OwnerShopsPage = lazy(() => import('../pages/OwnerShopsPage').then((m) => ({ default: m.OwnerShopsPage })));
 const OwnerShopEditPage = lazy(() => import('../pages/OwnerShopEditPage').then((m) => ({ default: m.OwnerShopEditPage })));
 const BrowseShopsPage = lazy(() => import('../pages/BrowseShopsPage').then((m) => ({ default: m.BrowseShopsPage })));
 const BrowseShopPage = lazy(() => import('../pages/BrowseShopPage').then((m) => ({ default: m.BrowseShopPage })));
 const BrowseMapPage = lazy(() => import('../pages/BrowseMapPage').then((m) => ({ default: m.BrowseMapPage })));
+const CoffeeZonesPage = lazy(() => import('../pages/CoffeeZonesPage').then((m) => ({ default: m.CoffeeZonesPage })));
+const CoffeeZoneEditorPage = lazy(() => import('../pages/CoffeeZoneEditorPage').then((m) => ({ default: m.CoffeeZoneEditorPage })));
 const ImportQueuePage = lazy(() => import('../pages/ImportQueuePage').then((m) => ({ default: m.ImportQueuePage })));
 const ImportDuplicatesPage = lazy(() =>
   import('../pages/ImportDuplicatesPage').then((m) => ({ default: m.ImportDuplicatesPage }))
@@ -32,6 +34,8 @@ const ImportDuplicatesPage = lazy(() =>
 const AppDistributionPage = lazy(() =>
   import('../pages/AppDistributionPage').then((m) => ({ default: m.AppDistributionPage }))
 );
+const ShopChangeRequestsPage = lazy(() => import('../pages/ShopChangeRequestsPage').then((m) => ({ default: m.ShopChangeRequestsPage })));
+const ShopChangeRequestDetailPage = lazy(() => import('../pages/ShopChangeRequestDetailPage').then((m) => ({ default: m.ShopChangeRequestDetailPage })));
 
 const Loader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -39,8 +43,23 @@ const Loader = () => (
   </div>
 );
 
+const LogoutRoute = () => {
+  const { logout } = useUser();
+  const navigate = useNavigate();
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    void logout().finally(() => navigate('/login', { replace: true }));
+  }, [logout, navigate]);
+
+  return <Loader />;
+};
+
 export const AppRoutes: React.FC = () => (
   <Routes>
+    <Route path="/logout" element={<LogoutRoute />} />
     <Route
       path="/login"
       element={
@@ -62,6 +81,10 @@ export const AppRoutes: React.FC = () => (
         <Route path="/coffee-shops" element={<BrowseShopsPage />} />
         <Route path="/coffee-shops/:id" element={<BrowseShopPage />} />
         <Route path="/map" element={<BrowseMapPage />} />
+
+        <Route path="/coffee-zones" element={<ProtectedRoute requireModerator><CoffeeZonesPage /></ProtectedRoute>} />
+        <Route path="/coffee-zones/new" element={<ProtectedRoute requireModerator><CoffeeZoneEditorPage /></ProtectedRoute>} />
+        <Route path="/coffee-zones/:id" element={<ProtectedRoute requireModerator><CoffeeZoneEditorPage /></ProtectedRoute>} />
 
         <Route
           path="/shops"
@@ -109,6 +132,15 @@ export const AppRoutes: React.FC = () => (
         />
 
         <Route
+          path="/shop-change-requests"
+          element={<ProtectedRoute requireModerator><ShopChangeRequestsPage /></ProtectedRoute>}
+        />
+        <Route
+          path="/shop-change-requests/:id"
+          element={<ProtectedRoute requireModerator><ShopChangeRequestDetailPage /></ProtectedRoute>}
+        />
+
+        <Route
           path="/shop-reports"
           element={
             <ProtectedRoute requireModerator>
@@ -152,11 +184,7 @@ export const AppRoutes: React.FC = () => (
         />
         <Route
           path="/published-roasters"
-          element={
-            <ProtectedRoute requireAdmin>
-              <PublishedRoastersPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/catalogs?kind=roasters" replace />}
         />
         <Route
           path="/published-roasters/:id"
@@ -167,6 +195,14 @@ export const AppRoutes: React.FC = () => (
           }
         />
 
+        <Route
+          path="/catalogs/roasters/:id"
+          element={
+            <ProtectedRoute requireAdmin>
+              <RoasterEditPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/catalogs"
           element={
