@@ -15,7 +15,7 @@ import { FocusBadge } from '../components/import/catalogControls';
 import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 20;
-type SortKey = 'name' | 'coffeeFocus' | 'status' | 'createdAtUtc';
+type SortKey = 'name' | 'coffeeFocus' | 'dataCompletenessScore' | 'status' | 'createdAtUtc';
 type SortDirection = 'asc' | 'desc';
 
 const STATUS_OPTIONS: { value: CoffeeShopStatus | ''; label: string }[] = [
@@ -75,7 +75,9 @@ export const PublishedShopsPage: React.FC = () => {
         search: search || undefined,
         status: status || undefined,
         importedFromFile: importedFromFile || undefined,
-        sortBy: sortKey,
+        // Completeness is sorted client-side because this field is not part of
+        // the documented backend sorting contract.
+        sortBy: sortKey === 'dataCompletenessScore' ? undefined : sortKey,
         sortDirection,
       }).then((r) => r.data),
   });
@@ -87,6 +89,10 @@ export const PublishedShopsPage: React.FC = () => {
     return items.sort((left, right) => {
       if (sortKey === 'createdAtUtc') {
         return (new Date(left.createdAtUtc).getTime() - new Date(right.createdAtUtc).getTime()) * direction;
+      }
+
+      if (sortKey === 'dataCompletenessScore') {
+        return (left.dataCompletenessScore - right.dataCompletenessScore) * direction;
       }
 
       return String(left[sortKey] ?? '').localeCompare(String(right[sortKey] ?? ''), 'ru', {
@@ -127,9 +133,10 @@ export const PublishedShopsPage: React.FC = () => {
   return (
     <div className="page-container">
       <div>
-        <h2 className="page-header-title">Опубликованные кофейни</h2>
+        <h2 className="page-header-title">Все кофейни</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
-          Управление опубликованными кофейнями
+          Управление созданными и опубликованными кофейнями
+          {sortKey === 'dataCompletenessScore' && ' · сортировка на странице'}
         </p>
       </div>
 
@@ -199,9 +206,7 @@ export const PublishedShopsPage: React.FC = () => {
                   <tr className="border-b border-border-light dark:border-border-dark">
                     <SortHeader sort="name" className="pl-5" {...sortProps}>Название</SortHeader>
                     <SortHeader sort="coffeeFocus" {...sortProps}>Фокус</SortHeader>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400 font-body">
-                      Заполненность
-                    </th>
+                    <SortHeader sort="dataCompletenessScore" {...sortProps}>Заполненность</SortHeader>
                     <SortHeader sort="status" {...sortProps}>Статус</SortHeader>
                     <SortHeader sort="createdAtUtc" {...sortProps}>Создана</SortHeader>
                     <th scope="col" className="px-4 py-3" />

@@ -70,7 +70,7 @@ export function CoffeeZonesPage() {
   const zones = zonesQuery.data ?? [];
 
   return (
-    <div className="page-container max-w-7xl">
+    <div className="page-container">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="page-header-title">Кофейные зоны</h2>

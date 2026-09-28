@@ -151,9 +151,9 @@ export const ShopReportsPage: React.FC = () => {
   return (
     <div className="page-container">
       <div>
-        <h2 className="page-header-title">Жалобы на неточности</h2>
+        <h2 className="page-header-title">Жалобы на данные кофеен</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
-          {data ? `Всего: ${data.totalItems}` : 'Загрузка...'}
+          {data ? `Сообщения пользователей о неточных сведениях · Всего: ${data.totalItems}` : 'Загрузка...'}
         </p>
       </div>
 

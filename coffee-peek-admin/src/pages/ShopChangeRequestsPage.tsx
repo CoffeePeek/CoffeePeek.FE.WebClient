@@ -129,7 +129,7 @@ export const ShopChangeRequestsPage: React.FC = () => {
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold font-display text-text-main dark:text-white">
-          Изменения кофейных
+          Правки кофеен
         </h1>
         <p className="mt-1 text-sm text-text-muted dark:text-stone-400">
           Заявки пользователей на изменение опубликованных данных.

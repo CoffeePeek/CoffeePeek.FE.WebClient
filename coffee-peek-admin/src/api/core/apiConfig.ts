@@ -1,4 +1,8 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL as string;
+// In development, keep browser requests same-origin and let Vite proxy them.
+// Production continues to use the configured public API URL directly.
+export const API_BASE_URL = import.meta.env.DEV
+  ? '/backend'
+  : import.meta.env.VITE_API_URL as string;
 
 if (!API_BASE_URL) {
   console.error('[config] VITE_API_URL не задан — запросы к API не будут работать. Укажите его в .env / переменных окружения сборки.');

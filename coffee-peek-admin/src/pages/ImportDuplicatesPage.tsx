@@ -185,7 +185,7 @@ export const ImportDuplicatesPage: React.FC = () => {
   }, [data, page]);
 
   return (
-    <div className="page-container max-w-5xl">
+    <div className="page-container">
       <ImportTabs />
       <div>
         <h2 className="page-header-title">Похожие места</h2>

@@ -60,7 +60,7 @@ export const DashboardPage: React.FC = () => {
   });
 
   return (
-    <div className="page-container max-w-5xl">
+    <div className="page-container">
       {/* Greeting */}
       <div>
         <h2 className="page-header-title">
@@ -166,14 +166,14 @@ export const DashboardPage: React.FC = () => {
               />
               <QuickAction
                 to="/shops?status=Pending"
-                label="Пользовательская модерация"
-                description="Заявки владельцев, не OSM"
+                label="Заявки на кофейни"
+                description="Кофейни, добавленные пользователями"
                 icon={<IconShop />}
                 color="text-primary"
               />
               <QuickAction
                 to="/reviews?status=Pending"
-                label="Отзывы на модерации"
+                label="Отзывы на проверке"
                 description="Просмотр и одобрение отзывов"
                 icon={<IconReview />}
                 color="text-blue-500"

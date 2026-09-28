@@ -159,10 +159,10 @@ export const ReviewsModerationPage: React.FC = () => {
     <div className="page-container">
       <div>
         <h2 className="page-header-title">
-          Модерация отзывов
+          Отзывы на проверке
         </h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
-          {data ? `Всего: ${data.totalCount}` : 'Загрузка...'}
+          {data ? `Отзывы пользователей, ожидающие решения · Всего: ${data.totalCount}` : 'Загрузка...'}
         </p>
       </div>
 

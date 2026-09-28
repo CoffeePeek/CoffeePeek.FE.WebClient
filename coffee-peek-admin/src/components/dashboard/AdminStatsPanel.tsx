@@ -28,6 +28,13 @@ const fmtHours = (h: number | null) =>
   h === null ? '—' : h >= 48 ? `${Math.round(h / 24)} дн` : `${Math.round(h)} ч`;
 
 const sum = (points: AdminDailyCount[]) => points.reduce((acc, p) => acc + p.count, 0);
+const CHART_DATE_FORMATTER = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' });
+
+const formatChartDate = (date: string) => {
+  const [year, month, day] = date.split('-').map(Number);
+  if (!year || !month || !day) return date;
+  return CHART_DATE_FORMATTER.format(new Date(Date.UTC(year, month - 1, day)));
+};
 
 const SectionTitle: React.FC<{ children: React.ReactNode; right?: React.ReactNode }> = ({ children, right }) => (
   <div className="flex items-center justify-between mb-3">
@@ -44,32 +51,94 @@ const Metric: React.FC<{ label: string; value: React.ReactNode; hint?: string }>
   </div>
 );
 
+const UserStatusMetric: React.FC<{
+  label: string;
+  value: number;
+  total: number;
+  tone: 'green' | 'red' | 'stone';
+  description: string;
+}> = ({ label, value, total, tone, description }) => {
+  const toneClasses = {
+    green: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ring-emerald-500/20',
+    red: 'bg-red-500/10 text-red-700 dark:text-red-300 ring-red-500/20',
+    stone: 'bg-stone-500/10 text-stone-700 dark:text-stone-300 ring-stone-500/20',
+  }[tone];
+  const percent = total ? Math.round((value / total) * 100) : 0;
+
+  return (
+    <div className="rounded-xl border border-border-light bg-gray-50/70 p-3.5 dark:border-border-dark dark:bg-white/[0.025]">
+      <div className="flex items-center justify-between gap-3">
+        <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ring-1 ${toneClasses}`}>
+          {label}
+        </span>
+        <span className="text-xs font-medium tabular-nums text-text-muted dark:text-stone-400">{percent}%</span>
+      </div>
+      <p className="mt-3 font-display text-2xl font-bold tabular-nums text-text-main dark:text-white">{value}</p>
+      <p className="mt-0.5 text-xs text-text-muted dark:text-stone-400">{description}</p>
+    </div>
+  );
+};
+
+const AccountProgress: React.FC<{ label: string; value: number; total: number; hint: string }> = ({
+  label,
+  value,
+  total,
+  hint,
+}) => {
+  const percent = total ? Math.round((value / total) * 100) : 0;
+  return (
+    <div>
+      <div className="mb-1.5 flex items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-text-main dark:text-stone-200">{label}</p>
+          <p className="text-[11px] text-text-muted dark:text-stone-500">{hint}</p>
+        </div>
+        <p className="shrink-0 text-sm font-semibold tabular-nums text-text-main dark:text-white">
+          {value} <span className="text-xs font-normal text-text-muted">· {percent}%</span>
+        </p>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-white/5">
+        <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
+  );
+};
+
 const Unavailable: React.FC = () => (
   <p className="text-sm text-text-muted dark:text-stone-400 font-body">Данные недоступны</p>
 );
 
 const Bars: React.FC<{ label: string; points: AdminDailyCount[] }> = ({ label, points }) => {
   const max = Math.max(1, ...points.map((p) => p.count));
+  const total = sum(points);
   return (
     <div>
       <div className="flex items-baseline justify-between">
         <p className="text-xs text-text-muted dark:text-stone-400 font-body uppercase tracking-wide">{label}</p>
-        <p className="text-sm font-semibold font-display text-text-main dark:text-white">{sum(points)}</p>
+        <p className="text-sm font-semibold font-display text-text-main dark:text-white">
+          {total} <span className="text-[10px] font-normal text-text-muted dark:text-stone-500">за период</span>
+        </p>
       </div>
-      <div className="flex items-end gap-px h-16 mt-2" role="img" aria-label={`${label}: ${sum(points)} за ${points.length} дн.`}>
+      <div className="flex items-end gap-px h-20 mt-2 border-b border-border-light dark:border-border-dark" role="img" aria-label={`${label}: ${total} за ${points.length} дн.`}>
         {points.map((p) => (
           <div
             key={p.date}
-            title={`${p.date}: ${p.count}`}
-            className="flex-1 bg-primary/70 hover:bg-primary rounded-t-sm min-h-px"
+            className="group/bar relative flex-1 bg-primary/70 hover:bg-primary rounded-t-sm min-h-px transition-colors"
             style={{ height: `${(p.count / max) * 100}%` }}
-          />
+          >
+            {p.count > 0 && (
+              <span className="pointer-events-none absolute bottom-[calc(100%+0.35rem)] left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1d1714] px-2 py-1 text-center text-white shadow-lg group-hover/bar:block">
+                <strong className="block text-xs font-semibold tabular-nums">{p.count}</strong>
+                <span className="block text-[9px] text-stone-300">{formatChartDate(p.date)}</span>
+              </span>
+            )}
+          </div>
         ))}
       </div>
       {points.length > 0 && (
         <div className="flex justify-between text-[10px] text-text-muted dark:text-stone-500 mt-1">
-          <span>{points[0].date}</span>
-          <span>{points[points.length - 1].date}</span>
+          <span>{formatChartDate(points[0].date)}</span>
+          <span>{formatChartDate(points[points.length - 1].date)}</span>
         </div>
       )}
     </div>
@@ -134,7 +203,6 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
     })),
   });
 
-  const pct = (n: number) => (overview.totalUsers ? `${Math.round((n / overview.totalUsers) * 100)}%` : '—');
   const ratings = shops.data?.ratings;
   const maxBucket = Math.max(1, ...(ratings?.distribution.map((d) => d.count) ?? []));
 
@@ -142,14 +210,80 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
     <div className="space-y-4">
       {/* Users */}
       <Card>
-        <SectionTitle>Пользователи</SectionTitle>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Metric label="Активных" value={overview.activeUsers} hint={`из ${overview.totalUsers}`} />
-          <Metric label="Заблокированных" value={overview.blockedUsers} />
-          <Metric label="Удалённых" value={overview.deletedUsers} />
-          <Metric label="DAU / WAU / MAU" value={`${overview.dailyActiveUsers} / ${overview.weeklyActiveUsers} / ${overview.monthlyActiveUsers}`} hint="по входам и обновлению токена" />
-          <Metric label="Email подтверждён" value={overview.emailConfirmedUsers} hint={pct(overview.emailConfirmedUsers)} />
-          <Metric label="Через Google" value={overview.googleUsers} hint={pct(overview.googleUsers)} />
+        <SectionTitle
+          right={
+            <span className="text-xs text-text-muted dark:text-stone-400">
+              Всего <strong className="font-semibold tabular-nums text-text-main dark:text-white">{overview.totalUsers}</strong>
+            </span>
+          }
+        >
+          Аудитория
+        </SectionTitle>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <UserStatusMetric
+            label="Активные"
+            value={overview.activeUsers}
+            total={overview.totalUsers}
+            tone="green"
+            description="могут пользоваться сервисом"
+          />
+          <UserStatusMetric
+            label="Заблокированы"
+            value={overview.blockedUsers}
+            total={overview.totalUsers}
+            tone="red"
+            description="доступ временно ограничен"
+          />
+          <UserStatusMetric
+            label="Удалены"
+            value={overview.deletedUsers}
+            total={overview.totalUsers}
+            tone="stone"
+            description="аккаунты удалены"
+          />
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-5 border-t border-border-light pt-5 dark:border-border-dark lg:grid-cols-2">
+          <div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted dark:text-stone-400">
+              Возвращаются в сервис
+            </p>
+            <div className="grid grid-cols-3 divide-x divide-border-light rounded-xl border border-border-light dark:divide-border-dark dark:border-border-dark">
+              {[
+                { label: 'За сутки', value: overview.dailyActiveUsers, period: 'DAU' },
+                { label: 'За 7 дней', value: overview.weeklyActiveUsers, period: 'WAU' },
+                { label: 'За 30 дней', value: overview.monthlyActiveUsers, period: 'MAU' },
+              ].map((item) => (
+                <div key={item.period} className="p-3 text-center">
+                  <p className="font-display text-xl font-bold tabular-nums text-text-main dark:text-white">{item.value}</p>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">{item.period}</p>
+                  <p className="mt-1 text-[10px] text-text-muted dark:text-stone-500">{item.label}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-text-muted dark:text-stone-500">Считаются входы и обновления сессии</p>
+          </div>
+
+          <div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted dark:text-stone-400">
+              Качество аккаунтов
+            </p>
+            <div className="space-y-4">
+              <AccountProgress
+                label="Подтверждённый email"
+                value={overview.emailConfirmedUsers}
+                total={overview.totalUsers}
+                hint="контакт подтверждён пользователем"
+              />
+              <AccountProgress
+                label="Вход через Google"
+                value={overview.googleUsers}
+                total={overview.totalUsers}
+                hint="аккаунты с Google-авторизацией"
+              />
+            </div>
+          </div>
         </div>
       </Card>
 

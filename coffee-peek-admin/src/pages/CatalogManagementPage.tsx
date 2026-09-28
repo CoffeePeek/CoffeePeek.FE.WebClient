@@ -178,7 +178,7 @@ export const CatalogManagementPage: React.FC = () => {
   return (
     <div className="page-container">
       <div>
-        <h1 className="page-header-title">Каталог</h1>
+        <h1 className="page-header-title">Справочники</h1>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">Управление справочниками, которые используются в карточках и фильтрах кофеен</p>
       </div>
 

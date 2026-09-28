@@ -131,7 +131,7 @@ export const BrowseMapPage: React.FC = () => {
   }, [shops, selectedShop?.id]);
 
   return (
-    <div className="page-container max-w-6xl">
+    <div className="page-container">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
           <h2 className="page-header-title">Карта кофеен</h2>

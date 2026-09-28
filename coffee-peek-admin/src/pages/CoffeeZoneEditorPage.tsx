@@ -190,7 +190,7 @@ export function CoffeeZoneEditorPage() {
   }
 
   return (
-    <div className="page-container max-w-7xl">
+    <div className="page-container">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link to="/coffee-zones" className="text-xs text-primary hover:underline">← К списку зон</Link>

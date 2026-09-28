@@ -36,7 +36,7 @@ export const BrowseShopPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="page-container max-w-3xl">
+      <div className="page-container">
         <div className="h-8 w-48 rounded bg-gray-100 dark:bg-white/5 animate-pulse mb-4" />
         <div className="h-64 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
       </div>
@@ -45,7 +45,7 @@ export const BrowseShopPage: React.FC = () => {
 
   if (isError || !shop) {
     return (
-      <div className="page-container max-w-3xl">
+      <div className="page-container">
         <p className="text-red-400 text-sm mb-4">Кофейня не найдена</p>
         <Link to="/coffee-shops">
           <Button variant="secondary" size="sm">Назад к списку</Button>
@@ -61,7 +61,7 @@ export const BrowseShopPage: React.FC = () => {
       : shop.imageUrls ?? (shop.imageUrl ? [shop.imageUrl] : []);
 
   return (
-    <div className="page-container max-w-3xl">
+    <div className="page-container">
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <Link to="/coffee-shops">
           <Button variant="ghost" size="sm">← К списку</Button>

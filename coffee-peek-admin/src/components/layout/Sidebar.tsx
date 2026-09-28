@@ -128,22 +128,23 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Модерация',
     collapsible: true,
     items: [
-      { path: '/shop-change-requests', label: 'Изменения кофейных', icon: <IconReview />, moderatorOnly: true },
-      { path: '/shops', label: 'Пользовательская модерация', icon: <IconShop />, moderatorOnly: true },
-      { path: '/import', label: 'Парсинг', icon: <IconImport />, moderatorOnly: true },
-      { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
-      { path: '/roasters', label: 'Обжарщики: модерация', icon: <IconRoaster />, moderatorOnly: true },
-      { path: '/coffee-zones', label: 'Кофейные зоны', icon: <IconMap />, moderatorOnly: true },
+      { path: '/shop-change-requests', label: 'Правки кофеен', icon: <IconReview />, moderatorOnly: true },
+      { path: '/shops', label: 'Заявки на кофейни', icon: <IconShop />, moderatorOnly: true },
+      { path: '/reviews', label: 'Отзывы на проверке', icon: <IconReview />, moderatorOnly: true },
+      { path: '/shop-reports', label: 'Жалобы на данные', icon: <IconFlag />, moderatorOnly: true },
+      { path: '/roasters', label: 'Заявки на обжарщиков', icon: <IconRoaster />, moderatorOnly: true },
     ],
   },
   {
-    id: 'content',
-    label: 'Контент',
+    id: 'data',
+    label: 'Данные и каталог',
+    collapsible: true,
     items: [
-      { path: '/reviews', label: 'Отзывы', icon: <IconReview />, moderatorOnly: true },
-      { path: '/shop-reports', label: 'Жалобы на кофейни', icon: <IconFlag />, moderatorOnly: true },
-      { path: '/catalogs', label: 'Каталог', icon: <IconCatalog />, adminOnly: true },
-      { path: '/shop-tags', label: 'Теги', icon: <IconTags />, adminOnly: true },
+      { path: '/published-shops', label: 'Все кофейни', icon: <IconShop />, adminOnly: true },
+      { path: '/import', label: 'Импорт данных', icon: <IconImport />, moderatorOnly: true },
+      { path: '/coffee-zones', label: 'Кофейные зоны', icon: <IconMap />, moderatorOnly: true },
+      { path: '/catalogs', label: 'Справочники', icon: <IconCatalog />, adminOnly: true },
+      { path: '/shop-tags', label: 'Теги кофеен', icon: <IconTags />, adminOnly: true },
       { path: '/my-shops', label: 'Мои кофейни', icon: <IconShop />, ownerOnly: true },
     ],
   },
@@ -190,7 +191,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [loggingOut, setLoggingOut] = useState(false);
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ moderation: true });
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    moderation: true,
+    data: true,
+  });
 
   const roles = useMemo(
     () => ({ isAdmin, isModerator, isOwner }),

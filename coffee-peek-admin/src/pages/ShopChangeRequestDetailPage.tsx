@@ -170,7 +170,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
   const userName = user?.nickname || user?.userName;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="w-full min-w-0 space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link to="/shop-change-requests" className="text-sm text-primary">

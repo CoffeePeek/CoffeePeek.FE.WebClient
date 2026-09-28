@@ -726,7 +726,7 @@ export const ImportInboxPage: React.FC<{
 
       {selectedIds.size > 0 && (
         <div className="shrink-0 border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark px-4 py-3">
-          <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-3 justify-between">
+          <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-3">
             <div className="text-sm font-body text-text-main dark:text-white">
               Выбрано: <span className="font-semibold">{selectedIds.size}</span>
               {(totalInFilter != null || loadedCount > 0) && (

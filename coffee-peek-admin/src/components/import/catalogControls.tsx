@@ -29,7 +29,7 @@ export const ImportTabs: React.FC = () => {
   return (
     <div className="flex gap-1 overflow-x-auto">
       <NavLink to="/import?panel=list" className={tabClass(listActive)}>
-        К парсингу
+        К импорту
       </NavLink>
       <NavLink to="/import/duplicates" className={tabClass(isDuplicates)}>
         Похожие

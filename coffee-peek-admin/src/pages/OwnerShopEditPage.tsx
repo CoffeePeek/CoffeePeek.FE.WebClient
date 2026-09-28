@@ -178,7 +178,7 @@ export const OwnerShopEditPage: React.FC = () => {
 
   if (isLoading || !shop) {
     return (
-      <div className="max-w-2xl space-y-4">
+      <div className="w-full min-w-0 space-y-4">
         <div className="h-8 w-48 bg-gray-100 dark:bg-white/5 rounded animate-pulse" />
         <div className="h-64 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse" />
       </div>
@@ -186,7 +186,7 @@ export const OwnerShopEditPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-5 w-full min-w-0 max-w-3xl">
+    <div className="space-y-5 w-full min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-start gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate('/my-shops')} className="self-start min-h-[44px] sm:min-h-0">
           ← Назад

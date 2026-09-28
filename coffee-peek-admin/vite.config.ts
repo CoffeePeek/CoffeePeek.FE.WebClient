@@ -1,13 +1,30 @@
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const apiTarget = env.VITE_API_URL?.trim();
+
   return {
     server: {
       port: parseInt(process.env.PORT || '5174'),
       strictPort: true,
       host: '0.0.0.0',
+      proxy: apiTarget
+        ? {
+            '/backend': {
+              target: apiTarget,
+              changeOrigin: true,
+              secure: true,
+              ws: true,
+              rewrite: (requestPath) => requestPath.replace(/^\/backend/, ''),
+              // Make the API refresh cookie valid for the local Vite origin.
+              cookieDomainRewrite: '',
+              cookiePathRewrite: '/',
+            },
+          }
+        : undefined,
     },
     plugins: [react()],
     resolve: {

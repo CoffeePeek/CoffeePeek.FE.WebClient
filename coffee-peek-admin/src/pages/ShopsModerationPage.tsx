@@ -16,7 +16,7 @@ import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 15;
-type SortKey = 'name' | 'address' | 'description' | 'status';
+type SortKey = 'name' | 'address' | 'description' | 'dataCompletenessScore' | 'status';
 type SortDir = 'asc' | 'desc';
 
 const STATUS_OPTIONS: { value: ModerationStatus | ''; label: string }[] = [
@@ -31,6 +31,9 @@ function compareShops(
   b: Awaited<ReturnType<typeof getModerationShops>>['data']['items'][number],
   key: SortKey
 ): number {
+  if (key === 'dataCompletenessScore') {
+    return a.dataCompletenessScore - b.dataCompletenessScore;
+  }
   const value = (shop: typeof a) => {
     if (key === 'status') return statusLabels[shop.status];
     return shop[key] ?? '';
@@ -149,9 +152,9 @@ export const ShopsModerationPage: React.FC = () => {
   return (
     <div className="page-container">
       <div>
-        <h2 className="page-header-title">Пользовательская модерация</h2>
+        <h2 className="page-header-title">Заявки на добавление кофеен</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
-          {data ? `Всего: ${data.totalCount}` : 'Загрузка...'}
+          {data ? `Кофейни, отправленные пользователями · Всего: ${data.totalCount}` : 'Загрузка...'}
           {data && sortKey && ' · сортировка на странице'}
         </p>
       </div>
@@ -277,8 +280,8 @@ export const ShopsModerationPage: React.FC = () => {
                     <th scope="col" className="text-left px-4 py-3">
                       <SortButton label="Описание" column="description" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
-                      Заполненность
+                    <th scope="col" className="text-left px-4 py-3">
+                      <SortButton label="Заполненность" column="dataCompletenessScore" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                     </th>
                     <th scope="col" className="text-left px-4 py-3">
                       <SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />

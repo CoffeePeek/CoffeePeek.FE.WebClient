@@ -109,7 +109,7 @@ export const ImportStatsPage: React.FC<{ embedded?: boolean }> = ({ embedded }) 
       className={
         embedded
           ? 'h-full overflow-y-auto p-4 sm:p-6 space-y-4'
-          : 'page-container max-w-4xl'
+          : 'page-container'
       }
     >
       {!embedded && <ImportTabs />}
