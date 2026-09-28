@@ -33,6 +33,17 @@ test('response pagination totals override body totals, never page length', async
   expect((await getCheckIns()).data).toMatchObject({ items: [normalizedItem], totalItems: 31, totalPages: 4 });
 });
 
+test('calendar range is sent as half-open from/to query parameters', async () => {
+  jest.mocked(httpClient.get).mockResolvedValue({ success: true, data: { checkIns: [], totalItems: 0, totalPages: 1 } } as never);
+  const range = { from: '2026-09-01T00:00:00+03:00', to: '2026-10-01T00:00:00+03:00' };
+  await getCheckIns(1, 100, range);
+  expect(httpClient.get).toHaveBeenCalledWith('/api/CheckIns', {
+    requiresAuth: true,
+    headers: { 'X-Page-Number': '1', 'X-Page-Size': '100' },
+    params: range,
+  });
+});
+
 test('private check-in serializes empty fields and uploaded photo metadata with size, not sizeBytes', async () => {
   const request = buildCheckInRequest({ coffeeShopId: item.shopId, isPublic: false, header: '', note: '', visitedDate: '2026-09-01', rating: { coffee: 5, service: 5, place: 5 } });
   request.photos = [{ fileName: 'coffee.jpg', contentType: 'image/jpeg', storageKey: item.photos[0].storageKey, size: 1024 }];

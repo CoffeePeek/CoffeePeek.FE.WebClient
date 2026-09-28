@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createCheckIn, getCheckIns, type GetCheckInsResponse } from '../../api/coffeeshop';
+import { createCheckIn, getCheckIns, getCheckInsByDateRange, type GetCheckInsResponse } from '../../api/coffeeshop';
 import { reviewKeys } from './useReviews';
 import { coffeeShopKeys } from './useCoffeeShops';
 
@@ -8,6 +8,7 @@ export const checkInKeys = {
   lists: () => [...checkInKeys.all, 'list'] as const,
   list: (page: number, pageSize: number) =>
     [...checkInKeys.lists(), { page, pageSize }] as const,
+  calendar: (from: string, to: string) => [...checkInKeys.all, 'calendar', { from, to }] as const,
 };
 
 export function useCheckIns(page: number = 1, pageSize: number = 10, enabled: boolean = true) {
@@ -21,6 +22,14 @@ export function useCheckIns(page: number = 1, pageSize: number = 10, enabled: bo
       return response.data;
     },
     enabled,
+  });
+}
+
+export function useCheckInsByDateRange(from: string, to: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: checkInKeys.calendar(from, to),
+    queryFn: () => getCheckInsByDateRange({ from, to }),
+    enabled: enabled && Boolean(from && to),
   });
 }
 

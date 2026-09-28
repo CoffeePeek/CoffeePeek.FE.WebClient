@@ -110,7 +110,7 @@ const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, on
             onClick={event => { event.stopPropagation(); toggleFavorite(shop.id); }}
             className="flex h-10 w-10 items-center justify-center rounded-full border-0 bg-black/80 backdrop-blur-md transition-transform hover:scale-105"
           >
-            <span aria-hidden="true" className="text-[27px] font-bold leading-none" style={{ color: favorite ? '#FB7185' : '#FFFFFF' }}>{favorite ? '♥' : '♡'}</span>
+            <AppIcon name="favorite" filled={favorite} size={26} color={favorite ? '#EAB308' : '#FFFFFF'} />
           </button>
         </div>
 

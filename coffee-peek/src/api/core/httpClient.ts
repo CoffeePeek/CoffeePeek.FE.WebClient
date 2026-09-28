@@ -128,6 +128,7 @@ class HttpClient {
         success: true,
         isSuccess: true,
         message: data.message || '',
+        statusCode: data.statusCode ?? response.status,
         data: normalizedData,
         ...(pagination ? { pagination } : {}),
       };

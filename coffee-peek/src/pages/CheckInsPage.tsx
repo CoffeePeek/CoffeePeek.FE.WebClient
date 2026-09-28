@@ -1,257 +1,193 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../contexts/ThemeContext';
-import { COLORS, getThemeColors } from '../constants/colors';
-import { usePageTitle } from '../hooks/usePageTitle';
-import { useCheckIns } from '../hooks/queries/useCheckIns';
-import WobbleRing from '../components/WobbleRing';
-import { AppIcon } from '../components/icons';
+import { getPhotoUrl } from '../api/coffeeshop';
+import type { CheckInDto, ShortPhotoMetadataDto } from '../api/coffeeshop';
 import Mascot from '../components/Mascot';
-import { getErrorMessage } from '../utils/errorHandler';
-import { formatCheckInDate } from '../utils/checkInForm';
 import PhotoLightbox from '../components/PhotoLightbox';
-import { getPhotoUrl, type ShortPhotoMetadataDto } from '../api/coffeeshop';
+import WobbleRing from '../components/WobbleRing';
+import { AppIcon, StarIcon } from '../components/icons';
+import { COLORS, getThemeColors } from '../constants/colors';
+import { useTheme } from '../contexts/ThemeContext';
+import { useCheckIns, useCheckInsByDateRange } from '../hooks/queries/useCheckIns';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const PAGE_SIZE = 10;
+const WEEKDAYS = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
+
+const visitDate = (item: CheckInDto) => new Date(item.visitedAt || item.createdAt);
+const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const formatDate = (item: CheckInDto) => visitDate(item).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 
 const CheckInsPage: React.FC = () => {
-  usePageTitle('Мои чекины');
+  usePageTitle('Чекины');
   const navigate = useNavigate();
   const { theme } = useTheme();
   const colors = getThemeColors(theme);
-  const isDark = theme === 'dark';
   const gold = COLORS.primary;
-
+  const [view, setView] = useState<'calendar' | 'feed'>('feed');
   const [page, setPage] = useState(1);
+  const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [selectedDate, setSelectedDate] = useState('');
   const [gallery, setGallery] = useState<{ images: ShortPhotoMetadataDto[]; shopName: string; initialIndex: number } | null>(null);
-  const { data, isLoading, isFetching, error, refetch } = useCheckIns(page, PAGE_SIZE);
 
-  const items = data?.items ?? [];
-  const totalItems = data?.totalItems ?? 0;
-  const totalPages = Math.max(1, data?.totalPages ?? 1);
+  const range = useMemo(() => ({
+    from: month.toISOString(),
+    to: new Date(month.getFullYear(), month.getMonth() + 1, 1).toISOString(),
+  }), [month]);
+  const feed = useCheckIns(page, PAGE_SIZE, view === 'feed');
+  const calendar = useCheckInsByDateRange(range.from, range.to, view === 'calendar');
+  const calendarItems = calendar.data ?? [];
+  const itemsByDate = useMemo(() => {
+    const grouped = new Map<string, CheckInDto[]>();
+    calendarItems.forEach(item => {
+      const key = dateKey(visitDate(item));
+      grouped.set(key, [...(grouped.get(key) ?? []), item]);
+    });
+    return grouped;
+  }, [calendarItems]);
+
+  useEffect(() => {
+    if (view !== 'calendar' || itemsByDate.has(selectedDate)) return;
+    setSelectedDate([...itemsByDate.keys()].sort().at(-1) ?? dateKey(month));
+  }, [itemsByDate, month, selectedDate, view]);
+
+  const items = view === 'feed' ? feed.data?.items ?? [] : itemsByDate.get(selectedDate) ?? [];
+  const isLoading = view === 'feed' ? feed.isLoading : calendar.isLoading;
+  const error = view === 'feed' ? feed.error : calendar.error;
+  const retry = () => { void (view === 'feed' ? feed.refetch() : calendar.refetch()); };
 
   return (
-    <div style={{ minHeight: '100%', background: colors.background }}>
-      <div style={{
-        borderBottom: `1px solid ${colors.border}`,
-        background: isDark ? 'rgba(45,36,31,0.7)' : colors.surface,
-        backdropFilter: 'blur(12px)',
-      }}>
-        <div
-          className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"
-          style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12 }}
-        >
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            aria-label="Назад"
-            style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 32, height: 32, padding: 0, flexShrink: 0,
-              border: 'none', borderRadius: 8, background: 'transparent',
-              color: colors.textPrimary, cursor: 'pointer',
-            }}
-          >
-            <AppIcon name="arrow_back" size={20} color="currentColor" />
+    <main className="min-h-screen px-4 pb-14 pt-6 sm:px-6 sm:pt-8" style={{ background: colors.background }}>
+      <div className="mx-auto w-full max-w-[760px]">
+        <header className="mb-6 grid grid-cols-[52px_1fr_52px] items-center sm:mb-8">
+          <button type="button" onClick={() => navigate(-1)} aria-label="Назад" className="flex h-12 w-12 items-center justify-center rounded-full border shadow-sm" style={{ borderColor: colors.border, background: colors.surface, color: colors.textPrimary }}>
+            <AppIcon name="arrow_back" size={24} color="currentColor" />
           </button>
-          <h1 style={{
-            margin: 0, fontFamily: '"Manrope"', fontWeight: 700,
-            fontSize: 18, color: colors.textPrimary, letterSpacing: '-0.01em',
-          }}>
-            Мои чекины
-          </h1>
-          {totalItems > 0 && (
-            <span style={{
-              fontFamily: '"Manrope", sans-serif', fontSize: 13, color: colors.textSecondary,
-            }}>
-              {totalItems}
-            </span>
-          )}
-        </div>
-      </div>
+          <h1 className="text-center text-2xl font-extrabold sm:text-3xl" style={{ color: colors.textPrimary }}>Чекины</h1>
+        </header>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div role="tablist" aria-label="Режим просмотра чекинов" className="mb-6 grid grid-cols-2 rounded-full p-1" style={{ background: colors.surface, border: `1px solid ${colors.border}` }}>
+          {([['calendar', 'Календарь'], ['feed', 'Лента']] as const).map(([id, label]) => (
+            <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => setView(id)} className="min-h-12 rounded-full px-4 text-base font-bold transition-colors" style={{ background: view === id ? (theme === 'dark' ? '#241C18' : '#F1EEEA') : 'transparent', color: view === id ? colors.textPrimary : colors.textSecondary }}>{label}</button>
+          ))}
+        </div>
+
+        {view === 'calendar' && (
+          <CheckInCalendar month={month} items={calendarItems} itemsByDate={itemsByDate} selectedDate={selectedDate} colors={colors} onMonthChange={offset => setMonth(value => new Date(value.getFullYear(), value.getMonth() + offset, 1))} onSelectDate={setSelectedDate} />
+        )}
+
         {isLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '64px 0' }}>
-            <WobbleRing size={48} />
-          </div>
+          <div className="flex justify-center py-16"><WobbleRing size={48} /></div>
         ) : error ? (
-          <div style={{
-            padding: 24, borderRadius: 16, border: `1px solid ${colors.border}`,
-            background: colors.surface, textAlign: 'center',
-          }}>
-            <p style={{ margin: '0 0 16px', fontFamily: '"Manrope", sans-serif', fontSize: 14, color: '#EF4444' }}>
-              {getErrorMessage(error)}
-            </p>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              style={{
-                padding: '10px 18px', borderRadius: 12, border: 'none', background: gold,
-                color: '#1A1412', fontFamily: '"Manrope", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
-              }}
-            >
-              Повторить
-            </button>
+          <div className="rounded-3xl border p-6 text-center" style={{ borderColor: colors.border, background: colors.surface }}>
+            <p className="mb-4 text-sm text-red-500">{getErrorMessage(error)}</p>
+            <button type="button" onClick={retry} className="min-h-11 rounded-xl px-5 font-bold" style={{ background: gold, color: '#1A1412' }}>Повторить</button>
           </div>
         ) : items.length === 0 ? (
-          <div style={{
-            padding: '48px 24px', borderRadius: 20, border: `1px solid ${colors.border}`,
-            background: colors.surface, textAlign: 'center',
-          }}>
-            <div style={{ margin: '0 auto 8px', display: 'flex', justifyContent: 'center' }} aria-hidden>
-              <Mascot pose="happy" size={128} />
-            </div>
-            <h2 style={{
-              margin: '0 0 8px', fontFamily: '"Manrope", sans-serif', fontWeight: 700,
-              fontSize: 18, color: colors.textPrimary,
-            }}>
-              Пока нет чекинов
-            </h2>
-            <p style={{ margin: '0 0 20px', fontFamily: '"Manrope", sans-serif', fontSize: 14, color: colors.textSecondary }}>
-              Отметьте чекин на странице кофейни — он появится здесь.
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate('/shops')}
-              style={{
-                padding: '10px 20px', borderRadius: 12, border: 'none', background: gold,
-                color: '#1A1412', fontFamily: '"Manrope", sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer',
-              }}
-            >
-              Открыть каталог
-            </button>
+          <div className="rounded-3xl border px-6 py-10 text-center" style={{ borderColor: colors.border, background: colors.surface }}>
+            <Mascot pose="happy" size={112} />
+            <h2 className="mt-2 text-lg font-bold" style={{ color: colors.textPrimary }}>{view === 'calendar' ? 'В этот день чекинов нет' : 'Пока нет чекинов'}</h2>
           </div>
         ) : (
           <>
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12, opacity: isFetching ? 0.7 : 1, transition: 'opacity .2s' }}>
-              {items.map((item) => (
-                <li
-                  key={item.id}
-                  style={{
-                    padding: '16px 18px', borderRadius: 16, border: `1px solid ${colors.border}`,
-                    background: colors.surface,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/shops/${item.shopId}`)}
-                      style={{
-                        flex: 1, textAlign: 'left', border: 'none', background: 'transparent',
-                        padding: 0, cursor: 'pointer',
-                      }}
-                    >
-                      <p style={{
-                        margin: 0, fontFamily: '"Manrope", sans-serif', fontWeight: 700,
-                        fontSize: 16, color: colors.textPrimary,
-                      }}>
-                        {item.shopName || 'Кофейня'}
-                      </p>
-                      <p style={{
-                        margin: '6px 0 0', fontFamily: '"Manrope", sans-serif', fontSize: 13, color: colors.textSecondary,
-                      }}>
-                        {formatCheckInDate(item)}
-                      </p>
-                    </button>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                      {item.reviewId ? (
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/shops/${item.shopId}/reviews/${item.reviewId}/edit`)}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                            padding: '5px 10px', borderRadius: 8,
-                            border: `1px solid ${isDark ? '#3D2F28' : '#E7E5E4'}`,
-                            background: 'transparent', color: gold,
-                            fontFamily: '"Manrope", sans-serif', fontWeight: 600, fontSize: 12, cursor: 'pointer',
-                          }}
-                        >
-                          <AppIcon name="rate_review" size={14} color="currentColor" />
-                          Отзыв
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {item.note ? (
-                    <p style={{
-                      margin: '12px 0 0', paddingTop: 12, borderTop: `1px solid ${colors.border}`,
-                      fontFamily: '"Manrope", sans-serif', fontSize: 14, color: colors.textPrimary, lineHeight: 1.5,
-                    }}>
-                      {item.note}
-                    </p>
-                  ) : null}
-                  {(item.photos?.length ?? 0) > 0 && (
-                    <div className="flex gap-2 overflow-x-auto mt-3 pb-1">
-                      {[...(item.photos ?? [])]
-                        .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
-                        .filter((photo) => photo.fullUrl)
-                        .map((photo, index, photos) => (
-                          <button
-                            key={photo.id ?? photo.storageKey}
-                            type="button"
-                            aria-label={`Открыть фото ${index + 1} из чекина`}
-                            onClick={() => setGallery({ images: photos, shopName: item.shopName || 'Кофейня', initialIndex: index })}
-                            className="w-24 h-24 shrink-0 rounded-xl overflow-hidden p-0 border-0"
-                          >
-                            <img src={getPhotoUrl(photo, 'thumbnail')}alt={`Фото посещения: ${item.shopName || 'Кофейня'}`} loading="lazy" className="w-full h-full object-cover" />
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-
-            {totalPages > 1 && (
-              <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button
-                    type="button"
-                    disabled={page <= 1 || isFetching}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    style={{
-                      padding: '10px 18px', borderRadius: 12,
-                      border: `1px solid ${colors.border}`,
-                      background: page <= 1 ? colors.border : colors.surface,
-                      color: page <= 1 ? `${colors.textSecondary}80` : colors.textPrimary,
-                      fontFamily: '"Manrope", sans-serif', fontWeight: 600, fontSize: 14,
-                      cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    ← Назад
-                  </button>
-                  <span style={{ fontFamily: '"Manrope", sans-serif', fontSize: 14, color: colors.textSecondary }}>
-                    Страница <span style={{ fontWeight: 700, color: gold }}>{page}</span> из {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={page >= totalPages || isFetching}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    style={{
-                      padding: '10px 18px', borderRadius: 12,
-                      border: `1px solid ${colors.border}`,
-                      background: page >= totalPages ? colors.border : colors.surface,
-                      color: page >= totalPages ? `${colors.textSecondary}80` : colors.textPrimary,
-                      fontFamily: '"Manrope", sans-serif', fontWeight: 600, fontSize: 14,
-                      cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    Вперёд →
-                  </button>
-                </div>
-                <p style={{ margin: 0, fontFamily: '"Manrope", sans-serif', fontSize: 13, color: colors.textSecondary }}>
-                  Показано {items.length} из {totalItems}
-                </p>
-              </div>
-            )}
+            {view === 'calendar' && <h2 className="mb-4 mt-7 text-2xl font-extrabold" style={{ color: colors.textPrimary }}>{visitDate(items[0]).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</h2>}
+            <div className="space-y-4" style={{ opacity: feed.isFetching || calendar.isFetching ? 0.7 : 1 }}>
+              {items.map(item => <CheckInCard key={item.id} item={item} colors={colors} onShopOpen={() => navigate(`/shops/${item.shopId}`)} onPhotoOpen={(images, initialIndex) => setGallery({ images, initialIndex, shopName: item.shopName || 'Кофейня' })} />)}
+            </div>
           </>
+        )}
+
+        {view === 'feed' && (feed.data?.totalPages ?? 0) > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-3" style={{ color: colors.textPrimary }}>
+            <button type="button" disabled={page <= 1 || feed.isFetching} onClick={() => setPage(value => value - 1)} className="min-h-11 rounded-xl border px-4 disabled:opacity-40" style={{ borderColor: colors.border }} aria-label="Предыдущая страница">←</button>
+            <span>{page} / {feed.data?.totalPages}</span>
+            <button type="button" disabled={page >= (feed.data?.totalPages ?? 1) || feed.isFetching} onClick={() => setPage(value => value + 1)} className="min-h-11 rounded-xl border px-4 disabled:opacity-40" style={{ borderColor: colors.border }} aria-label="Следующая страница">→</button>
+          </div>
         )}
       </div>
       {gallery && <PhotoLightbox {...gallery} onClose={() => setGallery(null)} />}
-    </div>
+    </main>
+  );
+};
+
+type ThemeColors = ReturnType<typeof getThemeColors>;
+
+const CheckInCard: React.FC<{ item: CheckInDto; colors: ThemeColors; onShopOpen: () => void; onPhotoOpen: (images: ShortPhotoMetadataDto[], initialIndex: number) => void }> = ({ item, colors, onShopOpen, onPhotoOpen }) => {
+  const rating = item.rating;
+  const average = rating ? (rating.place + rating.service + rating.coffee) / 3 : null;
+  const photos = [...(item.photos ?? [])].sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0)).filter(photo => getPhotoUrl(photo, 'thumbnail'));
+  return (
+    <article className="rounded-[28px] border p-5 sm:p-6" style={{ borderColor: colors.border, background: colors.surface }}>
+      <button type="button" onClick={onShopOpen} className="flex w-full items-center gap-4 text-left">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border" style={{ borderColor: `${COLORS.primary}70`, background: `${COLORS.primary}12`, color: COLORS.primary }}><AppIcon name="location_on" size={27} color="currentColor" /></span>
+        <span className="min-w-0"><strong className="block truncate text-lg sm:text-xl" style={{ color: colors.textPrimary }}>{item.shopName || 'Кофейня'}</strong><span className="mt-0.5 block text-sm" style={{ color: colors.textSecondary }}>{formatDate(item)}</span></span>
+      </button>
+
+      {rating && (
+        <>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {([['Аура', rating.place, 'auto_awesome'], ['Сервис', rating.service, 'groups'], ['Кофе', rating.coffee, 'coffee']] as const).map(([label, value, icon]) => (
+              <div key={label} className="flex min-h-20 items-center justify-center gap-2 rounded-2xl px-2" style={{ background: colors.background }}>
+                <AppIcon name={icon} size={22} color={COLORS.primary} />
+                <span><span className="block text-xs" style={{ color: colors.textSecondary }}>{label}</span><strong style={{ color: colors.textPrimary }}>{value}</strong></span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex items-center gap-2">
+            <span className="flex">{[1, 2, 3, 4, 5].map(star => <StarIcon key={star} filled={average !== null && star <= average} size={25} color={COLORS.primary} />)}</span>
+            <strong className="text-xl" style={{ color: colors.textPrimary }}>{average?.toFixed(1)}</strong>
+          </div>
+        </>
+      )}
+
+      {item.note && <p className="mt-5 whitespace-pre-line text-base leading-relaxed" style={{ color: colors.textSecondary }}>{item.note}</p>}
+      {photos.length > 0 && (
+        <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+          {photos.map((photo, index) => (
+            <button key={photo.id ?? photo.storageKey} type="button" onClick={() => onPhotoOpen(photos, index)} aria-label={`Открыть фото ${index + 1} из чекина`} className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border-0 p-0">
+              <img src={getPhotoUrl(photo, 'thumbnail')} alt="" loading="lazy" className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </article>
+  );
+};
+
+const CheckInCalendar: React.FC<{ month: Date; items: CheckInDto[]; itemsByDate: Map<string, CheckInDto[]>; selectedDate: string; colors: ThemeColors; onMonthChange: (offset: number) => void; onSelectDate: (key: string) => void }> = ({ month, items, itemsByDate, selectedDate, colors, onMonthChange, onSelectDate }) => {
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const offset = (month.getDay() + 6) % 7;
+  const uniqueShops = new Set(items.map(item => item.shopId)).size;
+  return (
+    <section className="mb-1 rounded-[28px] border p-4 sm:p-6" style={{ borderColor: colors.border, background: colors.surface }}>
+      <div className="mb-4 grid grid-cols-[44px_1fr_44px] items-center">
+        <button type="button" onClick={() => onMonthChange(-1)} aria-label="Предыдущий месяц" className="flex h-11 w-11 items-center justify-center"><AppIcon name="chevron_left" size={26} color={colors.textPrimary} /></button>
+        <div className="text-center"><h2 className="text-xl font-extrabold" style={{ color: colors.textPrimary }}>{month.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}</h2><p className="mt-0.5 text-sm" style={{ color: colors.textSecondary }}>{items.length} чекинов · {uniqueShops} кофеен</p></div>
+        <button type="button" onClick={() => onMonthChange(1)} aria-label="Следующий месяц" className="flex h-11 w-11 items-center justify-center"><AppIcon name="chevron_right" size={26} color={colors.textSecondary} /></button>
+      </div>
+      <div className="grid grid-cols-7 text-center text-xs" style={{ color: colors.textSecondary }}>{WEEKDAYS.map((day, index) => <span key={`${day}-${index}`} className="py-2">{day}</span>)}</div>
+      <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: offset }, (_, index) => <span key={`empty-${index}`} />)}
+        {Array.from({ length: days }, (_, index) => {
+          const day = index + 1;
+          const key = dateKey(new Date(month.getFullYear(), month.getMonth(), day));
+          const checkIns = itemsByDate.get(key) ?? [];
+          const selected = selectedDate === key;
+          return (
+            <button key={key} type="button" onClick={() => onSelectDate(key)} aria-label={`${day}, чекинов: ${checkIns.length}`} aria-pressed={selected} className="relative flex min-h-[62px] flex-col items-center justify-center overflow-hidden rounded-2xl border" style={{ borderColor: selected ? COLORS.primary : 'transparent', background: selected ? `${COLORS.primary}12` : 'transparent', color: colors.textPrimary }}>
+              <span className="text-sm">{day}</span>
+              {checkIns.length > 0 && <span className="mt-1 flex -space-x-2">{checkIns.slice(0, 2).map(item => {
+                const photo = item.photos?.find(value => getPhotoUrl(value, 'thumbnail'));
+                return photo
+                  ? <img key={item.id} src={getPhotoUrl(photo, 'thumbnail')} alt="" className="h-7 w-7 rounded-full border object-cover" style={{ borderColor: colors.surface }} />
+                  : <span key={item.id} className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border" style={{ borderColor: colors.surface, background: '#1A1412' }}><img src="/maskot-props/maskot-wthi-cup.png" alt="" className="h-10 w-10 max-w-none object-cover" /></span>;
+              })}</span>}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 };
 

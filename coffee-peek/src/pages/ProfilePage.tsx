@@ -15,9 +15,11 @@ import {
   CaretRight,
   ChatCircleText,
   Heart,
+  Factory,
   MapPin,
   NotePencil,
   PencilSimple,
+  Plus,
   SignOut,
 } from '@/components/Icon';
 
@@ -61,11 +63,17 @@ const ProfilePage: React.FC = () => {
     gold: '#EAB308',
   };
 
-  const activities = [
+  const favorites = [
     { title: 'Избранные кофейни', subtitle: 'Кофейни, которые вы сохранили', Icon: Heart, color: '#FB7185', bg: 'rgba(244,63,94,.16)', route: '/shops?filter=favorite' },
+  ];
+  const activities = [
     { title: 'Мои отзывы', subtitle: 'Ваши оценки и отзывы о кофейнях', Icon: ChatCircleText, color: '#D58AE8', bg: 'rgba(192,82,214,.16)', route: '/my/reviews' },
     { title: 'Чекины', subtitle: 'Места, которые вы уже посетили', Icon: MapPin, color: '#68B9E8', bg: 'rgba(56,153,211,.16)', route: '/check-ins' },
-    { title: 'Мои правки кофеен', subtitle: 'Заявки, которые вы отправили на модерацию', Icon: NotePencil, color: '#D8A743', bg: 'rgba(202,145,28,.16)', route: '/my/edits' },
+  ];
+  const moderation = [
+    { title: 'Правки кофеен', subtitle: 'Изменения, которые вы отправили', Icon: NotePencil, color: '#D8A743', bg: 'rgba(202,145,28,.16)', route: '/my/edits' },
+    { title: 'Отправленные кофейни', subtitle: 'Кофейни, которые вы добавили', Icon: Plus, color: '#74C98B', bg: 'rgba(65,158,88,.18)', route: '/my/shops' },
+    { title: 'Отправленные обжарщики', subtitle: 'Обжарщики, которых вы добавили', Icon: Factory, color: '#68B9E8', bg: 'rgba(56,153,211,.16)', route: '/my/roasters' },
   ];
 
   if (isLoading || isUserLoading) {
@@ -78,8 +86,9 @@ const ProfilePage: React.FC = () => {
         <div className="mx-auto w-full max-w-[680px]">
           <h1 className="mb-6 text-[26px] font-extrabold sm:text-3xl" style={{ color: colors.text }}>Профиль</h1>
           <GuestAuthCard {...colors} />
+          <ProfileSection title="Избранное" activities={favorites} colors={colors} onNavigate={navigate} />
           <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider sm:mt-6" style={{ color: colors.muted }}>Моя активность</p>
-          <ProfileActivityList activities={activities.slice(0, 3)} colors={colors} onNavigate={navigate} />
+          <ProfileActivityList activities={activities} colors={colors} onNavigate={navigate} />
         </div>
       </main>
     );
@@ -193,8 +202,9 @@ const ProfilePage: React.FC = () => {
           <textarea aria-label="О себе" value={draft.about} onChange={event => setDraft(value => ({ ...value, about: event.target.value }))} placeholder="Расскажите о себе" rows={2} className="mt-5 w-full resize-y rounded-xl border px-3 py-2 text-base outline-none" style={{ borderColor: colors.border, background: colors.surface, color: colors.text }} />
         ) : profile.about ? <p className="mt-4 text-sm leading-relaxed sm:mt-5 sm:text-base" style={{ color: colors.muted }}>{profile.about}</p> : null}
 
-        <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider sm:mt-6" style={{ color: colors.muted }}>Моя активность</p>
-        <ProfileActivityList activities={activities} colors={colors} onNavigate={navigate} />
+        <ProfileSection title="Избранное" activities={favorites} colors={colors} onNavigate={navigate} />
+        <ProfileSection title="Моя активность" activities={activities} colors={colors} onNavigate={navigate} />
+        <ProfileSection title="Модерация" activities={moderation} colors={colors} onNavigate={navigate} />
 
         <button
           type="button"
@@ -220,6 +230,13 @@ const ProfileStat: React.FC<{ value: number; label: string; to: string; text: st
 type ProfileColors = { bg: string; surface: string; border: string; text: string; muted: string; gold: string };
 
 type ProfileActivity = { title: string; subtitle: string; Icon: React.ComponentType<{ className?: string }>; color: string; bg: string; route: string };
+
+const ProfileSection: React.FC<{ title: string; activities: ProfileActivity[]; colors: ProfileColors; onNavigate: (route: string) => void }> = ({ title, activities, colors, onNavigate }) => (
+  <>
+    <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider sm:mt-6" style={{ color: colors.muted }}>{title}</p>
+    <ProfileActivityList activities={activities} colors={colors} onNavigate={onNavigate} />
+  </>
+);
 
 const ProfileActivityList: React.FC<{ activities: ProfileActivity[]; colors: ProfileColors; onNavigate: (route: string) => void }> = ({ activities, colors, onNavigate }) => (
   <section className="overflow-hidden rounded-[20px] border sm:rounded-3xl" style={{ borderColor: colors.border, background: colors.surface }}>

@@ -35,7 +35,7 @@ const LandingMapWidget: React.FC<{ embed?: boolean }> = ({ embed = false }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
-  const mapDataRef = useRef<MapSearchData>({ shops: [], zones: [] });
+  const mapDataRef = useRef<MapSearchData>({ shops: [], clusters: [], zones: [] });
   const mapRequestRef = useRef<AbortController | null>(null);
   const initStartedRef = useRef(false);
   const previewIdRef = useRef<string | null>(null);

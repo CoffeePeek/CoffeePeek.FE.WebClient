@@ -1,12 +1,14 @@
 import React from 'react';
-import { Review } from '../../api/coffeeshop';
-import { PublicUserProfile } from '../../api/user';
+import { getPhotoUrl } from '../../api/coffeeshop';
+import type { Review, ShortPhotoMetadataDto } from '../../api/coffeeshop';
+import type { PublicUserProfile } from '../../api/user';
 import { ReviewCardSkeleton } from '../skeletons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeClasses } from '../../utils/theme';
-import { AppUser } from '../../contexts/UserContext';
+import type { AppUser } from '../../contexts/UserContext';
 import { StarIcon } from '../icons';
 import Mascot from '../Mascot';
+import PhotoLightbox from '../PhotoLightbox';
 
 interface ReviewsSectionProps {
   reviews: Review[];
@@ -41,6 +43,8 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 }) => {
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
+  const [expandedReviews, setExpandedReviews] = React.useState<Set<string>>(new Set());
+  const [gallery, setGallery] = React.useState<{ images: ShortPhotoMetadataDto[]; initialIndex: number } | null>(null);
   const handleNavigateToUserProfile = (userId: string) => {
     if (onUserSelect) {
       onUserSelect(userId);
@@ -67,10 +71,11 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         <ReviewCardSkeleton count={3} />
       ) : reviews.length > 0 ? (
         <div className="flex snap-x gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible">
-          {reviews.map((review) => {
+          {reviews.map((review, index) => {
             const userProfile = usersCache.get(review.userId);
             const displayName = userProfile?.userName || review.userName || 'Анонимный пользователь';
             const avatarUrl = userProfile?.avatarUrl || review.userAvatar;
+            const photos = (review.photos ?? []).filter(photo => getPhotoUrl(photo, 'thumbnail'));
             const reviewDate = new Date(review.createdAt);
             const formattedDate = reviewDate.toLocaleDateString('ru-RU', {
               year: 'numeric',
@@ -78,13 +83,16 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               day: 'numeric'
             });
             const avgReviewRating = (review.ratingCoffee + review.ratingService + review.ratingPlace) / 3;
+            const isExpanded = expandedReviews.has(review.id);
+            const isLong = review.comment.length > 220;
+            const isBlurred = !user && index > 0;
 
             return (
-              <div key={review.id} className={`${cardBg} min-w-[88%] snap-start rounded-[24px] border p-5 transition-all sm:min-w-0 ${borderColor}`}>
-                <div className="mb-4 flex items-start justify-between gap-3">
+              <div key={review.id} aria-hidden={isBlurred || undefined} className={`${cardBg} min-w-[88%] snap-start rounded-[24px] border p-5 transition-all sm:min-w-0 ${borderColor} ${isBlurred ? 'pointer-events-none select-none blur-[6px]' : ''}`}>
+                <div className="mb-4 flex items-center justify-between gap-3">
                   <button
                     onClick={() => handleNavigateToUserProfile(review.userId)}
-                    className="flex items-center gap-4 hover:opacity-80 transition-opacity min-w-0"
+                    className="flex min-w-0 items-center gap-4 text-left transition-opacity hover:opacity-80"
                   >
                     <div className={`w-12 h-12 shrink-0 rounded-full border-2 ${themeClasses.primary.borderLighter} overflow-hidden`}>
                       {avatarUrl ? (
@@ -120,7 +128,37 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 {review.header && (
                   <h5 className={`font-bold ${textMain} mb-2`}>{review.header}</h5>
                 )}
-                <p className={`${textMuted} leading-relaxed`}>"{review.comment}"</p>
+                <p className={`${textMuted} whitespace-pre-line leading-relaxed ${isLong && !isExpanded ? 'line-clamp-4' : ''}`}>{review.comment}</p>
+                {isLong && (
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    onClick={() => setExpandedReviews(current => {
+                      const next = new Set(current);
+                      if (isExpanded) next.delete(review.id);
+                      else next.add(review.id);
+                      return next;
+                    })}
+                    className={`mt-2 font-semibold ${themeClasses.primary.text}`}
+                  >
+                    {isExpanded ? 'Свернуть' : 'Читать полностью'}
+                  </button>
+                )}
+                {photos.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {photos.map((photo, photoIndex) => (
+                      <button
+                        type="button"
+                        key={photo.storageKey || photo.fullUrl || photoIndex}
+                        onClick={() => setGallery({ images: photos, initialIndex: photoIndex })}
+                        className="aspect-square overflow-hidden rounded-xl border-0 p-0"
+                        aria-label={`Открыть фото ${photoIndex + 1} к отзыву`}
+                      >
+                        <img src={getPhotoUrl(photo, 'thumbnail')} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -131,6 +169,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
           <p className={`${textMuted} mt-3`}>Станьте первым, кто оценит и оставит отзыв о своём посещении {coffeeShopName}</p>
         </div>
       )}
+      {gallery && <PhotoLightbox images={gallery.images} shopName={coffeeShopName} initialIndex={gallery.initialIndex} onClose={() => setGallery(null)} />}
     </div>
   );
 };

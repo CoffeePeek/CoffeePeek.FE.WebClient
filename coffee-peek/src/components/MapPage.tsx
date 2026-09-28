@@ -7,7 +7,7 @@ import { getThemeClasses } from '../utils/theme';
 import { getMapShops, getMapZones, getCoffeeShopById, getPhotoUrl } from '../api/coffeeshop';
 import type { DetailedCoffeeShop, MapSearchData, MapShop, PhotoUrlsDto } from '../api/coffeeshop';
 import { getErrorMessage } from '../utils/errorHandler';
-import { ArrowRight, Star, Crosshair, NavigationArrow, MagnifyingGlass, X, Polygon } from '@/components/Icon';
+import { ArrowRight, CaretRight, Star, Crosshair, NavigationArrow, MagnifyingGlass, X, Polygon, MapPin, Minus, Plus } from '@/components/Icon';
 import Button from './Button';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
@@ -47,14 +47,14 @@ const MapPage: React.FC = () => {
   const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
   const selectedIdRef = useRef<string | null>(null);
-  const mapDataRef = useRef<MapSearchData>({ shops: [], zones: [] });
+  const mapDataRef = useRef<MapSearchData>({ shops: [], clusters: [], zones: [] });
   const paintMapRef = useRef<(data: MapSearchData) => void>(() => undefined);
   const mapRequestRef = useRef<AbortController | null>(null);
   const themeRef = useRef(theme);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mapData, setMapData] = useState<MapSearchData>({ shops: [], zones: [] });
+  const [mapData, setMapData] = useState<MapSearchData>({ shops: [], clusters: [], zones: [] });
   const [shopsLoaded, setShopsLoaded] = useState(false);
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
   const [selectedShopDetails, setSelectedShopDetails] = useState<DetailedCoffeeShop | null>(null);
@@ -79,18 +79,9 @@ const MapPage: React.FC = () => {
         showZonesRef.current ? getMapZones(bounds, controller.signal).catch(() => []) : [],
       ]);
       if (mapRequestRef.current !== controller) return null;
-      const shops = Array.isArray(response.data?.shops)
-        ? response.data.shops.map((shop: MapShop) => ({
-          id: shop.id,
-          latitude: Number(shop.latitude),
-          longitude: Number(shop.longitude),
-          title: shop.title || 'Кофейня',
-          type: shop.type ?? null,
-          primaryZoneId: shop.primaryZoneId,
-        }))
-        : [];
       const nextData: MapSearchData = {
-        shops,
+        shops: response.data?.shops ?? [],
+        clusters: response.data?.clusters ?? [],
         zones,
         isTruncated: response.data?.isTruncated === true,
       };
@@ -124,6 +115,18 @@ const MapPage: React.FC = () => {
     } finally {
       if (detailsRequestRef.current === shopId) setIsLoadingDetails(false);
     }
+  };
+
+  const selectShop = (shop: MapShop, moveToShop = false) => {
+    selectedIdRef.current = shop.id;
+    setSelectedShop(shop);
+    void loadShopDetails(shop.id);
+    if (moveToShop) {
+      queryRef.current = '';
+      setQuery('');
+      mapInstanceRef.current?.flyTo({ center: [shop.longitude, shop.latitude], zoom: 16, duration: 700 });
+    }
+    paintMapRef.current(mapDataRef.current);
   };
 
   const handleLocate = () => {
@@ -205,12 +208,7 @@ const MapPage: React.FC = () => {
           element.tabIndex = 0;
           element.setAttribute('role', 'button');
           element.setAttribute('aria-label', shop.title);
-          const select = () => {
-            selectedIdRef.current = shop.id;
-            setSelectedShop(shop);
-            void loadShopDetails(shop.id);
-            paintMap(mapDataRef.current);
-          };
+          const select = () => selectShop(shop);
           element.addEventListener('click', select);
           element.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -298,6 +296,11 @@ const MapPage: React.FC = () => {
     return 'Часы работы не указаны';
   };
 
+  const normalizedQuery = query.trim().toLocaleLowerCase('ru-RU');
+  const searchResults = normalizedQuery
+    ? mapData.shops.filter(shop => shop.title.toLocaleLowerCase('ru-RU').includes(normalizedQuery)).slice(0, 3)
+    : [];
+
   return (
     <div
       className={`relative z-0 isolate overflow-hidden ${themeClasses.bg.primary}`}
@@ -312,6 +315,8 @@ const MapPage: React.FC = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Поиск по названию"
+              aria-label="Поиск кофейни по названию"
+              aria-controls="map-search-results"
               className={`flex-1 min-w-0 bg-transparent outline-none text-sm ${themeClasses.text.primary}`}
             />
             {query && (
@@ -320,6 +325,22 @@ const MapPage: React.FC = () => {
               </button>
             )}
           </div>
+          {searchResults.length > 0 && (
+            <div id="map-search-results" className={`mt-2 overflow-hidden rounded-2xl border shadow-xl ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+              {searchResults.map((shop, index) => (
+                <button
+                  type="button"
+                  key={shop.id}
+                  onClick={() => selectShop(shop, true)}
+                  className={`flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${index ? `border-t ${themeClasses.border.default}` : ''}`}
+                >
+                  <MapPin size={21} weight="bold" className="shrink-0 text-[#EAB308]" />
+                  <span className={`min-w-0 flex-1 truncate font-semibold ${themeClasses.text.primary}`}>{shop.title}</span>
+                  <CaretRight size={20} className={`shrink-0 ${themeClasses.text.secondary}`} />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -336,6 +357,7 @@ const MapPage: React.FC = () => {
 
       {shopsLoaded
         && mapData.shops.length === 0
+        && mapData.clusters.length === 0
         && (mapData.zones?.length ?? 0) === 0
         && !isLoading && (
         <div
@@ -369,48 +391,41 @@ const MapPage: React.FC = () => {
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
       </div>
 
-      {/* App-style map controls: locate + zones */}
-      <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-[500] flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={handleLocate}
-          disabled={isLocating}
-          aria-label="Моё местоположение"
-          className={`w-14 h-14 flex items-center justify-center rounded-xl border shadow-lg active:scale-95 transition-all disabled:opacity-60 ${themeClasses.bg.card} ${themeClasses.border.default} ${themeClasses.text.primary}`}
-        >
-          {isLocating
-            ? <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-            : <Crosshair size={20} weight="bold" />}
+      <button
+        type="button"
+        onClick={() => setShowZones((value) => !value)}
+        aria-label={showZones ? 'Скрыть кофейные зоны' : 'Показать кофейные зоны'}
+        aria-pressed={showZones}
+        title={showZones ? 'Скрыть кофейные зоны' : 'Показать кофейные зоны'}
+        className={`absolute right-3 top-20 z-[500] flex h-12 w-12 items-center justify-center rounded-xl border shadow-lg transition-all active:scale-95 sm:right-4 ${themeClasses.bg.card} ${themeClasses.border.default} ${showZones ? 'text-[#EAB308]' : themeClasses.text.secondary}`}
+      >
+        <Polygon size={20} weight={showZones ? 'fill' : 'bold'} />
+      </button>
+
+      <div className={`absolute right-3 top-[58%] z-[500] flex -translate-y-1/2 flex-col overflow-hidden rounded-xl border shadow-lg sm:right-4 ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+        <button type="button" onClick={() => mapInstanceRef.current?.zoomIn()} aria-label="Приблизить карту" className={`flex h-12 w-12 items-center justify-center ${themeClasses.text.primary}`}>
+          <Plus size={21} weight="bold" />
         </button>
-        <button
-          type="button"
-          onClick={() => setShowZones((value) => !value)}
-          aria-label={showZones ? 'Скрыть кофейные зоны' : 'Показать кофейные зоны'}
-          aria-pressed={showZones}
-          title={showZones ? 'Скрыть кофейные зоны' : 'Показать кофейные зоны'}
-          className={`w-14 h-14 flex items-center justify-center rounded-xl border shadow-lg active:scale-95 transition-all ${themeClasses.bg.card} ${themeClasses.border.default} ${showZones ? 'text-[#EAB308]' : themeClasses.text.secondary}`}
-        >
-          <Polygon size={20} weight={showZones ? 'fill' : 'bold'} />
+        <button type="button" onClick={() => mapInstanceRef.current?.zoomOut()} aria-label="Отдалить карту" className={`flex h-12 w-12 items-center justify-center border-t ${themeClasses.border.default} ${themeClasses.text.primary}`}>
+          <Minus size={21} weight="bold" />
         </button>
       </div>
 
       <button
         type="button"
-        onClick={() => {
-          const map = mapInstanceRef.current;
-          if (!map) return;
-          void loadCoffeeShops(map).then((loaded) => {
-            if (loaded) paintMapRef.current(loaded);
-          });
-        }}
-        className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] w-[calc(100%-2rem)] max-w-xs sm:w-auto sm:min-w-[280px] min-h-12 px-8 py-3 ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-full shadow-lg hover:bg-opacity-90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EAB308]/50 focus-visible:ring-offset-2`}
+        onClick={handleLocate}
+        disabled={isLocating}
+        aria-label="Моё местоположение"
+        className={`absolute bottom-4 right-3 z-[500] flex h-12 w-12 items-center justify-center rounded-xl border shadow-lg transition-all active:scale-95 disabled:opacity-60 sm:right-4 ${themeClasses.bg.card} ${themeClasses.border.default} ${themeClasses.text.primary}`}
       >
-        <span className={`${themeClasses.text.primary} font-medium whitespace-nowrap`}>Поиск в этой области</span>
+        {isLocating
+          ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          : <Crosshair size={20} weight="bold" />}
       </button>
 
       {selectedShop && (
         <div
-          className={`absolute bottom-4 left-4 right-4 z-[500] ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl shadow-2xl max-w-md mx-auto`}
+          className={`absolute bottom-20 left-4 right-4 z-[500] ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-2xl shadow-2xl max-w-md mx-auto`}
         >
           {isLoadingDetails ? (
             <div className="p-4 flex items-center justify-center">

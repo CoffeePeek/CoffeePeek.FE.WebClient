@@ -2,6 +2,7 @@ export interface ApiResponse<T> {
   success?: boolean;
   isSuccess?: boolean;
   message: string;
+  statusCode?: string | number;
   data: T;
   /** From X-Total-Count / X-Total-Pages or body TotalItems/TotalPages */
   pagination?: {

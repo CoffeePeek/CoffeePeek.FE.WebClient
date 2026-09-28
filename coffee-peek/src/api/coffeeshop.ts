@@ -112,8 +112,21 @@ export interface MapShop {
   latitude: number;
   longitude: number;
   title: string;
-  type: CoffeeShopType | null;
-  primaryZoneId?: string;
+  type: CoffeeShopType | number | null;
+  primaryZoneId: string | null;
+}
+
+export interface MapCluster {
+  id: string | null;
+  latitude: number;
+  longitude: number;
+  count: number;
+  bounds: {
+    minLatitude: number;
+    minLongitude: number;
+    maxLatitude: number;
+    maxLongitude: number;
+  };
 }
 
 export interface MapCoffeeZone {
@@ -129,7 +142,8 @@ export interface MapCoffeeZone {
 
 export interface MapSearchData {
   shops: MapShop[];
-  zones?: MapCoffeeZone[];
+  clusters: MapCluster[];
+  zones: MapCoffeeZone[];
   isTruncated?: boolean;
 }
 
@@ -433,6 +447,11 @@ export interface GetCheckInsResponse {
   pageSize?: number;
 }
 
+export interface CheckInDateRange {
+  from: string;
+  to: string;
+}
+
 // ==================== Кэш для справочных данных ====================
 
 const referenceDataCache: {
@@ -564,6 +583,102 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
+export type MapSearchResponseData = {
+  shops?: Array<{
+    id: string;
+    latitude: string | number;
+    longitude: string | number;
+    title: string | null;
+    type: number | string | null;
+    primaryZoneId: string | null;
+  }>;
+  clusters?: Array<{
+    id: string | null;
+    latitude: string | number;
+    longitude: string | number;
+    count: string | number;
+    bounds: {
+      minLatitude: string | number;
+      minLongitude: string | number;
+      maxLatitude: string | number;
+      maxLongitude: string | number;
+    };
+  }>;
+  zones?: Array<{
+    id: string;
+    name: string | null;
+    description: string | null;
+    latitude: string | number;
+    longitude: string | number;
+    radiusMeters: string | number;
+    shopCount: string | number;
+    polygon: Array<{ latitude: string | number; longitude: string | number }>;
+  }>;
+  isTruncated?: boolean | null;
+};
+
+const finiteNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+function normalizeMapSearch(data: MapSearchResponseData): MapSearchData {
+  const shops = (data.shops ?? []).flatMap((shop): MapShop[] => {
+    const latitude = finiteNumber(shop.latitude);
+    const longitude = finiteNumber(shop.longitude);
+    if (typeof shop.id !== 'string' || latitude === null || longitude === null) return [];
+    return [{
+      id: shop.id,
+      latitude,
+      longitude,
+      title: typeof shop.title === 'string' && shop.title.trim() ? shop.title : 'Кофейня',
+      type: typeof shop.type === 'number' || typeof shop.type === 'string' ? shop.type as CoffeeShopType | number : null,
+      primaryZoneId: typeof shop.primaryZoneId === 'string' ? shop.primaryZoneId : null,
+    }];
+  });
+  const clusters = (data.clusters ?? []).flatMap((cluster): MapCluster[] => {
+    const latitude = finiteNumber(cluster.latitude);
+    const longitude = finiteNumber(cluster.longitude);
+    const count = finiteNumber(cluster.count);
+    const bounds = cluster.bounds;
+    const minLatitude = finiteNumber(bounds?.minLatitude);
+    const minLongitude = finiteNumber(bounds?.minLongitude);
+    const maxLatitude = finiteNumber(bounds?.maxLatitude);
+    const maxLongitude = finiteNumber(bounds?.maxLongitude);
+    if ([latitude, longitude, count, minLatitude, minLongitude, maxLatitude, maxLongitude].some(value => value === null)) return [];
+    return [{
+      id: typeof cluster.id === 'string' ? cluster.id : null,
+      latitude: latitude!,
+      longitude: longitude!,
+      count: count!,
+      bounds: { minLatitude: minLatitude!, minLongitude: minLongitude!, maxLatitude: maxLatitude!, maxLongitude: maxLongitude! },
+    }];
+  });
+  const zones = (data.zones ?? []).flatMap((zone): MapCoffeeZone[] => {
+    const latitude = finiteNumber(zone.latitude);
+    const longitude = finiteNumber(zone.longitude);
+    const radiusMeters = finiteNumber(zone.radiusMeters);
+    const shopCount = finiteNumber(zone.shopCount);
+    if (typeof zone.id !== 'string' || latitude === null || longitude === null || radiusMeters === null || shopCount === null) return [];
+    return [{
+      id: zone.id,
+      name: typeof zone.name === 'string' && zone.name.trim() ? zone.name : 'Кофейная зона',
+      description: typeof zone.description === 'string' ? zone.description : null,
+      latitude,
+      longitude,
+      radiusMeters,
+      shopCount,
+      polygon: (zone.polygon ?? []).flatMap((point) => {
+        const pointLatitude = finiteNumber(point.latitude);
+        const pointLongitude = finiteNumber(point.longitude);
+        return pointLatitude === null || pointLongitude === null ? [] : [{ latitude: pointLatitude, longitude: pointLongitude }];
+      }),
+    }];
+  });
+  return { shops, clusters, zones, isTruncated: data.isTruncated === true };
+}
+
 /** Loads the server-selected map representation for the viewport at the given zoom. */
 async function getMapSearch(
   bounds: MapViewportBounds,
@@ -571,7 +686,7 @@ async function getMapSearch(
   signal?: AbortSignal,
 ): Promise<ApiResponse<MapSearchData>> {
   const requests = splitMapBounds(bounds).map((part) =>
-    httpClient.get<MapSearchData>(API_ENDPOINTS.MAP.BASE, {
+    httpClient.get<MapSearchResponseData>(API_ENDPOINTS.MAP.BASE, {
       params: {
         ...part,
         zoom: Math.max(0, Math.min(22, Math.round(zoom))),
@@ -581,14 +696,19 @@ async function getMapSearch(
     }),
   );
   const responses = await Promise.all(requests);
-  const data = responses.map((response) => response.data);
+  const data = responses.map((response) => normalizeMapSearch(response.data));
 
   return {
     success: true,
     isSuccess: true,
     message: responses[0]?.message ?? '',
+    statusCode: responses[0]?.statusCode,
     data: {
       shops: uniqueById(data.flatMap((part) => part.shops ?? [])),
+      clusters: Array.from(new Map(data.flatMap((part) => part.clusters ?? []).map((cluster) => [
+        cluster.id ?? `${cluster.latitude}:${cluster.longitude}:${cluster.count}`,
+        cluster,
+      ])).values()),
       zones: uniqueById(data.flatMap((part) => part.zones ?? [])),
       isTruncated: data.some((part) => part.isTruncated === true),
     },
@@ -907,7 +1027,8 @@ export async function createCheckIn(
  */
 export async function getCheckIns(
   page: number = 1,
-  pageSize: number = 10
+  pageSize: number = 10,
+  range?: CheckInDateRange,
 ): Promise<ApiResponse<GetCheckInsResponse>> {
   const headers: Record<string, string> = {
     'X-Page-Number': page.toString(),
@@ -916,7 +1037,7 @@ export async function getCheckIns(
 
   const response = await httpClient.get<CheckInDto[] | GetCheckInsResponse | { items?: CheckInDto[]; checkIns?: CheckInDto[] }>(
     API_ENDPOINTS.CHECK_IN.BASE,
-    { headers, requiresAuth: true }
+    { headers, requiresAuth: true, ...(range ? { params: range } : {}) }
   );
 
   const raw = response.data;
@@ -957,4 +1078,13 @@ export async function getCheckIns(
       pageSize: bodyPageSize ?? pageSize,
     },
   };
+}
+
+/** Loads every check-in in the half-open visit-time range [from, to). */
+export async function getCheckInsByDateRange(range: CheckInDateRange): Promise<CheckInDto[]> {
+  const first = await getCheckIns(1, 100, range);
+  const remaining = await Promise.all(
+    Array.from({ length: Math.max(0, first.data.totalPages - 1) }, (_, index) => getCheckIns(index + 2, 100, range)),
+  );
+  return [first, ...remaining].flatMap(response => response.data.items);
 }
