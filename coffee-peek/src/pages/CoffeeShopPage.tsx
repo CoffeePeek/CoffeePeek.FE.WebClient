@@ -23,6 +23,7 @@ import { useRequireAuth } from '../hooks/useRequireAuth';
 import { useShopData } from '../hooks/useShopData';
 import { useUsersCache } from '../hooks/useUsersCache';
 import { distanceKm, formatDistance } from '../utils/distance';
+import { getLocationLifetime } from '../utils/geolocation';
 import { getPriceRangeTier } from '../utils/priceRange';
 import { formatDayOfWeekShort, getCurrentDayOfWeek, getCurrentStatus, toLocalSchedules } from '../utils/shopUtils';
 import { getThemeClasses } from '../utils/theme';
@@ -65,11 +66,18 @@ const CoffeeShopPage: React.FC = () => {
 
   useEffect(() => {
     if (!navigator.geolocation) return;
+    let expiry: ReturnType<typeof setTimeout> | undefined;
     navigator.geolocation.getCurrentPosition(
-      position => setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
+      position => {
+        const lifetime = getLocationLifetime(position.timestamp);
+        if (lifetime === 0) return setUserLocation(null);
+        setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+        expiry = setTimeout(() => setUserLocation(null), lifetime);
+      },
       () => setUserLocation(null),
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 },
     );
+    return () => clearTimeout(expiry);
   }, []);
 
   if (!shopId) {

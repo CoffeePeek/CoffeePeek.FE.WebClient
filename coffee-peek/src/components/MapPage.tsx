@@ -21,6 +21,7 @@ import {
   renderMapZones,
 } from '../map/osmMap';
 import { getCurrentDayOfWeek, toLocalSchedules } from '../utils/shopUtils';
+import { getLocationLifetime } from '../utils/geolocation';
 
 /** Opens a driving route to the shop in Yandex Maps (tries the mobile app first, falls back to the web map). */
 function openYandexRoute(from: { lat: number; lon: number } | null, toLat: number, toLon: number): void {
@@ -62,6 +63,7 @@ const MapPage: React.FC = () => {
   const [isLocating, setIsLocating] = useState(false);
   const userPosRef = useRef<{ lat: number; lon: number } | null>(null);
   const userMarkerRef = useRef<MapLibreMarker | null>(null);
+  const locationExpiryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [query, setQuery] = useState('');
   const queryRef = useRef('');
   const [showZones, setShowZones] = useState(() => localStorage.getItem('mapShowZones') !== 'false');
@@ -134,9 +136,19 @@ const MapPage: React.FC = () => {
       setError('Геолокация не поддерживается вашим браузером');
       return;
     }
+    if (locationExpiryRef.current) clearTimeout(locationExpiryRef.current);
+    userPosRef.current = null;
+    userMarkerRef.current?.remove();
+    userMarkerRef.current = null;
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const lifetime = getLocationLifetime(pos.timestamp);
+        if (lifetime === 0) {
+          setError('Получено устаревшее местоположение. Попробуйте ещё раз');
+          setIsLocating(false);
+          return;
+        }
         const { latitude, longitude } = pos.coords;
         userPosRef.current = { lat: latitude, lon: longitude };
         const map = mapInstanceRef.current;
@@ -150,13 +162,18 @@ const MapPage: React.FC = () => {
             userMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat([longitude, latitude]).addTo(map);
           }
         }
+        locationExpiryRef.current = setTimeout(() => {
+          userPosRef.current = null;
+          userMarkerRef.current?.remove();
+          userMarkerRef.current = null;
+        }, lifetime);
         setIsLocating(false);
       },
       () => {
         setError('Не удалось определить местоположение');
         setIsLocating(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   };
 
@@ -249,6 +266,7 @@ const MapPage: React.FC = () => {
     return () => {
       cancelled = true;
       clearTimeout(updateTimeout);
+      if (locationExpiryRef.current) clearTimeout(locationExpiryRef.current);
       mapRequestRef.current?.abort();
       clearMarkers();
       map.remove();

@@ -3,7 +3,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { brand, getThemeColors } from '../design-system/tokens';
 import Mascot, { type MascotPose } from './Mascot';
 import { StarIcon } from './icons';
-import { Camera, Check, MapPin, X } from './Icon';
+import { Calendar, Camera, CaretDown, MapPin, X } from './Icon';
 import WobbleRing from './WobbleRing';
 import { CHECK_IN_LIMITS, todayInputValue } from '../utils/checkInForm';
 import { MAX_CHECKIN_PHOTOS } from '../api/photos';
@@ -57,11 +57,11 @@ const StarRow: React.FC<{
           aria-checked={filled && star === value}
           aria-label={`${star} из 5`}
           onClick={() => onChange(star)}
-          className="p-0.5 rounded-sm hover:scale-110 transition-transform"
+          className="rounded-md p-1 transition-transform hover:scale-110"
         >
           <StarIcon
             filled={filled}
-            size={14}
+            size={34}
             color={filled ? brand.primary : emptyColor}
           />
         </button>
@@ -80,15 +80,15 @@ const PhotoThumb: React.FC<{ file: File; onRemove: () => void }> = ({ file, onRe
   }, [file]);
 
   return (
-    <div className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden">
+    <div className="relative h-28 w-24 shrink-0 overflow-hidden rounded-2xl">
       {src && <img src={src} alt="" className="w-full h-full object-cover" />}
       <button
         type="button"
         onClick={onRemove}
         aria-label="Удалить фото"
-        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center"
+        className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white"
       >
-        <X size={10} weight="bold" />
+        <X size={14} weight="bold" />
       </button>
     </div>
   );
@@ -128,108 +128,90 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
   const columns: RatingColumn[] = [
     { key: 'coffee', label: 'Кофе', pose: 'cup', value: ratingCoffee, onChange: onRatingCoffee },
     { key: 'service', label: 'Сервис', pose: 'dessert', value: ratingService, onChange: onRatingService },
-    { key: 'place', label: 'Атмосф.', pose: 'dance', value: ratingPlace, onChange: onRatingPlace },
+    { key: 'place', label: 'Атмосфера', pose: 'dance', value: ratingPlace, onChange: onRatingPlace },
   ];
 
+  const formattedDate = new Date(`${visitedDate}T12:00:00`).toLocaleDateString('ru-RU', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+
   return (
-    <fieldset disabled={isSubmitting} className="flex flex-col gap-5 border-0 p-0 m-0 min-w-0">
-      <header className="space-y-1.5">
+    <fieldset disabled={isSubmitting} className="m-0 flex min-w-0 flex-col gap-7 border-0 p-0">
+      <header className="space-y-2">
         <h2
-          className="font-extended font-bold text-[28px] leading-none tracking-tight"
+          className="font-extended text-[28px] font-bold leading-none tracking-tight"
           style={{ color: colors.textPrimary }}
         >
           Чекин
         </h2>
         <p className="flex items-center gap-1.5 min-w-0">
-          <MapPin size={16} weight="fill" color={gold} className="shrink-0" />
+          <MapPin size={18} className="shrink-0" />
           <span
-            className="font-extended font-semibold text-[13px] uppercase tracking-[0.04em] truncate"
-            style={{ color: gold }}
+            className="truncate font-body text-base"
+            style={{ color: colors.textSecondary }}
           >
             {shopName}
           </span>
         </p>
       </header>
 
-      <div className="grid grid-cols-3 gap-2">
-        {columns.map((col) => (
-          <div
-            key={col.key}
-            className="flex flex-col items-center gap-1.5 rounded-2xl px-1.5 pt-3 pb-2.5"
-            style={{ backgroundColor: isDark ? colors.surface : '#FFFFFF', boxShadow: cardShadow }}
-          >
-            <Mascot pose={col.pose} size={72} eager />
-            <span
-              className="font-extended font-semibold text-[12px]"
-              style={{ color: colors.textPrimary }}
-            >
-              {col.label}
-            </span>
-            <StarRow value={col.value} onChange={col.onChange} label={col.label} emptyColor={emptyStar} />
-          </div>
-        ))}
-      </div>
+      <section aria-labelledby="checkin-ratings-title">
+        <h3 id="checkin-ratings-title" className="font-extended text-xl font-bold" style={{ color: colors.textPrimary }}>Ваши оценки</h3>
+        <p className="mt-1 text-sm" style={{ color: colors.textSecondary }}>Нажмите на звёзды, чтобы изменить оценку</p>
+        <div className="mt-3 space-y-2.5">
+          {columns.map((col) => (
+            <div key={col.key} className="grid min-h-[112px] grid-cols-[72px_1fr] items-center gap-2 rounded-2xl px-3 py-3" style={{ backgroundColor: isDark ? colors.surface : '#FFFFFF', boxShadow: cardShadow }}>
+              <Mascot pose={col.pose} size={68} eager />
+              <div className="min-w-0">
+                <span className="block font-extended text-xl font-semibold" style={{ color: colors.textPrimary }}>{col.label}</span>
+                <div className="mt-2 flex justify-start">
+                  <StarRow value={col.value} onChange={col.onChange} label={col.label} emptyColor={emptyStar} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <label
           htmlFor="checkin-date"
-          className="block font-body text-[13px]"
+          className="block font-body text-base"
           style={{ color: colors.textSecondary }}
         >
-          Дата чекина
+          Дата посещения
         </label>
-        <input
+        <div className="relative">
+          <div className="flex min-h-14 items-center gap-3 rounded-2xl px-4" style={{ backgroundColor: isDark ? colors.input : '#FFFFFF', color: colors.textPrimary, border: fieldBorder }}>
+            <Calendar size={22} color={colors.textSecondary} />
+            <span className="min-w-0 flex-1 text-base">{formattedDate}</span>
+            <CaretDown size={20} color={colors.textSecondary} />
+          </div>
+          <input
             id="checkin-date"
             type="date"
             max={todayInputValue()}
             value={visitedDate}
             onChange={(e) => onVisitedDateChange(e.target.value)}
-            className="w-full rounded-2xl py-3 px-4 font-body text-sm outline-none"
-            style={{
-              backgroundColor: isDark ? colors.input : '#FFFFFF',
-              color: colors.textPrimary,
-              border: fieldBorder,
-              colorScheme: theme,
-            }}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            style={{ colorScheme: theme }}
           />
+        </div>
       </div>
 
-      <div className="space-y-1.5">
-        <p className="font-body text-[13px]" style={{ color: colors.textSecondary }}>
-          Фото (необязательно, до {MAX_CHECKIN_PHOTOS})
-        </p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {selectedFiles.length < MAX_CHECKIN_PHOTOS && <label
-            htmlFor="checkin-photos"
-            className="w-16 h-16 shrink-0 rounded-xl border border-dashed flex items-center justify-center cursor-pointer"
-            style={{ borderColor: colors.border, backgroundColor: isDark ? colors.surface : '#FFFFFF', color: colors.textSecondary }}
-            aria-label="Добавить фото"
-          >
-            <Camera size={22} />
-          </label>}
-          <input
-            id="checkin-photos"
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={onFileSelect}
-          />
-          {selectedFiles.map((file, index) => (
-            <PhotoThumb key={`${file.name}-${file.size}-${index}`} file={file} onRemove={() => onRemoveFile(index)} />
-          ))}
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="font-extended text-xl font-bold" style={{ color: colors.textPrimary }}>Сделать публичным</p>
+          <p className="mt-1 font-body text-sm leading-relaxed" style={{ color: colors.textSecondary }}>Ваш чекин станет отзывом — нужны заголовок и описание</p>
         </div>
-        {uploadingPhotos && (
-          <div className="flex items-center gap-2 py-1" style={{ color: colors.textSecondary }}>
-            <WobbleRing size={16} />
-            <span className="text-xs font-body">Загрузка фотографий...</span>
-          </div>
-        )}
+        <button type="button" role="switch" aria-label="Сделать чекин публичным" aria-checked={isPublic} onClick={() => onPublicChange(!isPublic)} className="inline-flex h-10 w-16 shrink-0 appearance-none items-center rounded-full border-0 p-1" style={{ backgroundColor: isPublic ? gold : isDark ? '#4A3830' : '#D6D3D1' }}>
+          <span className="block h-8 w-8 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out" style={{ transform: isPublic ? 'translateX(24px)' : 'translateX(0)' }} />
+        </button>
       </div>
 
       {isPublic && (
-        <div className="space-y-1.5">
-          <label htmlFor="checkin-header" className="block font-body text-[13px]" style={{ color: colors.textSecondary }}>
+        <div className="space-y-2">
+          <label htmlFor="checkin-header" className="block font-body text-base" style={{ color: colors.textSecondary }}>
             Заголовок отзыва (обязательно)
           </label>
           <input
@@ -240,16 +222,16 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
             minLength={CHECK_IN_LIMITS.headerMin}
             maxLength={CHECK_IN_LIMITS.headerMax}
             placeholder="Коротко о впечатлении"
-            className="w-full rounded-2xl px-4 py-3 font-body text-sm outline-none"
+            className="min-h-14 w-full rounded-2xl px-4 py-3 font-body text-base outline-none"
             style={{ backgroundColor: isDark ? colors.input : '#FFFFFF', color: colors.textPrimary, border: fieldBorder }}
           />
         </div>
       )}
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <label
           htmlFor="checkin-note"
-          className="block font-body text-[13px]"
+          className="block font-body text-base"
           style={{ color: colors.textSecondary }}
         >
           {isPublic ? 'Описание отзыва (обязательно)' : 'Заметка (необязательно)'}
@@ -263,8 +245,8 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           minLength={isPublic ? CHECK_IN_LIMITS.noteMin : undefined}
           maxLength={CHECK_IN_LIMITS.noteMax}
           aria-describedby={isPublic ? 'checkin-note-hint' : undefined}
-          rows={3}
-          className="w-full rounded-2xl px-4 py-3 font-body text-sm resize-none outline-none placeholder:opacity-50"
+          rows={4}
+          className="w-full resize-none rounded-3xl px-4 py-4 font-body text-base outline-none placeholder:opacity-50"
           style={{
             backgroundColor: isDark ? colors.input : '#FFFFFF',
             color: colors.textPrimary,
@@ -278,36 +260,25 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <p className="font-extended font-bold text-[15px]" style={{ color: colors.textPrimary }}>
-            Сделать публичным
-          </p>
-          <p className="font-body text-[12px] mt-0.5" style={{ color: colors.textSecondary }}>
-            Ваш чекин станет отзывом
-          </p>
+      <div className="space-y-3">
+        <div>
+          <p className="font-extended text-xl font-bold" style={{ color: colors.textPrimary }}>Фото (необязательно)</p>
+          <p className="mt-1 text-sm" style={{ color: colors.textSecondary }}>Добавьте до {MAX_CHECKIN_PHOTOS} фото вашего визита.</p>
+          <p className="mt-2 text-base font-semibold" style={{ color: colors.textPrimary }}>Добавлено: {selectedFiles.length}/{MAX_CHECKIN_PHOTOS}</p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-label="Сделать чекин публичным"
-          aria-checked={isPublic}
-          onClick={() => onPublicChange(!isPublic)}
-          className="inline-flex h-7 w-12 shrink-0 items-center rounded-full border-0 p-[2px] appearance-none"
-          style={{ backgroundColor: isPublic ? gold : isDark ? '#5C544F' : '#D6D3D1' }}
-        >
-          <span
-            className="block h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out"
-            style={{ transform: isPublic ? 'translateX(20px)' : 'translateX(0)' }}
-          />
-        </button>
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {selectedFiles.length < MAX_CHECKIN_PHOTOS && <label htmlFor="checkin-photos" className="flex h-28 w-24 shrink-0 cursor-pointer items-center justify-center rounded-2xl border" style={{ borderColor: colors.border, backgroundColor: isDark ? colors.surface : '#FFFFFF', color: colors.textSecondary }} aria-label="Добавить фото"><Camera size={30} /></label>}
+          <input id="checkin-photos" type="file" accept="image/*" multiple className="hidden" onChange={onFileSelect} />
+          {selectedFiles.map((file, index) => <PhotoThumb key={`${file.name}-${file.size}-${index}`} file={file} onRemove={() => onRemoveFile(index)} />)}
+        </div>
+        {uploadingPhotos && <div className="flex items-center gap-2 py-1" style={{ color: colors.textSecondary }}><WobbleRing size={16} /><span className="font-body text-xs">Загрузка фотографий...</span></div>}
       </div>
 
       <button
         type="button"
         onClick={onSubmit}
         disabled={isSubmitting}
-        className="w-full rounded-[18px] py-3.5 font-extended font-bold text-[16px] flex items-center justify-center gap-2 text-[#1A1412] transition-all active:scale-[0.98] disabled:opacity-50"
+        className="flex min-h-14 w-full items-center justify-center rounded-full font-extended text-lg font-bold text-[#1A1412] transition-all active:scale-[0.98] disabled:opacity-50"
         style={{ backgroundColor: gold }}
       >
         {isSubmitting ? (
@@ -316,10 +287,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
             Создание...
           </>
         ) : (
-          <>
-            Чекин
-            <Check size={18} weight="bold" />
-          </>
+          'Чекин'
         )}
       </button>
     </fieldset>

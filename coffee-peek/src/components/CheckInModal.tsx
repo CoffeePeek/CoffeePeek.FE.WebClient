@@ -126,11 +126,11 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
         onClick={handleClose}
       />
       <div
-        className="absolute inset-x-0 bottom-0 sm:relative sm:inset-auto w-full sm:max-w-[420px] flex flex-col min-h-0 overflow-hidden max-h-[min(85dvh,calc(100dvh-4.5rem))] sm:max-h-[90vh] rounded-t-[28px] sm:rounded-[28px] shadow-[0_-8px_40px_rgba(0,0,0,0.18)]"
+        className="absolute inset-x-0 bottom-0 flex max-h-[min(78dvh,calc(100dvh-4.5rem))] min-h-0 w-full flex-col overflow-hidden rounded-t-[32px] shadow-[0_-8px_40px_rgba(0,0,0,0.18)] sm:relative sm:inset-auto sm:max-h-[90vh] sm:max-w-[440px] sm:rounded-[32px]"
         style={{ backgroundColor: colors.card }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sm:hidden shrink-0 pt-2.5 pb-1">
+        <div className="shrink-0 pb-2 pt-4 sm:hidden">
           <div
             className="mx-auto h-1 w-10 rounded-full"
             style={{ backgroundColor: colors.border }}
@@ -146,7 +146,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
           <X size={18} />
         </button>
         <div
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-4 sm:px-6"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <CheckInForm

@@ -15,6 +15,7 @@ import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { useLocalCity } from '../hooks/useLocalCity';
 import { useSearchParams } from 'react-router-dom';
 import { distanceKm } from '../utils/distance';
+import { getLocationLifetime } from '../utils/geolocation';
 
 const PAGE_SIZE = 12;
 
@@ -111,17 +112,37 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [activeQuick, setActiveQuick] = useState<string[]>(() => searchParams.get('filter') === 'favorite' ? ['favorite'] : ['all']);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const locationExpiryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearUserLocation = useCallback(() => {
+    if (locationExpiryRef.current) clearTimeout(locationExpiryRef.current);
+    locationExpiryRef.current = null;
+    setUserLocation(null);
+    setActiveQuick(prev => {
+      if (!prev.includes('nearby')) return prev;
+      const next = prev.filter(id => id !== 'nearby');
+      return next.length > 0 ? next : ['all'];
+    });
+  }, []);
 
   const requestLocation = useCallback((activateNearby = true) => {
     if (!navigator.geolocation) return;
+    clearUserLocation();
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
+      ({ coords, timestamp }) => {
+        const lifetime = getLocationLifetime(timestamp);
+        if (lifetime === 0) return;
         setUserLocation({ latitude: coords.latitude, longitude: coords.longitude });
         if (activateNearby) setActiveQuick(prev => [...prev.filter(id => id !== 'all' && id !== 'nearby'), 'nearby']);
+        locationExpiryRef.current = setTimeout(clearUserLocation, lifetime);
       },
-      () => setActiveQuick(prev => prev.filter(id => id !== 'nearby')),
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+      clearUserLocation,
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 },
     );
+  }, [clearUserLocation]);
+
+  useEffect(() => () => {
+    if (locationExpiryRef.current) clearTimeout(locationExpiryRef.current);
   }, []);
 
   useEffect(() => {
