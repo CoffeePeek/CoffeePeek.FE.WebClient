@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import LogoMark from '../LogoMark';
@@ -13,121 +13,150 @@ interface NavItem {
   browseOnly?: boolean;
 }
 
-interface NavGroup {
+interface NavSection {
   id: string;
   label: string;
-  icon: React.ReactNode;
-  children: NavItem[];
+  collapsible?: boolean;
+  items: NavItem[];
 }
 
-type NavEntry = { type: 'link'; item: NavItem } | { type: 'group'; group: NavGroup };
+const iconClass = 'w-[18px] h-[18px] shrink-0';
 
 const IconDashboard = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3.75 10.75 12 3.5l8.25 7.25M5.75 9v10.25h12.5V9M9.25 19.25v-5.5h5.5v5.5" />
   </svg>
 );
 const IconShop = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 10.5v8.75h16V10.5M3.5 5.25h17l-1.25 5a2.5 2.5 0 0 1-3.75 1.45A2.5 2.5 0 0 1 12 12a2.5 2.5 0 0 1-3.5-.3 2.5 2.5 0 0 1-3.75-1.45l-1.25-5Z" />
   </svg>
 );
 const IconReview = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 17.5 3.75 20l3.5-.8A8.75 8.75 0 1 0 5 17.5Z" />
+    <path strokeLinecap="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01" />
   </svg>
 );
 const IconFlag = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 21V4a1 1 0 011-1h11.382a1 1 0 01.894 1.447L16 9l2.276 4.553A1 1 0 0117.382 15H6a1 1 0 00-1 1" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5.5 21V4m0 1h12l-2 4 2 4h-12" />
   </svg>
 );
 const IconUsers = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15.5 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20m6.25-9.5a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Zm7-5.75a3 3 0 0 1 0 5.75M17 14.5a4 4 0 0 1 4 4V20" />
   </svg>
 );
 const IconCache = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582 4-8 4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4S4 18.21 4 17" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6.5C4 4.57 7.58 3 12 3s8 1.57 8 3.5S16.42 10 12 10 4 8.43 4 6.5Z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6.5v5c0 1.93 3.58 3.5 8 3.5s8-1.57 8-3.5v-5M4 11.5v5c0 1.93 3.58 3.5 8 3.5s8-1.57 8-3.5v-5" />
   </svg>
 );
 const IconMobile = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 18h4M9 2h6a2 2 0 012 2v16a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2z" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <rect x="6.5" y="2.5" width="11" height="19" rx="2" strokeWidth={1.8} />
+    <path strokeLinecap="round" strokeWidth={1.8} d="M10 18.5h4" />
   </svg>
 );
 const IconAudit = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 5.5H5.5v15h13v-15H16M9 3.5h6v4H9v-4Zm-.5 10 2 2 4.5-5" />
   </svg>
 );
 const IconTags = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 3.5H5.5a2 2 0 0 0-2 2V12l8.5 8.5 8.5-8.5L12 3.5Z" />
+    <path strokeLinecap="round" strokeWidth={1.8} d="M8 8h.01" />
   </svg>
 );
 const IconCatalog = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6.5A2.5 2.5 0 016.5 4H10a2 2 0 012 2v14a2 2 0 00-2-2H6.5A2.5 2.5 0 014 15.5v-9zM20 6.5A2.5 2.5 0 0017.5 4H14a2 2 0 00-2 2v14a2 2 0 012-2h3.5a2.5 2.5 0 002.5-2.5v-9z" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3.5 5.75A2.25 2.25 0 0 1 5.75 3.5H10a2 2 0 0 1 2 2V20a3 3 0 0 0-3-3H5.75a2.25 2.25 0 0 1-2.25-2.25v-9Zm17 0a2.25 2.25 0 0 0-2.25-2.25H14a2 2 0 0 0-2 2V20a3 3 0 0 1 3-3h3.25a2.25 2.25 0 0 0 2.25-2.25v-9Z" />
   </svg>
 );
 const IconMap = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="m3.5 6 5.5-2.5 6 3 5.5-2.5v14L15 20.5l-6-3L3.5 20V6ZM9 3.5v14M15 6.5v14" />
   </svg>
 );
 const IconRoaster = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10a5 5 0 015-5h6a5 5 0 015 5v2a7 7 0 01-7 7H10a7 7 0 01-7-7v-2z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v2m-3.5-.5L9 5m7-3.5L15.5 5" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 9.5h13v3.25A6.25 6.25 0 0 1 11.75 19h-.5A6.25 6.25 0 0 1 5 12.75V9.5Zm13 1h1a2.5 2.5 0 0 1 0 5h-2.5M8 6.5c0-1 1-1 1-2s-1-1-1-2m4 4c0-1 1-1 1-2s-1-1-1-2" />
   </svg>
 );
 const IconImport = () => (
-  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h7" />
+  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5h14M5 9h14M5 13h9M5 17h7" />
   </svg>
 );
-const IconChevron = ({ open }: { open: boolean }) => (
+const IconChevron = ({ open = false }: { open?: boolean }) => (
   <svg
-    className={`w-4 h-4 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
+    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
   >
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m6 9 6 6 6-6" />
+  </svg>
+);
+const IconLogout = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 5H5v14h5m5-4 4-3-4-3m4 3H9" />
+  </svg>
+);
+const IconPerson = () => (
+  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
   </svg>
 );
 
-const NAV: NavEntry[] = [
-  { type: 'link', item: { path: '/dashboard', label: 'Дашборд', icon: <IconDashboard /> } },
-  { type: 'link', item: { path: '/coffee-shops', label: 'Кофейни', icon: <IconShop />, browseOnly: true } },
-  { type: 'link', item: { path: '/map', label: 'Карта', icon: <IconMap />, browseOnly: true } },
+const DASHBOARD: NavItem = { path: '/dashboard', label: 'Дашборд', icon: <IconDashboard /> };
+
+const NAV_SECTIONS: NavSection[] = [
   {
-    type: 'group',
-    group: {
-      id: 'moderation',
-      label: 'Модерация',
-      icon: <IconShop />,
-      children: [
-        { path: '/shop-change-requests', label: 'Изменения кофейных', icon: <IconReview />, moderatorOnly: true },
-        { path: '/shops', label: 'Пользовательская модерация', icon: <IconShop />, moderatorOnly: true },
-        { path: '/import', label: 'Парсинг', icon: <IconImport />, moderatorOnly: true },
-        { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
-        { path: '/roasters', label: 'Обжарщики: модерация', icon: <IconRoaster />, moderatorOnly: true },
-        { path: '/coffee-zones', label: 'Кофейные зоны', icon: <IconMap />, moderatorOnly: true },
-      ],
-    },
+    id: 'browse',
+    label: 'Обзор',
+    items: [
+      { path: '/coffee-shops', label: 'Кофейни', icon: <IconShop />, browseOnly: true },
+      { path: '/map', label: 'Карта', icon: <IconMap />, browseOnly: true },
+    ],
   },
-  { type: 'link', item: { path: '/reviews', label: 'Отзывы', icon: <IconReview />, moderatorOnly: true } },
-  { type: 'link', item: { path: '/shop-reports', label: 'Жалобы на кофейни', icon: <IconFlag />, moderatorOnly: true } },
-  { type: 'link', item: { path: '/catalogs', label: 'Каталог', icon: <IconCatalog />, adminOnly: true } },
-  { type: 'link', item: { path: '/shop-tags', label: 'Теги', icon: <IconTags />, adminOnly: true } },
-  { type: 'link', item: { path: '/audit', label: 'Audit log', icon: <IconAudit />, adminOnly: true } },
-  { type: 'link', item: { path: '/my-shops', label: 'Мои кофейни', icon: <IconShop />, ownerOnly: true } },
-  { type: 'link', item: { path: '/users', label: 'Пользователи', icon: <IconUsers />, adminOnly: true } },
-  { type: 'link', item: { path: '/app-distribution', label: 'Приложения', icon: <IconMobile />, adminOnly: true } },
-  { type: 'link', item: { path: '/cache', label: 'Кеши', icon: <IconCache />, adminOnly: true } },
+  {
+    id: 'moderation',
+    label: 'Модерация',
+    collapsible: true,
+    items: [
+      { path: '/shop-change-requests', label: 'Изменения кофейных', icon: <IconReview />, moderatorOnly: true },
+      { path: '/shops', label: 'Пользовательская модерация', icon: <IconShop />, moderatorOnly: true },
+      { path: '/import', label: 'Парсинг', icon: <IconImport />, moderatorOnly: true },
+      { path: '/published-shops', label: 'Опубликованные', icon: <IconShop />, adminOnly: true },
+      { path: '/roasters', label: 'Обжарщики: модерация', icon: <IconRoaster />, moderatorOnly: true },
+      { path: '/coffee-zones', label: 'Кофейные зоны', icon: <IconMap />, moderatorOnly: true },
+    ],
+  },
+  {
+    id: 'content',
+    label: 'Контент',
+    items: [
+      { path: '/reviews', label: 'Отзывы', icon: <IconReview />, moderatorOnly: true },
+      { path: '/shop-reports', label: 'Жалобы на кофейни', icon: <IconFlag />, moderatorOnly: true },
+      { path: '/catalogs', label: 'Каталог', icon: <IconCatalog />, adminOnly: true },
+      { path: '/shop-tags', label: 'Теги', icon: <IconTags />, adminOnly: true },
+      { path: '/my-shops', label: 'Мои кофейни', icon: <IconShop />, ownerOnly: true },
+    ],
+  },
+  {
+    id: 'system',
+    label: 'Система',
+    items: [
+      { path: '/audit', label: 'Audit log', icon: <IconAudit />, adminOnly: true },
+      { path: '/users', label: 'Пользователи', icon: <IconUsers />, adminOnly: true },
+      { path: '/app-distribution', label: 'Приложения', icon: <IconMobile />, adminOnly: true },
+      { path: '/cache', label: 'Кеши', icon: <IconCache />, adminOnly: true },
+    ],
+  },
 ];
 
 function canSee(item: NavItem, roles: { isAdmin: boolean; isModerator: boolean; isOwner: boolean }) {
@@ -142,35 +171,47 @@ function pathActive(pathname: string, path: string) {
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
-const linkClass = (active: boolean, extra = '') =>
-  `flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors text-sm font-body min-h-[44px] ${
-    active ? 'bg-primary/20 text-primary' : 'text-stone-400 hover:text-white hover:bg-white/5'
-  } ${extra}`;
+function roleLabel(roles: string[]) {
+  if (roles.includes('Admin')) return 'Администратор';
+  if (roles.includes('Moderator')) return 'Модератор';
+  if (roles.includes('Owner')) return 'Владелец';
+  return roles[0] ?? 'Пользователь';
+}
 
 interface SidebarProps {
   collapsed: boolean;
   mobileOpen: boolean;
   onNavigate: () => void;
+  onToggle: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavigate }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavigate, onToggle }) => {
   const { user, isAdmin, isModerator, isOwner, logout } = useUser();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [loggingOut, setLoggingOut] = useState(false);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ moderation: true });
 
-  const roles = { isAdmin, isModerator, isOwner };
+  const roles = useMemo(
+    () => ({ isAdmin, isModerator, isOwner }),
+    [isAdmin, isModerator, isOwner],
+  );
   const showLabels = !collapsed || mobileOpen;
+  const visibleSections = useMemo(
+    () => NAV_SECTIONS.map((section) => ({
+      ...section,
+      items: section.items.filter((item) => canSee(item, roles)),
+    })).filter((section) => section.items.length > 0),
+    [roles],
+  );
 
   useEffect(() => {
-    for (const entry of NAV) {
-      if (entry.type !== 'group') continue;
-      if (entry.group.children.some((child) => pathActive(pathname, child.path))) {
-        setOpenGroups((current) => ({ ...current, [entry.group.id]: true }));
+    for (const section of visibleSections) {
+      if (section.items.some((item) => pathActive(pathname, item.path))) {
+        setOpenSections((current) => ({ ...current, [section.id]: true }));
       }
     }
-  }, [pathname]);
+  }, [pathname, visibleSections]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -181,94 +222,146 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, mobileOpen, onNavig
     }
   };
 
-  const visibleEntries = NAV.flatMap((entry): NavEntry[] => {
-    if (entry.type === 'link') {
-      return canSee(entry.item, roles) ? [entry] : [];
-    }
-    const children = entry.group.children.filter((child) => canSee(child, roles));
-    return children.length > 0 ? [{ type: 'group', group: { ...entry.group, children } }] : [];
-  });
-
-  const renderLink = (item: NavItem, nested = false) => (
+  const renderLink = (item: NavItem, prominent = false) => (
     <NavLink
       key={item.path}
       to={item.path}
       onClick={onNavigate}
-      title={item.label}
-      className={({ isActive }) =>
-        linkClass(isActive || pathActive(pathname, item.path), nested && showLabels ? 'pl-9 py-2 min-h-[40px]' : '')
-      }
+      title={!showLabels ? item.label : undefined}
+      className={({ isActive }) => {
+        const active = isActive || pathActive(pathname, item.path);
+        return [
+          'group/nav relative flex min-h-[38px] items-center rounded-[9px] text-[12px] font-medium leading-[1.25] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f3c51d]/70',
+          showLabels ? 'gap-2.5 px-2.5' : 'mx-auto w-10 justify-center',
+          active
+            ? 'bg-gradient-to-r from-[#6b4a0f] to-[#49340f] text-[#ffd21f] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+            : 'text-[#e7dfda] hover:bg-white/[0.055] hover:text-white',
+          prominent && showLabels ? 'min-h-[42px] px-3 font-semibold' : '',
+        ].join(' ');
+      }}
     >
-      {item.icon}
-      {showLabels && <span className="leading-tight">{item.label}</span>}
+      {({ isActive }) => {
+        const active = isActive || pathActive(pathname, item.path);
+        return (
+          <>
+            {active && <span className="absolute -left-0.5 top-1/2 h-[70%] w-[3px] -translate-y-1/2 rounded-r-full bg-[#ffd21f]" />}
+            <span
+              className={[
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] transition-colors',
+                active ? 'bg-[#eab308]/20 text-[#ffd21f]' : 'bg-white/[0.035] text-[#d8d0ca] group-hover/nav:bg-white/[0.07]',
+              ].join(' ')}
+            >
+              {item.icon}
+            </span>
+            {showLabels && <span className="min-w-0 flex-1">{item.label}</span>}
+          </>
+        );
+      }}
     </NavLink>
   );
 
   return (
     <aside
       className={[
-        'h-full flex flex-col bg-surface-dark dark:bg-[#12100F] border-r border-border-dark transition-transform duration-300 ease-out shrink-0',
-        'fixed inset-y-0 left-0 z-50 w-[min(280px,85vw)] pt-[env(safe-area-inset-top)]',
+        'fixed inset-y-0 left-0 z-50 flex h-full w-[min(248px,88vw)] shrink-0 flex-col border-r border-white/[0.045] bg-[#1d1714] pt-[env(safe-area-inset-top)] text-white shadow-[14px_0_36px_rgba(32,20,13,0.16)] transition-transform duration-300 ease-out',
         'lg:static lg:z-auto lg:translate-x-0 lg:transition-[width]',
         mobileOpen ? 'translate-x-0' : '-translate-x-full',
-        collapsed ? 'lg:w-16' : 'lg:w-60',
+        collapsed ? 'lg:w-[72px]' : 'lg:w-[248px]',
       ].join(' ')}
     >
-      <div className="flex items-center gap-3 px-4 py-4 lg:py-5 border-b border-border-dark min-h-[3.5rem]">
-        <LogoMark size={32} variant="dark" className="rounded-lg" />
+      <div className={`flex min-h-[72px] items-center ${showLabels ? 'gap-3 px-[18px]' : 'justify-center px-3'}`}>
+        <LogoMark size={38} variant="dark" className="rounded-full ring-1 ring-white/10" />
         {showLabels && (
-          <span className="text-white font-display font-semibold text-sm tracking-wide truncate">
-            Admin Panel
-          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-[14px] font-semibold leading-5 text-white">Admin Panel</p>
+            <p className="truncate text-[10px] leading-3 text-[#998d87]">CoffeePeek</p>
+          </div>
+        )}
+        {showLabels && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.045] text-[#b7aca6] transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f3c51d]/70 lg:flex"
+            aria-label="Свернуть меню"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m14 7-5 5 5 5" />
+            </svg>
+          </button>
         )}
       </div>
 
-      <nav className="flex-1 py-3 overflow-y-auto overscroll-contain">
-        {visibleEntries.map((entry) => {
-          if (entry.type === 'link') return renderLink(entry.item);
+      <nav className={`flex-1 overflow-y-auto overscroll-contain pb-3 ${showLabels ? 'px-3' : 'px-2'}`} aria-label="Основная навигация">
+        <div className="mb-3">{renderLink(DASHBOARD, true)}</div>
 
-          const { group } = entry;
-          const childActive = group.children.some((child) => pathActive(pathname, child.path));
-          const open = Boolean(openGroups[group.id]);
-
+        {visibleSections.map((section) => {
+          const open = !section.collapsible || Boolean(openSections[section.id]) || !showLabels;
           return (
-            <div key={group.id} className="mb-1">
-              <button
-                type="button"
-                title={group.label}
-                aria-expanded={open}
-                onClick={() => setOpenGroups((current) => ({ ...current, [group.id]: !open }))}
-                className={linkClass(childActive && !open, 'w-full')}
-              >
-                {group.icon}
-                {showLabels && <span className="leading-tight flex-1 text-left">{group.label}</span>}
-                {showLabels && <IconChevron open={open} />}
-              </button>
-              {open && group.children.map((child) => renderLink(child, true))}
-            </div>
+            <section key={section.id} className={showLabels ? 'border-t border-white/[0.055] py-3' : 'border-t border-white/[0.055] py-2.5'}>
+              {showLabels && (
+                section.collapsible ? (
+                  <button
+                    type="button"
+                    className="mb-2 flex w-full items-center justify-between px-2 text-[9px] font-semibold uppercase tracking-[0.11em] text-[#897d77] transition-colors hover:text-[#c9bdb6]"
+                    aria-expanded={open}
+                    onClick={() => setOpenSections((current) => ({ ...current, [section.id]: !open }))}
+                  >
+                    <span>{section.label}</span>
+                    <IconChevron open={open} />
+                  </button>
+                ) : (
+                  <h2 className="mb-2 px-2 text-[9px] font-semibold uppercase tracking-[0.11em] text-[#897d77]">
+                    {section.label}
+                  </h2>
+                )
+              )}
+
+              {open && (
+                <div className={showLabels ? 'rounded-[10px] bg-white/[0.025] p-1' : 'space-y-1'}>
+                  {section.items.map((item) => renderLink(item))}
+                </div>
+              )}
+            </section>
           );
         })}
       </nav>
 
-      <div className="border-t border-border-dark p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        {showLabels && user && (
-          <div className="mb-3 min-w-0">
-            <p className="text-white text-xs font-medium truncate">{user.email}</p>
-            <p className="text-stone-400 text-xs mt-0.5 truncate">
-              {user.roles.join(', ') || 'Нет роли'}
-            </p>
+      <div className={`shrink-0 border-t border-white/[0.055] ${showLabels ? 'p-3' : 'p-2.5'} pb-[max(0.75rem,env(safe-area-inset-bottom))]`}>
+        {user && (
+          <div className={`flex items-center rounded-[10px] border border-white/[0.055] bg-white/[0.045] ${showLabels ? 'gap-2.5 p-2' : 'justify-center p-1.5'}`}>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#8d8179] to-[#5e554f] text-[#eee8e4] ring-1 ring-white/10">
+              <IconPerson />
+            </span>
+            {showLabels && (
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[10px] font-medium leading-4 text-[#f3efec]">{user.email}</p>
+                <p className="truncate text-[9px] leading-3 text-[#978b84]">{roleLabel(user.roles)}</p>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              title="Выйти"
+              aria-label={loggingOut ? 'Выход из системы' : 'Выйти'}
+              className={`${showLabels ? 'flex' : 'hidden'} h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#9f938d] transition-colors hover:bg-red-400/10 hover:text-red-300 disabled:cursor-wait disabled:opacity-50`}
+            >
+              <IconLogout />
+            </button>
           </div>
         )}
-        <button
-          onClick={handleLogout}
-          disabled={loggingOut}
-          className="flex items-center gap-2 text-stone-400 hover:text-red-400 transition-colors text-sm w-full min-h-[44px]"
-        >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          {showLabels && <span>{loggingOut ? 'Выход...' : 'Выйти'}</span>}
-        </button>
+        {!showLabels && (
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            title="Выйти"
+            aria-label={loggingOut ? 'Выход из системы' : 'Выйти'}
+            className="mx-auto mt-2 flex h-9 w-9 items-center justify-center rounded-lg text-[#8f837d] transition-colors hover:bg-red-400/10 hover:text-red-300 disabled:cursor-wait disabled:opacity-50"
+          >
+            <IconLogout />
+          </button>
+        )}
       </div>
     </aside>
   );

@@ -71,6 +71,7 @@ export const AppLayout: React.FC = () => {
         collapsed={collapsed}
         mobileOpen={mobileOpen}
         onNavigate={() => setMobileOpen(false)}
+        onToggle={handleMenuClick}
       />
 
       <div className="flex-1 flex flex-col min-w-0 w-full">
