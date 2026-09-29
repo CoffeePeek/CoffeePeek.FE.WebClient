@@ -1,8 +1,8 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
 import { Input } from '@/src/components/ui/Input';
 import { Textarea } from '@/src/components/ui/Textarea';
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
   getAdminShopTags,
   createAdminShopTag,
@@ -18,6 +18,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/Dialog';
+import { DataTable } from '../components/ui/DataTable';
 
 const emptyCreate: CreateShopTagRequest = {
   slug: '',
@@ -188,6 +189,13 @@ export const ShopTagsPage: React.FC = () => {
   };
 
   const sortedTags = [...(tags ?? [])].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+  const columns: ColumnDef<AdminShopTag>[] = [
+    { accessorKey: 'name', header: 'Название', cell: ({ row }) => <div><p className="text-xs font-medium text-text-main dark:text-white">{row.original.name}</p>{row.original.description && <p className="mt-0.5 line-clamp-1 text-xs text-stone-400">{row.original.description}</p>}</div>, meta: { headerClassName: 'pl-5', className: 'pl-5' } },
+    { accessorKey: 'slug', header: 'Slug', cell: ({ row }) => <span className="font-mono text-xs text-text-muted">{row.original.slug}</span> },
+    { accessorKey: 'sortOrder', header: 'Порядок', cell: ({ row }) => <span className="text-xs text-text-muted">{row.original.sortOrder}</span>, meta: { headerClassName: 'hidden sm:table-cell', className: 'hidden sm:table-cell' } },
+    { accessorKey: 'isActive', header: 'Статус', cell: ({ row }) => <Badge variant={row.original.isActive ? 'approved' : 'rejected'}>{row.original.isActive ? 'Активен' : 'Неактивен'}</Badge> },
+    { id: 'actions', cell: ({ row }) => <div className="flex min-w-[100px] flex-wrap gap-2"><Button variant="ghost" size="sm" onClick={() => setEditingTag(row.original)}>Изменить</Button>{row.original.isActive && <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-500" onClick={() => setDeactivatingId(row.original.id)}>Выкл.</Button>}</div> },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
@@ -259,78 +267,8 @@ export const ShopTagsPage: React.FC = () => {
         </form>
       </Card>
 
-      <Card className="p-6">
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-12 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        ) : !sortedTags.length ? (
-          <div className="p-12 text-center">
-            <p className="text-text-muted dark:text-stone-400 text-sm font-body">Теги ещё не созданы</p>
-          </div>
-        ) : (
-          <div className="relative w-full overflow-auto">
-            <Table className="w-full text-sm">
-              <TableHeader>
-                <TableRow className="border-b border-border-light dark:border-border-dark">
-                  <TableHead className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
-                    Название
-                  </TableHead>
-                  <TableHead className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
-                    Slug
-                  </TableHead>
-                  <TableHead className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden sm:table-cell">
-                    Порядок
-                  </TableHead>
-                  <TableHead className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
-                    Статус
-                  </TableHead>
-                  <TableHead className="px-4 py-3" />
-                </TableRow>
-              </TableHeader>
-              <TableBody className="divide-y divide-border-light dark:divide-border-dark">
-                {sortedTags.map((tag) => (
-                  <TableRow key={tag.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5">
-                    <TableCell className="px-5 py-3">
-                      <p className="font-medium text-text-main dark:text-white font-body text-xs">{tag.name}</p>
-                      {tag.description && (
-                        <p className="text-stone-400 text-xs font-body mt-0.5 line-clamp-1">{tag.description}</p>
-                      )}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-xs font-mono text-text-muted dark:text-stone-400">{tag.slug}</TableCell>
-                    <TableCell className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 font-body hidden sm:table-cell">
-                      {tag.sortOrder}
-                    </TableCell>
-                    <TableCell className="px-4 py-3">
-                      <Badge variant={tag.isActive ? 'approved' : 'rejected'}>
-                        {tag.isActive ? 'Активен' : 'Неактивен'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2 min-w-[100px]">
-                        <Button variant="ghost" size="sm" onClick={() => setEditingTag(tag)}>
-                          Изменить
-                        </Button>
-                        {tag.isActive && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:text-red-500"
-                            onClick={() => setDeactivatingId(tag.id)}
-                          >
-                            Выкл.
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+      <Card>
+        <DataTable columns={columns} data={sortedTags} loading={isLoading} emptyText="Теги ещё не созданы" getRowId={(tag) => tag.id} />
       </Card>
 
       <EditTagModal

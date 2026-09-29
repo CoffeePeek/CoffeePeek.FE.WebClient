@@ -1,9 +1,9 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
 import { Input } from '@/src/components/ui/Input';
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { useSearchParams, Link } from 'react-router-dom';
-import { getPublishedShops, setPublishedShopVisibility, CoffeeShopStatus } from '../api/admin';
+import { getPublishedShops, setPublishedShopVisibility, CoffeeShopStatus, type PublishedShop } from '../api/admin';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -15,6 +15,7 @@ import {
 } from '../constants/coffeeShopStatus';
 import { FocusBadge } from '../components/import/catalogControls';
 import { getErrorMessage } from '../utils/errors';
+import { DataTable } from '../components/ui/DataTable';
 
 const PAGE_SIZE = 20;
 type SortKey = 'name' | 'coffeeFocus' | 'dataCompletenessScore' | 'status' | 'createdAtUtc';
@@ -33,26 +34,22 @@ const SortHeader: React.FC<{
   sortDirection: SortDirection;
   onSort: (key: SortKey) => void;
   children: React.ReactNode;
-  className?: string;
-}> = ({ sort, sortKey, sortDirection, onSort, children, className = '' }) => {
+}> = ({ sort, sortKey, sortDirection, onSort, children }) => {
   const active = sortKey === sort;
   return (
-    <TableHead
-      scope="col"
-      aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-      className={`px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400 font-body ${className}`}
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      aria-label={`Сортировать: ${String(children)}`}
+      className="-ml-3 h-8 px-3 text-xs uppercase tracking-wide"
+      onClick={() => onSort(sort)}
     >
-      <button
-        type="button"
-        onClick={() => onSort(sort)}
-        className="group inline-flex items-center gap-1.5 whitespace-nowrap hover:text-text-main dark:hover:text-white"
-      >
-        {children}
-        <span className={active ? 'text-text-main dark:text-white' : 'text-stone-300 dark:text-stone-600'}>
-          {active ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
-        </span>
-      </button>
-    </TableHead>
+      {children}
+      <span aria-hidden className={active ? 'text-text-main dark:text-white' : 'text-stone-300 dark:text-stone-600'}>
+        {active ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
+      </span>
+    </Button>
   );
 };
 
@@ -131,6 +128,23 @@ export const PublishedShopsPage: React.FC = () => {
   };
 
   const sortProps = { sortKey, sortDirection, onSort: toggleSort };
+  const columns: ColumnDef<PublishedShop>[] = [
+    {
+      accessorKey: 'name',
+      header: () => <SortHeader sort="name" {...sortProps}>Название</SortHeader>,
+      cell: ({ row }) => <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{row.original.name}</span>{row.original.isHidden && <Badge variant="rejected">Скрыта</Badge>}</div>,
+      meta: { headerClassName: 'pl-5', className: 'pl-5' },
+    },
+    { accessorKey: 'coffeeFocus', header: () => <SortHeader sort="coffeeFocus" {...sortProps}>Фокус</SortHeader>, cell: ({ row }) => <FocusBadge focus={row.original.coffeeFocus} /> },
+    { accessorKey: 'dataCompletenessScore', header: () => <SortHeader sort="dataCompletenessScore" {...sortProps}>Заполненность</SortHeader>, cell: ({ row }) => <Badge variant="info">{row.original.dataCompletenessScore}%</Badge> },
+    { accessorKey: 'status', header: () => <SortHeader sort="status" {...sortProps}>Статус</SortHeader>, cell: ({ row }) => <Badge variant={coffeeShopStatusBadgeVariant(row.original.status)}>{COFFEE_SHOP_STATUS_LABELS[row.original.status]}</Badge> },
+    { accessorKey: 'createdAtUtc', header: () => <SortHeader sort="createdAtUtc" {...sortProps}>Создана</SortHeader>, cell: ({ row }) => <span className="text-xs text-text-muted dark:text-stone-400">{new Date(row.original.createdAtUtc).toLocaleDateString('ru')}</span> },
+    {
+      id: 'actions',
+      cell: ({ row }) => <div className="flex justify-end gap-1"><Button variant="ghost" size="sm" loading={visibilityMutation.isPending && visibilityMutation.variables?.id === row.original.id} onClick={() => visibilityMutation.mutate({ id: row.original.id, hidden: !row.original.isHidden })}>{row.original.isHidden ? 'Показать' : 'Скрыть'}</Button><Button asChild variant="ghost" size="sm"><Link to={`/published-shops/${row.original.id}`}>Редактировать</Link></Button></div>,
+      meta: { className: 'text-right' },
+    },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
@@ -184,90 +198,9 @@ export const PublishedShopsPage: React.FC = () => {
         </form>
       </div>
 
-      <Card className="p-6">
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-14 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        ) : !data?.items.length ? (
-          <div className="p-12 text-center">
-            <p className="text-text-muted dark:text-stone-400 text-sm font-body">Кофейни не найдены</p>
-          </div>
-        ) : (
-          <>
-            <div className="relative w-full overflow-auto">
-              <Table className="w-full text-sm">
-                <TableHeader>
-                  <TableRow className="border-b border-border-light dark:border-border-dark">
-                    <SortHeader sort="name" className="pl-5" {...sortProps}>Название</SortHeader>
-                    <SortHeader sort="coffeeFocus" {...sortProps}>Фокус</SortHeader>
-                    <SortHeader sort="dataCompletenessScore" {...sortProps}>Заполненность</SortHeader>
-                    <SortHeader sort="status" {...sortProps}>Статус</SortHeader>
-                    <SortHeader sort="createdAtUtc" {...sortProps}>Создана</SortHeader>
-                    <TableHead scope="col" className="px-4 py-3" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-border-light dark:divide-border-dark">
-                  {sortedItems.map((shop) => (
-                    <TableRow key={shop.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5">
-                      <TableCell className="px-5 py-3 font-medium text-text-main dark:text-white font-body text-sm">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span>{shop.name}</span>
-                          {shop.isHidden && <Badge variant="rejected">Скрыта</Badge>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <FocusBadge focus={shop.coffeeFocus} />
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Badge variant="info">{shop.dataCompletenessScore}%</Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>
-                          {COFFEE_SHOP_STATUS_LABELS[shop.status]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 font-body">
-                        {new Date(shop.createdAtUtc).toLocaleDateString('ru')}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-right">
-                        <div className="inline-flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            loading={
-                              visibilityMutation.isPending &&
-                              visibilityMutation.variables?.id === shop.id
-                            }
-                            onClick={() =>
-                              visibilityMutation.mutate({ id: shop.id, hidden: !shop.isHidden })
-                            }
-                          >
-                            {shop.isHidden ? 'Показать' : 'Скрыть'}
-                          </Button>
-                          <Link to={`/published-shops/${shop.id}`}>
-                            <Button variant="ghost" size="sm">
-                              Редактировать
-                            </Button>
-                          </Link>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
-              <Pagination
-                page={page}
-                totalPages={data.totalPages}
-                onPageChange={(p) => setParam('page', String(p))}
-              />
-            </div>
-          </>
-        )}
+      <Card>
+        <DataTable columns={columns} data={sortedItems} loading={isLoading} emptyText="Кофейни не найдены" getRowId={(shop) => shop.id} />
+        {data && data.totalPages > 1 && <div className="border-t border-border-light px-5 py-3 dark:border-border-dark"><Pagination page={page} totalPages={data.totalPages} onPageChange={(nextPage) => setParam('page', String(nextPage))} /></div>}
       </Card>
     </div>
   );

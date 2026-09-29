@@ -1,6 +1,7 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { DataTable } from '@/src/components/ui/DataTable';
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { PublishedShop } from '../../api/admin';
 import { getShopTags } from '../../api/catalogs';
 import {
@@ -207,6 +208,16 @@ function MenuItemsView({
       (current.volumeMl ?? null) !== (item.volumeMl ?? null)
     );
   });
+  type MenuItem = (typeof items)[number];
+  const isChanged = (item: MenuItem) => {
+    const current = currentBySlug.get(item.slug);
+    return !current || current.availability !== item.availability || (current.price ?? null) !== (item.price ?? null) || (current.volumeMl ?? null) !== (item.volumeMl ?? null);
+  };
+  const columns: ColumnDef<MenuItem>[] = [
+    { header: 'Напиток', cell: ({ row }) => <><p className="font-medium text-text-main dark:text-white">{nameFor(row.original.slug)}</p><p className="text-xs text-text-muted">{row.original.slug}</p></> },
+    { header: 'Сейчас', cell: ({ row }) => { const current = currentBySlug.get(row.original.slug); return current ? formatItem(current) : 'нет в текущем меню'; }, meta: { className: 'align-top text-text-muted dark:text-stone-400' } },
+    { header: 'В заявке', cell: ({ row }) => formatItem(row.original), meta: { className: 'align-top font-medium text-text-main dark:text-stone-100' } },
+  ];
 
   return (
     <div className="space-y-3">
@@ -214,46 +225,7 @@ function MenuItemsView({
         Позиций в заявке: {items.length}
         {currentMenu ? ` · изменится: ${changed.length}` : ''}
       </p>
-      <div className="overflow-hidden rounded-xl border border-border-light dark:border-border-dark">
-        <Table className="w-full text-left text-sm">
-          <TableHeader className="bg-stone-50 text-xs uppercase tracking-wide text-text-muted dark:bg-white/5 dark:text-stone-400">
-            <TableRow>
-              <TableHead className="px-3 py-2 font-semibold">Напиток</TableHead>
-              <TableHead className="px-3 py-2 font-semibold">Сейчас</TableHead>
-              <TableHead className="px-3 py-2 font-semibold">В заявке</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((item) => {
-              const current = currentBySlug.get(item.slug);
-              const isChanged =
-                !current ||
-                current.availability !== item.availability ||
-                (current.price ?? null) !== (item.price ?? null) ||
-                (current.volumeMl ?? null) !== (item.volumeMl ?? null);
-              return (
-                <TableRow
-                  key={item.slug}
-                  className={`border-t border-border-light dark:border-border-dark ${
-                    isChanged ? 'bg-amber-50/70 dark:bg-amber-500/10' : ''
-                  }`}
-                >
-                  <TableCell className="px-3 py-2.5 align-top">
-                    <p className="font-medium text-text-main dark:text-white">{nameFor(item.slug)}</p>
-                    <p className="text-xs text-text-muted">{item.slug}</p>
-                  </TableCell>
-                  <TableCell className="px-3 py-2.5 align-top text-text-muted dark:text-stone-400">
-                    {current ? formatItem(current) : 'нет в текущем меню'}
-                  </TableCell>
-                  <TableCell className="px-3 py-2.5 align-top font-medium text-text-main dark:text-stone-100">
-                    {formatItem(item)}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable columns={columns} data={items} getRowId={(item) => item.slug} getRowClassName={(item) => isChanged(item) ? 'bg-amber-50/70 dark:bg-amber-500/10' : undefined} />
     </div>
   );
 }

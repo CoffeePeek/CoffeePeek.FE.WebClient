@@ -1,5 +1,6 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { DataTable } from '@/src/components/ui/DataTable';
 import { Input } from '@/src/components/ui/Input';
+import type { ColumnDef } from '@tanstack/react-table';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -198,6 +199,23 @@ export const AppDistributionPage: React.FC = () => {
     () => [...(releasesQuery.data ?? [])].sort((a, b) => b.versionCode - a.versionCode),
     [releasesQuery.data]
   );
+  const releaseColumns: ColumnDef<AndroidAppRelease>[] = [
+    { accessorKey: 'version', header: 'Версия', meta: { className: 'font-semibold text-text-main dark:text-white' } },
+    { accessorKey: 'versionCode', header: 'Код' },
+    { accessorKey: 'fileName', header: 'Файл' },
+    { header: 'Размер', cell: ({ row }) => formatBytes(row.original.fileSize) },
+    { header: 'Дата релиза', cell: ({ row }) => formatDate(row.original.releasedAt) },
+    {
+      header: 'Статус',
+      cell: ({ row }) => <span className={`rounded-full px-2 py-1 text-xs font-semibold ${row.original.isActive ? 'bg-primary text-black' : 'bg-gray-100 text-text-muted dark:bg-white/10 dark:text-stone-300'}`}>{row.original.isActive ? 'Production' : 'Не активен'}</span>,
+    },
+    {
+      id: 'actions',
+      header: 'Действие',
+      meta: { className: 'text-right', headerClassName: 'text-right' },
+      cell: ({ row }) => <Button type="button" variant={row.original.isActive ? 'ghost' : 'secondary'} size="sm" disabled={row.original.isActive} onClick={() => setReleaseToPublish(row.original)}>Сделать production</Button>,
+    },
+  ];
   const production = configQuery.data?.android.apk;
   const activeRelease = releases.find((release) => release.isActive);
   const productionVersion = production?.version ?? activeRelease?.version;
@@ -274,63 +292,14 @@ export const AppDistributionPage: React.FC = () => {
         <div className="border-b border-border-light p-4 dark:border-border-dark">
           <h3 className="font-display text-base font-semibold text-text-main dark:text-white">Android-релизы</h3>
         </div>
-        <div className="relative w-full overflow-auto">
-          <Table className="w-full min-w-[760px] text-left text-sm">
-            <TableHeader className="bg-gray-50 text-xs uppercase text-text-muted dark:bg-white/5 dark:text-stone-400">
-              <TableRow>
-                <TableHead scope="col" className="px-4 py-3">Версия</TableHead>
-                <TableHead scope="col" className="px-4 py-3">Код</TableHead>
-                <TableHead scope="col" className="px-4 py-3">Файл</TableHead>
-                <TableHead scope="col" className="px-4 py-3">Размер</TableHead>
-                <TableHead scope="col" className="px-4 py-3">Дата релиза</TableHead>
-                <TableHead scope="col" className="px-4 py-3">Статус</TableHead>
-                <TableHead scope="col" className="px-4 py-3 text-right">Действие</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-border-light dark:divide-border-dark">
-              {releasesQuery.isLoading ? (
-                <TableRow>
-                  <TableCell className="px-4 py-8 text-center text-text-muted dark:text-stone-400" colSpan={7}>
-                    Загрузка...
-                  </TableCell>
-                </TableRow>
-              ) : releases.length === 0 ? (
-                <TableRow>
-                  <TableCell className="px-4 py-8 text-center text-text-muted dark:text-stone-400" colSpan={7}>
-                    Релизов пока нет
-                  </TableCell>
-                </TableRow>
-              ) : releases.map((release) => (
-                <TableRow
-                  key={release.id}
-                  className={release.isActive ? 'bg-primary/10' : 'border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5'}
-                >
-                  <TableCell className="px-4 py-3 font-semibold text-text-main dark:text-white">{release.version}</TableCell>
-                  <TableCell className="px-4 py-3 text-text-muted dark:text-stone-300">{release.versionCode}</TableCell>
-                  <TableCell className="px-4 py-3 text-text-muted dark:text-stone-300">{release.fileName}</TableCell>
-                  <TableCell className="px-4 py-3 text-text-muted dark:text-stone-300">{formatBytes(release.fileSize)}</TableCell>
-                  <TableCell className="px-4 py-3 text-text-muted dark:text-stone-300">{formatDate(release.releasedAt)}</TableCell>
-                  <TableCell className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${release.isActive ? 'bg-primary text-black' : 'bg-gray-100 text-text-muted dark:bg-white/10 dark:text-stone-300'}`}>
-                      {release.isActive ? 'Production' : 'Не активен'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-right">
-                    <Button
-                      type="button"
-                      variant={release.isActive ? 'ghost' : 'secondary'}
-                      size="sm"
-                      disabled={release.isActive}
-                      onClick={() => setReleaseToPublish(release)}
-                    >
-                      Сделать production
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          columns={releaseColumns}
+          data={releases}
+          loading={releasesQuery.isLoading}
+          emptyText="Релизов пока нет"
+          tableClassName="min-w-[760px]"
+          getRowClassName={(release) => release.isActive ? 'bg-primary/10' : undefined}
+        />
       </Card>
 
       <ConfirmDialog

@@ -1,6 +1,7 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { DataTable } from '@/src/components/ui/DataTable';
 import { Input } from '@/src/components/ui/Input';
 import { NativeSelect } from '@/src/components/ui/NativeSelect';
+import type { ColumnDef } from '@tanstack/react-table';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -21,6 +22,7 @@ import { getErrorMessage } from '../utils/errors';
 const PAGE_SIZE = 15;
 type SortKey = 'name' | 'address' | 'description' | 'dataCompletenessScore' | 'status';
 type SortDir = 'asc' | 'desc';
+type ModerationShop = Awaited<ReturnType<typeof getModerationShops>>['data']['items'][number];
 
 const STATUS_OPTIONS: { value: ModerationStatus | ''; label: string }[] = [
   { value: '', label: 'Все' },
@@ -29,11 +31,7 @@ const STATUS_OPTIONS: { value: ModerationStatus | ''; label: string }[] = [
   { value: 'Rejected', label: 'Отклонённые' },
 ];
 
-function compareShops(
-  a: Awaited<ReturnType<typeof getModerationShops>>['data']['items'][number],
-  b: Awaited<ReturnType<typeof getModerationShops>>['data']['items'][number],
-  key: SortKey
-): number {
+function compareShops(a: ModerationShop, b: ModerationShop, key: SortKey): number {
   if (key === 'dataCompletenessScore') {
     return a.dataCompletenessScore - b.dataCompletenessScore;
   }
@@ -152,6 +150,31 @@ export const ShopsModerationPage: React.FC = () => {
     return [...list].sort((a, b) => compareShops(a, b, sortKey) * direction);
   }, [data?.items, sortDir, sortKey]);
 
+  const columns: ColumnDef<ModerationShop>[] = [
+    {
+      id: 'photo',
+      header: '',
+      meta: { className: 'w-16' },
+      cell: ({ row }) => row.original.photos?.[0] ? <img src={row.original.photos[0].fullUrl} alt="" className="h-12 w-12 rounded-lg border border-border-light object-cover dark:border-border-dark" /> : <div className="h-12 w-12 rounded-lg border border-border-light bg-gray-100 dark:border-border-dark dark:bg-white/5" />,
+    },
+    {
+      id: 'name',
+      header: () => <SortButton label="Название" column="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />,
+      cell: ({ row }) => <><Link to={`/shops/${row.original.id}`} className="font-body font-medium text-text-main transition-colors hover:text-primary dark:text-white">{row.original.name}</Link><p className="mt-1 font-body text-xs text-text-muted dark:text-stone-500">{row.original.photos?.length ? `${row.original.photos.length} фото` : 'Без фото'}</p></>,
+      meta: { className: 'max-w-[200px]' },
+    },
+    { id: 'address', header: () => <SortButton label="Адрес" column="address" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />, cell: ({ row }) => <span className="line-clamp-3">{row.original.address}</span>, meta: { className: 'max-w-[220px]' } },
+    { id: 'description', header: () => <SortButton label="Описание" column="description" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />, cell: ({ row }) => <span className="line-clamp-3">{row.original.description || '—'}</span>, meta: { className: 'max-w-[260px]' } },
+    { id: 'completeness', header: () => <SortButton label="Заполненность" column="dataCompletenessScore" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />, cell: ({ row }) => <Badge variant="info">{row.original.dataCompletenessScore}%</Badge> },
+    { id: 'status', header: () => <SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />, cell: ({ row }) => <Badge variant={statusToBadgeVariant(row.original.status)}>{statusLabels[row.original.status]}</Badge> },
+    {
+      id: 'actions',
+      header: 'Действия',
+      meta: { className: 'w-[7.25rem] align-top' },
+      cell: ({ row }) => <div className="ml-auto flex w-[7.25rem] flex-col gap-1.5"><Button asChild variant="primary" size="sm" className="w-full whitespace-nowrap"><Link to={`/shops/${row.original.id}`}>Открыть</Link></Button>{row.original.status === 'Pending' && <><Button variant="success" size="sm" className="w-full whitespace-nowrap" onClick={() => setPendingAction({ id: row.original.id, type: 'approve' })}>Одобрить</Button><Button variant="danger" size="sm" className="w-full whitespace-nowrap" onClick={() => setPendingAction({ id: row.original.id, type: 'reject' })}>Отклонить</Button></>}</div>,
+    },
+  ];
+
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
@@ -269,104 +292,7 @@ export const ShopsModerationPage: React.FC = () => {
           </div>
 
           <Card className="hidden lg:block">
-            <div className="relative w-full overflow-auto">
-              <Table className="w-full text-sm">
-                <TableHeader>
-                  <TableRow className="border-b border-border-light dark:border-border-dark">
-                    <TableHead scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-16" />
-                    <TableHead scope="col" className="text-left px-4 py-3">
-                      <SortButton label="Название" column="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3">
-                      <SortButton label="Адрес" column="address" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3">
-                      <SortButton label="Описание" column="description" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3">
-                      <SortButton label="Заполненность" column="dataCompletenessScore" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3">
-                      <SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-[7.25rem]">
-                      Действия
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-border-light dark:divide-border-dark">
-                  {items.map((shop) => (
-                    <TableRow key={shop.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5 align-top">
-                      <TableCell className="px-5 py-3">
-                        {shop.photos?.[0] ? (
-                          <img
-                            src={shop.photos[0].fullUrl}
-                            alt=""
-                            className="w-12 h-12 rounded-lg object-cover border border-border-light dark:border-border-dark"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-white/5 border border-border-light dark:border-border-dark" />
-                        )}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 max-w-[200px]">
-                        <Link
-                          to={`/shops/${shop.id}`}
-                          className="font-medium text-text-main dark:text-white hover:text-primary transition-colors font-body"
-                        >
-                          {shop.name}
-                        </Link>
-                        <p className="text-xs text-text-muted dark:text-stone-500 font-body mt-1">
-                          {shop.photos?.length ? `${shop.photos.length} фото` : 'Без фото'}
-                        </p>
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 max-w-[220px] font-body">
-                        <span className="line-clamp-3">{shop.address}</span>
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 max-w-[260px] font-body">
-                        <span className="line-clamp-3">{shop.description || '—'}</span>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Badge variant="info">{shop.dataCompletenessScore}%</Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Badge variant={statusToBadgeVariant(shop.status)}>
-                          {statusLabels[shop.status]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-3 align-top">
-                        <div className="ml-auto flex w-[7.25rem] shrink-0 flex-col gap-1.5">
-                          <Link to={`/shops/${shop.id}`} className="block">
-                            <Button variant="primary" size="sm" className="w-full whitespace-nowrap">
-                              Открыть
-                            </Button>
-                          </Link>
-                          {shop.status === 'Pending' && (
-                            <>
-                              <Button
-                                variant="success"
-                                size="sm"
-                                className="w-full whitespace-nowrap"
-                                onClick={() => setPendingAction({ id: shop.id, type: 'approve' })}
-                              >
-                                Одобрить
-                              </Button>
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                className="w-full whitespace-nowrap"
-                                onClick={() => setPendingAction({ id: shop.id, type: 'reject' })}
-                              >
-                                Отклонить
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <DataTable columns={columns} data={items} getRowId={(shop) => shop.id} />
           </Card>
 
           <Pagination

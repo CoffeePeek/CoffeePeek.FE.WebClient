@@ -1,4 +1,4 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { DataTable } from '@/src/components/ui/DataTable';
 import { Input } from '@/src/components/ui/Input';
 import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import { Textarea } from '@/src/components/ui/Textarea';
@@ -7,6 +7,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { z } from 'zod';
 import {
   clearCoffeeZoneMembershipOverride,
@@ -19,6 +20,7 @@ import {
   updateCoffeeZone,
   ZONE_MAX_EXTENT_METERS,
   type CoffeeZoneCandidate,
+  type CoffeeZoneMember,
   type CoffeeZoneMembershipOverrideKind,
   type CoffeeZonePayload,
   type GeoPoint,
@@ -159,6 +161,18 @@ export function CoffeeZoneEditorPage() {
   const cityId = form.watch('cityId');
   const description = form.watch('description');
   const members = membershipQuery.data?.members ?? [];
+  const memberColumns: ColumnDef<CoffeeZoneMember>[] = [
+    {
+      header: 'Кофейня',
+      cell: ({ row }) => <><p className="font-medium text-text-main dark:text-white">{row.original.name}</p><p className="mt-0.5 text-xs text-text-muted dark:text-stone-500">{row.original.isAutomatic ? 'Внутри контура' : 'Вне контура'}{row.original.isPrimary ? ' · основная' : ''}</p></>,
+    },
+    { header: 'До центра', cell: ({ row }) => `${Math.round(row.original.distanceMeters)} м`, meta: { className: 'whitespace-nowrap text-xs text-text-muted' } },
+    { header: 'Правило', cell: ({ row }) => row.original.overrideKind ? <Badge variant={row.original.overrideKind === 'Exclude' ? 'rejected' : row.original.overrideKind === 'Primary' ? 'pending' : 'info'}>{overrideLabels[row.original.overrideKind]}</Badge> : <span className="text-xs text-text-muted dark:text-stone-500">Автоматически</span> },
+    {
+      id: 'actions',
+      cell: ({ row }) => <div className="flex min-w-max gap-1"><Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: row.original.shopId, kind: 'Include' })}>Включить</Button><Button type="button" variant="ghost" size="sm" className="text-red-400" onClick={() => membershipMutation.mutate({ shopId: row.original.shopId, kind: 'Exclude' })}>Исключить</Button><Button type="button" variant="ghost" size="sm" className="text-primary" onClick={() => membershipMutation.mutate({ shopId: row.original.shopId, kind: 'Primary' })}>Основная</Button>{row.original.overrideKind && <Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: row.original.shopId })}>Сбросить</Button>}</div>,
+    },
+  ];
   const pointCountValid = polygon.length >= MIN_POINTS && polygon.length <= MAX_POINTS;
   const extentMeters = polygonExtentMeters(polygon);
   const tooLarge = extentMeters > ZONE_MAX_EXTENT_METERS;
@@ -271,12 +285,7 @@ export function CoffeeZoneEditorPage() {
               </div>
               {membershipQuery.isLoading ? <div className="p-6 text-sm text-text-muted">Загрузка состава…</div> : members.length === 0 ? <div className="p-8 text-center text-sm text-text-muted dark:text-stone-400">Кофейни в зоне не найдены</div> : (
                 <div className="relative w-full overflow-auto max-h-[520px]">
-                  <Table className="w-full text-sm">
-                    <TableHeader className="sticky top-0 z-10 bg-white dark:bg-surface-dark"><TableRow className="border-b border-border-light dark:border-border-dark"><TableHead className="px-4 py-3 text-left text-xs text-text-muted">Кофейня</TableHead><TableHead className="px-4 py-3 text-left text-xs text-text-muted" title="От расчётного центра зоны">До центра</TableHead><TableHead className="px-4 py-3 text-left text-xs text-text-muted">Правило</TableHead><TableHead className="px-4 py-3" /></TableRow></TableHeader>
-                    <TableBody className="divide-y divide-border-light dark:divide-border-dark">
-                      {members.map((member) => <TableRow key={member.shopId} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5"><TableCell className="px-4 py-3"><p className="font-medium text-text-main dark:text-white">{member.name}</p><p className="mt-0.5 text-xs text-text-muted dark:text-stone-500">{member.isAutomatic ? 'Внутри контура' : 'Вне контура'}{member.isPrimary ? ' · основная' : ''}</p></TableCell><TableCell className="whitespace-nowrap px-4 py-3 text-xs text-text-muted dark:text-stone-400">{Math.round(member.distanceMeters)} м</TableCell><TableCell className="px-4 py-3">{member.overrideKind ? <Badge variant={member.overrideKind === 'Exclude' ? 'rejected' : member.overrideKind === 'Primary' ? 'pending' : 'info'}>{overrideLabels[member.overrideKind]}</Badge> : <span className="text-xs text-text-muted dark:text-stone-500">Автоматически</span>}</TableCell><TableCell className="px-4 py-3"><div className="flex min-w-max gap-1"><Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: member.shopId, kind: 'Include' })}>Включить</Button><Button type="button" variant="ghost" size="sm" className="text-red-400" onClick={() => membershipMutation.mutate({ shopId: member.shopId, kind: 'Exclude' })}>Исключить</Button><Button type="button" variant="ghost" size="sm" className="text-primary" onClick={() => membershipMutation.mutate({ shopId: member.shopId, kind: 'Primary' })}>Основная</Button>{member.overrideKind && <Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: member.shopId })}>Сбросить</Button>}</div></TableCell></TableRow>)}
-                    </TableBody>
-                  </Table>
+                  <DataTable columns={memberColumns} data={members} loading={membershipQuery.isLoading} getRowId={(member) => member.shopId} />
                 </div>
               )}
             </Card>

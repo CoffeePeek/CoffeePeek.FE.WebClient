@@ -1,5 +1,6 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { DataTable } from '@/src/components/ui/DataTable';
 import { Input } from '@/src/components/ui/Input';
+import type { ColumnDef } from '@tanstack/react-table';
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -38,7 +39,6 @@ const ROLE_COLORS: Record<UserRole, string> = {
   Employee: 'bg-teal-100 text-teal-800 dark:bg-teal-500/20 dark:text-teal-300',
   Roaster: 'bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300',
 };
-
 const UserRoleBadge: React.FC<{ role: UserRole }> = ({ role }) => (
   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-body ${ROLE_COLORS[role]}`}>
     {role}
@@ -366,6 +366,28 @@ export const UsersPage: React.FC = () => {
     setSearchParams(next);
   };
 
+  const columns: ColumnDef<AdminUser>[] = [
+    {
+      header: 'Пользователь',
+      cell: ({ row }) => {
+        const user = row.original;
+        return <div className="flex items-center gap-3">{user.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" /> : <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 font-display text-xs font-bold text-primary">{user.userName?.[0]?.toUpperCase() ?? user.email[0].toUpperCase()}</div>}<div className="min-w-0"><p className="flex max-w-[160px] items-center gap-1.5 truncate font-body text-xs font-medium text-text-main dark:text-white">{user.userName ?? user.email}{user.isBlocked && <Badge variant="rejected">Заблокирован</Badge>}</p>{user.userName && <p className="max-w-[160px] truncate font-body text-xs text-stone-400">{user.email}</p>}</div></div>;
+      },
+    },
+    { header: 'Роли', cell: ({ row }) => <div className="flex flex-wrap gap-1">{row.original.roles.length ? row.original.roles.map((role) => <UserRoleBadge key={role} role={role as UserRole} />) : <Badge>—</Badge>}</div> },
+    { accessorKey: 'reviewCount', header: 'Отзывов', meta: { className: 'hidden md:table-cell', headerClassName: 'hidden md:table-cell' }, cell: ({ row }) => row.original.reviewCount ?? 0 },
+    { accessorKey: 'checkInCount', header: 'Чекинов', meta: { className: 'hidden md:table-cell', headerClassName: 'hidden md:table-cell' }, cell: ({ row }) => row.original.checkInCount ?? 0 },
+    { accessorKey: 'addedShopsCount', header: 'Кофеен', meta: { className: 'hidden lg:table-cell', headerClassName: 'hidden lg:table-cell' }, cell: ({ row }) => row.original.addedShopsCount ?? 0 },
+    { accessorKey: 'createdAtUtc', header: 'Дата', meta: { className: 'hidden lg:table-cell', headerClassName: 'hidden lg:table-cell' }, cell: ({ row }) => new Date(row.original.createdAtUtc).toLocaleDateString('ru') },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const user = row.original;
+        return <div className="flex min-w-[220px] flex-wrap gap-2"><Button variant="ghost" size="sm" className="text-amber-500" onClick={() => setKickingUser(user)}>Оборвать</Button><Button variant="ghost" size="sm" onClick={() => setSessionsUser(user)}>Сессии</Button><Button variant="ghost" size="sm" onClick={() => setEditingUser(user)}>Роль</Button><Button variant="ghost" size="sm" className={user.isBlocked ? 'text-green-500' : 'text-amber-500'} onClick={() => setBlockingUser(user)}>{user.isBlocked ? 'Разблок.' : 'Блок'}</Button><Button variant="ghost" size="sm" className="text-red-400 hover:text-red-500" aria-label="Удалить" onClick={() => setDeletingUserId(user.id)}><svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></Button></div>;
+      },
+    },
+  ];
+
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
@@ -418,132 +440,11 @@ export const UsersPage: React.FC = () => {
       </div>
 
       <Card className="p-6">
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-14 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-            ))}
+        <DataTable columns={columns} data={data?.items ?? []} loading={isLoading} emptyText="Пользователи не найдены" />
+        {data && data.totalPages > 1 && (
+          <div className="border-t border-border-light px-5 py-3 dark:border-border-dark">
+            <Pagination page={page} totalPages={data.totalPages} onPageChange={(nextPage) => setParam('page', String(nextPage))} />
           </div>
-        ) : !data?.items.length ? (
-          <div className="p-12 text-center">
-            <p className="text-text-muted dark:text-stone-400 text-sm font-body">Пользователи не найдены</p>
-          </div>
-        ) : (
-          <>
-            <div className="relative w-full overflow-auto">
-              <Table className="w-full text-sm">
-                <TableHeader>
-                  <TableRow className="border-b border-border-light dark:border-border-dark">
-                    <TableHead scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Пользователь</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Роли</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Отзывов</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Чекинов</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Кофеен</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Дата</TableHead>
-                    <TableHead scope="col" className="px-4 py-3" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-border-light dark:divide-border-dark">
-                  {data.items.map((user) => (
-                    <TableRow key={user.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5">
-                      <TableCell className="px-5 py-3">
-                        <div className="flex items-center gap-3">
-                          {user.avatarUrl ? (
-                            <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold font-display">
-                              {user.userName?.[0]?.toUpperCase() ?? user.email[0].toUpperCase()}
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-medium text-text-main dark:text-white truncate max-w-[160px] font-body text-xs flex items-center gap-1.5">
-                              {user.userName ?? user.email}
-                              {user.isBlocked && (
-                                <Badge variant="rejected">Заблокирован</Badge>
-                              )}
-                            </p>
-                            {user.userName && (
-                              <p className="text-stone-400 text-xs truncate max-w-[160px] font-body">{user.email}</p>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {user.roles.length > 0
-                            ? user.roles.map((r) => <UserRoleBadge key={r} role={r as UserRole} />)
-                            : <Badge>—</Badge>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden md:table-cell font-body">
-                        {user.reviewCount ?? 0}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden md:table-cell font-body">
-                        {user.checkInCount ?? 0}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden lg:table-cell font-body">
-                        {user.addedShopsCount ?? 0}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden lg:table-cell font-body">
-                        {new Date(user.createdAtUtc).toLocaleDateString('ru')}
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2 min-w-[220px]">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-amber-500"
-                            onClick={() => setKickingUser(user)}
-                          >
-                            Оборвать
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSessionsUser(user)}
-                          >
-                            Сессии
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingUser(user)}
-                          >
-                            Роль
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={user.isBlocked ? 'text-green-500' : 'text-amber-500'}
-                            onClick={() => setBlockingUser(user)}
-                          >
-                            {user.isBlocked ? 'Разблок.' : 'Блок'}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:text-red-500"
-                            onClick={() => setDeletingUserId(user.id)}
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
-              <Pagination
-                page={page}
-                totalPages={data.totalPages}
-                onPageChange={(p) => setParam('page', String(p))}
-              />
-            </div>
-          </>
         )}
       </Card>
 

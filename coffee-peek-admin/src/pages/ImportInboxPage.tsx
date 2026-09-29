@@ -1,15 +1,16 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
 import { Input } from '@/src/components/ui/Input';
 import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { decideImportCandidate, getImportCandidates, ImportCandidate } from '../api/import';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../components/ui/Dialog';
+import { DataTable } from '../components/ui/DataTable';
 import {
   CoffeeFocusPicker,
   FocusBadge,
@@ -81,8 +82,7 @@ const BUCKETS: { value: CollectorBucket | 'all'; label: string }[] = [
   { value: 'vending', label: 'Вендинг' },
 ];
 
-const headerControl =
-  'w-full min-w-[7.5rem] rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-text-main dark:text-white text-xs py-1.5 px-2 font-body focus:outline-none focus:ring-2 focus:ring-primary/30';
+const headerControl = 'h-8 min-w-[7.5rem] text-xs';
 
 function isSelectable(item: ImportCandidate): boolean {
   return item.queueStatus === 'Pending' || item.queueStatus === 'Skipped';
@@ -412,8 +412,49 @@ export const ImportInboxPage: React.FC<{
     });
   };
 
-  const colCount = 7;
   const loadedCount = items.length;
+  const columns: ColumnDef<ImportCandidate>[] = [
+    {
+      id: 'selection',
+      header: () => <Input type="checkbox" checked={allSelectableChecked} ref={(element) => { if (element) element.indeterminate = someSelectableChecked && !allSelectableChecked; }} onChange={toggleAllVisible} disabled={!selectableItems.length} aria-label="Выбрать все загруженные" />,
+      cell: ({ row }) => <div onClick={(event) => event.stopPropagation()}><Input type="checkbox" checked={selectedIds.has(row.original.id)} disabled={!isSelectable(row.original)} onChange={(event) => toggleOne(row.original.id, event.target.checked)} aria-label={`Выбрать ${displayShopName(row.original.name, row.original.brand)}`} /></div>,
+      meta: { headerClassName: 'w-10 pl-4 pr-1', className: 'w-10 pl-4 pr-1' },
+    },
+    {
+      accessorKey: 'name',
+      header: () => <div className="flex min-w-52 flex-col gap-1.5"><SortButton label="Название" column="name" sortKey={sortKey} sortDir={sortDir} onSort={onSort} /><Input value={localSearch} onChange={(event) => setLocalSearch(event.target.value)} placeholder="Название, адрес..." className="h-8 text-xs" /><NativeSelect value={source} onChange={(event) => patchParams({ source: event.target.value })} className={headerControl} aria-label="Источник"><option value="">Все источники</option><option value="File">Из файла</option><option value="Osm">OSM</option><option value="CoffeeMap">CoffeeMap</option></NativeSelect></div>,
+      cell: ({ row }) => <div><div className="flex flex-wrap items-center gap-2"><Link to={{ pathname: `/import/${row.original.id}`, search: (() => { const next = new URLSearchParams(searchParams); next.set('panel', 'list'); return next.toString(); })() }} className="font-medium text-text-main hover:text-primary dark:text-white" onClick={(event) => event.stopPropagation()}>{displayShopName(row.original.name, row.original.brand)}</Link><SourceBadge source={String(row.original.source)} importedFromFile={row.original.importedFromFile} /></div>{row.original.address && <p className="max-w-xs truncate text-xs text-text-muted dark:text-stone-500">{row.original.address}</p>}</div>,
+      meta: { className: 'px-3' },
+    },
+    {
+      accessorKey: 'coffeeFocus',
+      header: () => <div className="flex flex-col gap-1.5"><SortButton label="Focus" column="focus" sortKey={sortKey} sortDir={sortDir} onSort={onSort} /><NativeSelect value={focus} onChange={(event) => patchParams({ focus: event.target.value })} className={headerControl}><option value="">Любой</option>{COFFEE_FOCUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect></div>,
+      cell: ({ row }) => <FocusBadge focus={row.original.coffeeFocus} />,
+    },
+    {
+      accessorKey: 'googleBusinessStatus',
+      header: () => <SortButton label="Google" column="google" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />,
+      cell: ({ row }) => row.original.googleBusinessStatus ? <GoogleStatusBadge status={row.original.googleBusinessStatus} /> : <span className="text-xs text-text-muted">—</span>,
+      meta: { headerClassName: 'hidden md:table-cell', className: 'hidden md:table-cell' },
+    },
+    {
+      accessorKey: 'osmAgeDays',
+      header: () => <SortButton label="OSM" column="osm" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />,
+      cell: ({ row }) => <span className="text-xs text-text-muted">{row.original.osmAgeDays != null ? `${row.original.osmAgeDays} дн.` : '—'}</span>,
+      meta: { headerClassName: 'hidden lg:table-cell', className: 'hidden lg:table-cell' },
+    },
+    {
+      accessorKey: 'collectorBucket',
+      header: () => <div className="flex flex-col gap-1.5"><SortButton label="Корзина" column="bucket" sortKey={sortKey} sortDir={sortDir} onSort={onSort} /><NativeSelect value={bucket} onChange={(event) => patchParams({ bucket: event.target.value })} className={headerControl}>{BUCKETS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect></div>,
+      cell: ({ row }) => <span className="text-xs text-text-muted">{row.original.collectorBucket ? BUCKET_LABELS[row.original.collectorBucket] : '—'}</span>,
+      meta: { headerClassName: 'hidden md:table-cell', className: 'hidden md:table-cell' },
+    },
+    {
+      accessorKey: 'queueStatus',
+      header: () => <div className="flex flex-col gap-1.5"><SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={onSort} /><NativeSelect value={status} onChange={(event) => { const nextStatus = event.target.value; patchParams({ status: nextStatus, rejectReason: nextStatus === 'Rejected' ? rejectReason : '' }); }} className={headerControl}>{STATUSES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect>{status === 'Rejected' && <NativeSelect value={rejectReason} onChange={(event) => patchParams({ rejectReason: event.target.value })} className={headerControl} aria-label="Причина отклонения"><option value="">Любая причина</option>{REJECT_REASON_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect>}</div>,
+      cell: ({ row }) => <Badge variant={row.original.queueStatus === 'Published' ? 'approved' : row.original.queueStatus === 'Rejected' ? 'rejected' : 'pending'}>{QUEUE_STATUS_LABELS[row.original.queueStatus]}{row.original.queueStatus === 'Rejected' && row.original.rejectReason ? ` · ${REJECT_REASON_LABELS[row.original.rejectReason]}` : ''}</Badge>,
+    },
+  ];
 
   return (
     <div className="h-full min-h-0 flex flex-col overflow-hidden">
@@ -429,277 +470,19 @@ export const ImportInboxPage: React.FC<{
           </p>
         )}
         <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto">
-          <Table className="w-full text-sm">
-            <TableHeader>
-              <TableRow className="border-b border-border-light dark:border-border-dark align-bottom">
-                <TableHead className="text-left pl-4 pr-1 py-3 w-10">
-                  <Input
-                    type="checkbox"
-                    checked={allSelectableChecked}
-                    ref={(el) => {
-                      if (el) el.indeterminate = someSelectableChecked && !allSelectableChecked;
-                    }}
-                    onChange={toggleAllVisible}
-                    disabled={!selectableItems.length}
-                    aria-label="Выбрать все на странице"
-                    className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-pointer disabled:opacity-40"
-                  />
-                </TableHead>
-                <TableHead className="text-left px-3 py-3">
-                  <div className="flex flex-col gap-1.5">
-                    <SortButton
-                      label="Название"
-                      column="name"
-                      sortKey={sortKey}
-                      sortDir={sortDir}
-                      onSort={onSort}
-                    />
-                    <Input
-                      value={localSearch}
-                      onChange={(e) => setLocalSearch(e.target.value)}
-                      placeholder="Название, адрес..."
-                      className={`${headerControl} min-w-[12rem]`}
-                    />
-                    <NativeSelect
-                      value={hasAddress ? '1' : ''}
-                      onChange={(e) => patchParams({ hasAddress: e.target.value })}
-                      className={headerControl}
-                      aria-label="Фильтр по адресу"
-                    >
-                      <option value="">Все адреса</option>
-                      <option value="1">Только с адресами</option>
-                    </NativeSelect>
-                    <NativeSelect
-                      value={source}
-                      onChange={(e) => patchParams({ source: e.target.value })}
-                      className={headerControl}
-                      aria-label="Источник"
-                    >
-                      <option value="">Все источники</option>
-                      <option value="File">Из файла</option>
-                      <option value="Osm">OSM</option>
-                      <option value="CoffeeMap">CoffeeMap</option>
-                    </NativeSelect>
-                  </div>
-                </TableHead>
-                <TableHead className="text-left px-4 py-3">
-                  <div className="flex flex-col gap-1.5">
-                    <SortButton
-                      label="Focus"
-                      column="focus"
-                      sortKey={sortKey}
-                      sortDir={sortDir}
-                      onSort={onSort}
-                    />
-                    <NativeSelect
-                      value={focus}
-                      onChange={(e) => patchParams({ focus: e.target.value })}
-                      className={headerControl}
-                    >
-                      <option value="">Любой</option>
-                      {COFFEE_FOCUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </div>
-                </TableHead>
-                <TableHead className="text-left px-4 py-3 hidden md:table-cell">
-                  <SortButton
-                    label="Google"
-                    column="google"
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                    onSort={onSort}
-                  />
-                </TableHead>
-                <TableHead className="text-left px-4 py-3 hidden lg:table-cell">
-                  <SortButton
-                    label="OSM"
-                    column="osm"
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                    onSort={onSort}
-                  />
-                </TableHead>
-                <TableHead className="text-left px-4 py-3 hidden md:table-cell">
-                  <div className="flex flex-col gap-1.5">
-                    <SortButton
-                      label="Корзина"
-                      column="bucket"
-                      sortKey={sortKey}
-                      sortDir={sortDir}
-                      onSort={onSort}
-                    />
-                    <NativeSelect
-                      value={bucket}
-                      onChange={(e) => patchParams({ bucket: e.target.value })}
-                      className={headerControl}
-                    >
-                      {BUCKETS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </div>
-                </TableHead>
-                <TableHead className="text-left px-4 py-3">
-                  <div className="flex flex-col gap-1.5">
-                    <SortButton
-                      label="Статус"
-                      column="status"
-                      sortKey={sortKey}
-                      sortDir={sortDir}
-                      onSort={onSort}
-                    />
-                    <NativeSelect
-                      value={status}
-                      onChange={(e) => {
-                        const nextStatus = e.target.value;
-                        patchParams({
-                          status: nextStatus,
-                          rejectReason: nextStatus === 'Rejected' ? rejectReason : '',
-                        });
-                      }}
-                      className={headerControl}
-                    >
-                      {STATUSES.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                    {(status === 'Rejected' || status === 'all') && (
-                      <NativeSelect
-                        value={rejectReason}
-                        onChange={(e) => patchParams({ rejectReason: e.target.value })}
-                        className={headerControl}
-                        aria-label="Причина отклонения"
-                      >
-                        <option value="">Любая причина</option>
-                        {REJECT_REASON_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </NativeSelect>
-                    )}
-                  </div>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-border-light dark:divide-border-dark">
-              {isLoading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell colSpan={colCount} className="px-5 py-2">
-                      <div className="h-8 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : !items.length ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={colCount}
-                    className="p-12 text-center text-sm text-text-muted dark:text-stone-400"
-                  >
-                    Ничего не найдено
-                  </TableCell>
-                </TableRow>
-              ) : (
-                items.map((item) => {
-                  const selectable = isSelectable(item);
-                  const checked = selectedIds.has(item.id);
-                  return (
-                    <TableRow
-                      key={item.id}
-                      className={[
-                        'border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5 cursor-pointer',
-                        checked ? 'bg-primary/5 dark:bg-primary/10' : '',
-                        selectedId === item.id ? 'bg-primary/10 dark:bg-primary/15' : '',
-                      ].join(' ')}
-                      onClick={() => openCandidate(item.id)}
-                    >
-                      <TableCell
-                        className="pl-4 pr-1 py-2 align-middle"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Input
-                          type="checkbox"
-                          checked={checked}
-                          disabled={!selectable}
-                          onChange={(e) => toggleOne(item.id, e.target.checked)}
-                          aria-label={`Выбрать ${displayShopName(item.name, item.brand)}`}
-                          className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-pointer disabled:opacity-40"
-                        />
-                      </TableCell>
-                      <TableCell className="px-3 py-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Link
-                            to={{
-                              pathname: `/import/${item.id}`,
-                              search: (() => {
-                                const next = new URLSearchParams(searchParams);
-                                next.set('panel', 'list');
-                                return next.toString();
-                              })(),
-                            }}
-                            className="text-text-main dark:text-white hover:text-primary font-medium"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {displayShopName(item.name, item.brand)}
-                          </Link>
-                          <SourceBadge
-                            source={String(item.source)}
-                            importedFromFile={item.importedFromFile}
-                          />
-                        </div>
-                        {item.address && (
-                          <p className="text-xs text-text-muted dark:text-stone-500 truncate max-w-xs">
-                            {item.address}
-                          </p>
-                        )}
-                      </TableCell>
-                      <TableCell className="px-4 py-2">
-                        <FocusBadge focus={item.coffeeFocus} />
-                      </TableCell>
-                      <TableCell className="px-4 py-2 hidden md:table-cell">
-                        {item.googleBusinessStatus ? (
-                          <GoogleStatusBadge status={item.googleBusinessStatus} />
-                        ) : (
-                          <span className="text-xs text-text-muted dark:text-stone-500">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="px-4 py-2 hidden lg:table-cell text-xs text-text-muted dark:text-stone-400">
-                        {item.osmAgeDays != null ? `${item.osmAgeDays} дн.` : '—'}
-                      </TableCell>
-                      <TableCell className="px-4 py-2 hidden md:table-cell text-xs text-text-muted dark:text-stone-400">
-                        {item.collectorBucket ? BUCKET_LABELS[item.collectorBucket] : '—'}
-                      </TableCell>
-                      <TableCell className="px-4 py-2">
-                        <Badge
-                          variant={
-                            item.queueStatus === 'Published'
-                              ? 'approved'
-                              : item.queueStatus === 'Rejected'
-                                ? 'rejected'
-                                : 'pending'
-                          }
-                        >
-                          {QUEUE_STATUS_LABELS[item.queueStatus]}
-                          {item.queueStatus === 'Rejected' && item.rejectReason
-                            ? ` · ${REJECT_REASON_LABELS[item.rejectReason]}`
-                            : ''}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={columns}
+            data={items}
+            loading={isLoading}
+            emptyText="Ничего не найдено"
+            tableClassName="text-sm"
+            getRowId={(item) => item.id}
+            onRowClick={(item) => openCandidate(item.id)}
+            getRowClassName={(item) => [
+              selectedIds.has(item.id) ? 'bg-primary/5 dark:bg-primary/10' : '',
+              selectedId === item.id ? 'bg-primary/10 dark:bg-primary/15' : '',
+            ].join(' ')}
+          />
           {/* Sentinel lives inside the scroll container so the observer root actually scrolls it. */}
           <div
             ref={loadMoreRef}

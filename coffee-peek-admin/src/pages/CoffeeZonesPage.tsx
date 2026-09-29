@@ -1,8 +1,8 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
 import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
   archiveCoffeeZone,
   getCoffeeZones,
@@ -17,6 +17,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { getErrorMessage } from '../utils/errors';
+import { DataTable } from '../components/ui/DataTable';
 
 const statusMeta: Record<CoffeeZoneStatus, { label: string; variant: BadgeVariant }> = {
   Draft: { label: 'Черновик', variant: 'pending' },
@@ -70,6 +71,14 @@ export function CoffeeZonesPage() {
   const cities = catalogs?.cities ?? [];
   const cityNames = new Map(cities.map((city) => [city.id, city.name]));
   const zones = zonesQuery.data ?? [];
+  const columns: ColumnDef<AdminCoffeeZone>[] = [
+    { accessorKey: 'name', header: 'Название', cell: ({ row }) => <div><Link to={`/coffee-zones/${row.original.id}`} className="font-medium text-text-main hover:text-primary dark:text-white">{row.original.name}</Link>{row.original.description && <p className="mt-0.5 max-w-xs truncate text-xs text-text-muted">{row.original.description}</p>}</div> },
+    { accessorKey: 'cityId', header: 'Город', cell: ({ row }) => <span className="whitespace-nowrap text-xs text-text-muted">{cityNames.get(row.original.cityId) ?? '—'}</span> },
+    { accessorKey: 'status', header: 'Статус', cell: ({ row }) => <Badge variant={statusMeta[row.original.status].variant}>{statusMeta[row.original.status].label}</Badge> },
+    { id: 'polygon', header: 'Контур', cell: ({ row }) => <PolygonThumbnail zone={row.original} /> },
+    { accessorKey: 'shopCount', header: 'Кофейни', cell: ({ row }) => <span className="text-xs text-text-muted">{row.original.shopCount}</span> },
+    { id: 'actions', header: 'Действия', cell: ({ row }) => <div className="flex min-w-max flex-wrap gap-1"><Button asChild variant="ghost" size="sm"><Link to={`/coffee-zones/${row.original.id}`}>Изменить</Link></Button>{row.original.status !== 'Published' && <Button variant="ghost" size="sm" className="text-green-500" onClick={() => setPendingAction({ zone: row.original, status: 'Published' })}>Опубликовать</Button>}{row.original.status !== 'Draft' && <Button variant="ghost" size="sm" onClick={() => setPendingAction({ zone: row.original, status: 'Draft' })}>В черновик</Button>}{row.original.status !== 'Archived' && <Button variant="ghost" size="sm" className="text-red-400" onClick={() => setPendingAction({ zone: row.original, status: 'Archived', archive: true })}>Архивировать</Button>}</div> },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
@@ -99,49 +108,11 @@ export function CoffeeZonesPage() {
         </label>
       </Card>
 
-      <Card className="p-6">
-        {zonesQuery.isLoading ? (
-          <div className="space-y-3 p-6">
-            {Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-14 animate-pulse rounded bg-gray-100 dark:bg-white/5" />)}
-          </div>
-        ) : zonesQuery.isError ? (
+      <Card>
+        {zonesQuery.isError ? (
           <div className="p-10 text-center text-sm text-red-400">Не удалось загрузить кофейные зоны</div>
-        ) : zones.length === 0 ? (
-          <div className="p-12 text-center text-sm text-text-muted dark:text-stone-400">Зоны не найдены</div>
         ) : (
-          <div className="relative w-full overflow-auto">
-            <Table className="w-full text-sm">
-              <TableHeader>
-                <TableRow className="border-b border-border-light dark:border-border-dark">
-                  {['Название', 'Город', 'Статус', 'Контур', 'Кофейни', 'Действия'].map((label) => (
-                    <TableHead scope="col" key={label} className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400">{label}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody className="divide-y divide-border-light dark:divide-border-dark">
-                {zones.map((zone) => (
-                  <TableRow key={zone.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5">
-                    <TableCell className="px-4 py-3">
-                      <Link to={`/coffee-zones/${zone.id}`} className="font-medium text-text-main hover:text-primary dark:text-white">{zone.name}</Link>
-                      {zone.description && <p className="mt-0.5 max-w-xs truncate text-xs text-text-muted dark:text-stone-500">{zone.description}</p>}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3 text-xs text-text-muted dark:text-stone-400">{cityNames.get(zone.cityId) ?? '—'}</TableCell>
-                    <TableCell className="px-4 py-3"><Badge variant={statusMeta[zone.status].variant}>{statusMeta[zone.status].label}</Badge></TableCell>
-                    <TableCell className="px-4 py-2 text-xs text-text-muted dark:text-stone-400"><PolygonThumbnail zone={zone} /></TableCell>
-                    <TableCell className="px-4 py-3 text-xs text-text-muted dark:text-stone-400">{zone.shopCount}</TableCell>
-                    <TableCell className="px-4 py-3">
-                      <div className="flex min-w-max flex-wrap gap-1">
-                        <Link to={`/coffee-zones/${zone.id}`}><Button variant="ghost" size="sm">Изменить</Button></Link>
-                        {zone.status !== 'Published' && <Button variant="ghost" size="sm" className="text-green-500" onClick={() => setPendingAction({ zone, status: 'Published' })}>Опубликовать</Button>}
-                        {zone.status !== 'Draft' && <Button variant="ghost" size="sm" onClick={() => setPendingAction({ zone, status: 'Draft' })}>В черновик</Button>}
-                        {zone.status !== 'Archived' && <Button variant="ghost" size="sm" className="text-red-400" onClick={() => setPendingAction({ zone, status: 'Archived', archive: true })}>Архивировать</Button>}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTable columns={columns} data={zones} loading={zonesQuery.isLoading} emptyText="Зоны не найдены" getRowId={(zone) => zone.id} />
         )}
       </Card>
 

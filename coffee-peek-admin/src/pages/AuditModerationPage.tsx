@@ -1,6 +1,6 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { useSearchParams } from 'react-router-dom';
 import {
   getModerationAuditLog,
@@ -12,6 +12,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
+import { DataTable } from '../components/ui/DataTable';
 
 const PAGE_SIZE = 20;
 
@@ -40,32 +41,14 @@ const ACTION_VARIANT: Record<AuditAction, 'approved' | 'rejected' | 'pending'> =
   Pending: 'pending',
 };
 
-const AuditRow: React.FC<{ entry: ModerationAuditEntry }> = ({ entry }) => (
-  <TableRow className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5">
-    <TableCell className="px-5 py-3 text-xs text-text-muted dark:text-stone-400 font-body whitespace-nowrap">
-      {new Date(entry.createdAtUtc).toLocaleString('ru')}
-    </TableCell>
-    <TableCell className="px-4 py-3">
-      <Badge>
-        {entry.entityType === 'Shop'
-          ? 'Кофейня'
-          : entry.entityType === 'Review' ? 'Отзыв' : 'Пост'}
-      </Badge>
-    </TableCell>
-    <TableCell className="px-4 py-3 text-sm text-text-main dark:text-white font-body max-w-[200px] truncate">
-      {entry.entityName}
-    </TableCell>
-    <TableCell className="px-4 py-3">
-      <Badge variant={ACTION_VARIANT[entry.action]}>{ACTION_LABELS[entry.action]}</Badge>
-    </TableCell>
-    <TableCell className="px-4 py-3 text-xs font-mono text-text-muted dark:text-stone-400 hidden md:table-cell">
-      {entry.moderatorUserId.slice(0, 8)}…
-    </TableCell>
-    <TableCell className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 font-body max-w-[240px] truncate hidden lg:table-cell">
-      {entry.comment ?? '—'}
-    </TableCell>
-  </TableRow>
-);
+const columns: ColumnDef<ModerationAuditEntry>[] = [
+  { accessorKey: 'createdAtUtc', header: 'Дата', cell: ({ row }) => <span className="whitespace-nowrap text-xs text-text-muted">{new Date(row.original.createdAtUtc).toLocaleString('ru')}</span>, meta: { headerClassName: 'pl-5', className: 'pl-5' } },
+  { accessorKey: 'entityType', header: 'Тип', cell: ({ row }) => <Badge>{row.original.entityType === 'Shop' ? 'Кофейня' : row.original.entityType === 'Review' ? 'Отзыв' : 'Пост'}</Badge> },
+  { accessorKey: 'entityName', header: 'Сущность', cell: ({ row }) => <span className="block max-w-[200px] truncate">{row.original.entityName}</span> },
+  { accessorKey: 'action', header: 'Действие', cell: ({ row }) => <Badge variant={ACTION_VARIANT[row.original.action]}>{ACTION_LABELS[row.original.action]}</Badge> },
+  { accessorKey: 'moderatorUserId', header: 'Модератор', cell: ({ row }) => <span className="font-mono text-xs text-text-muted">{row.original.moderatorUserId.slice(0, 8)}…</span>, meta: { headerClassName: 'hidden md:table-cell', className: 'hidden md:table-cell' } },
+  { accessorKey: 'comment', header: 'Комментарий', cell: ({ row }) => <span className="block max-w-[240px] truncate text-xs text-text-muted">{row.original.comment ?? '—'}</span>, meta: { headerClassName: 'hidden lg:table-cell', className: 'hidden lg:table-cell' } },
+];
 
 export const AuditModerationPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -130,47 +113,9 @@ export const AuditModerationPage: React.FC = () => {
         </div>
       </div>
 
-      <Card className="p-6">
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-12 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        ) : !data?.items.length ? (
-          <div className="p-12 text-center">
-            <p className="text-text-muted dark:text-stone-400 text-sm font-body">Записей не найдено</p>
-          </div>
-        ) : (
-          <>
-            <div className="relative w-full overflow-auto">
-              <Table className="w-full text-sm">
-                <TableHeader>
-                  <TableRow className="border-b border-border-light dark:border-border-dark">
-                    <TableHead scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Дата</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Тип</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Сущность</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Действие</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Модератор</TableHead>
-                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Комментарий</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-border-light dark:divide-border-dark">
-                  {data.items.map((entry) => (
-                    <AuditRow key={entry.id} entry={entry} />
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
-              <Pagination
-                page={page}
-                totalPages={data.totalPages}
-                onPageChange={(p) => setParam('page', String(p))}
-              />
-            </div>
-          </>
-        )}
+      <Card>
+        <DataTable columns={columns} data={data?.items ?? []} loading={isLoading} emptyText="Записей не найдено" getRowId={(entry) => entry.id} />
+        {data && data.totalPages > 1 && <div className="border-t border-border-light px-5 py-3 dark:border-border-dark"><Pagination page={page} totalPages={data.totalPages} onPageChange={(nextPage) => setParam('page', String(nextPage))} /></div>}
       </Card>
     </div>
   );
