@@ -9,11 +9,20 @@ const SessionRealtime: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const handlingRef = useRef(false);
+  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Путь читаем через ref: иначе хаб переподключается на каждой навигации.
   const pathnameRef = useRef(location.pathname);
   pathnameRef.current = location.pathname;
 
   useEffect(() => {
+    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
+    const scheduleStop = () => {
+      stopTimerRef.current = setTimeout(() => {
+        stopTimerRef.current = null;
+        void stopSessionHub();
+      }, 0);
+    };
+
     // Сбрасываем защиту от повторного выхода только для новой сессии.
     if (user?.id) handlingRef.current = false;
 
@@ -31,8 +40,11 @@ const SessionRealtime: React.FC = () => {
     const unsubscribe = subscribeSessionInvalidated(endSession);
 
     if (!user?.id) {
-      void stopSessionHub();
-      return () => unsubscribe();
+      scheduleStop();
+      return () => {
+        unsubscribe();
+        scheduleStop();
+      };
     }
 
     void startSessionHub((payload) => {
@@ -41,7 +53,7 @@ const SessionRealtime: React.FC = () => {
 
     return () => {
       unsubscribe();
-      void stopSessionHub();
+      scheduleStop();
     };
   }, [user?.id, clearSession, navigate]);
 

@@ -6,6 +6,7 @@ import { parseForceLogoutPayload, type ForceLogoutPayload } from './forceLogout'
 let connection: HubConnection | null = null;
 let forceLogoutHandler: ((payload: ForceLogoutPayload) => void | Promise<void>) | null = null;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingStart: Promise<void> | null = null;
 const START_RETRY_MS = 15_000;
 
 function hubUrl(): string {
@@ -56,8 +57,10 @@ export async function startSessionHub(
     })();
   });
 
+  const starting = hub.start();
+  pendingStart = starting;
   try {
-    await hub.start();
+    await starting;
   } catch {
     // Хаб мог быть уже заменён новым start — не теряем ссылку на живое соединение.
     if (connection === hub) {
@@ -66,6 +69,8 @@ export async function startSessionHub(
       const handler = forceLogoutHandler;
       if (handler) retryTimer = setTimeout(() => void startSessionHub(handler), START_RETRY_MS);
     }
+  } finally {
+    if (pendingStart === starting) pendingStart = null;
   }
 }
 
@@ -76,5 +81,6 @@ export async function stopSessionHub(): Promise<void> {
   connection = null;
   forceLogoutHandler = null;
   if (!hub) return;
+  await pendingStart?.catch(() => {});
   await hub.stop().catch(() => {});
 }

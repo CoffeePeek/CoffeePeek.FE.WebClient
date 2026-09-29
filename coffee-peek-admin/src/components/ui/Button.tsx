@@ -44,9 +44,16 @@ export const Button: React.FC<ButtonProps> = ({
   asChild = false,
   ...props
 }) => {
-  const Component = asChild ? Slot : 'button';
+  if (asChild) {
+    return (
+      <Slot className={cn(buttonVariants({ variant, size }), className)} {...props}>
+        {children}
+      </Slot>
+    );
+  }
+
   return (
-    <Component
+    <button
       type={type}
       disabled={disabled || loading}
       className={cn(buttonVariants({ variant, size }), className)}
@@ -54,7 +61,7 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {loading && <LoaderCircle className="h-3.5 w-3.5 animate-spin" />}
       {children}
-    </Component>
+    </button>
   );
 };
 
