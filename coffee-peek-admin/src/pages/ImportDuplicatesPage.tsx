@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
   decideDuplicateSuggestion,
   DuplicateCandidateSide,
@@ -11,6 +12,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
+import { DataTable } from '../components/ui/DataTable';
 import { ImportTabs, SourceBadge } from '../components/import/catalogControls';
 import { useToast } from '../contexts/ToastContext';
 import {
@@ -91,53 +93,6 @@ const SideCard: React.FC<{ side: DuplicateCandidateSide; label: string }> = ({ s
   );
 };
 
-const SuggestionCard: React.FC<{
-  item: DuplicateSuggestion;
-  busy: boolean;
-  onDecide: (id: string, accept: boolean) => void;
-}> = ({ item, busy, onDecide }) => (
-  <Card className="p-6">
-    <div className="flex flex-wrap items-center gap-2 mb-3">
-      <span className="text-sm font-semibold text-text-main dark:text-white font-display">
-        Score {Math.round(item.score)}
-      </span>
-      {item.distanceMeters != null && (
-        <span className="text-xs text-text-muted dark:text-stone-400">
-          {Math.round(item.distanceMeters)} м
-        </span>
-      )}
-      {item.reasons.map((reason) => (
-        <Badge key={reason} variant="default">
-          {reason}
-        </Badge>
-      ))}
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <SideCard side={item.left} label="A" />
-      <SideCard side={item.right} label="B" />
-    </div>
-    <div className="mt-4 flex flex-col sm:flex-row gap-2">
-      <Button
-        variant="primary"
-        className="flex-1 min-h-[44px]"
-        disabled={busy}
-        loading={busy}
-        onClick={() => onDecide(item.id, true)}
-      >
-        Это одно место
-      </Button>
-      <Button
-        variant="secondary"
-        className="flex-1 min-h-[44px]"
-        disabled={busy}
-        onClick={() => onDecide(item.id, false)}
-      >
-        Разные места
-      </Button>
-    </div>
-  </Card>
-);
-
 export const ImportDuplicatesPage: React.FC = () => {
   const { showToast } = useToast();
   const qc = useQueryClient();
@@ -178,6 +133,12 @@ export const ImportDuplicatesPage: React.FC = () => {
 
   const items = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
+  const columns: ColumnDef<DuplicateSuggestion>[] = [
+    { accessorKey: 'score', header: 'Score', cell: ({ row }) => <div className="min-w-[120px]"><strong>{Math.round(row.original.score)}</strong>{row.original.distanceMeters != null && <p className="text-xs text-text-muted">{Math.round(row.original.distanceMeters)} м</p>}<div className="mt-1 flex flex-wrap gap-1">{row.original.reasons.map((reason) => <Badge key={reason}>{reason}</Badge>)}</div></div> },
+    { id: 'left', header: 'Место A', cell: ({ row }) => <SideCard side={row.original.left} label="A" /> },
+    { id: 'right', header: 'Место B', cell: ({ row }) => <SideCard side={row.original.right} label="B" /> },
+    { id: 'actions', cell: ({ row }) => { const busy = decidingIds.has(row.original.id); return <div className="flex min-w-max flex-col gap-2"><Button size="sm" disabled={busy} loading={busy} onClick={() => decide(row.original.id, true)}>Это одно место</Button><Button variant="secondary" size="sm" disabled={busy} onClick={() => decide(row.original.id, false)}>Разные места</Button></div>; } },
+  ];
 
   // Deciding the last pairs of the last page shrinks totalPages — step back instead of showing empty.
   useEffect(() => {
@@ -201,35 +162,8 @@ export const ImportDuplicatesPage: React.FC = () => {
         </p>
       )}
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-40 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
-          ))}
-        </div>
-      ) : !items.length ? (
-        <Card className="p-6">
-          <p className="text-sm text-text-muted dark:text-stone-400 text-center py-8">
-            Похожих пар нет. После загрузки JSON нажмите «Найти похожие».
-          </p>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          <p className="text-xs text-text-muted dark:text-stone-500">
-            В выборке: {data?.totalCount ?? items.length}
-            {totalPages > 1 && ` · стр. ${page} из ${totalPages}`}
-          </p>
-          {items.map((item) => (
-            <SuggestionCard
-              key={item.id}
-              item={item}
-              busy={decidingIds.has(item.id)}
-              onDecide={decide}
-            />
-          ))}
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
-      )}
+      <Card><DataTable columns={columns} data={items} loading={isLoading} emptyText="Похожих пар нет. После загрузки JSON нажмите «Найти похожие»." getRowId={(item) => item.id} /></Card>
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 };

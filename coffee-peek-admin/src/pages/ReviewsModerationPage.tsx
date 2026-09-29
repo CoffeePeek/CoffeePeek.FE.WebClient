@@ -1,6 +1,8 @@
 import { Input } from '@/src/components/ui/Input';
+import { DataTable } from '@/src/components/ui/DataTable';
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getModerationReviews, approveReview, rejectReview, ModerationStatus, AdminReview } from '../api/admin';
 import { useToast } from '../contexts/ToastContext';
@@ -19,82 +21,6 @@ const STATUS_OPTIONS: { value: ModerationStatus | ''; label: string }[] = [
   { value: 'Approved', label: 'Одобренные' },
   { value: 'Rejected', label: 'Отклонённые' },
 ];
-
-const StarRow: React.FC<{ label: string; value: number }> = ({ label, value }) => (
-  <div className="flex items-center gap-2">
-    <span className="text-xs text-stone-500 w-24 shrink-0">{label}</span>
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <svg key={s} className={`w-3 h-3 ${s <= value ? 'text-primary fill-primary' : 'text-gray-300 dark:text-stone-600'}`} viewBox="0 0 20 20">
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-        </svg>
-      ))}
-    </div>
-    <span className="text-xs text-stone-500">{value}/5</span>
-  </div>
-);
-
-const ReviewCard: React.FC<{
-  review: AdminReview;
-  onApprove: () => void;
-  onReject: () => void;
-}> = ({ review, onApprove, onReject }) => (
-  <div className="p-4 sm:p-5 border-b border-border-light dark:border-border-dark last:border-0">
-    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-      <div className="flex-1 min-w-0 w-full">
-        <div className="flex items-center gap-2 flex-wrap mb-1">
-          <span className="font-semibold text-sm text-text-main dark:text-white font-body">{review.header}</span>
-          <Badge variant={statusToBadgeVariant(review.status)}>{statusLabels[review.status]}</Badge>
-        </div>
-        <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-2">
-          {review.authorName ?? review.authorEmail} ·{' '}
-          <Link
-            to={`/coffee-shops/${review.shopId}`}
-            title={`Открыть кофейню ${review.shopName}`}
-            className="font-medium text-blue-600 underline decoration-blue-600/30 underline-offset-2 hover:text-blue-700 hover:decoration-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            {review.shopName}
-          </Link>{' '}
-          ·{' '}
-          {new Date(review.createdAtUtc).toLocaleDateString('ru')}
-        </p>
-        <p className="text-sm text-text-main dark:text-stone-300 font-body mb-3 line-clamp-3">
-          {review.comment}
-        </p>
-        {review.photos.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-1 mb-3">
-            {review.photos.map((photo) => (
-              <a
-                key={photo.storageKey}
-                href={photo.fullUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 rounded-lg overflow-hidden border border-border-light dark:border-border-dark"
-              >
-                <img src={photo.fullUrl} alt={photo.fileName ?? 'Фото отзыва'} loading="lazy" className="w-20 h-20 object-cover" />
-              </a>
-            ))}
-          </div>
-        )}
-        <div className="space-y-1">
-          <StarRow label="Кофе" value={review.ratingCoffee} />
-          <StarRow label="Сервис" value={review.ratingService} />
-          <StarRow label="Место" value={review.ratingPlace} />
-        </div>
-      </div>
-      {review.status === 'Pending' && (
-        <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto shrink-0">
-          <Button variant="success" size="sm" onClick={onApprove} className="flex-1 sm:flex-none min-h-[44px] sm:min-h-0">
-            Одобрить
-          </Button>
-          <Button variant="danger" size="sm" onClick={onReject} className="flex-1 sm:flex-none min-h-[44px] sm:min-h-0">
-            Отклонить
-          </Button>
-        </div>
-      )}
-    </div>
-  </div>
-);
 
 export const ReviewsModerationPage: React.FC = () => {
   const { showToast } = useToast();
@@ -147,6 +73,16 @@ export const ReviewsModerationPage: React.FC = () => {
     setSearchParams(next);
   };
 
+  const columns: ColumnDef<AdminReview>[] = [
+    { accessorKey: 'header', header: 'Отзыв', cell: ({ row }) => <div className="max-w-[360px]"><p className="font-medium text-text-main dark:text-white">{row.original.header}</p><p className="line-clamp-2 text-xs text-text-muted">{row.original.comment}</p></div> },
+    { accessorKey: 'shopName', header: 'Кофейня', cell: ({ row }) => <Link to={`/coffee-shops/${row.original.shopId}`} className="font-medium text-blue-600 hover:underline dark:text-blue-400">{row.original.shopName}</Link> },
+    { id: 'author', header: 'Автор', cell: ({ row }) => row.original.authorName ?? row.original.authorEmail },
+    { id: 'ratings', header: 'Оценки', cell: ({ row }) => `К ${row.original.ratingCoffee} · С ${row.original.ratingService} · М ${row.original.ratingPlace}` },
+    { accessorKey: 'status', header: 'Статус', cell: ({ row }) => <Badge variant={statusToBadgeVariant(row.original.status)}>{statusLabels[row.original.status]}</Badge> },
+    { accessorKey: 'createdAtUtc', header: 'Дата', cell: ({ row }) => new Date(row.original.createdAtUtc).toLocaleDateString('ru') },
+    { id: 'actions', cell: ({ row }) => row.original.status === 'Pending' ? <div className="flex gap-2"><Button variant="success" size="sm" onClick={() => setPendingAction({ id: row.original.id, type: 'approve' })}>Одобрить</Button><Button variant="danger" size="sm" onClick={() => setPendingAction({ id: row.original.id, type: 'reject' })}>Отклонить</Button></div> : null },
+  ];
+
   // After acting on the last item of page N>1 the page becomes empty — step back instead of stranding the user.
   useEffect(() => {
     if (data && page > 1 && !data.items.length) {
@@ -198,36 +134,9 @@ export const ReviewsModerationPage: React.FC = () => {
         </form>
       </div>
 
-      <Card className="p-6">
-        {isLoading ? (
-          <div className="p-6 space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-28 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        ) : !data?.items.length ? (
-          <div className="p-12 text-center">
-            <p className="text-text-muted dark:text-stone-400 text-sm font-body">Отзывы не найдены</p>
-          </div>
-        ) : (
-          <>
-            {data.items.map((review) => (
-              <ReviewCard
-                key={review.id}
-                review={review}
-                onApprove={() => setPendingAction({ id: review.id, type: 'approve' })}
-                onReject={() => setPendingAction({ id: review.id, type: 'reject' })}
-              />
-            ))}
-            <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
-              <Pagination
-                page={page}
-                totalPages={data.totalPages}
-                onPageChange={(p) => setParam('page', String(p))}
-              />
-            </div>
-          </>
-        )}
+      <Card>
+        <DataTable columns={columns} data={data?.items ?? []} loading={isLoading} emptyText="Отзывы не найдены" getRowId={(review) => review.id} />
+        {data && <div className="border-t border-border-light px-5 py-3 dark:border-border-dark"><Pagination page={page} totalPages={data.totalPages} onPageChange={(nextPage) => setParam('page', String(nextPage))} /></div>}
       </Card>
 
       <ConfirmDialog

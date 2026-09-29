@@ -1,5 +1,7 @@
 import { Input } from '@/src/components/ui/Input';
+import { DataTable } from '@/src/components/ui/DataTable';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Button } from '../ui/Button';
 import { BynSign } from '../ui/CoffeeBeanSign';
 import { uploadMenuPhotoFiles } from '../../api/photos';
@@ -146,6 +148,16 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
       { title: 'Фильтр', rows: filter },
     ];
   }, [items]);
+  const itemColumns: ColumnDef<ShopMenuItemDto>[] = [
+    { accessorKey: 'nameRu', header: 'Напиток', cell: ({ row }) => <><p className="font-medium">{row.original.nameRu}</p>{row.original.source === 'Manual' && <p className="text-xs text-text-muted">вручную</p>}</> },
+    { accessorKey: 'availability', header: 'Наличие', cell: ({ row }) => <AvailabilityToggle value={row.original.availability} onChange={(availability) => patchItem(row.original.slug, { availability })} /> },
+    { id: 'price', header: 'Цена', cell: ({ row }) => row.original.availability === 'Present' ? <label className="inline-flex h-8 w-[5.75rem] items-center gap-1 rounded-md border border-border-light px-2 dark:border-border-dark"><Input type="text" inputMode="decimal" placeholder="0" aria-label={`Цена ${row.original.nameRu}`} value={priceDrafts[row.original.slug] ?? ''} onChange={(event) => { const raw = event.target.value; setPriceDrafts((current) => ({ ...current, [row.original.slug]: raw })); patchItem(row.original.slug, { price: parsePriceDraft(raw) }); }} className="min-w-0 text-right tabular-nums" /><BynSign size={11} /></label> : '—' },
+  ];
+  const unmatchedColumns: ColumnDef<UnmatchedMenuItem>[] = [
+    { accessorKey: 'rawName', header: 'Позиция' },
+    { accessorKey: 'price', header: 'Цена', cell: ({ row }) => row.original.price != null ? formatMenuPrice(row.original.price) : '—' },
+    { accessorKey: 'confidence', header: 'Уверенность', cell: ({ row }) => row.original.confidence != null ? `${Math.round(row.original.confidence * 100)}%` : '—' },
+  ];
 
   const patchItem = (slug: string, patch: Partial<ShopMenuItemDto>) => {
     setItems((current) => current.map((item) => (item.slug === slug ? { ...item, ...patch } : item)));
@@ -328,50 +340,7 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
                 <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-1.5">
                   {group.title}
                 </p>
-                <div className="rounded-lg border border-border-light dark:border-border-dark divide-y divide-border-light dark:divide-border-dark">
-                  {group.rows.map((item) => {
-                    const present = item.availability === 'Present';
-                    return (
-                      <div
-                        key={item.slug}
-                        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2"
-                      >
-                        <div className="min-w-[7rem] flex-1">
-                          <p className="text-sm font-medium font-body truncate">{item.nameRu}</p>
-                          {item.source === 'Manual' && (
-                            <p className="text-[10px] text-text-muted leading-none mt-0.5">вручную</p>
-                          )}
-                        </div>
-                        <AvailabilityToggle
-                          value={item.availability}
-                          onChange={(availability) => patchItem(item.slug, { availability })}
-                        />
-                        <label
-                          className={`inline-flex items-center gap-1 h-8 w-[5.75rem] shrink-0 rounded-md border px-2 ${
-                            present
-                              ? 'border-border-light dark:border-border-dark bg-white dark:bg-surface-dark'
-                              : 'border-transparent opacity-0 pointer-events-none'
-                          }`}
-                        >
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            placeholder="0"
-                            aria-label={`Цена ${item.nameRu}`}
-                            value={priceDrafts[item.slug] ?? ''}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              setPriceDrafts((current) => ({ ...current, [item.slug]: raw }));
-                              patchItem(item.slug, { price: parsePriceDraft(raw) });
-                            }}
-                            className="w-full min-w-0 bg-transparent text-sm text-right outline-none font-body tabular-nums text-text-main dark:text-white"
-                          />
-                          <BynSign size={11} />
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
+                <DataTable columns={itemColumns} data={group.rows} getRowId={(item) => item.slug} />
               </div>
             )
           )}
@@ -392,15 +361,7 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
           <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-1.5">
             Не совпало с каталогом
           </p>
-          <ul className="text-xs text-text-muted space-y-1">
-            {unmatched.map((row) => (
-              <li key={`${row.rawName}-${row.price ?? ''}`}>
-                {row.rawName}
-                {row.price != null ? ` · ${formatMenuPrice(row.price)}` : ''}
-                {row.confidence != null ? ` · ${Math.round(row.confidence * 100)}%` : ''}
-              </li>
-            ))}
-          </ul>
+          <DataTable columns={unmatchedColumns} data={unmatched} getRowId={(row) => `${row.rawName}-${row.price ?? ''}`} />
         </div>
       )}
     </div>

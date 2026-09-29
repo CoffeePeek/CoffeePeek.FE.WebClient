@@ -1,7 +1,9 @@
 import { Input } from '@/src/components/ui/Input';
 import { NativeSelect } from '@/src/components/ui/NativeSelect';
+import { DataTable } from '@/src/components/ui/DataTable';
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   createAdminCatalogItem,
@@ -176,6 +178,12 @@ export const CatalogManagementPage: React.FC = () => {
     if (!body || !editing) return showToast(kind === 'equipments' ? 'Укажите бренд и модель' : 'Укажите название', 'error');
     updateMutation.mutate({ catalog: kind, id: editing.id, body });
   };
+  const columns: ColumnDef<CatalogItem>[] = [
+    ...(kind === 'roasters' ? [{ id: 'photo', header: '', cell: ({ row }: { row: { original: CatalogItem } }) => { const roaster = row.original as CatalogRoaster; return roaster.photoUrl ? <img src={roaster.photoUrl} alt="" className="h-12 w-12 rounded-lg object-cover" /> : <div className="h-12 w-12 rounded-lg bg-stone-100 dark:bg-white/5" />; } } as ColumnDef<CatalogItem>] : []),
+    { id: 'name', header: 'Название', cell: ({ row }) => itemTitle(kind, row.original) },
+    { id: 'category', header: 'Категория', cell: ({ row }) => itemCategory(kind, row.original) || '—' },
+    { id: 'actions', meta: { className: 'text-right' }, cell: ({ row }) => { const roaster = kind === 'roasters' ? row.original as CatalogRoaster : null; return <div className="flex justify-end gap-2">{roaster ? <Button asChild variant="secondary" size="sm"><Link to={`/catalogs/roasters/${roaster.id}`}>Редактировать</Link></Button> : <Button variant="secondary" size="sm" onClick={() => { setEditing(row.original); setEditForm(formFromItem(kind, row.original)); }}>Изменить</Button>}<Button variant="ghost" size="sm" className="text-red-500" onClick={() => setDeleting(row.original)}>Удалить</Button></div>; } },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
@@ -198,25 +206,7 @@ export const CatalogManagementPage: React.FC = () => {
           <div className="min-w-0"><h2 className="text-sm font-semibold text-text-main dark:text-white font-display">{definition.label}</h2><p className="text-xs text-text-muted dark:text-stone-400 font-body mt-0.5">{data.length} записей</p></div>
           <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по каталогу" aria-label="Поиск по каталогу" className="sm:ml-auto sm:max-w-xs" />
         </div>
-        {isLoading ? <div className="p-5 space-y-3" aria-label="Загрузка каталога">{Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-14 rounded-lg bg-stone-100 dark:bg-white/5 animate-pulse" />)}</div>
-          : isError ? <div className="p-10 text-center"><p className="text-sm text-red-500 font-body mb-3">Не удалось загрузить каталог</p><Button variant="secondary" onClick={() => refetch()}>Повторить</Button></div>
-          : visibleItems.length === 0 ? <div className="p-10 text-center"><p className="text-sm text-text-muted dark:text-stone-400 font-body">{search ? 'Ничего не найдено' : 'В этом справочнике пока нет записей'}</p></div>
-          : <ul className="divide-y divide-border-light dark:divide-border-dark">{visibleItems.map((item) => {
-            const category = itemCategory(kind, item);
-            const roaster = kind === 'roasters' ? item as CatalogRoaster : null;
-            return <li key={item.id} className="p-4 sm:px-5 flex flex-col sm:flex-row sm:items-center gap-3 hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
-              {roaster && (roaster.photoUrl
-                ? <img src={roaster.photoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-border-light dark:border-border-dark object-cover" />
-                : <div className="h-12 w-12 shrink-0 rounded-lg border border-border-light dark:border-border-dark bg-stone-100 dark:bg-white/5" />)}
-              <div className="min-w-0 flex-1"><p className="text-sm font-medium text-text-main dark:text-white font-body break-words">{itemTitle(kind, item)}</p>{category && <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1">{category}</p>}</div>
-              <div className="flex gap-2 sm:shrink-0">
-                {roaster
-                  ? <Link to={`/catalogs/roasters/${roaster.id}`} className="flex-1 sm:flex-none"><Button variant="secondary" size="sm" className="w-full min-h-[40px]">Редактировать</Button></Link>
-                  : <Button variant="secondary" size="sm" className="flex-1 sm:flex-none min-h-[40px]" onClick={() => { setEditing(item); setEditForm(formFromItem(kind, item)); }}>Изменить</Button>}
-                <Button variant="ghost" size="sm" className="flex-1 sm:flex-none min-h-[40px] text-red-500 hover:text-red-600" onClick={() => setDeleting(item)}>Удалить</Button>
-              </div>
-            </li>;
-          })}</ul>}
+        {isError ? <div className="p-10 text-center"><p className="mb-3 font-body text-sm text-red-500">Не удалось загрузить каталог</p><Button variant="secondary" onClick={() => refetch()}>Повторить</Button></div> : <DataTable columns={columns} data={visibleItems} loading={isLoading} emptyText={search ? 'Ничего не найдено' : 'В этом справочнике пока нет записей'} getRowId={(item) => item.id} />}
       </Card>
 
       <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>

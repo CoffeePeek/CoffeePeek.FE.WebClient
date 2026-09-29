@@ -1,6 +1,8 @@
 import { Input } from '@/src/components/ui/Input';
+import { DataTable } from '@/src/components/ui/DataTable';
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { getCacheKeys, clearCacheByPattern, clearCacheByKey } from '../api/admin';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
@@ -58,6 +60,10 @@ export const CachePage: React.FC = () => {
     }
     setActivePattern(pattern);
   };
+  const columns: ColumnDef<string>[] = [
+    { id: 'key', header: 'Ключ', cell: ({ row }) => <span className="font-mono">{row.original}</span> },
+    { id: 'actions', meta: { className: 'text-right' }, cell: ({ row }) => <Button variant="ghost" size="sm" className="text-red-400" onClick={() => setKeyToClear(row.original)}>Удалить</Button> },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
@@ -98,43 +104,8 @@ export const CachePage: React.FC = () => {
         </div>
       </form>
 
-      <Card className="p-6">
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-10 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        ) : !keys?.length ? (
-          <div className="p-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-text-muted dark:text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-text-muted dark:text-stone-400 text-sm font-body">
-              Ключи не найдены для «{activePattern}»
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border-light dark:divide-border-dark">
-            {keys.map((key) => (
-              <div key={key} className="flex items-center gap-4 px-5 py-3">
-                <p className="flex-1 min-w-0 text-sm font-mono text-text-main dark:text-white truncate">
-                  {key}
-                </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setKeyToClear(key)}
-                  className="text-red-400 hover:text-red-500 shrink-0"
-                >
-                  Удалить
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+      <Card>
+        <DataTable columns={columns} data={keys ?? []} loading={isLoading} emptyText={`Ключи не найдены для «${activePattern}»`} getRowId={(key) => key} />
       </Card>
 
       <ConfirmDialog

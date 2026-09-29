@@ -10,6 +10,7 @@ import {
   type AdminDailyCount,
   type AdminModerationQueueName,
   type AdminModerationInsights,
+  type AdminShopsInsights,
   type AdminTopShop,
   type OverviewStats,
 } from '../../api/admin';
@@ -29,6 +30,8 @@ const QUEUE_LABELS: Record<AdminModerationQueueName, string> = {
 const DAY_OPTIONS = [7, 30, 90] as const;
 type ModerationQueue = AdminModerationInsights['queues'][number];
 type Moderator = AdminModerationInsights['topModerators30Days'][number];
+type DownloadChannel = AdminShopsInsights['downloads']['byChannel'][number];
+type DownloadCountry = AdminShopsInsights['downloads']['topCountries30Days'][number];
 
 const fmtHours = (h: number | null) =>
   h === null ? '—' : h >= 48 ? `${Math.round(h / 24)} дн` : `${Math.round(h)} ч`;
@@ -157,25 +160,30 @@ const Bars: React.FC<{ label: string; points: AdminDailyCount[] }> = ({ label, p
   );
 };
 
-const TopShops: React.FC<{ title: string; shops: AdminTopShop[] }> = ({ title, shops }) => (
-  <div>
-    <p className="text-xs text-text-muted dark:text-stone-400 font-body uppercase tracking-wide mb-2">{title}</p>
-    {shops.length === 0 ? (
-      <p className="text-sm text-text-muted dark:text-stone-400">Нет данных</p>
-    ) : (
-      <ol className="space-y-1 text-sm font-body">
-        {shops.map((s, i) => (
-          <li key={s.shopId} className="flex justify-between gap-2">
-            <Link to={`/published-shops/${s.shopId}`} className="truncate text-text-main dark:text-stone-200 hover:text-primary">
-              {i + 1}. {s.name}
-            </Link>
-            <span className="text-text-muted dark:text-stone-400 tabular-nums">{s.count}</span>
-          </li>
-        ))}
-      </ol>
-    )}
-  </div>
-);
+const TopShops: React.FC<{ title: string; shops: AdminTopShop[] }> = ({ title, shops }) => {
+  const columns: ColumnDef<AdminTopShop>[] = [
+    { accessorKey: 'name', header: title, cell: ({ row }) => <Link to={`/published-shops/${row.original.shopId}`} className="text-text-main hover:text-primary dark:text-stone-200">{row.original.name}</Link> },
+    { accessorKey: 'count', header: 'Кол-во', meta: { className: 'text-right', headerClassName: 'text-right' } },
+  ];
+  return <DataTable columns={columns} data={shops} emptyText="Нет данных" getRowId={(shop) => shop.shopId} />;
+};
+
+const DownloadChannels: React.FC<{ rows: DownloadChannel[] }> = ({ rows }) => {
+  const columns: ColumnDef<DownloadChannel>[] = [
+    { accessorKey: 'channel', header: 'Канал' },
+    { accessorKey: 'total', header: 'Всего' },
+    { accessorKey: 'last30Days', header: '30 дн.' },
+  ];
+  return <DataTable columns={columns} data={rows} getRowId={(row) => row.channel} />;
+};
+
+const DownloadCountries: React.FC<{ rows: DownloadCountry[] }> = ({ rows }) => {
+  const columns: ColumnDef<DownloadCountry>[] = [
+    { accessorKey: 'country', header: 'Страна', cell: ({ row }) => row.original.country === 'unknown' ? 'Неизвестно' : row.original.country },
+    { accessorKey: 'count', header: 'За 30 дн.' },
+  ];
+  return <DataTable columns={columns} data={rows} getRowId={(row) => row.country} />;
+};
 
 export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overview }) => {
   const [days, setDays] = useState<number>(30);
@@ -374,22 +382,8 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
                 Загрузки приложения: {shops.data.downloads.total} (+{shops.data.downloads.last30Days} за 30 дн)
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm font-body">
-                <ul className="space-y-1">
-                  {shops.data.downloads.byChannel.map((c) => (
-                    <li key={c.channel} className="flex justify-between">
-                      <span className="text-text-main dark:text-stone-200">{c.channel}</span>
-                      <span className="tabular-nums text-text-muted dark:text-stone-400">{c.total} (+{c.last30Days})</span>
-                    </li>
-                  ))}
-                </ul>
-                <ul className="space-y-1">
-                  {shops.data.downloads.topCountries30Days.map((c) => (
-                    <li key={c.country} className="flex justify-between">
-                      <span className="text-text-main dark:text-stone-200">{c.country === 'unknown' ? 'Неизвестно' : c.country}</span>
-                      <span className="tabular-nums text-text-muted dark:text-stone-400">{c.count}</span>
-                    </li>
-                  ))}
-                </ul>
+                <DownloadChannels rows={shops.data.downloads.byChannel} />
+                <DownloadCountries rows={shops.data.downloads.topCountries30Days} />
               </div>
             </div>
           </div>

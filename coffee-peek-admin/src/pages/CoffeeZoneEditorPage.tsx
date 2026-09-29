@@ -173,6 +173,11 @@ export function CoffeeZoneEditorPage() {
       cell: ({ row }) => <div className="flex min-w-max gap-1"><Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: row.original.shopId, kind: 'Include' })}>Включить</Button><Button type="button" variant="ghost" size="sm" className="text-red-400" onClick={() => membershipMutation.mutate({ shopId: row.original.shopId, kind: 'Exclude' })}>Исключить</Button><Button type="button" variant="ghost" size="sm" className="text-primary" onClick={() => membershipMutation.mutate({ shopId: row.original.shopId, kind: 'Primary' })}>Основная</Button>{row.original.overrideKind && <Button type="button" variant="ghost" size="sm" onClick={() => membershipMutation.mutate({ shopId: row.original.shopId })}>Сбросить</Button>}</div>,
     },
   ];
+  const candidateColumns: ColumnDef<CoffeeZoneCandidate>[] = [
+    { id: 'index', header: 'Кандидат', cell: ({ row }) => `Кандидат ${row.index + 1}` },
+    { accessorKey: 'shopCount', header: 'Кофеен' },
+    { id: 'actions', cell: ({ row }) => <Button type="button" variant="secondary" size="sm" onClick={() => selectCandidate(row.original)}>Выбрать</Button> },
+  ];
   const pointCountValid = polygon.length >= MIN_POINTS && polygon.length <= MAX_POINTS;
   const extentMeters = polygonExtentMeters(polygon);
   const tooLarge = extentMeters > ZONE_MAX_EXTENT_METERS;
@@ -264,7 +269,7 @@ export function CoffeeZoneEditorPage() {
               <label className="text-xs text-text-muted dark:text-stone-400">Мин. кофеен<Input type="number" min={3} max={50} value={minShops} onChange={(e) => setMinShops(Number(e.target.value))} className="mt-1.5" /></label>
             </div>
             <Button type="button" variant="secondary" className="mt-3 w-full" disabled={!cityId || candidateRadius < 100 || candidateRadius > 2000 || minShops < 3 || minShops > 50} loading={candidatesMutation.isPending} onClick={() => candidatesMutation.mutate()}>Найти кофейные скопления</Button>
-            {candidates.length > 0 && <div className="mt-3 max-h-52 space-y-2 overflow-y-auto">{candidates.map((candidate, index) => <button key={`${candidate.centerLatitude}-${candidate.centerLongitude}`} type="button" onClick={() => selectCandidate(candidate)} className="flex w-full items-center justify-between rounded-lg border border-border-light px-3 py-2 text-left text-xs hover:border-primary dark:border-border-dark"><span>Кандидат {index + 1}</span><span className="text-text-muted dark:text-stone-400">{candidate.shopCount} кофеен</span></button>)}</div>}
+            {candidates.length > 0 && <div className="mt-3 max-h-52 overflow-y-auto"><DataTable columns={candidateColumns} data={candidates} getRowId={(candidate) => `${candidate.centerLatitude}-${candidate.centerLongitude}`} /></div>}
           </Card>
         </div>
 

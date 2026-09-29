@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { useSearchParams, Link } from 'react-router-dom';
 import { getModerationRoasters, approveRoaster, rejectRoaster } from '../api/roasters';
 import { ModerationStatus } from '../api/admin';
@@ -9,9 +10,11 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { DataTable } from '../components/ui/DataTable';
 import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 15;
+type ModerationRoaster = Awaited<ReturnType<typeof getModerationRoasters>>['data']['items'][number];
 
 const STATUS_OPTIONS: { value: ModerationStatus | ''; label: string }[] = [
   { value: '', label: 'Все' },
@@ -64,6 +67,13 @@ export const RoastersModerationPage: React.FC = () => {
     if (key !== 'page') next.delete('page');
     setSearchParams(next);
   };
+  const columns: ColumnDef<ModerationRoaster>[] = [
+    { id: 'photo', header: '', cell: ({ row }) => row.original.photos[0] ? <img src={row.original.photos[0].fullUrl} alt="" className="h-12 w-12 rounded-lg object-cover" /> : <div className="h-12 w-12 rounded-lg bg-stone-100 dark:bg-white/5" /> },
+    { accessorKey: 'name', header: 'Название', cell: ({ row }) => <Button asChild variant="ghost" className="px-0"><Link to={`/roasters/${row.original.id}`}>{row.original.name}</Link></Button> },
+    { accessorKey: 'about', header: 'Описание', cell: ({ row }) => <span className="line-clamp-3 max-w-[520px]">{row.original.about || '—'}</span> },
+    { accessorKey: 'status', header: 'Статус', cell: ({ row }) => <Badge variant={statusToBadgeVariant(row.original.status)}>{statusLabels[row.original.status]}</Badge> },
+    { id: 'actions', cell: ({ row }) => <div className="flex min-w-max gap-2"><Button asChild variant="secondary" size="sm"><Link to={`/roasters/${row.original.id}`}>Открыть</Link></Button>{row.original.status === 'Pending' && <><Button variant="success" size="sm" onClick={() => setPendingAction({ id: row.original.id, type: 'approve' })}>Одобрить</Button><Button variant="danger" size="sm" onClick={() => setPendingAction({ id: row.original.id, type: 'reject' })}>Отклонить</Button></>}</div> },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
@@ -90,86 +100,8 @@ export const RoastersModerationPage: React.FC = () => {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-24 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
-          ))}
-        </div>
-      ) : !data?.items.length ? (
-        <Card className="p-6">
-          <div className="p-12 text-center">
-            <p className="text-text-muted dark:text-stone-400 text-sm font-body">Обжарщики не найдены</p>
-          </div>
-        </Card>
-      ) : (
-        <>
-          <div className="space-y-3">
-            {data.items.map((roaster) => (
-              <Card key={roaster.id} className="p-6">
-                <div className="flex gap-3">
-                  {roaster.photos[0] ? (
-                    <img
-                      src={roaster.photos[0].fullUrl}
-                      alt=""
-                      className="w-16 h-16 rounded-lg object-cover shrink-0 border border-border-light dark:border-border-dark"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg shrink-0 bg-gray-100 dark:bg-white/5 border border-border-light dark:border-border-dark" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <Link
-                        to={`/roasters/${roaster.id}`}
-                        className="font-medium text-text-main dark:text-white hover:text-primary font-body line-clamp-2"
-                      >
-                        {roaster.name}
-                      </Link>
-                      <Badge variant={statusToBadgeVariant(roaster.status)}>
-                        {statusLabels[roaster.status]}
-                      </Badge>
-                    </div>
-                    {roaster.about && (
-                      <p className="text-xs text-text-muted dark:text-stone-500 font-body mt-1 line-clamp-2">
-                        {roaster.about}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      <Link to={`/roasters/${roaster.id}`}>
-                        <Button variant="primary" size="sm">Открыть</Button>
-                      </Link>
-                      {roaster.status === 'Pending' && (
-                        <>
-                          <Button
-                            variant="success"
-                            size="sm"
-                            onClick={() => setPendingAction({ id: roaster.id, type: 'approve' })}
-                          >
-                            Одобрить
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => setPendingAction({ id: roaster.id, type: 'reject' })}
-                          >
-                            Отклонить
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          <Pagination
-            page={page}
-            totalPages={data.totalPages}
-            onPageChange={(p) => setParam('page', String(p))}
-          />
-        </>
-      )}
+      <Card><DataTable columns={columns} data={data?.items ?? []} loading={isLoading} emptyText="Обжарщики не найдены" getRowId={(roaster) => roaster.id} /></Card>
+      {data && <Pagination page={page} totalPages={data.totalPages} onPageChange={(nextPage) => setParam('page', String(nextPage))} />}
 
       <ConfirmDialog
         isOpen={pendingAction?.type === 'approve'}

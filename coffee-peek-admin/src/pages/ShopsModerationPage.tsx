@@ -212,96 +212,10 @@ export const ShopsModerationPage: React.FC = () => {
         </form>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
-          ))}
-        </div>
-      ) : !data?.items.length ? (
-        <Card className="p-6">
-          <div className="p-12 text-center">
-            <p className="text-text-muted dark:text-stone-400 text-sm font-body">Кофейни не найдены</p>
-          </div>
-        </Card>
-      ) : (
-        <>
-          <div className="space-y-3 lg:hidden">
-            {items.map((shop) => (
-              <Card key={shop.id} className="p-6">
-                <div className="flex gap-3">
-                  {shop.photos?.[0] ? (
-                    <img
-                      src={shop.photos[0].fullUrl}
-                      alt=""
-                      className="w-16 h-16 rounded-lg object-cover shrink-0 border border-border-light dark:border-border-dark"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg shrink-0 bg-gray-100 dark:bg-white/5 border border-border-light dark:border-border-dark" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <Link
-                        to={`/shops/${shop.id}`}
-                        className="font-medium text-text-main dark:text-white hover:text-primary font-body line-clamp-2"
-                      >
-                        {shop.name}
-                      </Link>
-                      <Badge variant={statusToBadgeVariant(shop.status)}>
-                        {statusLabels[shop.status]}
-                      </Badge>
-                    </div>
-                    <div className="mt-2">
-                      <Badge variant="info">Заполнено: {shop.dataCompletenessScore}%</Badge>
-                    </div>
-                    <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1 line-clamp-2">
-                      {shop.address}
-                    </p>
-                    {shop.description && (
-                      <p className="text-xs text-text-muted dark:text-stone-500 font-body mt-1 line-clamp-2">
-                        {shop.description}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      <Link to={`/shops/${shop.id}`} className="flex-1 min-w-[120px]">
-                        <Button variant="primary" size="sm" className="w-full">Открыть</Button>
-                      </Link>
-                      {shop.status === 'Pending' && (
-                        <>
-                          <Button
-                            variant="success"
-                            size="sm"
-                            onClick={() => setPendingAction({ id: shop.id, type: 'approve' })}
-                          >
-                            ✓
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => setPendingAction({ id: shop.id, type: 'reject' })}
-                          >
-                            ✕
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          <Card className="hidden lg:block">
-            <DataTable columns={columns} data={items} getRowId={(shop) => shop.id} />
-          </Card>
-
-          <Pagination
-            page={page}
-            totalPages={data.totalPages}
-            onPageChange={(p) => setParam('page', String(p))}
-          />
-        </>
-      )}
+      <Card>
+        <DataTable columns={columns} data={items} loading={isLoading} emptyText="Кофейни не найдены" getRowId={(shop) => shop.id} />
+      </Card>
+      {data && <Pagination page={page} totalPages={data.totalPages} onPageChange={(nextPage) => setParam('page', String(nextPage))} />}
 
       <ConfirmDialog
         isOpen={pendingAction?.type === 'approve'}

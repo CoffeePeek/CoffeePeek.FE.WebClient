@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Link, useParams } from 'react-router-dom';
 import { getBrowseCoffeeShopById } from '../api/coffeeShops';
 import { setPublishedShopVisibility } from '../api/admin';
@@ -8,6 +9,7 @@ import { Card } from '../components/ui/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
 import { useUser } from '../contexts/UserContext';
+import { DataTable } from '../components/ui/DataTable';
 
 const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
@@ -23,6 +25,11 @@ export const BrowseShopPage: React.FC = () => {
     queryFn: () => getBrowseCoffeeShopById(id!).then((r) => r.data),
     enabled: Boolean(id),
   });
+  type ShopSchedule = NonNullable<NonNullable<typeof shop>['schedules']>[number];
+  const scheduleColumns: ColumnDef<ShopSchedule>[] = [
+    { accessorKey: 'dayOfWeek', header: 'День', cell: ({ row }) => DAY_NAMES[row.original.dayOfWeek] ?? row.original.dayOfWeek },
+    { id: 'hours', header: 'Часы', cell: ({ row }) => row.original.openTime && row.original.closeTime ? `${row.original.openTime} – ${row.original.closeTime}` : '—' },
+  ];
 
   const hideMutation = useMutation({
     mutationFn: () => setPublishedShopVisibility(id!, true),
@@ -156,16 +163,7 @@ export const BrowseShopPage: React.FC = () => {
               <h3 className="text-xs font-medium text-text-muted dark:text-stone-500 uppercase tracking-wide mb-2">
                 Расписание
               </h3>
-              <ul className="space-y-1 text-sm">
-                {shop.schedules.map((s) => (
-                  <li key={s.dayOfWeek} className="flex justify-between text-text-main dark:text-stone-300">
-                    <span>{DAY_NAMES[s.dayOfWeek] ?? s.dayOfWeek}</span>
-                    <span>
-                      {s.openTime && s.closeTime ? `${s.openTime} – ${s.closeTime}` : '—'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <DataTable columns={scheduleColumns} data={shop.schedules} getRowId={(schedule) => String(schedule.dayOfWeek)} />
             </div>
           )}
 

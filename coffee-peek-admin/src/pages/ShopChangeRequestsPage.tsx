@@ -1,8 +1,10 @@
 import { Input } from '@/src/components/ui/Input';
 import { NativeSelect } from '@/src/components/ui/NativeSelect';
+import { DataTable } from '@/src/components/ui/DataTable';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { getPublishedShopById } from '../api/admin';
 import {
   getShopChangeRequests,
@@ -15,6 +17,7 @@ import { getUserPublicProfile } from '../api/users';
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 import { Pagination } from '../components/ui/Pagination';
 
 export const sectionLabels: Record<ShopChangeSection, string> = {
@@ -118,6 +121,14 @@ export const ShopChangeRequestsPage: React.FC = () => {
   }, [page, section, shopId, status, submittedByUserId, showToast]);
 
   const { shopNames, userNames } = useEntityLabels(data?.items ?? []);
+  const columns: ColumnDef<ShopChangeRequestDto>[] = [
+    { accessorKey: 'section', header: 'Секция', cell: ({ row }) => sectionLabels[row.original.section] },
+    { accessorKey: 'shopId', header: 'Кофейня', cell: ({ row }) => shopNames.get(row.original.shopId) || 'Загружается…' },
+    { accessorKey: 'submittedByUserId', header: 'Отправил', cell: ({ row }) => userNames.get(row.original.submittedByUserId) || 'Пользователь…' },
+    { accessorKey: 'status', header: 'Статус', cell: ({ row }) => <Badge variant={row.original.status.toLowerCase() as 'pending' | 'approved' | 'rejected'}>{statusLabels[row.original.status]}</Badge> },
+    { accessorKey: 'createdAtUtc', header: 'Дата', cell: ({ row }) => new Date(row.original.createdAtUtc).toLocaleString('ru-RU') },
+    { id: 'actions', meta: { className: 'text-right' }, cell: ({ row }) => <Button asChild variant="secondary" size="sm"><Link to={`/shop-change-requests/${row.original.id}`}>Открыть</Link></Button> },
+  ];
 
   const update = (patch: Record<string, string>) => {
     const next = new URLSearchParams(params);
@@ -184,64 +195,13 @@ export const ShopChangeRequestsPage: React.FC = () => {
             placeholder="ID пользователя"
             className="rounded-lg border border-border-light bg-white px-3 py-2 dark:border-border-dark dark:bg-surface-dark"
           />
-          <button className="rounded-lg bg-primary px-4 py-2 font-semibold text-black">
-            Применить
-          </button>
+          <Button type="submit">Применить</Button>
         </form>
       </Card>
 
-      {loading ? (
-        <p className="text-text-muted">Загрузка…</p>
-      ) : data?.items.length ? (
-        <div className="space-y-3">
-          {data.items.map((request) => {
-            const shopName = shopNames.get(request.shopId);
-            const userName = userNames.get(request.submittedByUserId);
-            return (
-              <Link
-                key={request.id}
-                to={`/shop-change-requests/${request.id}`}
-                className="block"
-              >
-                <Card className="p-4 transition-colors hover:border-primary/50">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-text-main dark:text-white">
-                        {sectionLabels[request.section]}
-                        {shopName ? (
-                          <span className="font-normal text-text-muted"> · {shopName}</span>
-                        ) : null}
-                      </p>
-                      <p className="mt-1 text-sm text-text-main dark:text-stone-200">
-                        {shopName || 'Кофейня загружается…'}
-                      </p>
-                      <p className="text-xs text-text-muted dark:text-stone-400">
-                        Отправил: {userName || 'пользователь…'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Badge
-                        variant={
-                          request.status.toLowerCase() as 'pending' | 'approved' | 'rejected'
-                        }
-                      >
-                        {statusLabels[request.status]}
-                      </Badge>
-                      <p className="mt-2 text-xs text-text-muted dark:text-stone-400">
-                        {new Date(request.createdAtUtc).toLocaleString('ru-RU')}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-      ) : (
-        <Card className="p-6">
-          <p className="text-text-muted dark:text-stone-400">Заявок не найдено.</p>
-        </Card>
-      )}
+      <Card>
+        <DataTable columns={columns} data={data?.items ?? []} loading={loading} emptyText="Заявок не найдено" getRowId={(request) => request.id} />
+      </Card>
 
       <Pagination
         page={page}

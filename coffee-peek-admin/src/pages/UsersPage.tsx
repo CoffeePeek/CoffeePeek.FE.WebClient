@@ -101,6 +101,14 @@ const UserSessionsModal: React.FC<{
   if (!user) return null;
 
   const list: UserSession[] = sessions ?? [];
+  const columns: ColumnDef<UserSession>[] = [
+    { accessorKey: 'deviceName', header: 'Устройство', cell: ({ row }) => row.original.deviceName || 'Неизвестное устройство' },
+    { accessorKey: 'ipAddress', header: 'IP', cell: ({ row }) => row.original.ipAddress || '—' },
+    { accessorKey: 'createdAtUtc', header: 'Создана', cell: ({ row }) => formatSessionDate(row.original.createdAtUtc) },
+    { accessorKey: 'expiryDate', header: 'Истекает', cell: ({ row }) => row.original.expiryDate ? formatSessionDate(row.original.expiryDate) : '—' },
+    { accessorKey: 'isRevoked', header: 'Статус', cell: ({ row }) => <Badge variant={row.original.isRevoked ? 'rejected' : 'approved'}>{row.original.isRevoked ? 'Отозвана' : 'Активна'}</Badge> },
+    { id: 'actions', cell: ({ row }) => !row.original.isRevoked ? <Button variant="ghost" size="sm" className="text-red-400" loading={revokingSessionId === row.original.id && revokeOneMutation.isPending} onClick={() => setConfirmSessionId(row.original.id)}>Отозвать</Button> : null },
+  ];
 
   return (
     <>
@@ -123,67 +131,12 @@ const UserSessionsModal: React.FC<{
             </Button>
           </div>
 
-          {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-16 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-              ))}
-            </div>
-          ) : isError ? (
+          {isError ? (
             <p className="text-sm text-red-400 font-body text-center py-8">
               {(error as { message?: string })?.message ?? 'Не удалось загрузить сессии'}
             </p>
-          ) : !list.length ? (
-            <p className="text-sm text-text-muted dark:text-stone-400 font-body text-center py-8">
-              Сессий нет
-            </p>
           ) : (
-            <div className="space-y-2">
-              {list.map((session) => (
-                <div
-                  key={session.id}
-                  className="rounded-lg border border-border-light dark:border-border-dark p-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 space-y-1">
-                      <p className="text-sm font-medium text-text-main dark:text-white font-body truncate">
-                        {session.deviceName || 'Неизвестное устройство'}
-                      </p>
-                      <p className="text-xs text-text-muted dark:text-stone-400 font-mono">
-                        {session.ipAddress || '—'}
-                      </p>
-                      <p className="text-xs text-text-muted dark:text-stone-500 font-body">
-                        Создана: {formatSessionDate(session.createdAtUtc)}
-                      </p>
-                      <p className="text-xs text-text-muted dark:text-stone-500 font-body">
-                        Истекает: {session.expiryDate ? formatSessionDate(session.expiryDate) : '—'}
-                      </p>
-                      {session.lastSeenAtUtc && (
-                        <p className="text-xs text-text-muted dark:text-stone-500 font-body">
-                          Активность: {formatSessionDate(session.lastSeenAtUtc)}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <Badge variant={session.isRevoked ? 'rejected' : 'approved'}>
-                        {session.isRevoked ? 'Отозвана' : 'Активна'}
-                      </Badge>
-                      {!session.isRevoked && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-400 hover:text-red-500"
-                          loading={revokingSessionId === session.id && revokeOneMutation.isPending}
-                          onClick={() => setConfirmSessionId(session.id)}
-                        >
-                          Отозвать
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <DataTable columns={columns} data={list} loading={isLoading} emptyText="Сессий нет" getRowId={(session) => session.id} tableClassName="min-w-[760px]" />
           )}
         </DialogContent>
       </Dialog>

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Link, useSearchParams } from 'react-router-dom';
+import { DataTable } from '../components/ui/DataTable';
 import {
   getShopIssueReports,
   updateShopIssueReportStatus,
@@ -57,52 +59,6 @@ const ACTION_LABELS: Record<ActionStatus, string> = {
   Invalid: 'Отметить недействительной',
 };
 
-const ReportCard: React.FC<{
-  report: AdminShopIssueReport;
-  onAction: (status: ActionStatus) => void;
-}> = ({ report, onAction }) => (
-  <div className="p-4 sm:p-5 border-b border-border-light dark:border-border-dark last:border-0">
-    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-      <div className="flex-1 min-w-0 w-full">
-        <div className="flex items-center gap-2 flex-wrap mb-1">
-          <span className="font-semibold text-sm text-text-main dark:text-white font-body">
-            {CATEGORY_LABELS[report.category]}
-          </span>
-          <Badge variant={STATUS_BADGE[report.status]}>{STATUS_LABELS[report.status]}</Badge>
-        </div>
-        <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-2">
-          Кофейня{' '}
-          <Link
-            to={`/coffee-shops/${report.shopId}`}
-            className="font-mono text-primary hover:underline break-all"
-          >
-            {report.shopId}
-          </Link>
-          {' '}· {new Date(report.createdAtUtc).toLocaleDateString('ru')}
-        </p>
-        {report.description && (
-          <p className="text-sm text-text-main dark:text-stone-300 font-body">{report.description}</p>
-        )}
-      </div>
-      <div className="flex flex-row flex-wrap sm:flex-col gap-2 w-full sm:w-auto shrink-0">
-        {(Object.keys(ACTION_LABELS) as ActionStatus[])
-          .filter((status) => status !== report.status)
-          .map((status) => (
-            <Button
-              key={status}
-              variant={status === 'Invalid' ? 'danger' : status === 'Fixed' ? 'success' : 'secondary'}
-              size="sm"
-              onClick={() => onAction(status)}
-              className="flex-1 sm:flex-none min-h-[44px] sm:min-h-0"
-            >
-              {ACTION_LABELS[status]}
-            </Button>
-          ))}
-      </div>
-    </div>
-  </div>
-);
-
 export const ShopReportsPage: React.FC = () => {
   const { showToast } = useToast();
   const qc = useQueryClient();
@@ -138,6 +94,14 @@ export const ShopReportsPage: React.FC = () => {
     if (key !== 'page') next.delete('page');
     setSearchParams(next);
   };
+  const columns: ColumnDef<AdminShopIssueReport>[] = [
+    { accessorKey: 'category', header: 'Категория', cell: ({ row }) => CATEGORY_LABELS[row.original.category] },
+    { accessorKey: 'shopId', header: 'Кофейня', cell: ({ row }) => <Link to={`/coffee-shops/${row.original.shopId}`} className="font-mono text-primary hover:underline">{row.original.shopId}</Link> },
+    { accessorKey: 'description', header: 'Описание', cell: ({ row }) => <span className="line-clamp-3 max-w-[420px]">{row.original.description || '—'}</span> },
+    { accessorKey: 'status', header: 'Статус', cell: ({ row }) => <Badge variant={STATUS_BADGE[row.original.status]}>{STATUS_LABELS[row.original.status]}</Badge> },
+    { accessorKey: 'createdAtUtc', header: 'Дата', cell: ({ row }) => new Date(row.original.createdAtUtc).toLocaleDateString('ru') },
+    { id: 'actions', cell: ({ row }) => <div className="flex min-w-max gap-2">{(Object.keys(ACTION_LABELS) as ActionStatus[]).filter((nextStatus) => nextStatus !== row.original.status).map((nextStatus) => <Button key={nextStatus} variant={nextStatus === 'Invalid' ? 'danger' : nextStatus === 'Fixed' ? 'success' : 'secondary'} size="sm" onClick={() => setPendingAction({ id: row.original.id, status: nextStatus })}>{ACTION_LABELS[nextStatus]}</Button>)}</div> },
+  ];
 
   // After acting on the last item of page N>1 the page becomes empty — step back instead of stranding the user.
   useEffect(() => {
@@ -173,35 +137,9 @@ export const ShopReportsPage: React.FC = () => {
         </div>
       </div>
 
-      <Card className="p-6">
-        {isLoading ? (
-          <div className="p-6 space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-20 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        ) : !data?.items.length ? (
-          <div className="p-12 text-center">
-            <p className="text-text-muted dark:text-stone-400 text-sm font-body">Жалобы не найдены</p>
-          </div>
-        ) : (
-          <>
-            {data.items.map((report) => (
-              <ReportCard
-                key={report.id}
-                report={report}
-                onAction={(actionStatus) => setPendingAction({ id: report.id, status: actionStatus })}
-              />
-            ))}
-            <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
-              <Pagination
-                page={data.currentPage}
-                totalPages={data.totalPages}
-                onPageChange={(p) => setParam('page', String(p))}
-              />
-            </div>
-          </>
-        )}
+      <Card>
+        <DataTable columns={columns} data={data?.items ?? []} loading={isLoading} emptyText="Жалобы не найдены" getRowId={(report) => report.id} />
+        {data && <div className="border-t border-border-light px-5 py-3 dark:border-border-dark"><Pagination page={data.currentPage} totalPages={data.totalPages} onPageChange={(nextPage) => setParam('page', String(nextPage))} /></div>}
       </Card>
 
       <ConfirmDialog

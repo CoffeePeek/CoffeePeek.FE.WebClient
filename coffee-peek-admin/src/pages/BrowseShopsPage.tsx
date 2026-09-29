@@ -1,13 +1,16 @@
 import { Input } from '@/src/components/ui/Input';
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { useSearchParams, Link } from 'react-router-dom';
 import { getBrowseCoffeeShops } from '../api/coffeeShops';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Pagination } from '../components/ui/Pagination';
+import { DataTable } from '../components/ui/DataTable';
 
 const PAGE_SIZE = 20;
+type BrowseShop = Awaited<ReturnType<typeof getBrowseCoffeeShops>>['data']['items'][number];
 
 export const BrowseShopsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,6 +31,15 @@ export const BrowseShopsPage: React.FC = () => {
     if (key !== 'page') next.delete('page');
     setSearchParams(next);
   };
+  const columns: ColumnDef<BrowseShop>[] = [
+    { id: 'photo', header: '', cell: ({ row }) => row.original.imageUrl ? <img src={row.original.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover" /> : <span className="text-2xl">☕</span> },
+    { accessorKey: 'name', header: 'Название', cell: ({ row }) => <Button asChild variant="ghost" className="px-0"><Link to={`/coffee-shops/${row.original.id}`}>{row.original.name}</Link></Button> },
+    { accessorKey: 'cityName', header: 'Город', cell: ({ row }) => row.original.cityName || '—' },
+    { accessorKey: 'address', header: 'Адрес', cell: ({ row }) => row.original.address || '—' },
+    { accessorKey: 'rating', header: 'Рейтинг', cell: ({ row }) => row.original.rating != null ? `★ ${row.original.rating.toFixed(1)}` : '—' },
+    { accessorKey: 'reviewCount', header: 'Отзывы', cell: ({ row }) => row.original.reviewCount ?? 0 },
+    { id: 'actions', cell: ({ row }) => <Button asChild variant="secondary" size="sm"><Link to={`/coffee-shops/${row.original.id}`}>Открыть</Link></Button> },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
@@ -63,61 +75,8 @@ export const BrowseShopsPage: React.FC = () => {
         </div>
       )}
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-40 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
-          ))}
-        </div>
-      ) : !data?.items.length ? (
-        <Card className="p-12 text-center">
-          <p className="text-text-muted dark:text-stone-400 text-sm font-body">Кофейни не найдены</p>
-        </Card>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.items.map((shop) => (
-              <Link
-                key={shop.id}
-                to={`/coffee-shops/${shop.id}`}
-                className="group block bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden hover:border-primary dark:hover:border-primary transition-colors"
-              >
-                <div className="h-32 bg-[#1A1412] flex items-center justify-center overflow-hidden">
-                  {shop.imageUrl ? (
-                    <img
-                      src={shop.imageUrl}
-                      alt={shop.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <span className="text-4xl">☕</span>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-text-main dark:text-white font-display text-sm truncate">
-                    {shop.name}
-                  </h3>
-                  {shop.cityName && (
-                    <p className="text-xs text-text-muted dark:text-stone-400 mt-1">{shop.cityName}</p>
-                  )}
-                  {shop.address && (
-                    <p className="text-xs text-text-muted dark:text-stone-500 mt-1 truncate">{shop.address}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-xs text-text-muted dark:text-stone-400">
-                    {shop.rating != null && <span>⭐ {shop.rating.toFixed(1)}</span>}
-                    {shop.reviewCount != null && <span>{shop.reviewCount} отзывов</span>}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <Pagination
-            page={page}
-            totalPages={data.totalPages}
-            onPageChange={(p) => setParam('page', String(p))}
-          />
-        </>
-      )}
+      <Card><DataTable columns={columns} data={data?.items ?? []} loading={isLoading} emptyText="Кофейни не найдены" getRowId={(shop) => shop.id} /></Card>
+      {data && <Pagination page={page} totalPages={data.totalPages} onPageChange={(nextPage) => setParam('page', String(nextPage))} />}
     </div>
   );
 };
