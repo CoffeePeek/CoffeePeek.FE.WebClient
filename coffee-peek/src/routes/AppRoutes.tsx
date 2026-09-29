@@ -18,6 +18,7 @@ const CoffeeShopDetailPage = lazyWithRetry(() => import('../pages/CoffeeShopPage
 const CreateReviewPage = lazyWithRetry(() => import('../pages/CreateReviewPage'));
 const UserProfilePage = lazyWithRetry(() => import('../pages/UserProfilePage'));
 const ProfilePage = lazyWithRetry(() => import('../pages/ProfilePage'));
+const DeleteAccountPage = lazyWithRetry(() => import('../pages/DeleteAccountPage'));
 const CreateCoffeeShopPage = lazyWithRetry(() => import('../pages/CreateCoffeeShopPage'));
 const CreateRoasterPage = lazyWithRetry(() => import('../pages/CreateRoasterPage'));
 const RoasterDetailPage = lazyWithRetry(() => import('../pages/RoasterDetailPage'));
@@ -74,6 +75,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/error" element={<ErrorPage />} />
         <Route path="/confirm-email" element={<ConfirmEmailPage />} />
         <Route path="/confirm-account-deletion" element={<ConfirmAccountDeletionPage />} />
+        <Route path="/profile/delete" element={<DeleteAccountPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/download" element={<DownloadPage />} />
@@ -256,4 +258,3 @@ export const AppRoutes: React.FC = () => {
     </ErrorBoundary>
   );
 };
-

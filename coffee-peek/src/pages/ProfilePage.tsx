@@ -215,6 +215,13 @@ const ProfilePage: React.FC = () => {
           <SignOut size={22} />
           Выйти
         </button>
+        <Link
+          to="/profile/delete"
+          className="mt-3 flex min-h-12 w-full items-center justify-center rounded-full border text-sm font-bold transition-opacity hover:opacity-80"
+          style={{ borderColor: colors.border, color: isDark ? '#FCA5A5' : '#B91C1C' }}
+        >
+          Удалить аккаунт
+        </Link>
       </div>
     </main>
   );

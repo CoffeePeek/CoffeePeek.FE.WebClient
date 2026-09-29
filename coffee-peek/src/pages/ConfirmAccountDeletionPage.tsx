@@ -115,10 +115,10 @@ const ConfirmAccountDeletionPage: React.FC = () => {
                 Ссылка недействительна
               </h1>
               <p style={{ margin: '0 0 24px', fontFamily: '"Manrope"', fontSize: 14, color: textMuted, lineHeight: 1.55 }}>
-                В ссылке нет токена подтверждения удаления. Запросите новую из настроек аккаунта.
+                В ссылке нет токена подтверждения удаления. Запросите новое письмо на странице удаления аккаунта.
               </p>
-              <Link to="/login" style={{ color: gold, fontWeight: 600, textDecoration: 'none' }}>
-                На страницу входа
+              <Link to="/profile/delete" style={{ color: gold, fontWeight: 600, textDecoration: 'none' }}>
+                Запросить новое письмо
               </Link>
             </div>
           )}
