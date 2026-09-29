@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Link } from 'react-router-dom';
 import {
   getModerationInsights,
@@ -8,11 +9,13 @@ import {
   getUsersTimeseries,
   type AdminDailyCount,
   type AdminModerationQueueName,
+  type AdminModerationInsights,
   type AdminTopShop,
   type OverviewStats,
 } from '../../api/admin';
 import { getUserPublicProfile } from '../../api/users';
 import { Card } from '../ui/Card';
+import { DataTable } from '../ui/DataTable';
 
 const QUEUE_LABELS: Record<AdminModerationQueueName, string> = {
   shops: 'Кофейни',
@@ -23,9 +26,17 @@ const QUEUE_LABELS: Record<AdminModerationQueueName, string> = {
 };
 
 const DAY_OPTIONS = [7, 30, 90] as const;
+type ModerationQueue = AdminModerationInsights['queues'][number];
+type Moderator = AdminModerationInsights['topModerators30Days'][number];
 
 const fmtHours = (h: number | null) =>
   h === null ? '—' : h >= 48 ? `${Math.round(h / 24)} дн` : `${Math.round(h)} ч`;
+
+const queueColumns: ColumnDef<ModerationQueue>[] = [
+  { accessorKey: 'queue', header: 'Очередь', cell: ({ row }) => QUEUE_LABELS[row.original.queue] ?? row.original.queue },
+  { accessorKey: 'pending', header: () => <span className="block text-right">В ожидании</span>, cell: ({ row }) => <span className="block text-right tabular-nums">{row.original.pending}</span> },
+  { accessorKey: 'oldestPendingHours', header: () => <span className="block text-right">Старейшая</span>, cell: ({ row }) => <span className="block text-right tabular-nums text-text-muted">{fmtHours(row.original.oldestPendingHours)}</span> },
+];
 
 const sum = (points: AdminDailyCount[]) => points.reduce((acc, p) => acc + p.count, 0);
 const CHART_DATE_FORMATTER = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' });
@@ -205,6 +216,12 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
 
   const ratings = shops.data?.ratings;
   const maxBucket = Math.max(1, ...(ratings?.distribution.map((d) => d.count) ?? []));
+  const moderatorColumns: ColumnDef<Moderator>[] = [
+    { accessorKey: 'moderatorUserId', header: 'Модератор (30 дн)', cell: ({ row }) => moderatorProfiles[moderatorIds.indexOf(row.original.moderatorUserId)]?.data?.userName ?? row.original.moderatorUserId },
+    { accessorKey: 'total', header: () => <span className="block text-right">Всего</span>, cell: ({ row }) => <span className="block text-right tabular-nums">{row.original.total}</span> },
+    { accessorKey: 'approved', header: () => <span className="block text-right">Одобрено</span>, cell: ({ row }) => <span className="block text-right tabular-nums text-emerald-600">{row.original.approved}</span> },
+    { accessorKey: 'rejected', header: () => <span className="block text-right">Отклонено</span>, cell: ({ row }) => <span className="block text-right tabular-nums text-red-500">{row.original.rejected}</span> },
+  ];
 
   return (
     <div className="space-y-4">
@@ -393,47 +410,9 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
               <Metric label="Отзывов промодерировано" value={moderation.data.sla.reviewsModerated30Days} hint="за 30 дн" />
               <Metric label="Среднее время (отзывы)" value={fmtHours(moderation.data.sla.avgReviewModerationHours)} />
             </div>
-            <table className="w-full text-sm font-body">
-              <thead>
-                <tr className="text-xs text-text-muted dark:text-stone-400 uppercase tracking-wide text-left">
-                  <th className="font-normal pb-1">Очередь</th>
-                  <th className="font-normal pb-1 text-right">В ожидании</th>
-                  <th className="font-normal pb-1 text-right">Старейшая</th>
-                </tr>
-              </thead>
-              <tbody>
-                {moderation.data.queues.map((q) => (
-                  <tr key={q.queue} className="border-t border-border-light dark:border-border-dark">
-                    <td className="py-1 text-text-main dark:text-stone-200">{QUEUE_LABELS[q.queue] ?? q.queue}</td>
-                    <td className="py-1 text-right tabular-nums">{q.pending}</td>
-                    <td className="py-1 text-right tabular-nums text-text-muted dark:text-stone-400">{fmtHours(q.oldestPendingHours)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable columns={queueColumns} data={moderation.data.queues} />
             {moderation.data.topModerators30Days.length > 0 && (
-              <table className="w-full text-sm font-body">
-                <thead>
-                  <tr className="text-xs text-text-muted dark:text-stone-400 uppercase tracking-wide text-left">
-                    <th className="font-normal pb-1">Модератор (30 дн)</th>
-                    <th className="font-normal pb-1 text-right">Всего</th>
-                    <th className="font-normal pb-1 text-right">Одобрено</th>
-                    <th className="font-normal pb-1 text-right">Отклонено</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {moderation.data.topModerators30Days.map((m, i) => (
-                    <tr key={m.moderatorUserId} className="border-t border-border-light dark:border-border-dark">
-                      <td className="py-1 text-text-main dark:text-stone-200 truncate">
-                        {moderatorProfiles[i]?.data?.userName ?? m.moderatorUserId}
-                      </td>
-                      <td className="py-1 text-right tabular-nums">{m.total}</td>
-                      <td className="py-1 text-right tabular-nums text-green-600">{m.approved}</td>
-                      <td className="py-1 text-right tabular-nums text-red-500">{m.rejected}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <DataTable columns={moderatorColumns} data={moderation.data.topModerators30Days} />
             )}
           </div>
         ) : null}
