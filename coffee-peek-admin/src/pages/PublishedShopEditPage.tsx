@@ -1,3 +1,6 @@
+import { Input } from '@/src/components/ui/Input';
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
+import { Textarea } from '@/src/components/ui/Textarea';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +26,7 @@ import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PhotoOrderEditor } from '../components/PhotoOrderEditor';
 import { PriceRangePicker } from '../components/PriceRangePicker';
 import { ScheduleEditor, getDefaultSchedules } from '../components/moderation/ScheduleEditor';
@@ -322,13 +325,9 @@ export const PublishedShopEditPage: React.FC = () => {
       .map((tag) => ({ slug: tag.slug, label: catalogTagLabel(tag.slug, tag.name) }));
     return fromApi.length > 0 ? fromApi : CATALOG_TAG_OPTIONS;
   }, [catalogTags]);
-
-  const fieldClass =
-    'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body';
-
   if (isLoading || !shop) {
     return (
-      <div className="page-container">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
         <div className="h-8 w-48 bg-gray-100 dark:bg-white/5 rounded animate-pulse" />
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           <div className="h-64 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse" />
@@ -339,7 +338,7 @@ export const PublishedShopEditPage: React.FC = () => {
   }
 
   return (
-    <div className="page-container pb-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-8">
       <div className="flex items-start gap-3">
         <Button
           variant="ghost"
@@ -351,7 +350,7 @@ export const PublishedShopEditPage: React.FC = () => {
         </Button>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="page-header-title text-xl sm:text-2xl">{shop.name}</h2>
+            <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white text-xl sm:text-2xl">{shop.name}</h2>
             <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>
               {COFFEE_SHOP_STATUS_LABELS[shop.status]}
             </Badge>
@@ -368,7 +367,7 @@ export const PublishedShopEditPage: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-5 items-start">
         <div className="space-y-5 min-w-0">
-          <Card>
+          <Card className="p-6">
             <form
               onSubmit={handleSubmit(async (data) => {
                 const scheduleError = sendSchedules ? validateSchedules(schedules) : null;
@@ -386,20 +385,20 @@ export const PublishedShopEditPage: React.FC = () => {
                   <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                     Название
                   </label>
-                  <input {...register('name')} className={fieldClass} />
+                  <Input {...register('name')} />
                   {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                     Статус
                   </label>
-                  <select {...register('status')} className={fieldClass}>
+                  <NativeSelect {...register('status')}>
                     {COFFEE_SHOP_STATUS_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </div>
               </div>
 
@@ -407,7 +406,7 @@ export const PublishedShopEditPage: React.FC = () => {
                 <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                   Описание
                 </label>
-                <textarea {...register('description')} rows={4} className={`${fieldClass} resize-y min-h-[96px]`} />
+                <Textarea {...register('description')} rows={4} className="min-h-24 resize-y" />
               </div>
 
               <div>
@@ -428,33 +427,33 @@ export const PublishedShopEditPage: React.FC = () => {
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Город
                     </label>
-                    <select {...register('cityId')} className={fieldClass}>
+                    <NativeSelect {...register('cityId')}>
                       <option value="">Выберите город</option>
                       {(catalogs?.cities ?? []).map((city) => (
                         <option key={city.id} value={city.id}>
                           {city.name}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Адрес
                     </label>
-                    <input {...register('address')} className={fieldClass} placeholder="Улица и дом" />
+                    <Input {...register('address')} placeholder="Улица и дом" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Широта
                     </label>
-                    <input {...register('latitude')} className={fieldClass} placeholder="53.9" />
+                    <Input {...register('latitude')} placeholder="53.9" />
                     {errors.latitude && <p className="text-red-400 text-xs mt-1">{errors.latitude.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Долгота
                     </label>
-                    <input {...register('longitude')} className={fieldClass} placeholder="27.56" />
+                    <Input {...register('longitude')} placeholder="27.56" />
                     {errors.longitude && <p className="text-red-400 text-xs mt-1">{errors.longitude.message}</p>}
                   </div>
                 </div>
@@ -467,27 +466,27 @@ export const PublishedShopEditPage: React.FC = () => {
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Телефон
                     </label>
-                    <input {...register('phoneNumber')} className={fieldClass} placeholder="+375..." />
+                    <Input {...register('phoneNumber')} placeholder="+375..." />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Email
                     </label>
-                    <input {...register('email')} className={fieldClass} />
+                    <Input {...register('email')} />
                     {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Сайт
                     </label>
-                    <input {...register('siteLink')} className={fieldClass} />
+                    <Input {...register('siteLink')} />
                     {errors.siteLink && <p className="text-red-400 text-xs mt-1">{errors.siteLink.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Instagram
                     </label>
-                    <input {...register('instagramLink')} className={fieldClass} />
+                    <Input {...register('instagramLink')} />
                     {errors.instagramLink && <p className="text-red-400 text-xs mt-1">{errors.instagramLink.message}</p>}
                   </div>
                 </div>
@@ -558,7 +557,7 @@ export const PublishedShopEditPage: React.FC = () => {
         </div>
 
         <div className="space-y-5 min-w-0">
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Видимость</h3>
             <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
               Скрытая кофейня остаётся в админке, но не попадает в поиск и на карту. Это отдельно от статуса
@@ -577,7 +576,7 @@ export const PublishedShopEditPage: React.FC = () => {
             </Button>
           </Card>
 
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Coffee focus</h3>
             <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
               Одна категория для ленты. Specialty синхронизирует тег specialty.
@@ -595,7 +594,7 @@ export const PublishedShopEditPage: React.FC = () => {
             </Button>
           </Card>
 
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Теги</h3>
             <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
               Полная замена набора. Не более {MAX_SHOP_TAGS} штук.
@@ -616,17 +615,17 @@ export const PublishedShopEditPage: React.FC = () => {
             </Button>
           </Card>
 
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Владелец</h3>
             <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
               UUID пользователя с ролью Owner. Роль выдаётся в разделе «Пользователи».
             </p>
             <div className="flex flex-col gap-2">
-              <input
+              <Input
                 value={ownerInput}
                 onChange={(e) => setOwnerInput(e.target.value)}
                 placeholder="owner-user-id (UUID)"
-                className={`${fieldClass} font-mono min-h-[44px] sm:min-h-0`}
+                className="font-mono"
               />
               <Button
                 variant="secondary"
@@ -657,7 +656,7 @@ export const PublishedShopEditPage: React.FC = () => {
       />
 
       {id && (
-        <Card>
+        <Card className="p-6">
           <MenuEditor
             menu={shopMenu?.menu ?? null}
             unmatched={shopMenu?.unmatched}
@@ -682,7 +681,7 @@ export const PublishedShopEditPage: React.FC = () => {
         </Card>
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={confirmAction === 'hide'}
         title="Скрыть кофейню?"
         message="Кофейня пропадёт из поиска и с карты приложения, пока её снова не покажут."
@@ -695,7 +694,7 @@ export const PublishedShopEditPage: React.FC = () => {
         onCancel={() => setConfirmAction(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={confirmAction === 'removeOwner'}
         title="Снять владельца?"
         message="Текущий владелец потеряет доступ к управлению этой кофейней."

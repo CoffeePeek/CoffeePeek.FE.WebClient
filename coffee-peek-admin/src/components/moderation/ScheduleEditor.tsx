@@ -1,3 +1,4 @@
+import { Input } from '@/src/components/ui/Input';
 import React from 'react';
 import { AdminShopSchedule } from '../../api/admin';
 import {
@@ -60,7 +61,7 @@ export const ScheduleEditor: React.FC<ScheduleEditorProps> = ({ value, onChange 
                 {DAY_NAMES[schedule.dayOfWeek]}
               </p>
               <label className="flex items-center gap-2 text-xs text-text-muted dark:text-stone-400 font-body">
-                <input
+                <Input
                   type="checkbox"
                   checked={schedule.isClosed ?? false}
                   onChange={(e) =>
@@ -117,7 +118,7 @@ const TimeInput: React.FC<{
   disabled?: boolean;
   onChange: (value: string) => void;
 }> = ({ label, value, disabled, onChange }) => (
-  <input
+  <Input
     type="text"
     inputMode="numeric"
     aria-label={label}
@@ -131,7 +132,7 @@ const TimeInput: React.FC<{
       const normalized = normalizeTime24(event.target.value);
       if (normalized && normalized !== event.target.value) onChange(normalized);
     }}
-    className="w-full min-w-0 border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#1A1412] text-text-main dark:text-white disabled:opacity-50 font-mono tabular-nums"
+    className="font-mono tabular-nums"
   />
 );
 

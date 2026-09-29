@@ -1,3 +1,4 @@
+import { Input } from '@/src/components/ui/Input';
 import React, { useMemo, useState } from 'react';
 
 interface CatalogItem {
@@ -72,12 +73,12 @@ export const CatalogMultiSelect: React.FC<CatalogMultiSelectProps> = ({
         <p className="text-xs text-text-muted dark:text-stone-500 font-body">{emptyLabel}</p>
       )}
 
-      <input
+      <Input
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Поиск..."
-        className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#1A1412] text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary/30 font-body"
+
       />
 
       <div className="max-h-44 overflow-y-auto rounded-lg border border-border-light dark:border-border-dark divide-y divide-border-light dark:divide-border-dark">
@@ -93,7 +94,7 @@ export const CatalogMultiSelect: React.FC<CatalogMultiSelectProps> = ({
                   checked ? 'bg-primary/5' : ''
                 }`}
               >
-                <input
+                <Input
                   type="checkbox"
                   checked={checked}
                   onChange={() => toggle(item.id)}

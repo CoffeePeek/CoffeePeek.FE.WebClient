@@ -1,3 +1,6 @@
+import { Input } from '@/src/components/ui/Input';
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
+import { Textarea } from '@/src/components/ui/Textarea';
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -172,10 +175,6 @@ export const OwnerShopEditPage: React.FC = () => {
     },
     onError: (err: any) => showToast(err?.message ?? 'Не удалось удалить фото', 'error'),
   });
-
-  const fieldClass =
-    'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body';
-
   if (isLoading || !shop) {
     return (
       <div className="w-full min-w-0 space-y-4">
@@ -204,7 +203,7 @@ export const OwnerShopEditPage: React.FC = () => {
         </div>
       </div>
 
-      <Card>
+      <Card className="p-6">
         <form
           onSubmit={handleSubmit(async (data) => {
             const scheduleError = sendSchedules ? validateSchedules(schedules) : null;
@@ -218,33 +217,33 @@ export const OwnerShopEditPage: React.FC = () => {
         >
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Название</label>
-            <input {...register('name')} className={fieldClass} />
+            <Input {...register('name')} />
             {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
           </div>
 
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Описание</label>
-            <textarea {...register('description')} rows={3} className={`${fieldClass} resize-none`} />
+            <Textarea {...register('description')} rows={3} className="resize-none" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Телефон</label>
-              <input {...register('phoneNumber')} className={fieldClass} />
+              <Input {...register('phoneNumber')} />
             </div>
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Email</label>
-              <input {...register('email')} className={fieldClass} />
+              <Input {...register('email')} />
               {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Сайт</label>
-              <input {...register('siteLink')} className={fieldClass} />
+              <Input {...register('siteLink')} />
               {errors.siteLink && <p className="text-red-400 text-xs mt-1">{errors.siteLink.message}</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Instagram</label>
-              <input {...register('instagramLink')} className={fieldClass} />
+              <Input {...register('instagramLink')} />
               {errors.instagramLink && <p className="text-red-400 text-xs mt-1">{errors.instagramLink.message}</p>}
             </div>
           </div>
@@ -254,27 +253,27 @@ export const OwnerShopEditPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Город</label>
-                <select {...register('cityId')} className={fieldClass}>
+                <NativeSelect {...register('cityId')}>
                   <option value="">Выберите город</option>
                   {(catalogs?.cities ?? []).map((city) => (
                     <option key={city.id} value={city.id}>
                       {city.name}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Адрес</label>
-                <input {...register('address')} className={fieldClass} />
+                <Input {...register('address')} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Широта</label>
-                <input {...register('latitude')} className={fieldClass} />
+                <Input {...register('latitude')} />
                 {errors.latitude && <p className="text-red-400 text-xs mt-1">{errors.latitude.message}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">Долгота</label>
-                <input {...register('longitude')} className={fieldClass} />
+                <Input {...register('longitude')} />
                 {errors.longitude && <p className="text-red-400 text-xs mt-1">{errors.longitude.message}</p>}
               </div>
             </div>

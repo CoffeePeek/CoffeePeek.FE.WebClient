@@ -1,3 +1,6 @@
+import { Input } from '@/src/components/ui/Input';
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
+import { Textarea } from '@/src/components/ui/Textarea';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,7 +19,7 @@ import { useCatalogs } from '../hooks/useCatalogs';
 import { Badge, statusToBadgeVariant, statusLabels } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PhotoGallery } from '../components/moderation/PhotoGallery';
 import { ScheduleEditor, getDefaultSchedules } from '../components/moderation/ScheduleEditor';
 import { CatalogMultiSelect } from '../components/moderation/CatalogMultiSelect';
@@ -191,7 +194,7 @@ export const ShopEditPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="page-container">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-32 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
         ))}
@@ -228,12 +231,8 @@ export const ShopEditPage: React.FC = () => {
     }
     updateMutation.mutate(data);
   });
-
-  const inputClass =
-    'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#1A1412] text-text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 font-body';
-
   return (
-    <div className="page-container pb-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-start gap-3 min-w-0">
           <button
@@ -247,7 +246,7 @@ export const ShopEditPage: React.FC = () => {
           </button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="page-header-title text-xl sm:text-2xl">{shop.name}</h2>
+              <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white text-xl sm:text-2xl">{shop.name}</h2>
               <Badge variant={statusToBadgeVariant(shop.status)}>{statusLabels[shop.status]}</Badge>
               <Badge variant="info">Заполнено: {shop.dataCompletenessScore}%</Badge>
             </div>
@@ -283,14 +282,14 @@ export const ShopEditPage: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] gap-5">
         <div className="space-y-5">
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">
               Фотографии ({shop.photos?.length ?? 0})
             </h3>
             <PhotoGallery photos={shop.photos ?? []} />
           </Card>
 
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">
               Данные от пользователя
             </h3>
@@ -378,31 +377,31 @@ export const ShopEditPage: React.FC = () => {
           onSubmit={submitForm}
           className="space-y-5"
         >
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-4">
               Основная информация
             </h3>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Название *" error={errors.name?.message}>
-                  <input {...register('name')} className={inputClass} />
+                  <Input {...register('name')} />
                 </Field>
                 <Field label="Город">
-                  <select {...register('cityId')} className={inputClass} disabled={catalogsLoading}>
+                  <NativeSelect {...register('cityId')} disabled={catalogsLoading}>
                     <option value="">Не указан</option>
                     {catalogs?.cities.map((city) => (
                       <option key={city.id} value={city.id}>{city.name}</option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </Field>
               </div>
 
               <Field label="Адрес *" error={errors.address?.message}>
-                <input {...register('address')} className={inputClass} />
+                <Input {...register('address')} />
               </Field>
 
               <Field label="Описание">
-                <textarea {...register('description')} rows={5} className={`${inputClass} resize-y min-h-[120px]`} />
+                <Textarea {...register('description')} rows={5} className="min-h-32 resize-y" />
               </Field>
 
               <Field label="Ценовой диапазон">
@@ -417,25 +416,25 @@ export const ShopEditPage: React.FC = () => {
             </div>
           </Card>
 
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-4">Контакты</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Телефон" error={errors.phone?.message}>
-                <input {...register('phone')} placeholder="+375 ..." className={inputClass} />
+                <Input {...register('phone')} placeholder="+375 ..." />
               </Field>
               <Field label="Email" error={errors.email?.message}>
-                <input {...register('email')} placeholder="coffee@example.com" className={inputClass} />
+                <Input {...register('email')} placeholder="coffee@example.com" />
               </Field>
               <Field label="Сайт" error={errors.website?.message}>
-                <input {...register('website')} placeholder="https://..." className={inputClass} />
+                <Input {...register('website')} placeholder="https://..." />
               </Field>
               <Field label="Instagram" error={errors.instagram?.message}>
-                <input {...register('instagram')} placeholder="@coffeeshop" className={inputClass} />
+                <Input {...register('instagram')} placeholder="@coffeeshop" />
               </Field>
             </div>
           </Card>
 
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-4">
               Расписание работы
             </h3>
@@ -449,7 +448,7 @@ export const ShopEditPage: React.FC = () => {
             />
           </Card>
 
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-4">
               Оборудование и ассортимент
             </h3>
@@ -490,7 +489,7 @@ export const ShopEditPage: React.FC = () => {
           </Card>
 
           {id && (
-            <Card>
+            <Card className="p-6">
               <MenuEditor
                 menu={shop.menu ?? null}
                 onAttach={async (photos) => {
@@ -532,7 +531,7 @@ export const ShopEditPage: React.FC = () => {
         </form>
       </div>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction === 'approve'}
         title="Одобрить кофейню?"
         message="Кофейня станет видна пользователям. Можно оставить комментарий для аудита."
@@ -546,7 +545,7 @@ export const ShopEditPage: React.FC = () => {
         onCancel={() => setPendingAction(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction === 'reject'}
         title="Отклонить кофейню?"
         message="Укажите причину отклонения — пользователь сможет увидеть её в истории."

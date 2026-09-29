@@ -1,8 +1,9 @@
+import { Input } from '@/src/components/ui/Input';
 import React, { useEffect, useRef, useState } from 'react';
 import { PublishedShopPhoto } from '../api/admin';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
-import { ConfirmModal } from './ui/ConfirmModal';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 
 interface PhotoOrderEditorProps {
   photos: PublishedShopPhoto[];
@@ -71,7 +72,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
   };
 
   return (
-    <Card>
+    <Card className="p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-text-main dark:text-white font-display">Галерея</h3>
@@ -82,7 +83,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
         <div className="flex flex-wrap gap-2">
           {onAddFiles && (
             <>
-              <input
+              <Input
                 ref={inputRef}
                 type="file"
                 accept="image/*"
@@ -172,7 +173,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
               }`}
             >
               {onDelete && (
-                <input
+                <Input
                   type="checkbox"
                   checked={selectedIds.includes(photo.id)}
                   onChange={() => toggleSelected(photo.id)}
@@ -211,7 +212,7 @@ export const PhotoOrderEditor: React.FC<PhotoOrderEditorProps> = ({
       )}
 
       {onDelete && (
-        <ConfirmModal
+        <ConfirmDialog
           isOpen={confirmDelete}
           title="Удалить выбранные фото?"
           message={`Будет удалено фотографий: ${selectedIds.length}. Это действие нельзя отменить.`}

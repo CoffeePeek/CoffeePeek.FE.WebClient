@@ -1,3 +1,6 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { Input } from '@/src/components/ui/Input';
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -5,7 +8,8 @@ import { decideImportCandidate, getImportCandidates, ImportCandidate } from '../
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../components/ui/Dialog';
 import {
   CoffeeFocusPicker,
   FocusBadge,
@@ -418,18 +422,18 @@ export const ImportInboxPage: React.FC<{
         <span className="font-semibold">{totalInFilter != null ? totalInFilter : loadedCount}</span>
       </p>
 
-      <Card padding="none" className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <Card className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {isError && !isFetchNextPageError && (
           <p className="p-6 text-sm text-red-600 dark:text-red-400">
             Не удалось загрузить список. Проверьте, что backend import API уже выкатили.
           </p>
         )}
         <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-light dark:border-border-dark align-bottom">
-                <th className="text-left pl-4 pr-1 py-3 w-10">
-                  <input
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow className="border-b border-border-light dark:border-border-dark align-bottom">
+                <TableHead className="text-left pl-4 pr-1 py-3 w-10">
+                  <Input
                     type="checkbox"
                     checked={allSelectableChecked}
                     ref={(el) => {
@@ -440,8 +444,8 @@ export const ImportInboxPage: React.FC<{
                     aria-label="Выбрать все на странице"
                     className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-pointer disabled:opacity-40"
                   />
-                </th>
-                <th className="text-left px-3 py-3">
+                </TableHead>
+                <TableHead className="text-left px-3 py-3">
                   <div className="flex flex-col gap-1.5">
                     <SortButton
                       label="Название"
@@ -450,13 +454,13 @@ export const ImportInboxPage: React.FC<{
                       sortDir={sortDir}
                       onSort={onSort}
                     />
-                    <input
+                    <Input
                       value={localSearch}
                       onChange={(e) => setLocalSearch(e.target.value)}
                       placeholder="Название, адрес..."
                       className={`${headerControl} min-w-[12rem]`}
                     />
-                    <select
+                    <NativeSelect
                       value={hasAddress ? '1' : ''}
                       onChange={(e) => patchParams({ hasAddress: e.target.value })}
                       className={headerControl}
@@ -464,8 +468,8 @@ export const ImportInboxPage: React.FC<{
                     >
                       <option value="">Все адреса</option>
                       <option value="1">Только с адресами</option>
-                    </select>
-                    <select
+                    </NativeSelect>
+                    <NativeSelect
                       value={source}
                       onChange={(e) => patchParams({ source: e.target.value })}
                       className={headerControl}
@@ -475,10 +479,10 @@ export const ImportInboxPage: React.FC<{
                       <option value="File">Из файла</option>
                       <option value="Osm">OSM</option>
                       <option value="CoffeeMap">CoffeeMap</option>
-                    </select>
+                    </NativeSelect>
                   </div>
-                </th>
-                <th className="text-left px-4 py-3">
+                </TableHead>
+                <TableHead className="text-left px-4 py-3">
                   <div className="flex flex-col gap-1.5">
                     <SortButton
                       label="Focus"
@@ -487,7 +491,7 @@ export const ImportInboxPage: React.FC<{
                       sortDir={sortDir}
                       onSort={onSort}
                     />
-                    <select
+                    <NativeSelect
                       value={focus}
                       onChange={(e) => patchParams({ focus: e.target.value })}
                       className={headerControl}
@@ -498,10 +502,10 @@ export const ImportInboxPage: React.FC<{
                           {opt.label}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </div>
-                </th>
-                <th className="text-left px-4 py-3 hidden md:table-cell">
+                </TableHead>
+                <TableHead className="text-left px-4 py-3 hidden md:table-cell">
                   <SortButton
                     label="Google"
                     column="google"
@@ -509,8 +513,8 @@ export const ImportInboxPage: React.FC<{
                     sortDir={sortDir}
                     onSort={onSort}
                   />
-                </th>
-                <th className="text-left px-4 py-3 hidden lg:table-cell">
+                </TableHead>
+                <TableHead className="text-left px-4 py-3 hidden lg:table-cell">
                   <SortButton
                     label="OSM"
                     column="osm"
@@ -518,8 +522,8 @@ export const ImportInboxPage: React.FC<{
                     sortDir={sortDir}
                     onSort={onSort}
                   />
-                </th>
-                <th className="text-left px-4 py-3 hidden md:table-cell">
+                </TableHead>
+                <TableHead className="text-left px-4 py-3 hidden md:table-cell">
                   <div className="flex flex-col gap-1.5">
                     <SortButton
                       label="Корзина"
@@ -528,7 +532,7 @@ export const ImportInboxPage: React.FC<{
                       sortDir={sortDir}
                       onSort={onSort}
                     />
-                    <select
+                    <NativeSelect
                       value={bucket}
                       onChange={(e) => patchParams({ bucket: e.target.value })}
                       className={headerControl}
@@ -538,10 +542,10 @@ export const ImportInboxPage: React.FC<{
                           {opt.label}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </div>
-                </th>
-                <th className="text-left px-4 py-3">
+                </TableHead>
+                <TableHead className="text-left px-4 py-3">
                   <div className="flex flex-col gap-1.5">
                     <SortButton
                       label="Статус"
@@ -550,7 +554,7 @@ export const ImportInboxPage: React.FC<{
                       sortDir={sortDir}
                       onSort={onSort}
                     />
-                    <select
+                    <NativeSelect
                       value={status}
                       onChange={(e) => {
                         const nextStatus = e.target.value;
@@ -566,9 +570,9 @@ export const ImportInboxPage: React.FC<{
                           {opt.label}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                     {(status === 'Rejected' || status === 'all') && (
-                      <select
+                      <NativeSelect
                         value={rejectReason}
                         onChange={(e) => patchParams({ rejectReason: e.target.value })}
                         className={headerControl}
@@ -580,49 +584,49 @@ export const ImportInboxPage: React.FC<{
                             {opt.label}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     )}
                   </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-light dark:divide-border-dark">
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border-light dark:divide-border-dark">
               {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={colCount} className="px-5 py-2">
+                  <TableRow key={i}>
+                    <TableCell colSpan={colCount} className="px-5 py-2">
                       <div className="h-8 rounded bg-gray-100 dark:bg-white/5 animate-pulse" />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               ) : !items.length ? (
-                <tr>
-                  <td
+                <TableRow>
+                  <TableCell
                     colSpan={colCount}
                     className="p-12 text-center text-sm text-text-muted dark:text-stone-400"
                   >
                     Ничего не найдено
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 items.map((item) => {
                   const selectable = isSelectable(item);
                   const checked = selectedIds.has(item.id);
                   return (
-                    <tr
+                    <TableRow
                       key={item.id}
                       className={[
-                        'table-row cursor-pointer',
+                        'border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5 cursor-pointer',
                         checked ? 'bg-primary/5 dark:bg-primary/10' : '',
                         selectedId === item.id ? 'bg-primary/10 dark:bg-primary/15' : '',
                       ].join(' ')}
                       onClick={() => openCandidate(item.id)}
                     >
-                      <td
+                      <TableCell
                         className="pl-4 pr-1 py-2 align-middle"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <input
+                        <Input
                           type="checkbox"
                           checked={checked}
                           disabled={!selectable}
@@ -630,8 +634,8 @@ export const ImportInboxPage: React.FC<{
                           aria-label={`Выбрать ${displayShopName(item.name, item.brand)}`}
                           className="size-4 rounded border-border-light dark:border-border-dark accent-primary cursor-pointer disabled:opacity-40"
                         />
-                      </td>
-                      <td className="px-3 py-2">
+                      </TableCell>
+                      <TableCell className="px-3 py-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <Link
                             to={{
@@ -657,24 +661,24 @@ export const ImportInboxPage: React.FC<{
                             {item.address}
                           </p>
                         )}
-                      </td>
-                      <td className="px-4 py-2">
+                      </TableCell>
+                      <TableCell className="px-4 py-2">
                         <FocusBadge focus={item.coffeeFocus} />
-                      </td>
-                      <td className="px-4 py-2 hidden md:table-cell">
+                      </TableCell>
+                      <TableCell className="px-4 py-2 hidden md:table-cell">
                         {item.googleBusinessStatus ? (
                           <GoogleStatusBadge status={item.googleBusinessStatus} />
                         ) : (
                           <span className="text-xs text-text-muted dark:text-stone-500">—</span>
                         )}
-                      </td>
-                      <td className="px-4 py-2 hidden lg:table-cell text-xs text-text-muted dark:text-stone-400">
+                      </TableCell>
+                      <TableCell className="px-4 py-2 hidden lg:table-cell text-xs text-text-muted dark:text-stone-400">
                         {item.osmAgeDays != null ? `${item.osmAgeDays} дн.` : '—'}
-                      </td>
-                      <td className="px-4 py-2 hidden md:table-cell text-xs text-text-muted dark:text-stone-400">
+                      </TableCell>
+                      <TableCell className="px-4 py-2 hidden md:table-cell text-xs text-text-muted dark:text-stone-400">
                         {item.collectorBucket ? BUCKET_LABELS[item.collectorBucket] : '—'}
-                      </td>
-                      <td className="px-4 py-2">
+                      </TableCell>
+                      <TableCell className="px-4 py-2">
                         <Badge
                           variant={
                             item.queueStatus === 'Published'
@@ -689,13 +693,13 @@ export const ImportInboxPage: React.FC<{
                             ? ` · ${REJECT_REASON_LABELS[item.rejectReason]}`
                             : ''}
                         </Badge>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {/* Sentinel lives inside the scroll container so the observer root actually scrolls it. */}
           <div
             ref={loadMoreRef}
@@ -756,18 +760,10 @@ export const ImportInboxPage: React.FC<{
       )}
 
       {batchModal === 'publish' && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => !batchMutation.isPending && setBatchModal(null)}
-          />
-          <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg p-5 sm:p-6 border border-border-light dark:border-border-dark pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-            <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-1">
-              В ленту · {publishableSelected.length}
-            </h3>
-            <p className="text-sm text-text-muted dark:text-stone-400 font-body mb-4">
-              Один coffee focus на всю пачку.
-            </p>
+        <Dialog open onOpenChange={(open) => !open && !batchMutation.isPending && setBatchModal(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogTitle>В ленту · {publishableSelected.length}</DialogTitle>
+            <DialogDescription>Один coffee focus на всю пачку.</DialogDescription>
             {skippedNoName > 0 && (
               <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
                 Без нормального имени пропущены: {skippedNoName}.
@@ -809,23 +805,15 @@ export const ImportInboxPage: React.FC<{
                 Отмена
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {batchModal === 'reject' && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => !batchMutation.isPending && setBatchModal(null)}
-          />
-          <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 border border-border-light dark:border-border-dark pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-            <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-1">
-              Почему не в ленту? · {selectedItems.filter(isSelectable).length}
-            </h3>
-            <p className="text-sm text-text-muted dark:text-stone-400 font-body mb-4">
-              Одна причина на всю пачку.
-            </p>
+        <Dialog open onOpenChange={(open) => !open && !batchMutation.isPending && setBatchModal(null)}>
+          <DialogContent className="max-w-md">
+            <DialogTitle>Почему не в ленту? · {selectedItems.filter(isSelectable).length}</DialogTitle>
+            <DialogDescription>Одна причина на всю пачку.</DialogDescription>
             <div className="flex flex-col gap-2">
               {REJECT_REASON_OPTIONS.map((opt) => (
                 <button
@@ -859,11 +847,11 @@ export const ImportInboxPage: React.FC<{
             >
               Отмена
             </Button>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={confirmPublishClosed}
         title="Есть закрытые по Google"
         message={`Среди выбранных ${closedSelected.length} с статусом «Закрыто». Опубликовать их всё равно?`}

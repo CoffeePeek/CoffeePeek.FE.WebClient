@@ -5,7 +5,7 @@ import { getBrowseCoffeeShopById } from '../api/coffeeShops';
 import { setPublishedShopVisibility } from '../api/admin';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
 import { useUser } from '../contexts/UserContext';
 
@@ -36,7 +36,7 @@ export const BrowseShopPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="page-container">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
         <div className="h-8 w-48 rounded bg-gray-100 dark:bg-white/5 animate-pulse mb-4" />
         <div className="h-64 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
       </div>
@@ -45,7 +45,7 @@ export const BrowseShopPage: React.FC = () => {
 
   if (isError || !shop) {
     return (
-      <div className="page-container">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
         <p className="text-red-400 text-sm mb-4">Кофейня не найдена</p>
         <Link to="/coffee-shops">
           <Button variant="secondary" size="sm">Назад к списку</Button>
@@ -61,7 +61,7 @@ export const BrowseShopPage: React.FC = () => {
       : shop.imageUrls ?? (shop.imageUrl ? [shop.imageUrl] : []);
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <Link to="/coffee-shops">
           <Button variant="ghost" size="sm">← К списку</Button>
@@ -86,7 +86,7 @@ export const BrowseShopPage: React.FC = () => {
         )}
       </div>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={isAdmin && confirmHide}
         title="Скрыть кофейню из приложения?"
         message={`«${shop.name}» перестанет отображаться пользователям приложения.`}
@@ -120,7 +120,7 @@ export const BrowseShopPage: React.FC = () => {
 
         <div className="p-5 space-y-4">
           <div>
-            <h2 className="page-header-title">{shop.name}</h2>
+            <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">{shop.name}</h2>
             {shop.cityName && (
               <p className="text-sm text-text-muted dark:text-stone-400 mt-1">{shop.cityName}</p>
             )}

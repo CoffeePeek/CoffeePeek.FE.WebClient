@@ -1,3 +1,4 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { PublishedShop } from '../../api/admin';
@@ -214,15 +215,15 @@ function MenuItemsView({
         {currentMenu ? ` · изменится: ${changed.length}` : ''}
       </p>
       <div className="overflow-hidden rounded-xl border border-border-light dark:border-border-dark">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-stone-50 text-xs uppercase tracking-wide text-text-muted dark:bg-white/5 dark:text-stone-400">
-            <tr>
-              <th className="px-3 py-2 font-semibold">Напиток</th>
-              <th className="px-3 py-2 font-semibold">Сейчас</th>
-              <th className="px-3 py-2 font-semibold">В заявке</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="w-full text-left text-sm">
+          <TableHeader className="bg-stone-50 text-xs uppercase tracking-wide text-text-muted dark:bg-white/5 dark:text-stone-400">
+            <TableRow>
+              <TableHead className="px-3 py-2 font-semibold">Напиток</TableHead>
+              <TableHead className="px-3 py-2 font-semibold">Сейчас</TableHead>
+              <TableHead className="px-3 py-2 font-semibold">В заявке</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {items.map((item) => {
               const current = currentBySlug.get(item.slug);
               const isChanged =
@@ -231,27 +232,27 @@ function MenuItemsView({
                 (current.price ?? null) !== (item.price ?? null) ||
                 (current.volumeMl ?? null) !== (item.volumeMl ?? null);
               return (
-                <tr
+                <TableRow
                   key={item.slug}
                   className={`border-t border-border-light dark:border-border-dark ${
                     isChanged ? 'bg-amber-50/70 dark:bg-amber-500/10' : ''
                   }`}
                 >
-                  <td className="px-3 py-2.5 align-top">
+                  <TableCell className="px-3 py-2.5 align-top">
                     <p className="font-medium text-text-main dark:text-white">{nameFor(item.slug)}</p>
                     <p className="text-xs text-text-muted">{item.slug}</p>
-                  </td>
-                  <td className="px-3 py-2.5 align-top text-text-muted dark:text-stone-400">
+                  </TableCell>
+                  <TableCell className="px-3 py-2.5 align-top text-text-muted dark:text-stone-400">
                     {current ? formatItem(current) : 'нет в текущем меню'}
-                  </td>
-                  <td className="px-3 py-2.5 align-top font-medium text-text-main dark:text-stone-100">
+                  </TableCell>
+                  <TableCell className="px-3 py-2.5 align-top font-medium text-text-main dark:text-stone-100">
                     {formatItem(item)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

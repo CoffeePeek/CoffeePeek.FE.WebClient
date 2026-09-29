@@ -1,3 +1,5 @@
+import { Input } from '@/src/components/ui/Input';
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -15,7 +17,8 @@ import {
 } from '../api/catalogs';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Dialog, DialogContent, DialogTitle } from '../components/ui/Dialog';
 import { useToast } from '../contexts/ToastContext';
 import { getErrorMessage } from '../utils/errors';
 
@@ -49,7 +52,6 @@ function parseCatalogKind(value: string | null): CatalogKind {
 
 type FormState = { name: string; brand: string; modelName: string; category: number };
 const EMPTY_FORM: FormState = { name: '', brand: '', modelName: '', category: 0 };
-const fieldClass = 'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#1A1412] text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary/30 font-body min-h-[44px]';
 const labelClass = 'block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body';
 
 function itemTitle(kind: CatalogKind, item: CatalogItem): string {
@@ -100,14 +102,14 @@ const CatalogForm: React.FC<{
     <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {equipment ? (
         <>
-          <div><label htmlFor={`${editing ? 'edit' : 'create'}-brand`} className={labelClass}>Бренд</label><input id={`${editing ? 'edit' : 'create'}-brand`} autoFocus={editing} value={value.brand} onChange={(e) => onChange({ ...value, brand: e.target.value })} placeholder="La Marzocco" maxLength={100} className={fieldClass} /></div>
-          <div><label htmlFor={`${editing ? 'edit' : 'create'}-model`} className={labelClass}>Модель</label><input id={`${editing ? 'edit' : 'create'}-model`} value={value.modelName} onChange={(e) => onChange({ ...value, modelName: e.target.value })} placeholder="Linea Mini" maxLength={100} className={fieldClass} /></div>
+          <div><label htmlFor={`${editing ? 'edit' : 'create'}-brand`} className={labelClass}>Бренд</label><Input id={`${editing ? 'edit' : 'create'}-brand`} autoFocus={editing} value={value.brand} onChange={(e) => onChange({ ...value, brand: e.target.value })} placeholder="La Marzocco" maxLength={100} /></div>
+          <div><label htmlFor={`${editing ? 'edit' : 'create'}-model`} className={labelClass}>Модель</label><Input id={`${editing ? 'edit' : 'create'}-model`} value={value.modelName} onChange={(e) => onChange({ ...value, modelName: e.target.value })} placeholder="Linea Mini" maxLength={100} /></div>
         </>
       ) : (
-        <div className={definition.kind === 'brewMethods' ? '' : 'sm:col-span-2'}><label htmlFor={`${editing ? 'edit' : 'create'}-name`} className={labelClass}>Название</label><input id={`${editing ? 'edit' : 'create'}-name`} autoFocus={editing} value={value.name} onChange={(e) => onChange({ ...value, name: e.target.value })} placeholder={`Новый ${definition.singular}`} maxLength={100} className={fieldClass} /></div>
+        <div className={definition.kind === 'brewMethods' ? '' : 'sm:col-span-2'}><label htmlFor={`${editing ? 'edit' : 'create'}-name`} className={labelClass}>Название</label><Input id={`${editing ? 'edit' : 'create'}-name`} autoFocus={editing} value={value.name} onChange={(e) => onChange({ ...value, name: e.target.value })} placeholder={`Новый ${definition.singular}`} maxLength={100} /></div>
       )}
       {(equipment || definition.kind === 'brewMethods') && (
-        <div className={equipment ? 'sm:col-span-2' : ''}><label htmlFor={`${editing ? 'edit' : 'create'}-category`} className={labelClass}>Категория</label><select id={`${editing ? 'edit' : 'create'}-category`} value={value.category} onChange={(e) => onChange({ ...value, category: Number(e.target.value) })} className={fieldClass}>{categoryOptions.map((label, index) => <option key={label} value={index}>{label}</option>)}</select></div>
+        <div className={equipment ? 'sm:col-span-2' : ''}><label htmlFor={`${editing ? 'edit' : 'create'}-category`} className={labelClass}>Категория</label><NativeSelect id={`${editing ? 'edit' : 'create'}-category`} value={value.category} onChange={(e) => onChange({ ...value, category: Number(e.target.value) })}>{categoryOptions.map((label, index) => <option key={label} value={index}>{label}</option>)}</NativeSelect></div>
       )}
       <div className="sm:col-span-2 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
         {onCancel && <Button type="button" variant="ghost" onClick={onCancel} disabled={busy} className="min-h-[44px]">Отмена</Button>}
@@ -176,25 +178,25 @@ export const CatalogManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h1 className="page-header-title">Справочники</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Справочники</h1>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">Управление справочниками, которые используются в карточках и фильтрах кофеен</p>
       </div>
 
-      <div className="filter-chips" role="tablist" aria-label="Разделы каталога">
-        {CATALOGS.map((catalog) => <button key={catalog.kind} type="button" role="tab" aria-selected={kind === catalog.kind} onClick={() => changeKind(catalog.kind)} className={`filter-chip ${kind === catalog.kind ? 'bg-primary text-black' : 'bg-white dark:bg-surface-dark text-text-muted dark:text-stone-300 border border-border-light dark:border-border-dark'}`}>{catalog.label}</button>)}
+      <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0" role="tablist" aria-label="Разделы каталога">
+        {CATALOGS.map((catalog) => <Button key={catalog.kind} type="button" size="sm" role="tab" aria-selected={kind === catalog.kind} onClick={() => changeKind(catalog.kind)} variant={kind === catalog.kind ? 'primary' : 'secondary'}>{catalog.label}</Button>)}
       </div>
 
-      <Card>
+      <Card className="p-6">
         <div className="mb-4"><h2 className="text-sm font-semibold text-text-main dark:text-white font-display">Добавить: {definition.singular}</h2><p className="text-xs text-text-muted dark:text-stone-400 font-body mt-1">{definition.description}</p></div>
         <CatalogForm definition={definition} value={createForm} busy={createMutation.isPending} editing={false} onChange={setCreateForm} onSubmit={submitCreate} />
       </Card>
 
-      <Card padding="none">
+      <Card className="p-6">
         <div className="p-4 sm:p-5 border-b border-border-light dark:border-border-dark flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="min-w-0"><h2 className="text-sm font-semibold text-text-main dark:text-white font-display">{definition.label}</h2><p className="text-xs text-text-muted dark:text-stone-400 font-body mt-0.5">{data.length} записей</p></div>
-          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по каталогу" aria-label="Поиск по каталогу" className={`${fieldClass} sm:ml-auto sm:max-w-xs`} />
+          <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по каталогу" aria-label="Поиск по каталогу" className="sm:ml-auto sm:max-w-xs" />
         </div>
         {isLoading ? <div className="p-5 space-y-3" aria-label="Загрузка каталога">{Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-14 rounded-lg bg-stone-100 dark:bg-white/5 animate-pulse" />)}</div>
           : isError ? <div className="p-10 text-center"><p className="text-sm text-red-500 font-body mb-3">Не удалось загрузить каталог</p><Button variant="secondary" onClick={() => refetch()}>Повторить</Button></div>
@@ -217,9 +219,11 @@ export const CatalogManagementPage: React.FC = () => {
           })}</ul>}
       </Card>
 
-      {editing && <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="catalog-edit-title"><button type="button" className="absolute inset-0 bg-black/55" onClick={() => setEditing(null)} aria-label="Закрыть окно редактирования" /><div className="relative w-full sm:max-w-lg bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-xl"><h2 id="catalog-edit-title" className="text-base font-semibold text-text-main dark:text-white font-display mb-4">Изменить: {itemTitle(kind, editing)}</h2><CatalogForm definition={definition} value={editForm} busy={updateMutation.isPending} editing onChange={setEditForm} onSubmit={submitEdit} onCancel={() => setEditing(null)} /></div></div>}
+      <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
+        {editing && <DialogContent><DialogTitle>Изменить: {itemTitle(kind, editing)}</DialogTitle><CatalogForm definition={definition} value={editForm} busy={updateMutation.isPending} editing onChange={setEditForm} onSubmit={submitEdit} onCancel={() => setEditing(null)} /></DialogContent>}
+      </Dialog>
 
-      <ConfirmModal isOpen={Boolean(deleting)} title={`Удалить ${definition.singular}?`} message={`«${deleting ? itemTitle(kind, deleting) : ''}» будет удалено из справочника. Если запись используется кофейней, сервер может отклонить удаление.`} confirmLabel="Удалить" variant="danger" onConfirm={async () => { if (deleting) await deleteMutation.mutateAsync({ catalog: kind, id: deleting.id }); }} onCancel={() => setDeleting(null)} />
+      <ConfirmDialog isOpen={Boolean(deleting)} title={`Удалить ${definition.singular}?`} message={`«${deleting ? itemTitle(kind, deleting) : ''}» будет удалено из справочника. Если запись используется кофейней, сервер может отклонить удаление.`} confirmLabel="Удалить" variant="danger" onConfirm={async () => { if (deleting) await deleteMutation.mutateAsync({ catalog: kind, id: deleting.id }); }} onCancel={() => setDeleting(null)} />
     </div>
   );
 };

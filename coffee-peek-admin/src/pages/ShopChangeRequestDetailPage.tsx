@@ -1,3 +1,5 @@
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
+import { Textarea } from '@/src/components/ui/Textarea';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,7 +18,7 @@ import { ChangeRequestPayloadView } from '../components/moderation/ChangeRequest
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
 import { sectionLabels } from './ShopChangeRequestsPage';
 
@@ -164,7 +166,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
   };
 
   if (loading) return <p className="text-text-muted">Загрузка…</p>;
-  if (!request) return <Card>Заявка не найдена.</Card>;
+  if (!request) return <Card className="p-6">Заявка не найдена.</Card>;
   const pending = request.status === 'Pending';
   const shopThumb = shop?.photos?.[0]?.fullUrl;
   const userName = user?.nickname || user?.userName;
@@ -187,7 +189,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card padding="sm">
+        <Card className="p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">Кофейня</p>
           {shop ? (
             <div className="flex gap-3">
@@ -226,7 +228,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
           )}
         </Card>
 
-        <Card padding="sm">
+        <Card className="p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
             Кто отправил
           </p>
@@ -274,7 +276,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
         </Card>
       </div>
 
-      <Card padding="sm">
+      <Card className="p-4">
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-text-muted">Создано</dt>
@@ -294,7 +296,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
         )}
       </Card>
 
-      <Card>
+      <Card className="p-6">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-text-main dark:text-white">Что меняется</h2>
@@ -310,17 +312,17 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
           {pending && (
             <label className="block text-sm font-semibold">
               Секция
-              <select
+              <NativeSelect
                 value={section}
                 onChange={(e) => setSection(e.target.value as ShopChangeSection)}
-                className="mt-2 block w-full rounded-lg border border-border-light bg-white px-3 py-2 dark:border-border-dark dark:bg-surface-dark"
+                className="mt-2"
               >
                 {sections.map((item) => (
                   <option key={item} value={item}>
                     {sectionLabels[item]}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
           )}
 
@@ -340,7 +342,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
           {showRawJson && (
             <label className="block text-sm font-semibold">
               Технический JSON
-              <textarea
+              <Textarea
                 disabled={!pending}
                 value={payload}
                 onChange={(e) => setPayload(e.target.value)}
@@ -360,10 +362,10 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
       </Card>
 
       {pending && (
-        <Card>
+        <Card className="p-6">
           <label className="block text-sm font-semibold">
             Комментарий модератора
-            <textarea
+            <Textarea
               maxLength={500}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -393,7 +395,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
         </Card>
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={confirmApprove}
         title="Одобрить и применить?"
         message="Изменения сразу применятся к опубликованной кофейне."

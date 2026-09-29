@@ -1,3 +1,4 @@
+import { Input } from '@/src/components/ui/Input';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,7 +15,8 @@ import {
 import { getShopTags } from '../api/catalogs';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../components/ui/Dialog';
 import { DossierMap } from '../components/import/DossierMap';
 import { DossierQueue } from '../components/import/DossierQueue';
 import { MenuEditor } from '../components/menu/MenuEditor';
@@ -640,7 +642,7 @@ export const ImportQueuePage: React.FC = () => {
                     В импорте нет Instagram. Не ищем «{title} Минск». Вставь URL с карточки Яндекса или с сайта.
                   </p>
                   <div className="flex gap-1.5">
-                    <input
+                    <Input
                       ref={igInputRef}
                       value={igPaste}
                       onChange={(e) => setIgPaste(e.target.value)}
@@ -651,7 +653,7 @@ export const ImportQueuePage: React.FC = () => {
                         }
                       }}
                       placeholder="instagram.com/…"
-                      className="flex-1 min-w-0 rounded-md border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      className="flex-1"
                     />
                     <Button variant="secondary" size="sm" onClick={() => void applyInstagram()}>
                       Вставить
@@ -696,23 +698,23 @@ export const ImportQueuePage: React.FC = () => {
               {(!candidate.phone || !candidate.website) && (
                 <div className="mt-2 grid gap-1.5">
                   {!candidate.phone && (
-                    <input
+                    <Input
                       value={phoneDraft}
                       onChange={(e) => setPhoneDraft(e.target.value)}
                       onBlur={() => phoneDraft.trim() && void tryPatchContacts({ phone: phoneDraft.trim() })}
                       placeholder="Вписать телефон с карточки Яндекса"
-                      className="w-full rounded-md border border-border-light dark:border-border-dark px-2.5 py-2 text-sm bg-white dark:bg-surface-dark"
+
                     />
                   )}
                   {!candidate.website && (
-                    <input
+                    <Input
                       value={websiteDraft}
                       onChange={(e) => setWebsiteDraft(e.target.value)}
                       onBlur={() =>
                         websiteDraft.trim() && void tryPatchContacts({ website: websiteDraft.trim() })
                       }
                       placeholder="Вписать сайт"
-                      className="w-full rounded-md border border-border-light dark:border-border-dark px-2.5 py-2 text-sm bg-white dark:bg-surface-dark"
+
                     />
                   )}
                 </div>
@@ -932,15 +934,10 @@ export const ImportQueuePage: React.FC = () => {
       )}
 
       {rejectPickerOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setRejectPickerOpen(false)} />
-          <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 border border-border-light dark:border-border-dark pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-            <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-1">
-              Почему не в ленту?
-            </h3>
-            <p className="text-sm text-text-muted dark:text-stone-400 font-body mb-4">
-              Выберите причину. Без причины отклонить нельзя.
-            </p>
+        <Dialog open onOpenChange={(open) => !open && setRejectPickerOpen(false)}>
+          <DialogContent className="max-w-md">
+            <DialogTitle>Почему не в ленту?</DialogTitle>
+            <DialogDescription>Выберите причину. Без причины отклонить нельзя.</DialogDescription>
             <div className="flex flex-col gap-2">
               {REJECT_REASON_OPTIONS.map((opt) => (
                 <button
@@ -971,11 +968,11 @@ export const ImportQueuePage: React.FC = () => {
             >
               Отмена
             </Button>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={confirmPublishClosed}
         title="Нужно подтверждение"
         message="Google считает место закрытым или бэкенд предлагает отклонить. Опубликовать всё равно?"

@@ -1,3 +1,5 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { Input } from '@/src/components/ui/Input';
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -17,9 +19,11 @@ import {
 import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { Card, StatCard } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
+import { MetricCard } from '../components/dashboard/MetricCard';
 import { Pagination } from '../components/ui/Pagination';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/Dialog';
 import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 20;
@@ -100,22 +104,12 @@ const UserSessionsModal: React.FC<{
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-        <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg p-5 sm:p-6 border border-border-light dark:border-border-dark max-h-[90dvh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="min-w-0">
-              <h3 className="text-base font-semibold text-text-main dark:text-white font-display">
-                Сессии
-              </h3>
-              <p className="text-xs text-text-muted dark:text-stone-400 font-body mt-0.5 truncate">
-                {user.email}
-              </p>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onClose} className="shrink-0">
-              Закрыть
-            </Button>
-          </div>
+      <Dialog open={Boolean(user)} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Сессии</DialogTitle>
+            <DialogDescription className="truncate">{user.email}</DialogDescription>
+          </DialogHeader>
 
           <div className="flex justify-end mb-3">
             <Button
@@ -191,10 +185,10 @@ const UserSessionsModal: React.FC<{
               ))}
             </div>
           )}
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={confirmRevokeAll}
         title="Отозвать все сессии?"
         message="Пользователь будет разлогинен на всех устройствах сразу."
@@ -206,7 +200,7 @@ const UserSessionsModal: React.FC<{
         onCancel={() => setConfirmRevokeAll(false)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={!!confirmSessionId}
         title="Отозвать сессию?"
         message="Пользователь будет разлогинен на этом устройстве сразу, если оно подключено к realtime."
@@ -247,18 +241,17 @@ const EditRoleModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm p-5 sm:p-6 border border-border-light dark:border-border-dark max-h-[90dvh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-        <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-1">
-          Изменить роль
-        </h3>
-        <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-4">{user.email}</p>
+    <Dialog open={Boolean(user)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Изменить роль</DialogTitle>
+          <DialogDescription>{user.email}</DialogDescription>
+        </DialogHeader>
 
         <div className="space-y-2 mb-5">
           {ROLES.map((r) => (
             <label key={r} className="flex items-center gap-3 cursor-pointer">
-              <input
+              <Input
                 type="radio"
                 name="role"
                 value={r}
@@ -272,12 +265,12 @@ const EditRoleModal: React.FC<{
           ))}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sm:justify-end">
+        <DialogFooter>
           <Button variant="ghost" size="sm" onClick={onClose} disabled={loading} className="w-full sm:w-auto min-h-[44px] sm:min-h-0">Отмена</Button>
           <Button variant="primary" size="sm" onClick={handleSave} loading={loading} className="w-full sm:w-auto min-h-[44px] sm:min-h-0">Сохранить</Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -374,9 +367,9 @@ export const UsersPage: React.FC = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">
           Пользователи
         </h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
@@ -387,46 +380,44 @@ export const UsersPage: React.FC = () => {
       {/* Stats row */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard label="Всего" value={stats.totalUsers} icon={<IconUsers />} />
-          <StatCard label="Сегодня" value={stats.registeredToday} icon={<IconUsers />} color="text-green-500" />
-          <StatCard label="Активных" value={stats.activeUsers} icon={<IconUsers />} color="text-blue-500" />
-          <StatCard label="Заблокированных" value={stats.blockedUsers} icon={<IconUsers />} color="text-red-500" />
+          <MetricCard label="Всего" value={stats.totalUsers} icon={<IconUsers />} />
+          <MetricCard label="Сегодня" value={stats.registeredToday} icon={<IconUsers />} color="text-green-500" />
+          <MetricCard label="Активных" value={stats.activeUsers} icon={<IconUsers />} color="text-blue-500" />
+          <MetricCard label="Заблокированных" value={stats.blockedUsers} icon={<IconUsers />} color="text-red-500" />
         </div>
       )}
 
       {/* Filters */}
-      <div className="filter-bar">
-        <div className="filter-chips">
+      <div className="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-3 shadow-sm dark:border-border-dark dark:bg-surface-dark sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {(['', ...ROLES] as (UserRole | '')[]).map((r) => (
-            <button
+            <Button
+              type="button"
+              size="sm"
               key={r || 'all'}
               onClick={() => setParam('role', r)}
-              className={`filter-chip ${
-                roleFilter === r
-                  ? 'bg-primary text-black'
-                  : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
-              }`}
+              variant={roleFilter === r ? 'primary' : 'secondary'}
             >
               {r || 'Все'}
-            </button>
+            </Button>
           ))}
         </div>
         <form
           onSubmit={(e) => { e.preventDefault(); setParam('search', localSearch); }}
-          className="search-form"
+          className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row"
         >
-          <input
+          <Input
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Email или имя..."
-            className="search-input"
+            className="w-full sm:w-72"
           />
           <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">Найти</Button>
         </form>
       </div>
 
-      <Card padding="none">
+      <Card className="p-6">
         {isLoading ? (
           <div className="p-6 space-y-3">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -439,23 +430,23 @@ export const UsersPage: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="table-scroll">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border-light dark:border-border-dark">
-                    <th scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Пользователь</th>
-                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Роли</th>
-                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Отзывов</th>
-                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Чекинов</th>
-                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Кофеен</th>
-                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Дата</th>
-                    <th scope="col" className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-light dark:divide-border-dark">
+            <div className="relative w-full overflow-auto">
+              <Table className="w-full text-sm">
+                <TableHeader>
+                  <TableRow className="border-b border-border-light dark:border-border-dark">
+                    <TableHead scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Пользователь</TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">Роли</TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Отзывов</TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden md:table-cell">Чекинов</TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Кофеен</TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden lg:table-cell">Дата</TableHead>
+                    <TableHead scope="col" className="px-4 py-3" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border-light dark:divide-border-dark">
                   {data.items.map((user) => (
-                    <tr key={user.id} className="table-row">
-                      <td className="px-5 py-3">
+                    <TableRow key={user.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5">
+                      <TableCell className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           {user.avatarUrl ? (
                             <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
@@ -476,28 +467,28 @@ export const UsersPage: React.FC = () => {
                             )}
                           </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {user.roles.length > 0
                             ? user.roles.map((r) => <UserRoleBadge key={r} role={r as UserRole} />)
                             : <Badge>—</Badge>}
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden md:table-cell font-body">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden md:table-cell font-body">
                         {user.reviewCount ?? 0}
-                      </td>
-                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden md:table-cell font-body">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden md:table-cell font-body">
                         {user.checkInCount ?? 0}
-                      </td>
-                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden lg:table-cell font-body">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden lg:table-cell font-body">
                         {user.addedShopsCount ?? 0}
-                      </td>
-                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden lg:table-cell font-body">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 text-xs hidden lg:table-cell font-body">
                         {new Date(user.createdAtUtc).toLocaleDateString('ru')}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="action-buttons min-w-[220px]">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2 min-w-[220px]">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -539,11 +530,11 @@ export const UsersPage: React.FC = () => {
                             </svg>
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
             <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
               <Pagination
@@ -572,7 +563,7 @@ export const UsersPage: React.FC = () => {
         onClose={() => setSessionsUser(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={!!kickingUser}
         title="Оборвать все сессии?"
         message={`${kickingUser?.email ?? 'Пользователь'} будет разлогинен на всех устройствах сразу.`}
@@ -584,7 +575,7 @@ export const UsersPage: React.FC = () => {
         onCancel={() => setKickingUser(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={!!blockingUser}
         title={blockingUser?.isBlocked ? 'Разблокировать пользователя?' : 'Заблокировать пользователя?'}
         message={
@@ -605,7 +596,7 @@ export const UsersPage: React.FC = () => {
         onCancel={() => setBlockingUser(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={!!deletingUserId}
         title="Удалить пользователя (soft delete)?"
         message="Пользователь будет помечен как удалённый, все сессии отозваны. Отдельно от блокировки."

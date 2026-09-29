@@ -1,3 +1,6 @@
+import { Input } from '@/src/components/ui/Input';
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
+import { Textarea } from '@/src/components/ui/Textarea';
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,12 +11,8 @@ import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { getErrorMessage } from '../utils/errors';
-
-const fieldClass =
-  'w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body';
-
 const EXTENSION_CONTENT_TYPES: Record<string, string> = {
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
@@ -167,7 +166,7 @@ export const RoasterEditPage: React.FC = () => {
 
   if (isLoading || !roaster) {
     return (
-      <div className="page-container">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
         <div className="h-8 w-48 bg-gray-100 dark:bg-white/5 rounded animate-pulse" />
         <div className="h-64 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse" />
       </div>
@@ -175,7 +174,7 @@ export const RoasterEditPage: React.FC = () => {
   }
 
   return (
-    <div className="page-container pb-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-8">
       <div className="flex items-start gap-3">
         <Button
           variant="ghost"
@@ -185,10 +184,10 @@ export const RoasterEditPage: React.FC = () => {
         >
           ← Назад
         </Button>
-        <h2 className="page-header-title text-xl sm:text-2xl min-w-0 flex-1">{roaster.name}</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white text-xl sm:text-2xl min-w-0 flex-1">{roaster.name}</h2>
       </div>
 
-      <Card>
+      <Card className="p-6">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -201,53 +200,53 @@ export const RoasterEditPage: React.FC = () => {
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                 Название
               </label>
-              <input value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} required />
+              <Input value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                 О компании
               </label>
-              <textarea
+              <Textarea
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
                 rows={4}
-                className={`${fieldClass} resize-y min-h-[96px]`}
+                className="min-h-24 resize-y"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                 Город
               </label>
-              <select value={cityId} onChange={(e) => setCityId(e.target.value)} className={fieldClass}>
+              <NativeSelect value={cityId} onChange={(e) => setCityId(e.target.value)}>
                 <option value="">Не менять</option>
                 {(catalogs?.cities ?? []).map((city) => (
                   <option key={city.id} value={city.id}>
                     {city.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                 Адрес
               </label>
-              <input value={address} onChange={(e) => setAddress(e.target.value)} className={fieldClass} />
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} />
             </div>
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                 Instagram
               </label>
-              <input
+              <Input
                 value={instagramLink}
                 onChange={(e) => setInstagramLink(e.target.value)}
-                className={fieldClass}
+
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                 Сайт
               </label>
-              <input value={siteLink} onChange={(e) => setSiteLink(e.target.value)} className={fieldClass} />
+              <Input value={siteLink} onChange={(e) => setSiteLink(e.target.value)} />
             </div>
           </div>
 
@@ -262,7 +261,7 @@ export const RoasterEditPage: React.FC = () => {
         </form>
       </Card>
 
-      <Card>
+      <Card className="p-6">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display">Фотографии</h3>
@@ -270,7 +269,7 @@ export const RoasterEditPage: React.FC = () => {
               Первая фотография — обложка. Изменения применяются при сохранении карточки выше.
             </p>
           </div>
-          <input
+          <Input
             ref={fileInputRef}
             type="file"
             accept="image/*"
@@ -348,7 +347,7 @@ export const RoasterEditPage: React.FC = () => {
         )}
       </Card>
 
-      <Card>
+      <Card className="p-6">
         <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Удаление</h3>
         <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
           Безвозвратно удаляет обжарщика из каталога.
@@ -363,7 +362,7 @@ export const RoasterEditPage: React.FC = () => {
         </Button>
       </Card>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={confirmDelete}
         title="Удалить обжарщика?"
         message="Это действие необратимо."

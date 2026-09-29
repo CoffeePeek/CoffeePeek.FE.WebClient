@@ -1,3 +1,5 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,7 +13,7 @@ import {
 import { Badge, type BadgeVariant } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { getErrorMessage } from '../utils/errors';
@@ -70,10 +72,10 @@ export function CoffeeZonesPage() {
   const zones = zonesQuery.data ?? [];
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="page-header-title">Кофейные зоны</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Кофейные зоны</h2>
           <p className="mt-0.5 text-sm text-text-muted dark:text-stone-400">
             Управление географическими подборками кофеен
           </p>
@@ -83,21 +85,21 @@ export function CoffeeZonesPage() {
         </Link>
       </div>
 
-      <Card padding="sm">
+      <Card className="p-4">
         <label className="block max-w-sm text-xs font-medium text-text-muted dark:text-stone-400">
           Город
-          <select
+          <NativeSelect
             value={cityId}
             onChange={(event) => setCityId(event.target.value)}
-            className="mt-1.5 min-h-[42px] w-full rounded-lg border border-border-light bg-white px-3 py-2 text-sm text-text-main dark:border-border-dark dark:bg-surface-dark dark:text-white"
+            className="mt-1.5"
           >
             <option value="">Все города</option>
             {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
-          </select>
+          </NativeSelect>
         </label>
       </Card>
 
-      <Card padding="none">
+      <Card className="p-6">
         {zonesQuery.isLoading ? (
           <div className="space-y-3 p-6">
             {Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-14 animate-pulse rounded bg-gray-100 dark:bg-white/5" />)}
@@ -107,43 +109,43 @@ export function CoffeeZonesPage() {
         ) : zones.length === 0 ? (
           <div className="p-12 text-center text-sm text-text-muted dark:text-stone-400">Зоны не найдены</div>
         ) : (
-          <div className="table-scroll">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-light dark:border-border-dark">
+          <div className="relative w-full overflow-auto">
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow className="border-b border-border-light dark:border-border-dark">
                   {['Название', 'Город', 'Статус', 'Контур', 'Кофейни', 'Действия'].map((label) => (
-                    <th scope="col" key={label} className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400">{label}</th>
+                    <TableHead scope="col" key={label} className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400">{label}</TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-light dark:divide-border-dark">
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border-light dark:divide-border-dark">
                 {zones.map((zone) => (
-                  <tr key={zone.id} className="table-row">
-                    <td className="px-4 py-3">
+                  <TableRow key={zone.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5">
+                    <TableCell className="px-4 py-3">
                       <Link to={`/coffee-zones/${zone.id}`} className="font-medium text-text-main hover:text-primary dark:text-white">{zone.name}</Link>
                       {zone.description && <p className="mt-0.5 max-w-xs truncate text-xs text-text-muted dark:text-stone-500">{zone.description}</p>}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-text-muted dark:text-stone-400">{cityNames.get(zone.cityId) ?? '—'}</td>
-                    <td className="px-4 py-3"><Badge variant={statusMeta[zone.status].variant}>{statusMeta[zone.status].label}</Badge></td>
-                    <td className="px-4 py-2 text-xs text-text-muted dark:text-stone-400"><PolygonThumbnail zone={zone} /></td>
-                    <td className="px-4 py-3 text-xs text-text-muted dark:text-stone-400">{zone.shopCount}</td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-4 py-3 text-xs text-text-muted dark:text-stone-400">{cityNames.get(zone.cityId) ?? '—'}</TableCell>
+                    <TableCell className="px-4 py-3"><Badge variant={statusMeta[zone.status].variant}>{statusMeta[zone.status].label}</Badge></TableCell>
+                    <TableCell className="px-4 py-2 text-xs text-text-muted dark:text-stone-400"><PolygonThumbnail zone={zone} /></TableCell>
+                    <TableCell className="px-4 py-3 text-xs text-text-muted dark:text-stone-400">{zone.shopCount}</TableCell>
+                    <TableCell className="px-4 py-3">
                       <div className="flex min-w-max flex-wrap gap-1">
                         <Link to={`/coffee-zones/${zone.id}`}><Button variant="ghost" size="sm">Изменить</Button></Link>
                         {zone.status !== 'Published' && <Button variant="ghost" size="sm" className="text-green-500" onClick={() => setPendingAction({ zone, status: 'Published' })}>Опубликовать</Button>}
                         {zone.status !== 'Draft' && <Button variant="ghost" size="sm" onClick={() => setPendingAction({ zone, status: 'Draft' })}>В черновик</Button>}
                         {zone.status !== 'Archived' && <Button variant="ghost" size="sm" className="text-red-400" onClick={() => setPendingAction({ zone, status: 'Archived', archive: true })}>Архивировать</Button>}
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </Card>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={Boolean(pendingAction)}
         title={pendingAction?.status === 'Archived' ? 'Архивировать зону?' : 'Изменить статус зоны?'}
         message={pendingAction ? `Зона «${pendingAction.zone.name}» получит статус «${statusMeta[pendingAction.status].label}».` : ''}

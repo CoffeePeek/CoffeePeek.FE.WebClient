@@ -1,10 +1,11 @@
+import { Input } from '@/src/components/ui/Input';
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCacheKeys, clearCacheByPattern, clearCacheByKey } from '../api/admin';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { getErrorMessage } from '../utils/errors';
 
 const DEFAULT_PATTERN = 'user:*';
@@ -59,25 +60,25 @@ export const CachePage: React.FC = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">Управление кешем</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Управление кешем</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           Просмотр и очистка Redis-кеша по паттерну
         </p>
       </div>
 
-      <form onSubmit={handleSearch} className="filter-bar">
+      <form onSubmit={handleSearch} className="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-3 shadow-sm dark:border-border-dark dark:bg-surface-dark sm:flex-row sm:flex-wrap sm:items-center">
         <div className="flex-1 min-w-0 w-full">
           <label className="block text-xs font-medium text-text-muted dark:text-stone-400 font-body mb-1.5">
             Redis pattern
           </label>
-          <input
+          <Input
             type="text"
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
             placeholder="user:*"
-            className="search-input w-full font-mono"
+            className="w-full sm:w-72 w-full font-mono"
           />
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:self-end">
@@ -97,7 +98,7 @@ export const CachePage: React.FC = () => {
         </div>
       </form>
 
-      <Card padding="none">
+      <Card className="p-6">
         {isLoading ? (
           <div className="p-6 space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -136,7 +137,7 @@ export const CachePage: React.FC = () => {
         )}
       </Card>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={confirmClearPattern}
         title="Очистить кеш по паттерну?"
         message={`Будут удалены все ключи, соответствующие «${activePattern}».`}
@@ -148,7 +149,7 @@ export const CachePage: React.FC = () => {
         onCancel={() => setConfirmClearPattern(false)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={!!keyToClear}
         title="Удалить ключ из кеша?"
         message={`Ключ: ${keyToClear ?? ''}`}

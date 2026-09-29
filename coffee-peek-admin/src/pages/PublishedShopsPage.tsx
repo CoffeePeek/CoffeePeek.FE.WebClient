@@ -1,3 +1,5 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { Input } from '@/src/components/ui/Input';
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -35,7 +37,7 @@ const SortHeader: React.FC<{
 }> = ({ sort, sortKey, sortDirection, onSort, children, className = '' }) => {
   const active = sortKey === sort;
   return (
-    <th
+    <TableHead
       scope="col"
       aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
       className={`px-4 py-3 text-left text-xs font-medium text-text-muted dark:text-stone-400 font-body ${className}`}
@@ -50,7 +52,7 @@ const SortHeader: React.FC<{
           {active ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
         </span>
       </button>
-    </th>
+    </TableHead>
   );
 };
 
@@ -131,55 +133,50 @@ export const PublishedShopsPage: React.FC = () => {
   const sortProps = { sortKey, sortDirection, onSort: toggleSort };
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">Все кофейни</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Все кофейни</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           Управление созданными и опубликованными кофейнями
           {sortKey === 'dataCompletenessScore' && ' · сортировка на странице'}
         </p>
       </div>
 
-      <div className="filter-bar">
-        <div className="filter-chips">
+      <div className="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-3 shadow-sm dark:border-border-dark dark:bg-surface-dark sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {STATUS_OPTIONS.map((opt) => (
-            <button
+            <Button
+              type="button"
+              size="sm"
               key={opt.value || 'all'}
               onClick={() => setParam('status', opt.value)}
-              className={`filter-chip ${
-                status === opt.value
-                  ? 'bg-primary text-black'
-                  : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
-              }`}
+              variant={status === opt.value ? 'primary' : 'secondary'}
             >
               {opt.label}
-            </button>
+            </Button>
           ))}
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={() => setParam('importedFromFile', importedFromFile ? '' : '1')}
-            className={`filter-chip ${
-              importedFromFile
-                ? 'bg-primary text-black'
-                : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
-            }`}
+            variant={importedFromFile ? 'primary' : 'secondary'}
           >
             Импорт из файла
-          </button>
+          </Button>
         </div>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             setParam('search', localSearch);
           }}
-          className="search-form"
+          className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row"
         >
-          <input
+          <Input
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Название..."
-            className="search-input"
+            className="w-full sm:w-72"
           />
           <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
             Найти
@@ -187,7 +184,7 @@ export const PublishedShopsPage: React.FC = () => {
         </form>
       </div>
 
-      <Card padding="none">
+      <Card className="p-6">
         {isLoading ? (
           <div className="p-6 space-y-3">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -200,42 +197,42 @@ export const PublishedShopsPage: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="table-scroll">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border-light dark:border-border-dark">
+            <div className="relative w-full overflow-auto">
+              <Table className="w-full text-sm">
+                <TableHeader>
+                  <TableRow className="border-b border-border-light dark:border-border-dark">
                     <SortHeader sort="name" className="pl-5" {...sortProps}>Название</SortHeader>
                     <SortHeader sort="coffeeFocus" {...sortProps}>Фокус</SortHeader>
                     <SortHeader sort="dataCompletenessScore" {...sortProps}>Заполненность</SortHeader>
                     <SortHeader sort="status" {...sortProps}>Статус</SortHeader>
                     <SortHeader sort="createdAtUtc" {...sortProps}>Создана</SortHeader>
-                    <th scope="col" className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-light dark:divide-border-dark">
+                    <TableHead scope="col" className="px-4 py-3" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border-light dark:divide-border-dark">
                   {sortedItems.map((shop) => (
-                    <tr key={shop.id} className="table-row">
-                      <td className="px-5 py-3 font-medium text-text-main dark:text-white font-body text-sm">
+                    <TableRow key={shop.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5">
+                      <TableCell className="px-5 py-3 font-medium text-text-main dark:text-white font-body text-sm">
                         <div className="flex flex-wrap items-center gap-2">
                           <span>{shop.name}</span>
                           {shop.isHidden && <Badge variant="rejected">Скрыта</Badge>}
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <FocusBadge focus={shop.coffeeFocus} />
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <Badge variant="info">{shop.dataCompletenessScore}%</Badge>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <Badge variant={coffeeShopStatusBadgeVariant(shop.status)}>
                           {COFFEE_SHOP_STATUS_LABELS[shop.status]}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 font-body">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 font-body">
                         {new Date(shop.createdAtUtc).toLocaleDateString('ru')}
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right">
                         <div className="inline-flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
@@ -256,11 +253,11 @@ export const PublishedShopsPage: React.FC = () => {
                             </Button>
                           </Link>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
             <div className="px-5 py-3 border-t border-border-light dark:border-border-dark">
               <Pagination

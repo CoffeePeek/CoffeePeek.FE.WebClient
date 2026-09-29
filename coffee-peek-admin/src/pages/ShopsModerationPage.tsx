@@ -1,3 +1,6 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { Input } from '@/src/components/ui/Input';
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -12,7 +15,7 @@ import { Badge, statusToBadgeVariant, statusLabels } from '../components/ui/Badg
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 15;
@@ -150,35 +153,35 @@ export const ShopsModerationPage: React.FC = () => {
   }, [data?.items, sortDir, sortKey]);
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">Заявки на добавление кофеен</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Заявки на добавление кофеен</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           {data ? `Кофейни, отправленные пользователями · Всего: ${data.totalCount}` : 'Загрузка...'}
           {data && sortKey && ' · сортировка на странице'}
         </p>
       </div>
 
-      <div className="filter-bar">
+      <div className="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-3 shadow-sm dark:border-border-dark dark:bg-surface-dark sm:flex-row sm:flex-wrap sm:items-center">
         <label className="flex items-center gap-2 text-sm text-text-muted dark:text-stone-400 font-body">
           <span className="shrink-0">Статус</span>
-          <select
+          <NativeSelect
             value={status}
             onChange={(event) => setParam('status', event.target.value)}
-            className="min-h-[40px] rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-[#1A1412] px-3 py-2 text-sm text-text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
-        <form onSubmit={handleSearch} className="search-form">
-          <input
+        <form onSubmit={handleSearch} className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row">
+          <Input
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Поиск по названию..."
-            className="search-input"
+            className="w-full sm:w-72"
           />
           <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
             Найти
@@ -193,7 +196,7 @@ export const ShopsModerationPage: React.FC = () => {
           ))}
         </div>
       ) : !data?.items.length ? (
-        <Card>
+        <Card className="p-6">
           <div className="p-12 text-center">
             <p className="text-text-muted dark:text-stone-400 text-sm font-body">Кофейни не найдены</p>
           </div>
@@ -202,7 +205,7 @@ export const ShopsModerationPage: React.FC = () => {
         <>
           <div className="space-y-3 lg:hidden">
             {items.map((shop) => (
-              <Card key={shop.id} padding="md">
+              <Card key={shop.id} className="p-6">
                 <div className="flex gap-3">
                   {shop.photos?.[0] ? (
                     <img
@@ -265,36 +268,36 @@ export const ShopsModerationPage: React.FC = () => {
             ))}
           </div>
 
-          <Card padding="none" className="hidden lg:block">
-            <div className="table-scroll">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border-light dark:border-border-dark">
-                    <th scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-16" />
-                    <th scope="col" className="text-left px-4 py-3">
+          <Card className="hidden lg:block">
+            <div className="relative w-full overflow-auto">
+              <Table className="w-full text-sm">
+                <TableHeader>
+                  <TableRow className="border-b border-border-light dark:border-border-dark">
+                    <TableHead scope="col" className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-16" />
+                    <TableHead scope="col" className="text-left px-4 py-3">
                       <SortButton label="Название" column="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th scope="col" className="text-left px-4 py-3">
+                    </TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3">
                       <SortButton label="Адрес" column="address" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th scope="col" className="text-left px-4 py-3">
+                    </TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3">
                       <SortButton label="Описание" column="description" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th scope="col" className="text-left px-4 py-3">
+                    </TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3">
                       <SortButton label="Заполненность" column="dataCompletenessScore" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th scope="col" className="text-left px-4 py-3">
+                    </TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3">
                       <SortButton label="Статус" column="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-[7.25rem]">
+                    </TableHead>
+                    <TableHead scope="col" className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body w-[7.25rem]">
                       Действия
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-light dark:divide-border-dark">
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border-light dark:divide-border-dark">
                   {items.map((shop) => (
-                    <tr key={shop.id} className="table-row align-top">
-                      <td className="px-5 py-3">
+                    <TableRow key={shop.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5 align-top">
+                      <TableCell className="px-5 py-3">
                         {shop.photos?.[0] ? (
                           <img
                             src={shop.photos[0].fullUrl}
@@ -304,8 +307,8 @@ export const ShopsModerationPage: React.FC = () => {
                         ) : (
                           <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-white/5 border border-border-light dark:border-border-dark" />
                         )}
-                      </td>
-                      <td className="px-4 py-3 max-w-[200px]">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 max-w-[200px]">
                         <Link
                           to={`/shops/${shop.id}`}
                           className="font-medium text-text-main dark:text-white hover:text-primary transition-colors font-body"
@@ -315,25 +318,25 @@ export const ShopsModerationPage: React.FC = () => {
                         <p className="text-xs text-text-muted dark:text-stone-500 font-body mt-1">
                           {shop.photos?.length ? `${shop.photos.length} фото` : 'Без фото'}
                         </p>
-                      </td>
-                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 max-w-[220px] font-body">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 max-w-[220px] font-body">
                         <span className="line-clamp-3">{shop.address}</span>
-                      </td>
-                      <td className="px-4 py-3 text-text-muted dark:text-stone-400 max-w-[260px] font-body">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-text-muted dark:text-stone-400 max-w-[260px] font-body">
                         <span className="line-clamp-3">{shop.description || '—'}</span>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <Badge variant="info">{shop.dataCompletenessScore}%</Badge>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <Badge variant={statusToBadgeVariant(shop.status)}>
                           {statusLabels[shop.status]}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-3 align-top">
-                        <div className="table-actions">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 align-top">
+                        <div className="ml-auto flex w-[7.25rem] shrink-0 flex-col gap-1.5">
                           <Link to={`/shops/${shop.id}`} className="block">
-                            <Button variant="primary" size="sm" className="action-btn">
+                            <Button variant="primary" size="sm" className="w-full whitespace-nowrap">
                               Открыть
                             </Button>
                           </Link>
@@ -342,7 +345,7 @@ export const ShopsModerationPage: React.FC = () => {
                               <Button
                                 variant="success"
                                 size="sm"
-                                className="action-btn"
+                                className="w-full whitespace-nowrap"
                                 onClick={() => setPendingAction({ id: shop.id, type: 'approve' })}
                               >
                                 Одобрить
@@ -350,7 +353,7 @@ export const ShopsModerationPage: React.FC = () => {
                               <Button
                                 variant="danger"
                                 size="sm"
-                                className="action-btn"
+                                className="w-full whitespace-nowrap"
                                 onClick={() => setPendingAction({ id: shop.id, type: 'reject' })}
                               >
                                 Отклонить
@@ -358,11 +361,11 @@ export const ShopsModerationPage: React.FC = () => {
                             </>
                           )}
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </Card>
 
@@ -374,7 +377,7 @@ export const ShopsModerationPage: React.FC = () => {
         </>
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction?.type === 'approve'}
         title="Одобрить кофейню?"
         message="Кофейня станет видна пользователям."
@@ -389,7 +392,7 @@ export const ShopsModerationPage: React.FC = () => {
         onCancel={() => setPendingAction(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction?.type === 'reject'}
         title="Отклонить кофейню?"
         message="Укажите причину отклонения."

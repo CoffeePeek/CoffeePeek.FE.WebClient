@@ -1,3 +1,5 @@
+import { Input } from '@/src/components/ui/Input';
+import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
@@ -136,7 +138,7 @@ export const ShopChangeRequestsPage: React.FC = () => {
         </p>
       </div>
 
-      <Card padding="sm">
+      <Card className="p-4">
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -148,7 +150,7 @@ export const ShopChangeRequestsPage: React.FC = () => {
           }}
           className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"
         >
-          <select
+          <NativeSelect
             value={status}
             onChange={(e) => update({ status: e.target.value, page: '1' })}
             className="rounded-lg border border-border-light bg-white px-3 py-2 dark:border-border-dark dark:bg-surface-dark"
@@ -157,8 +159,8 @@ export const ShopChangeRequestsPage: React.FC = () => {
             <option value="Pending">На модерации</option>
             <option value="Approved">Одобрено</option>
             <option value="Rejected">Отклонено</option>
-          </select>
-          <select
+          </NativeSelect>
+          <NativeSelect
             value={section}
             onChange={(e) => update({ section: e.target.value, page: '1' })}
             className="rounded-lg border border-border-light bg-white px-3 py-2 dark:border-border-dark dark:bg-surface-dark"
@@ -169,14 +171,14 @@ export const ShopChangeRequestsPage: React.FC = () => {
                 {label}
               </option>
             ))}
-          </select>
-          <input
+          </NativeSelect>
+          <Input
             value={shopIdDraft}
             onChange={(e) => setShopIdDraft(e.target.value)}
             placeholder="ID кофейни"
             className="rounded-lg border border-border-light bg-white px-3 py-2 dark:border-border-dark dark:bg-surface-dark"
           />
-          <input
+          <Input
             value={userIdDraft}
             onChange={(e) => setUserIdDraft(e.target.value)}
             placeholder="ID пользователя"
@@ -201,7 +203,7 @@ export const ShopChangeRequestsPage: React.FC = () => {
                 to={`/shop-change-requests/${request.id}`}
                 className="block"
               >
-                <Card padding="sm" className="transition-colors hover:border-primary/50">
+                <Card className="p-4 transition-colors hover:border-primary/50">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-semibold text-text-main dark:text-white">
@@ -236,7 +238,7 @@ export const ShopChangeRequestsPage: React.FC = () => {
           })}
         </div>
       ) : (
-        <Card>
+        <Card className="p-6">
           <p className="text-text-muted dark:text-stone-400">Заявок не найдено.</p>
         </Card>
       )}

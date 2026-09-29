@@ -6,7 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import { Badge, statusToBadgeVariant, statusLabels } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PhotoGallery } from '../components/moderation/PhotoGallery';
 import { getErrorMessage } from '../utils/errors';
 
@@ -48,7 +48,7 @@ export const RoasterModerationDetailPage: React.FC = () => {
 
   if (isLoading || !roaster) {
     return (
-      <div className="page-container">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
         <div className="h-8 w-48 bg-gray-100 dark:bg-white/5 rounded animate-pulse" />
         <div className="h-64 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse" />
       </div>
@@ -56,7 +56,7 @@ export const RoasterModerationDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="page-container pb-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 pb-8">
       <div className="flex items-start gap-3">
         <Button
           variant="ghost"
@@ -68,7 +68,7 @@ export const RoasterModerationDetailPage: React.FC = () => {
         </Button>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="page-header-title text-xl sm:text-2xl">{roaster.name}</h2>
+            <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white text-xl sm:text-2xl">{roaster.name}</h2>
             <Badge variant={statusToBadgeVariant(roaster.status)}>{statusLabels[roaster.status]}</Badge>
           </div>
         </div>
@@ -90,7 +90,7 @@ export const RoasterModerationDetailPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] gap-5 items-start">
-        <Card>
+        <Card className="p-6">
           <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">Фотографии</h3>
           <PhotoGallery
             photos={roaster.photos.map((photo) => ({
@@ -101,7 +101,7 @@ export const RoasterModerationDetailPage: React.FC = () => {
           />
         </Card>
 
-        <Card>
+        <Card className="p-6">
           <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-4">
             Данные от пользователя
           </h3>
@@ -132,7 +132,7 @@ export const RoasterModerationDetailPage: React.FC = () => {
         </Card>
       </div>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction === 'approve'}
         title="Одобрить обжарщика?"
         message="Обжарщик станет виден пользователям в каталоге."
@@ -146,7 +146,7 @@ export const RoasterModerationDetailPage: React.FC = () => {
         onCancel={() => setPendingAction(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction === 'reject'}
         title="Отклонить обжарщика?"
         message="Укажите причину отклонения."

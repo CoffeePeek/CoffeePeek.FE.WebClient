@@ -17,7 +17,7 @@ export const OwnerShopsPage: React.FC = () => {
   });
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
         <h2 className="text-lg font-bold text-text-main dark:text-white font-display">
           Мои кофейни
@@ -27,7 +27,7 @@ export const OwnerShopsPage: React.FC = () => {
         </p>
       </div>
 
-      <Card padding="none">
+      <Card className="p-6">
         {isLoading ? (
           <div className="p-6 space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (

@@ -18,7 +18,7 @@ interface QuickActionProps {
 }
 
 const QuickAction = ({ to, label, description, icon: Icon }: QuickActionProps) => (
-  <Card padding="none" className="transition-colors hover:border-primary/50">
+  <Card className="transition-colors hover:border-primary/50">
     <Link to={to} className="group flex items-center gap-4 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-dark dark:text-primary">
         <Icon className="h-5 w-5" />
@@ -66,12 +66,12 @@ export const DashboardPage = () => {
       {isAdmin && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {isLoading ? Array.from({ length: 4 }, (_, index) => <StatSkeleton key={index} />) : stats.map(({ label, value, hint, icon: Icon }) => (
-            <Card key={label} padding="none">
+            <Card key={label} className="p-6">
               <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-medium text-text-muted dark:text-stone-400">{label}</CardTitle>
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary-dark dark:text-primary"><Icon className="h-4 w-4" /></span>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 <p className="font-display text-3xl font-bold tabular-nums">{value}</p>
                 <CardDescription className="mt-1 text-xs">{hint}</CardDescription>
               </CardContent>

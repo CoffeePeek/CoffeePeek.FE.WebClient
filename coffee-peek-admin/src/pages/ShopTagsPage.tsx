@@ -1,3 +1,6 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { Input } from '@/src/components/ui/Input';
+import { Textarea } from '@/src/components/ui/Textarea';
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -13,7 +16,8 @@ import { useToast } from '../contexts/ToastContext';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/Dialog';
 
 const emptyCreate: CreateShopTagRequest = {
   slug: '',
@@ -60,49 +64,48 @@ const EditTagModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 border border-border-light dark:border-border-dark max-h-[90dvh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-        <h3 className="text-base font-semibold text-text-main dark:text-white font-display mb-1">
-          Редактировать тег
-        </h3>
-        <p className="text-xs text-text-muted dark:text-stone-400 font-mono mb-4">{tag.slug}</p>
+    <Dialog open={Boolean(tag)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Редактировать тег</DialogTitle>
+          <DialogDescription className="font-mono">{tag.slug}</DialogDescription>
+        </DialogHeader>
 
         <div className="space-y-3 mb-5">
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
               Название
             </label>
-            <input
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body min-h-[44px] sm:min-h-0"
+
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
               Описание
             </label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body resize-none"
+              className="resize-none"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
               Порядок
             </label>
-            <input
+            <Input
               type="number"
               value={sortOrder}
               onChange={(e) => setSortOrder(Number(e.target.value))}
-              className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body min-h-[44px] sm:min-h-0"
+
             />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input
+            <Input
               type="checkbox"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
@@ -112,16 +115,16 @@ const EditTagModal: React.FC<{
           </label>
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sm:justify-end">
+        <DialogFooter>
           <Button variant="ghost" size="sm" onClick={onClose} disabled={loading} className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
             Отмена
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave} loading={loading} className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
             Сохранить
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -187,15 +190,15 @@ export const ShopTagsPage: React.FC = () => {
   const sortedTags = [...(tags ?? [])].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">Теги кофеен</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Теги кофеен</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           Справочник тегов для фильтрации и карточек кофеен
         </p>
       </div>
 
-      <Card>
+      <Card className="p-6">
         <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-3">
           Создать тег
         </h3>
@@ -204,43 +207,43 @@ export const ShopTagsPage: React.FC = () => {
             <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
               Slug
             </label>
-            <input
+            <Input
               value={createForm.slug}
               onChange={(e) => setCreateForm((f) => ({ ...f, slug: e.target.value }))}
               placeholder="wifi"
-              className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-mono min-h-[44px] sm:min-h-0"
+              className="font-mono"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
               Название
             </label>
-            <input
+            <Input
               value={createForm.name}
               onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="Wi‑Fi"
-              className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body min-h-[44px] sm:min-h-0"
+
             />
           </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
               Описание
             </label>
-            <input
+            <Input
               value={createForm.description ?? ''}
               onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
-              className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body min-h-[44px] sm:min-h-0"
+
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
               Порядок
             </label>
-            <input
+            <Input
               type="number"
               value={createForm.sortOrder}
               onChange={(e) => setCreateForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))}
-              className="w-full border border-border-light dark:border-border-dark rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-dark text-text-main dark:text-white font-body min-h-[44px] sm:min-h-0"
+
             />
           </div>
           <div className="flex items-end">
@@ -256,7 +259,7 @@ export const ShopTagsPage: React.FC = () => {
         </form>
       </Card>
 
-      <Card padding="none">
+      <Card className="p-6">
         {isLoading ? (
           <div className="p-6 space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -268,45 +271,45 @@ export const ShopTagsPage: React.FC = () => {
             <p className="text-text-muted dark:text-stone-400 text-sm font-body">Теги ещё не созданы</p>
           </div>
         ) : (
-          <div className="table-scroll">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-light dark:border-border-dark">
-                  <th className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
+          <div className="relative w-full overflow-auto">
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow className="border-b border-border-light dark:border-border-dark">
+                  <TableHead className="text-left px-5 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
                     Название
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
+                  </TableHead>
+                  <TableHead className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
                     Slug
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden sm:table-cell">
+                  </TableHead>
+                  <TableHead className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body hidden sm:table-cell">
                     Порядок
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
+                  </TableHead>
+                  <TableHead className="text-left px-4 py-3 text-xs font-medium text-text-muted dark:text-stone-400 font-body">
                     Статус
-                  </th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-light dark:divide-border-dark">
+                  </TableHead>
+                  <TableHead className="px-4 py-3" />
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border-light dark:divide-border-dark">
                 {sortedTags.map((tag) => (
-                  <tr key={tag.id} className="table-row">
-                    <td className="px-5 py-3">
+                  <TableRow key={tag.id} className="border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5">
+                    <TableCell className="px-5 py-3">
                       <p className="font-medium text-text-main dark:text-white font-body text-xs">{tag.name}</p>
                       {tag.description && (
                         <p className="text-stone-400 text-xs font-body mt-0.5 line-clamp-1">{tag.description}</p>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-xs font-mono text-text-muted dark:text-stone-400">{tag.slug}</td>
-                    <td className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 font-body hidden sm:table-cell">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-mono text-text-muted dark:text-stone-400">{tag.slug}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs text-text-muted dark:text-stone-400 font-body hidden sm:table-cell">
                       {tag.sortOrder}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
                       <Badge variant={tag.isActive ? 'approved' : 'rejected'}>
                         {tag.isActive ? 'Активен' : 'Неактивен'}
                       </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="action-buttons min-w-[100px]">
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2 min-w-[100px]">
                         <Button variant="ghost" size="sm" onClick={() => setEditingTag(tag)}>
                           Изменить
                         </Button>
@@ -321,11 +324,11 @@ export const ShopTagsPage: React.FC = () => {
                           </Button>
                         )}
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </Card>
@@ -338,7 +341,7 @@ export const ShopTagsPage: React.FC = () => {
         onClose={() => setEditingTag(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={!!deactivatingId}
         title="Деактивировать тег?"
         message="Тег станет неактивным и перестанет отображаться в публичном каталоге. Назначенные связи могут остаться."

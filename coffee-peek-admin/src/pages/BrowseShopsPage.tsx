@@ -1,3 +1,4 @@
+import { Input } from '@/src/components/ui/Input';
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -29,9 +30,9 @@ export const BrowseShopsPage: React.FC = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">Кофейни</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Кофейни</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           Каталог опубликованных кофеен — только просмотр
         </p>
@@ -42,14 +43,14 @@ export const BrowseShopsPage: React.FC = () => {
           e.preventDefault();
           setParam('search', localSearch);
         }}
-        className="search-form"
+        className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row"
       >
-        <input
+        <Input
           type="text"
           value={localSearch}
           onChange={(e) => setLocalSearch(e.target.value)}
           placeholder="Поиск по названию..."
-          className="search-input"
+          className="w-full sm:w-72"
         />
         <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
           Найти

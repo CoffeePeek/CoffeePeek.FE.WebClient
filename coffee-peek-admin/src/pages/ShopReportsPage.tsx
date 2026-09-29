@@ -13,7 +13,7 @@ import { Badge, BadgeVariant } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 20;
@@ -149,33 +149,31 @@ export const ShopReportsPage: React.FC = () => {
   }, [data, page, searchParams, setSearchParams]);
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">Жалобы на данные кофеен</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Жалобы на данные кофеен</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           {data ? `Сообщения пользователей о неточных сведениях · Всего: ${data.totalItems}` : 'Загрузка...'}
         </p>
       </div>
 
-      <div className="filter-bar">
-        <div className="filter-chips">
+      <div className="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-3 shadow-sm dark:border-border-dark dark:bg-surface-dark sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {STATUS_OPTIONS.map((opt) => (
-            <button
+            <Button
+              type="button"
+              size="sm"
               key={opt.value}
               onClick={() => setParam('status', opt.value)}
-              className={`filter-chip ${
-                status === opt.value
-                  ? 'bg-primary text-black'
-                  : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
-              }`}
+              variant={status === opt.value ? 'primary' : 'secondary'}
             >
               {opt.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
-      <Card padding="none">
+      <Card className="p-6">
         {isLoading ? (
           <div className="p-6 space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -206,7 +204,7 @@ export const ShopReportsPage: React.FC = () => {
         )}
       </Card>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={!!pendingAction}
         title={pendingAction ? ACTION_LABELS[pendingAction.status] : ''}
         message="Изменить статус этой жалобы?"

@@ -1,3 +1,4 @@
+import { Input } from '@/src/components/ui/Input';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../ui/Button';
 import { BynSign } from '../ui/CoffeeBeanSign';
@@ -282,7 +283,7 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
           void handleFiles(pasted);
         }}
       >
-        <input
+        <Input
           ref={fileRef}
           type="file"
           accept="image/*"
@@ -309,7 +310,7 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
         <div className="rounded-[10px] border border-border-light dark:border-border-dark px-3 py-2 space-y-2">
           <p className="text-sm">{hint}</p>
           <label className="flex items-center gap-2 text-xs text-text-muted">
-            <input
+            <Input
               type="checkbox"
               checked={applyRange}
               onChange={(e) => setApplyRange(e.target.checked)}
@@ -352,7 +353,7 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
                               : 'border-transparent opacity-0 pointer-events-none'
                           }`}
                         >
-                          <input
+                          <Input
                             type="text"
                             inputMode="decimal"
                             placeholder="0"

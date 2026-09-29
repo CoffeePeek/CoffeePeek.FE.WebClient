@@ -1,3 +1,4 @@
+import { Input } from '@/src/components/ui/Input';
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -90,7 +91,7 @@ export const LoginPage: React.FC = () => {
               <label className="block text-stone-300 text-xs font-medium mb-1.5 font-body">
                 Email
               </label>
-              <input
+              <Input
                 {...register('email')}
                 type="email"
                 autoComplete="email"
@@ -107,7 +108,7 @@ export const LoginPage: React.FC = () => {
                 Пароль
               </label>
               <div className="relative">
-                <input
+                <Input
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"

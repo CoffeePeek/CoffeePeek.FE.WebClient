@@ -8,7 +8,7 @@ import { Badge, statusToBadgeVariant, statusLabels } from '../components/ui/Badg
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 15;
@@ -66,28 +66,26 @@ export const RoastersModerationPage: React.FC = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">Заявки на добавление обжарщиков</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Заявки на добавление обжарщиков</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
           {data ? `Обжарщики, отправленные пользователями · Всего: ${data.totalCount}` : 'Загрузка...'}
         </p>
       </div>
 
-      <div className="filter-bar">
-        <div className="filter-chips">
+      <div className="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-3 shadow-sm dark:border-border-dark dark:bg-surface-dark sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {STATUS_OPTIONS.map((opt) => (
-            <button
+            <Button
+              type="button"
+              size="sm"
               key={opt.value}
               onClick={() => setParam('status', opt.value)}
-              className={`filter-chip ${
-                status === opt.value
-                  ? 'bg-primary text-black'
-                  : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
-              }`}
+              variant={status === opt.value ? 'primary' : 'secondary'}
             >
               {opt.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -99,7 +97,7 @@ export const RoastersModerationPage: React.FC = () => {
           ))}
         </div>
       ) : !data?.items.length ? (
-        <Card>
+        <Card className="p-6">
           <div className="p-12 text-center">
             <p className="text-text-muted dark:text-stone-400 text-sm font-body">Обжарщики не найдены</p>
           </div>
@@ -108,7 +106,7 @@ export const RoastersModerationPage: React.FC = () => {
         <>
           <div className="space-y-3">
             {data.items.map((roaster) => (
-              <Card key={roaster.id} padding="md">
+              <Card key={roaster.id} className="p-6">
                 <div className="flex gap-3">
                   {roaster.photos[0] ? (
                     <img
@@ -173,7 +171,7 @@ export const RoastersModerationPage: React.FC = () => {
         </>
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction?.type === 'approve'}
         title="Одобрить обжарщика?"
         message="Обжарщик станет виден пользователям в каталоге."
@@ -187,7 +185,7 @@ export const RoastersModerationPage: React.FC = () => {
         onCancel={() => setPendingAction(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction?.type === 'reject'}
         title="Отклонить обжарщика?"
         message="Укажите причину отклонения."

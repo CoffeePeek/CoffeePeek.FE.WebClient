@@ -96,7 +96,7 @@ const SuggestionCard: React.FC<{
   busy: boolean;
   onDecide: (id: string, accept: boolean) => void;
 }> = ({ item, busy, onDecide }) => (
-  <Card>
+  <Card className="p-6">
     <div className="flex flex-wrap items-center gap-2 mb-3">
       <span className="text-sm font-semibold text-text-main dark:text-white font-display">
         Score {Math.round(item.score)}
@@ -185,10 +185,10 @@ export const ImportDuplicatesPage: React.FC = () => {
   }, [data, page]);
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <ImportTabs />
       <div>
-        <h2 className="page-header-title">Похожие места</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Похожие места</h2>
         <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
           Пары для ручного подтверждения. Автомердж по OSM / Instagram / телефону уже прошёл на
           бэке.
@@ -208,7 +208,7 @@ export const ImportDuplicatesPage: React.FC = () => {
           ))}
         </div>
       ) : !items.length ? (
-        <Card>
+        <Card className="p-6">
           <p className="text-sm text-text-muted dark:text-stone-400 text-center py-8">
             Похожих пар нет. После загрузки JSON нажмите «Найти похожие».
           </p>

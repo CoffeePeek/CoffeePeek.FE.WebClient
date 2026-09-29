@@ -16,6 +16,7 @@ import {
 import { getUserPublicProfile } from '../../api/users';
 import { Card } from '../ui/Card';
 import { DataTable } from '../ui/DataTable';
+import { Button } from '../ui/Button';
 
 const QUEUE_LABELS: Record<AdminModerationQueueName, string> = {
   shops: 'Кофейни',
@@ -226,7 +227,7 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
   return (
     <div className="space-y-4">
       {/* Users */}
-      <Card>
+      <Card className="p-6">
         <SectionTitle
           right={
             <span className="text-xs text-text-muted dark:text-stone-400">
@@ -305,24 +306,21 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
       </Card>
 
       {/* Timeseries */}
-      <Card>
+      <Card className="p-6">
         <SectionTitle
           right={
             <div className="flex gap-1" role="group" aria-label="Период">
               {DAY_OPTIONS.map((d) => (
-                <button
+                <Button
                   key={d}
                   type="button"
+                  size="sm"
                   onClick={() => setDays(d)}
                   aria-pressed={days === d}
-                  className={`px-2 py-0.5 text-xs rounded-md border ${
-                    days === d
-                      ? 'border-primary text-primary'
-                      : 'border-border-light dark:border-border-dark text-text-muted dark:text-stone-400'
-                  }`}
+                  variant={days === d ? 'primary' : 'secondary'}
                 >
                   {d} дн
-                </button>
+                </Button>
               ))}
             </div>
           }
@@ -344,7 +342,7 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
       </Card>
 
       {/* Shops insights */}
-      <Card>
+      <Card className="p-6">
         <SectionTitle>Кофейни и отзывы</SectionTitle>
         {!overview.shopsAvailable || shops.isError ? (
           <Unavailable />
@@ -399,7 +397,7 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
       </Card>
 
       {/* Moderation insights */}
-      <Card>
+      <Card className="p-6">
         <SectionTitle>Модерация</SectionTitle>
         {!overview.moderationAvailable || moderation.isError ? (
           <Unavailable />

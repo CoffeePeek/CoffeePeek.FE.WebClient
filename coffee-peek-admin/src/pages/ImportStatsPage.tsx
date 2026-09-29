@@ -1,3 +1,4 @@
+import { Input } from '@/src/components/ui/Input';
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,7 +11,8 @@ import {
 } from '../api/import';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from '../components/ui/Button';
-import { Card, StatCard } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
+import { MetricCard } from '../components/dashboard/MetricCard';
 import { ImportTabs } from '../components/import/catalogControls';
 import { BUCKET_LABELS, COFFEE_FOCUS_LABELS } from '../constants/catalogIngest';
 
@@ -109,13 +111,13 @@ export const ImportStatsPage: React.FC<{ embedded?: boolean }> = ({ embedded }) 
       className={
         embedded
           ? 'h-full overflow-y-auto p-4 sm:p-6 space-y-4'
-          : 'page-container'
+          : 'mx-auto w-full max-w-[1600px] space-y-6'
       }
     >
       {!embedded && <ImportTabs />}
       {!embedded && (
         <div>
-          <h2 className="page-header-title">Статистика каталога</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Статистика каталога</h2>
           <p className="text-sm text-text-muted dark:text-stone-400 mt-0.5">
             В ленте = только Published. Заявки владельцев сюда не входят.
           </p>
@@ -140,28 +142,26 @@ export const ImportStatsPage: React.FC<{ embedded?: boolean }> = ({ embedded }) 
       ) : data ? (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <StatCard label="Ожидает" value={data.pending} icon={<span />} color="text-yellow-400" />
-            <StatCard label="Позже" value={data.skipped} icon={<span />} />
-            <StatCard
+            <MetricCard label="Ожидает" value={data.pending} color="text-yellow-400" />
+            <MetricCard label="Позже" value={data.skipped} />
+            <MetricCard
               label="В ленте"
               value={data.published}
-              icon={<span />}
               color="text-green-400"
               subtitle={Object.entries(data.publishedByFocus)
                 .map(([key, count]) => `${COFFEE_FOCUS_LABELS[key as keyof typeof COFFEE_FOCUS_LABELS]} ${count}`)
                 .join(' · ')}
             />
-            <StatCard label="Не в ленту" value={data.rejected} icon={<span />} color="text-red-400" />
-            <StatCard
+            <MetricCard label="Не в ленту" value={data.rejected} color="text-red-400" />
+            <MetricCard
               label="Похожие"
               value={data.pendingDuplicates}
-              icon={<span />}
               color="text-primary"
               subtitle="на подтверждение"
               onClick={() => navigate('/import/duplicates')}
             />
           </div>
-          <Card>
+          <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white mb-3">Корзины коллектора</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
               {(Object.keys(BUCKET_LABELS) as Array<keyof typeof BUCKET_LABELS>).map((key) => (
@@ -175,7 +175,7 @@ export const ImportStatsPage: React.FC<{ embedded?: boolean }> = ({ embedded }) 
         </>
       ) : null}
 
-      <Card>
+      <Card className="p-6">
         <h3 className="text-sm font-semibold text-text-main dark:text-white mb-2">Первый деплой</h3>
         <p className="text-xs text-text-muted dark:text-stone-500 mb-1">
           Снимок OSM и JSON решений из spike. Не вызывает Overpass/Google с браузера.
@@ -192,7 +192,7 @@ export const ImportStatsPage: React.FC<{ embedded?: boolean }> = ({ embedded }) 
           >
             Обновить OSM (Минск)
           </Button>
-          <input
+          <Input
             ref={placesFileRef}
             type="file"
             accept=".json,application/json"
@@ -212,7 +212,7 @@ export const ImportStatsPage: React.FC<{ embedded?: boolean }> = ({ embedded }) 
           >
             Найти похожие
           </Button>
-          <input
+          <Input
             ref={fileRef}
             type="file"
             accept="application/json"

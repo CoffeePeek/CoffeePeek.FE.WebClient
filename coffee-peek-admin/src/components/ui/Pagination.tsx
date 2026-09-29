@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './Button';
 
 interface PaginationProps {
@@ -26,7 +27,7 @@ export const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPage
         onClick={() => onPageChange(page - 1)}
         aria-label="Предыдущая страница"
       >
-        ←
+        <ChevronLeft className="h-4 w-4" />
       </Button>
 
       <span className="sm:hidden px-2 text-xs text-text-muted dark:text-stone-400 font-body tabular-nums">
@@ -54,7 +55,7 @@ export const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPage
         onClick={() => onPageChange(page + 1)}
         aria-label="Следующая страница"
       >
-        →
+        <ChevronRight className="h-4 w-4" />
       </Button>
     </nav>
   );

@@ -1,29 +1,30 @@
 import React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { ModerationStatus } from '../../api/admin';
+import { cn } from '../../lib/utils';
 
 export type BadgeVariant = 'pending' | 'approved' | 'rejected' | 'info' | 'default';
 
-interface BadgeProps {
-  variant?: BadgeVariant;
-  children: React.ReactNode;
-  className?: string;
-}
+const badgeVariants = cva('inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold transition-colors', {
+  variants: {
+    variant: {
+      pending: 'border-amber-300/40 bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
+      approved: 'border-emerald-300/40 bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
+      rejected: 'border-red-300/40 bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300',
+      info: 'border-blue-300/40 bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-300',
+      default: 'border-border-light bg-stone-100 text-stone-700 dark:border-border-dark dark:bg-white/10 dark:text-stone-300',
+    },
+  },
+  defaultVariants: { variant: 'default' },
+});
 
-const variantClasses: Record<BadgeVariant, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300',
-  approved: 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300',
-  rejected: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300',
-  info: 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300',
-  default: 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-stone-300',
-};
+interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {}
 
-export const Badge: React.FC<BadgeProps> = ({ variant = 'default', children, className = '' }) => (
-  <span
-    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-body ${variantClasses[variant]} ${className}`}
-  >
-    {children}
-  </span>
+export const Badge = ({ variant, className, ...props }: BadgeProps) => (
+  <span className={cn(badgeVariants({ variant }), className)} {...props} />
 );
+
+export { badgeVariants };
 
 export function statusToBadgeVariant(status: ModerationStatus): BadgeVariant {
   switch (status) {

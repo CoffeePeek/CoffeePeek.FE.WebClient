@@ -1,3 +1,5 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/Table';
+import { Input } from '@/src/components/ui/Input';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -10,7 +12,7 @@ import {
 } from '../api/appDistribution';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
 
 const distributionKeys = {
@@ -68,7 +70,7 @@ const Toggle: React.FC<{
   label: string;
 }> = ({ checked, onChange, label }) => (
   <label className="inline-flex items-center gap-2 text-sm font-body text-text-main dark:text-white">
-    <input
+    <Input
       type="checkbox"
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
@@ -102,12 +104,12 @@ const StoreSettingsCard: React.FC<{
       <p className="mt-1 text-xs text-text-muted dark:text-stone-400">URL и доступность канала</p>
     </div>
     <Field label="Ссылка магазина">
-      <input
+      <Input
         type="url"
         value={form.url}
         onChange={(e) => onFormChange({ ...form, url: e.target.value })}
         placeholder="https://..."
-        className="search-input w-full"
+        className="w-full sm:w-72 w-full"
       />
     </Field>
     <Toggle
@@ -202,9 +204,9 @@ export const AppDistributionPage: React.FC = () => {
   const isApkAvailable = Boolean(production?.available || production?.url || activeRelease);
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">Приложения</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Приложения</h2>
         <p className="mt-0.5 text-sm text-text-muted dark:text-stone-400 font-body">
           Каналы скачивания и production APK для CoffeePeek
         </p>
@@ -222,7 +224,7 @@ export const AppDistributionPage: React.FC = () => {
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card>
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-wide text-text-muted dark:text-stone-400">Production APK</p>
           <p className="mt-2 text-2xl font-bold text-text-main dark:text-white font-display">
             {productionVersion ?? '—'}
@@ -231,7 +233,7 @@ export const AppDistributionPage: React.FC = () => {
             APK {isApkAvailable ? 'включён' : 'выключен'}
           </p>
         </Card>
-        <Card>
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-wide text-text-muted dark:text-stone-400">Google Play</p>
           <p className="mt-2 text-lg font-bold text-text-main dark:text-white font-display">
             {configQuery.data?.android.googlePlay.available ? 'Включён' : 'Выключен'}
@@ -240,7 +242,7 @@ export const AppDistributionPage: React.FC = () => {
             {configQuery.data?.android.googlePlay.url ?? 'URL не задан'}
           </p>
         </Card>
-        <Card>
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-wide text-text-muted dark:text-stone-400">App Store</p>
           <p className="mt-2 text-lg font-bold text-text-main dark:text-white font-display">
             {configQuery.data?.ios.appStore.available ? 'Включён' : 'Выключен'}
@@ -268,52 +270,52 @@ export const AppDistributionPage: React.FC = () => {
         />
       </div>
 
-      <Card padding="none">
+      <Card className="p-6">
         <div className="border-b border-border-light p-4 dark:border-border-dark">
           <h3 className="font-display text-base font-semibold text-text-main dark:text-white">Android-релизы</h3>
         </div>
-        <div className="table-scroll">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-gray-50 text-xs uppercase text-text-muted dark:bg-white/5 dark:text-stone-400">
-              <tr>
-                <th scope="col" className="px-4 py-3">Версия</th>
-                <th scope="col" className="px-4 py-3">Код</th>
-                <th scope="col" className="px-4 py-3">Файл</th>
-                <th scope="col" className="px-4 py-3">Размер</th>
-                <th scope="col" className="px-4 py-3">Дата релиза</th>
-                <th scope="col" className="px-4 py-3">Статус</th>
-                <th scope="col" className="px-4 py-3 text-right">Действие</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-light dark:divide-border-dark">
+        <div className="relative w-full overflow-auto">
+          <Table className="w-full min-w-[760px] text-left text-sm">
+            <TableHeader className="bg-gray-50 text-xs uppercase text-text-muted dark:bg-white/5 dark:text-stone-400">
+              <TableRow>
+                <TableHead scope="col" className="px-4 py-3">Версия</TableHead>
+                <TableHead scope="col" className="px-4 py-3">Код</TableHead>
+                <TableHead scope="col" className="px-4 py-3">Файл</TableHead>
+                <TableHead scope="col" className="px-4 py-3">Размер</TableHead>
+                <TableHead scope="col" className="px-4 py-3">Дата релиза</TableHead>
+                <TableHead scope="col" className="px-4 py-3">Статус</TableHead>
+                <TableHead scope="col" className="px-4 py-3 text-right">Действие</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border-light dark:divide-border-dark">
               {releasesQuery.isLoading ? (
-                <tr>
-                  <td className="px-4 py-8 text-center text-text-muted dark:text-stone-400" colSpan={7}>
+                <TableRow>
+                  <TableCell className="px-4 py-8 text-center text-text-muted dark:text-stone-400" colSpan={7}>
                     Загрузка...
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : releases.length === 0 ? (
-                <tr>
-                  <td className="px-4 py-8 text-center text-text-muted dark:text-stone-400" colSpan={7}>
+                <TableRow>
+                  <TableCell className="px-4 py-8 text-center text-text-muted dark:text-stone-400" colSpan={7}>
                     Релизов пока нет
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : releases.map((release) => (
-                <tr
+                <TableRow
                   key={release.id}
-                  className={release.isActive ? 'bg-primary/10' : 'table-row'}
+                  className={release.isActive ? 'bg-primary/10' : 'border-b border-border-light transition-colors hover:bg-stone-50 dark:border-border-dark dark:hover:bg-white/5'}
                 >
-                  <td className="px-4 py-3 font-semibold text-text-main dark:text-white">{release.version}</td>
-                  <td className="px-4 py-3 text-text-muted dark:text-stone-300">{release.versionCode}</td>
-                  <td className="px-4 py-3 text-text-muted dark:text-stone-300">{release.fileName}</td>
-                  <td className="px-4 py-3 text-text-muted dark:text-stone-300">{formatBytes(release.fileSize)}</td>
-                  <td className="px-4 py-3 text-text-muted dark:text-stone-300">{formatDate(release.releasedAt)}</td>
-                  <td className="px-4 py-3">
+                  <TableCell className="px-4 py-3 font-semibold text-text-main dark:text-white">{release.version}</TableCell>
+                  <TableCell className="px-4 py-3 text-text-muted dark:text-stone-300">{release.versionCode}</TableCell>
+                  <TableCell className="px-4 py-3 text-text-muted dark:text-stone-300">{release.fileName}</TableCell>
+                  <TableCell className="px-4 py-3 text-text-muted dark:text-stone-300">{formatBytes(release.fileSize)}</TableCell>
+                  <TableCell className="px-4 py-3 text-text-muted dark:text-stone-300">{formatDate(release.releasedAt)}</TableCell>
+                  <TableCell className="px-4 py-3">
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${release.isActive ? 'bg-primary text-black' : 'bg-gray-100 text-text-muted dark:bg-white/10 dark:text-stone-300'}`}>
                       {release.isActive ? 'Production' : 'Не активен'}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right">
                     <Button
                       type="button"
                       variant={release.isActive ? 'ghost' : 'secondary'}
@@ -323,15 +325,15 @@ export const AppDistributionPage: React.FC = () => {
                     >
                       Сделать production
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </Card>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={!!releaseToPublish}
         title="Сделать релиз production?"
         message={releaseToPublish ? `Будет опубликована версия ${releaseToPublish.version}. Для старых версий это выполнит откат.` : ''}

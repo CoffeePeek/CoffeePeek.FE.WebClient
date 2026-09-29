@@ -1,3 +1,4 @@
+import { Input } from '@/src/components/ui/Input';
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { Badge, statusToBadgeVariant, statusLabels } from '../components/ui/Badg
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { getErrorMessage } from '../utils/errors';
 
 const PAGE_SIZE = 15;
@@ -156,9 +157,9 @@ export const ReviewsModerationPage: React.FC = () => {
   }, [data, page, searchParams, setSearchParams]);
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div>
-        <h2 className="page-header-title">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">
           Отзывы на проверке
         </h2>
         <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
@@ -166,32 +167,30 @@ export const ReviewsModerationPage: React.FC = () => {
         </p>
       </div>
 
-      <div className="filter-bar">
-        <div className="filter-chips">
+      <div className="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-3 shadow-sm dark:border-border-dark dark:bg-surface-dark sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {STATUS_OPTIONS.map((opt) => (
-            <button
+            <Button
+              type="button"
+              size="sm"
               key={opt.value}
               onClick={() => setParam('status', opt.value)}
-              className={`filter-chip ${
-                status === opt.value
-                  ? 'bg-primary text-black'
-                  : 'bg-gray-100 dark:bg-white/10 text-text-muted dark:text-stone-400 hover:bg-gray-200 dark:hover:bg-white/15'
-              }`}
+              variant={status === opt.value ? 'primary' : 'secondary'}
             >
               {opt.label}
-            </button>
+            </Button>
           ))}
         </div>
         <form
           onSubmit={(e) => { e.preventDefault(); setParam('search', localSearch); }}
-          className="search-form"
+          className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row"
         >
-          <input
+          <Input
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Поиск по тексту..."
-            className="search-input"
+            className="w-full sm:w-72"
           />
           <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto min-h-[44px] sm:min-h-0">
             Найти
@@ -199,7 +198,7 @@ export const ReviewsModerationPage: React.FC = () => {
         </form>
       </div>
 
-      <Card padding="none">
+      <Card className="p-6">
         {isLoading ? (
           <div className="p-6 space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -231,7 +230,7 @@ export const ReviewsModerationPage: React.FC = () => {
         )}
       </Card>
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction?.type === 'approve'}
         title="Одобрить отзыв?"
         message="Отзыв будет опубликован и виден всем пользователям."
@@ -245,7 +244,7 @@ export const ReviewsModerationPage: React.FC = () => {
         onCancel={() => setPendingAction(null)}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={pendingAction?.type === 'reject'}
         title="Отклонить отзыв?"
         message="Укажите причину отклонения."

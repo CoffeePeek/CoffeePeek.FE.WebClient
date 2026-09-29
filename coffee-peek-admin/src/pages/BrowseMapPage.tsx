@@ -131,10 +131,10 @@ export const BrowseMapPage: React.FC = () => {
   }, [shops, selectedShop?.id]);
 
   return (
-    <div className="page-container">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
-          <h2 className="page-header-title">Карта кофеен</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">Карта кофеен</h2>
           <p className="text-sm text-text-muted dark:text-stone-400 font-body mt-0.5">
             Просмотр кофеен на карте — без редактирования
           </p>
