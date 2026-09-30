@@ -1,3 +1,4 @@
+import PublicAddressPage from '../components/PublicAddressPage';
 import React, { Suspense, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
@@ -80,6 +81,14 @@ export const AppRoutes: React.FC = () => {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/download" element={<DownloadPage />} />
 
+        <Route path="/coffee-shops/:shopId" element={<AuthenticatedLayout><PublicAddressPage kind="shops" param="shopId"><CoffeeShopDetailPage /></PublicAddressPage></AuthenticatedLayout>} />
+        <Route path="/cities/:slug" element={<AuthenticatedLayout><PublicAddressPage kind="cities" param="slug" /></AuthenticatedLayout>} />
+        <Route path="/coffee-zones/:slug" element={<AuthenticatedLayout><PublicAddressPage kind="zones" param="slug" /></AuthenticatedLayout>} />
+        <Route path="/coffee-shops/:shopId/reviews/new" element={<ProtectedRoute><AuthenticatedLayout><PublicAddressPage kind="shops" param="shopId"><CreateReviewPage /></PublicAddressPage></AuthenticatedLayout></ProtectedRoute>} />
+        <Route path="/coffee-shops/:shopId/reviews/:reviewId/edit" element={<ProtectedRoute><AuthenticatedLayout><PublicAddressPage kind="shops" param="shopId"><CreateReviewPage /></PublicAddressPage></AuthenticatedLayout></ProtectedRoute>} />
+        <Route path="/coffee-shops/:shopId/edit" element={<ProtectedRoute><AuthenticatedLayout><PublicAddressPage kind="shops" param="shopId"><EditCoffeeShopPage /></PublicAddressPage></AuthenticatedLayout></ProtectedRoute>} />
+        <Route path="/coffee-shops/:shopId/checkin" element={<ProtectedRoute><AuthenticatedLayout><PublicAddressPage kind="shops" param="shopId"><CreateCheckInPage /></PublicAddressPage></AuthenticatedLayout></ProtectedRoute>} />
+        <Route path="/coffee-shops/:shopId/reviews/edit" element={<ProtectedRoute><AuthenticatedLayout><PublicAddressPage kind="shops" param="shopId"><CreateReviewPage /></PublicAddressPage></AuthenticatedLayout></ProtectedRoute>} />
         {/* Protected routes */}
         <Route
           path="/dashboard"
@@ -103,7 +112,7 @@ export const AppRoutes: React.FC = () => {
           path="/shops/:shopId"
           element={
             <AuthenticatedLayout>
-              <CoffeeShopDetailPage />
+              <PublicAddressPage kind="shops" param="shopId"><CoffeeShopDetailPage /></PublicAddressPage>
             </AuthenticatedLayout>
           }
         />
@@ -113,7 +122,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <AuthenticatedLayout>
-                <CreateReviewPage />
+                <PublicAddressPage kind="shops" param="shopId"><CreateReviewPage /></PublicAddressPage>
               </AuthenticatedLayout>
             </ProtectedRoute>
           }
@@ -124,7 +133,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <AuthenticatedLayout>
-                <EditCoffeeShopPage />
+                <PublicAddressPage kind="shops" param="shopId"><EditCoffeeShopPage /></PublicAddressPage>
               </AuthenticatedLayout>
             </ProtectedRoute>
           }
@@ -146,7 +155,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <AuthenticatedLayout>
-                <CreateReviewPage />
+                <PublicAddressPage kind="shops" param="shopId"><CreateReviewPage /></PublicAddressPage>
               </AuthenticatedLayout>
             </ProtectedRoute>
           }
@@ -165,11 +174,9 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="/users/:userId"
           element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <UserProfilePage />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
+            <AuthenticatedLayout>
+              <PublicAddressPage kind="users" param="userId"><UserProfilePage /></PublicAddressPage>
+            </AuthenticatedLayout>
           }
         />
 
@@ -199,7 +206,7 @@ export const AppRoutes: React.FC = () => {
           path="/roasters/:roasterId"
           element={
             <AuthenticatedLayout>
-              <RoasterDetailPage />
+              <PublicAddressPage kind="roasters" param="roasterId"><RoasterDetailPage /></PublicAddressPage>
             </AuthenticatedLayout>
           }
         />
@@ -209,7 +216,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <AuthenticatedLayout>
-                <CreateCheckInPage />
+                <PublicAddressPage kind="shops" param="shopId"><CreateCheckInPage /></PublicAddressPage>
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

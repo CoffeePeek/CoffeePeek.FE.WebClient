@@ -1,3 +1,5 @@
+import { queryClient } from '../lib/queryClient';
+import { getPublicAddress } from './publicAddresses';
 /**
  * API модуль для аутентификации и профиля пользователя
  */
@@ -295,9 +297,16 @@ export async function updatePhoneNumber(
 export async function updateUsername(
   data: UpdateUsernameRequest
 ): Promise<ApiResponse<string>> {
-  return httpClient.patch<string>(API_ENDPOINTS.USER.UPDATE_USERNAME, data, {
+  const response = await httpClient.patch<string>(API_ENDPOINTS.USER.UPDATE_USERNAME, data, {
     requiresAuth: true,
   });
+  if (response.success) {
+    queryClient.removeQueries({ queryKey: ['publicAddress', 'users'] });
+    const profile = await getProfile().catch(() => null);
+    const id = profile?.data?.id || profile?.data?.userCredentialId;
+    if (id) await getPublicAddress('users', id).catch(() => undefined);
+  }
+  return response;
 }
 
 /**

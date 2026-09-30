@@ -1,3 +1,4 @@
+import { getPublicAddress } from '../../api/publicAddresses';
 import React from 'react';
 import { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { COLORS } from '../../constants/colors';
@@ -67,7 +68,10 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({
   const openNow = isShopOpenNow(shop);
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/shops/${shop.id}`;
+    let path: string;
+    try { path = (await getPublicAddress('shops', shop.id)).canonicalPath; }
+    catch { showToast('Адрес временно недоступен. Попробуйте ещё раз.', 'error'); return; }
+    const url = `https://coffeepeek.by${path}`;
     const text = `Нашёл отличную кофейню «${shop.name}» на CoffeePeek — загляни:\n${url}`;
 
     const copied = await copyText(text);

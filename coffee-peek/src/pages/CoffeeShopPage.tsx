@@ -1,5 +1,9 @@
+import { getPublicAddress } from '../api/publicAddresses';
+import PublicEntityLink from '../components/PublicEntityLink';
+import { usePublicNavigate } from '../hooks/usePublicNavigate';
+import { usePublicResolution } from '../components/PublicAddressPage';
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { CheckInDto, DetailedCoffeeShop } from '../api/coffeeshop';
 import { getPhotoUrl } from '../api/coffeeshop';
 import CheckInModal from '../components/CheckInModal';
@@ -32,6 +36,8 @@ import {
   NavigationArrow, NotePencil, ShareNetwork, Star,
 } from '@/components/Icon';
 
+const EMPTY_REVIEWS: NonNullable<DetailedCoffeeShop['reviews']> = [];
+
 type DetailColors = {
   bg: string;
   surface: string;
@@ -48,14 +54,18 @@ function formatCheckInDate(value?: string): string {
 }
 
 const CoffeeShopPage: React.FC = () => {
-  const { shopId } = useParams<{ shopId: string }>();
+  const { shopId: routeId } = useParams<{ shopId: string }>();
+  const resolution = usePublicResolution();
+  const shopId = resolution?.id ?? routeId;
   const navigate = useNavigate();
+  const openPublic = usePublicNavigate();
   const { theme } = useTheme();
   const { user, requireAuth } = useRequireAuth();
   const { showToast } = useToast();
-  const { shop, isLoading, error, reloadShop } = useShopData(shopId ?? '');
+  const legacyShop = useShopData(resolution ? null : shopId ?? '');
+  const { shop, isLoading, error, reloadShop } = resolution ? { shop: resolution.data as DetailedCoffeeShop, isLoading: false, error: null, reloadShop: resolution.reload } : legacyShop;
   const { myReviewId } = useMyReview(shop);
-  const reviews = shop?.reviews ?? [];
+  const reviews = shop?.reviews ?? EMPTY_REVIEWS;
   const usersCache = useUsersCache(reviews);
   const { isFavorite, toggleFavorite } = useLocalFavorites();
   const [showCheckInModal, setShowCheckInModal] = useState(false);
@@ -143,8 +153,8 @@ const CoffeeShopPage: React.FC = () => {
 
   const handleReview = () => {
     if (!requireAuth()) return;
-    const route = myReviewId ? `/shops/${shopId}/reviews/${myReviewId}/edit` : `/shops/${shopId}/reviews/new`;
-    navigate(route, { state: { shop: shopBasicInfo } });
+    const suffix = myReviewId ? '/reviews/edit' : '/reviews/new';
+    openPublic('shops', shopId!, suffix, { state: { shop: shopBasicInfo, reviewId: myReviewId } });
   };
 
   const handleCheckIn = () => {
@@ -154,12 +164,13 @@ const CoffeeShopPage: React.FC = () => {
 
   const handleEditShop = () => {
     if (!requireAuth()) return;
-    navigate(`/shops/${shopId}/edit`);
+    openPublic('shops', shopId!, '/edit');
   };
 
   const handleShare = async () => {
-    const data = { title: shop.name, text: `Кофейня «${shop.name}» в CoffeePeek`, url: window.location.href };
     try {
+      const address = await getPublicAddress('shops', shop.id);
+      const data = { title: shop.name, text: `Кофейня «${shop.name}» в CoffeePeek`, url: `https://coffeepeek.by${address.canonicalPath}` };
       if (navigator.share) await navigator.share(data);
       else {
         await navigator.clipboard.writeText(data.url);
@@ -212,15 +223,15 @@ const CoffeeShopPage: React.FC = () => {
         <ShopMenuSection menu={shop.menu ?? null} textMain={textMain} textMuted={textMuted} cardBg={cardBg} borderColor={borderColor} />
         {!!shop.schedules?.length && <HoursCard shop={shop} schedules={localSchedules} colors={colors} />}
 
-        {!!shop.roasters?.length && <section><SectionTitle colors={colors}>Обжарщики</SectionTitle><div className="overflow-hidden rounded-[24px] border" style={{ background: colors.surface, borderColor: colors.border }}>{shop.roasters.map((roaster, index) => <Link key={roaster.id} to={`/roasters/${roaster.id}`} className="flex min-h-[72px] items-center gap-4 px-5 py-3" style={{ borderTop: index ? `1px solid ${colors.border}` : undefined, color: colors.text }}>{roaster.photoUrl ? <img src={roaster.photoUrl} alt="" className="h-12 w-12 rounded-full object-cover" /> : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-100 font-bold text-stone-700">{roaster.name[0]}</span>}<span className="flex-1 font-semibold">{roaster.name}</span><AppIcon name="chevron_right" size={20} color={colors.muted} /></Link>)}</div></section>}
+        {!!shop.roasters?.length && <section><SectionTitle colors={colors}>Обжарщики</SectionTitle><div className="overflow-hidden rounded-[24px] border" style={{ background: colors.surface, borderColor: colors.border }}>{shop.roasters.map((roaster, index) => <PublicEntityLink key={roaster.id} kind="roasters" entityId={roaster.id} className="flex min-h-[72px] items-center gap-4 px-5 py-3" style={{ borderTop: index ? `1px solid ${colors.border}` : undefined, color: colors.text }}>{roaster.photoUrl ? <img src={roaster.photoUrl} alt="" className="h-12 w-12 rounded-full object-cover" /> : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-100 font-bold text-stone-700">{roaster.name[0]}</span>}<span className="flex-1 font-semibold">{roaster.name}</span><AppIcon name="chevron_right" size={20} color={colors.muted} /></PublicEntityLink>)}</div></section>}
 
         {!!shop.brewMethods?.length && <section><SectionTitle colors={colors}>Методы заваривания</SectionTitle><div className="flex flex-wrap gap-2 rounded-[24px] border p-5" style={{ background: colors.surface, borderColor: colors.border }}>{shop.brewMethods.map(method => <span key={method.id} className="rounded-full px-3 py-2 text-sm font-semibold" style={{ background: isDark ? '#3A321F' : '#FBF4DF', color: '#B38B32' }}>{method.name}</span>)}</div></section>}
 
         {(shop.equipments?.length || shop.beans?.length) ? <section><SectionTitle colors={colors}>Кофе и оборудование</SectionTitle><div className="grid gap-4 rounded-[24px] border p-5 sm:grid-cols-2" style={{ background: colors.surface, borderColor: colors.border }}>{!!shop.equipments?.length && <div><h3 className="mb-2 font-bold" style={{ color: colors.text }}>Оборудование</h3><p className="text-sm leading-relaxed" style={{ color: colors.muted }}>{shop.equipments.map(item => item.name).join(', ')}</p></div>}{!!shop.beans?.length && <div><h3 className="mb-2 font-bold" style={{ color: colors.text }}>Зёрна</h3><p className="text-sm leading-relaxed" style={{ color: colors.muted }}>{shop.beans.map(item => item.name).join(', ')}</p></div>}</div></section> : null}
 
         <ContactButtons shop={shop} cardBg={cardBg} borderColor={borderColor} textMain={textMain} textMuted={textMuted} />
-        {user && <CheckInsList checkIns={shop.userCheckIns ?? []} colors={colors} onEdit={reviewId => navigate(`/shops/${shopId}/reviews/${reviewId}/edit`, { state: { shop: shopBasicInfo } })} />}
-        <ReviewsSection reviews={reviews} usersCache={usersCache} isLoading={false} myReviewId={myReviewId} isCheckingMyReview={false} onWriteOrEditReview={handleReview} onUserSelect={userId => navigate(`/users/${userId}`)} user={user} textMain={textMain} textMuted={textMuted} cardBg={cardBg} borderColor={borderColor} coffeeShopName={shop.name} />
+        {user && <CheckInsList checkIns={shop.userCheckIns ?? []} colors={colors} onEdit={reviewId => openPublic('shops', shopId!, '/reviews/edit', { state: { shop: shopBasicInfo, reviewId } })} />}
+        <ReviewsSection reviews={reviews} usersCache={usersCache} isLoading={false} myReviewId={myReviewId} isCheckingMyReview={false} onWriteOrEditReview={handleReview} onUserSelect={userId => { const path = usersCache.get(userId)?.canonicalPath; if (path) navigate(path); else void openPublic('users', userId); }} user={user} textMain={textMain} textMuted={textMuted} cardBg={cardBg} borderColor={borderColor} coffeeShopName={shop.name} />
         {!user && <GuestAuthCard {...colors} />}
       </main>
 

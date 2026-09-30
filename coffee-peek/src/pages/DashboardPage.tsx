@@ -1,3 +1,4 @@
+import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
@@ -14,6 +15,7 @@ const DashboardPage: React.FC = () => {
   const { user, isLoading } = useUser();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const openPublic = usePublicNavigate();
   const location = useLocation();
   
   const page = searchParams.get('page') || 'coffeeshops';
@@ -33,7 +35,7 @@ const DashboardPage: React.FC = () => {
   usePageTitle(pageTitles[page] || 'Панель управления');
 
   const handleShopSelect = (shopId: string) => {
-    navigate(`/shops/${shopId}`);
+    openPublic('shops', shopId);
   };
 
   if (page === 'settings' && (isLoading || !user)) {

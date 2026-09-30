@@ -1,13 +1,19 @@
 import { getMyContributions } from '../src/api/myContributions';
 import { httpClient } from '../src/api/core/httpClient';
 
-jest.mock('../src/api/core/httpClient', () => ({ httpClient: { get: jest.fn() } }));
+jest.mock('../src/api/core/httpClient', () => ({ httpClient: { get: jest.fn(), getRaw: jest.fn() } }));
 
 const get = httpClient.get as jest.Mock;
+const shopId = '11111111-1111-1111-1111-111111111111';
+const liveId = '22222222-2222-2222-2222-222222222222';
+const getRaw = httpClient.getRaw as jest.Mock;
 const paging = { totalItems: 1, totalPages: 1, currentPage: 1, pageSize: 20 };
 const query = { page: 1, pageSize: 20, status: 'Rejected' as const };
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  getRaw.mockImplementation(async (path: string) => new URL(path, 'https://example.com').searchParams.getAll('ids').map(entityId => ({ entityId, canonicalPath: entityId === liveId ? '/coffee-shops/live' : '/coffee-shops/shop' })));
+});
 
 test('each /mine endpoint maps its own list key and status/reason fields', async () => {
   get.mockResolvedValueOnce({ data: { ...paging, moderationShops: [{ id: 's', name: 'Shop', address: 'Street 1', moderationStatus: 'Approved', rejectedReason: null, publishedShopId: null }] } });
@@ -17,15 +23,21 @@ test('each /mine endpoint maps its own list key and status/reason fields', async
   get.mockResolvedValueOnce({ data: { ...paging, items: [{ id: 'r', name: 'Roaster', about: null, moderationStatus: 'Pending', rejectedReason: null }] } });
   expect((await getMyContributions('roasters', query)).items[0]).toMatchObject({ title: 'Roaster', status: 'Pending' });
 
-  get.mockResolvedValueOnce({ data: { ...paging, reviewDtos: [{ id: 'v', header: null, comment: 'Nice', shopId: 'shop', createdAt: '2026-09-01T00:00:00Z', moderationStatus: 'Rejected', rejectedReason: 'Spam', rating: { place: 3, service: 4, coffee: 5 } }] } });
-  expect((await getMyContributions('reviews', query)).items[0]).toMatchObject({ status: 'Rejected', reason: 'Spam', link: '/shops/shop' });
+  get.mockResolvedValueOnce({ data: { ...paging, reviewDtos: [{ id: 'v', header: null, comment: 'Nice', shopId, createdAt: '2026-09-01T00:00:00Z', moderationStatus: 'Rejected', rejectedReason: 'Spam', rating: { place: 3, service: 4, coffee: 5 } }] } });
+  expect((await getMyContributions('reviews', query)).items[0]).toMatchObject({ status: 'Rejected', reason: 'Spam', link: '/coffee-shops/shop' });
 
-  get.mockResolvedValueOnce({ data: { ...paging, items: [{ id: 'e', shopId: 'shop', section: 'Menu', status: 'Rejected', rejectionReason: 'Wrong', createdAtUtc: '2026-09-01T00:00:00Z' }] } });
-  expect((await getMyContributions('edits', query)).items[0]).toMatchObject({ title: 'Меню', status: 'Rejected', reason: 'Wrong', link: '/shops/shop' });
+  get.mockResolvedValueOnce({ data: { ...paging, items: [{ id: 'e', shopId, section: 'Menu', status: 'Rejected', rejectionReason: 'Wrong', createdAtUtc: '2026-09-01T00:00:00Z' }] } });
+  expect((await getMyContributions('edits', query)).items[0]).toMatchObject({ title: 'Меню', status: 'Rejected', reason: 'Wrong', link: '/coffee-shops/shop' });
   expect(get).toHaveBeenLastCalledWith('/api/ShopChangeRequests/mine', { params: query });
 });
 
 test('published shop links to the live catalog id', async () => {
-  get.mockResolvedValueOnce({ data: { ...paging, moderationShops: [{ id: 's', name: 'Shop', address: null, moderationStatus: 'Approved', rejectedReason: null, publishedShopId: 'live' }] } });
-  expect((await getMyContributions('shops', query)).items[0].link).toBe('/shops/live');
+  get.mockResolvedValueOnce({ data: { ...paging, moderationShops: [{ id: 's', name: 'Shop', address: null, moderationStatus: 'Approved', rejectedReason: null, publishedShopId: liveId }] } });
+  expect((await getMyContributions('shops', query)).items[0].link).toBe('/coffee-shops/live');
+});
+
+test('metadata outage never exposes a GUID link', async () => {
+  get.mockResolvedValueOnce({ data: { ...paging, moderationShops: [{ id: 's', name: 'Shop', moderationStatus: 'Approved', publishedShopId: liveId }] } });
+  getRaw.mockRejectedValueOnce(new Error('unavailable'));
+  expect((await getMyContributions('shops', query)).items[0].link).toBeUndefined();
 });

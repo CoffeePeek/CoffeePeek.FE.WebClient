@@ -1,6 +1,6 @@
 const SITE_URL = 'https://coffeepeek.by';
 const DEFAULT_API_URL = 'https://api.coffeepeek.by';
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const escapeHtml = (value = '') => String(value)
   .replaceAll('&', '&amp;')
@@ -16,15 +16,15 @@ function apiUrl(path) {
   return `${stripTrailingSlash(configured)}${path}`;
 }
 
-async function fetchJson(path) {
+async function fetchJson(path, direct = false) {
   try {
     const response = await fetch(apiUrl(path), {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json' }, cache: 'no-store',
       signal: AbortSignal.timeout(8000),
     });
-    if (!response.ok) return { ok: false, status: response.status, body: null };
+    if (!response.ok) return { ok: false, status: response.status, body: null, retryAfter: response.headers.get('Retry-After') };
     const body = await response.json();
-    return { ok: body?.isSuccess !== false, status: response.status, body };
+    return { ok: direct || body?.isSuccess === true, status: response.status, body };
   } catch {
     return { ok: false, status: 503, body: null };
   }
@@ -90,7 +90,7 @@ function renderShopCards(shops) {
     const photo = shop.photos?.[0]?.urls?.card || shop.photos?.[0]?.fullUrl;
     return `<li style="border:1px solid #3D2F28;border-radius:16px;overflow:hidden;background:#2D241F">
       ${photo ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(shop.name)}" width="640" height="360" style="display:block;width:100%;height:180px;object-fit:cover">` : ''}
-      <div style="padding:18px"><h2 style="font-size:20px;margin:0 0 8px"><a href="/shops/${escapeHtml(shop.id)}" style="color:#fff">${escapeHtml(shop.name)}</a></h2>
+      <div style="padding:18px"><h2 style="font-size:20px;margin:0 0 8px">${shop.canonicalPath ? `<a href="${escapeHtml(shop.canonicalPath)}" style="color:#fff">${escapeHtml(shop.name)}</a>` : escapeHtml(shop.name)}</h2>
       <p style="color:#A39E93;margin:0 0 8px">${escapeHtml(address)}</p>
       <p style="margin:0">${shop.reviewCount ? `${escapeHtml(shop.rating)} ★ · ${escapeHtml(shop.reviewCount)} отзывов` : 'Пока без отзывов'}</p></div>
     </li>`;
@@ -150,6 +150,13 @@ export async function renderPublicPage(request) {
       return { html, status: 503 };
     }
     const shops = result.body?.data?.coffeeShops || [];
+    if (shops.length) {
+      const ids = new URLSearchParams();
+      shops.forEach(shop => ids.append('ids', shop.id));
+      const batch = await fetchJson(`/api/CoffeeShops/public-addresses?${ids}`, true);
+      const addresses = new Map((Array.isArray(batch.body) ? batch.body : []).map(address => [address.entityId, address.canonicalPath]));
+      shops.forEach(shop => { shop.canonicalPath = addresses.get(shop.id); });
+    }
     const title = 'Кофейни Беларуси — CoffeePeek';
     const description = `Каталог кофеен CoffeePeek: ${shops.length} заведений с адресами, рейтингами, меню и фотографиями.`;
     const structuredData = {
@@ -158,7 +165,7 @@ export async function renderPublicPage(request) {
       itemListElement: shops.map((shop, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `${SITE_URL}/shops/${shop.id}`,
+        url: shop.canonicalPath ? `${SITE_URL}${shop.canonicalPath}` : undefined,
         name: shop.name,
       })),
     };
@@ -167,6 +174,41 @@ export async function renderPublicPage(request) {
       html,
       `${pageLayout('Кофейни', 'Каталог кофеен с адресами, рейтингами и меню.', renderShopCards(shops))}${jsonLd(structuredData)}`,
     );
+    return { html, status: 200 };
+  }
+
+  const prefixes = { shops: '/api/CoffeeShops', roasters: '/api/roasters', users: '/api/Users', cities: '/api/Catalogs/cities', zones: '/api/Catalogs/coffee-zones' };
+  if (page === 'address') {
+    const kind = url.searchParams.get('kind');
+    const segment = url.searchParams.get('segment') || '';
+    if (!prefixes[kind]) return { html: '', status: 400 };
+    const legacy = UUID_PATTERN.test(segment);
+    const prefix = prefixes[kind];
+    let result = await fetchJson(`${prefix}/${legacy ? `${encodeURIComponent(segment)}/public-address` : `by-slug/${encodeURIComponent(segment)}`}`, true);
+    const address = legacy ? result.body : result.body?.address;
+    const path = url.searchParams.get('path') || '';
+    if (result.ok && address?.canonicalPath && (legacy || address.isAlias || path !== address.canonicalPath)) {
+      return { html: '', status: 301, location: address.canonicalPath };
+    }
+    let data = result.body?.data;
+    if (legacy && !address?.canonicalPath) {
+      if (kind === 'shops' || kind === 'roasters' || kind === 'users') {
+        result = await fetchJson(`${prefix}/${segment}`);
+        data = result.body?.data;
+      } else if (kind === 'cities') {
+        result = await fetchJson(prefix);
+        data = result.body?.data?.cities?.find(city => city.id === segment);
+      }
+    }
+    if (!result.ok || !data) {
+      const status = result.ok ? 404 : result.status;
+      const content = status === 404 ? pageLayout('Не найдено', 'Страница недоступна по этому адресу.', '') : renderUnavailable();
+      return { html: injectContent(replaceMeta(shell, { title: 'CoffeePeek', description: 'Публичная страница CoffeePeek', canonical: `${SITE_URL}${path}` }), content), status, retryAfter: result.retryAfter };
+    }
+    const entity = kind === 'shops' ? data.shopDto : data;
+    const title = entity?.name || entity?.userName || 'CoffeePeek';
+    const description = entity?.description || entity?.about || title;
+    const html = injectContent(replaceMeta(shell, { title: `${title} — CoffeePeek`, description, canonical: `${SITE_URL}${address?.canonicalPath || path}` }), kind === 'shops' ? renderShopDetails(entity) : pageLayout(title, description, kind === 'users' ? `<p>Отзывов: ${escapeHtml(entity.reviewCount)}</p><p>Чекинов: ${escapeHtml(entity.checkInCount)}</p>` : ''));
     return { html, status: 200 };
   }
 
@@ -182,13 +224,16 @@ export async function renderPublicPage(request) {
   ]);
   const shop = result.body?.data?.shopDto;
   if (!result.ok || !shop) {
-    if (!result.body && result.status >= 500) {
+    if (!result.body && (result.status >= 500 || result.status === 429)) {
       const html = injectContent(replaceMeta(shell, { title: 'CoffeePeek временно недоступен', description: 'Данные кофейни временно недоступны.', canonical: `${SITE_URL}/shops/${shopId}` }), renderUnavailable());
-      return { html, status: 503 };
+      return { html, status: result.status === 429 ? 429 : 503, retryAfter: result.retryAfter };
     }
     const html = injectContent(replaceMeta(shell, { title: 'Кофейня не найдена — CoffeePeek', description: 'Запрошенная кофейня не найдена.', canonical: `${SITE_URL}/shops/${shopId}` }), renderNotFound());
     return { html, status: 404 };
   }
+
+  const metadata = await fetchJson(`/api/CoffeeShops/${shopId}/public-address`, true);
+  if (metadata.ok && metadata.body?.canonicalPath) return { html: '', status: 301, location: metadata.body.canonicalPath };
 
   const address = shop.location?.address || 'Беларусь';
   const city = citiesResult.body?.data?.cities?.find((item) => item.id === shop.cityId)?.name;
@@ -204,12 +249,14 @@ export async function renderPublicPage(request) {
 export default {
   async fetch(request) {
     try {
-      const { html, status } = await renderPublicPage(request);
+      const { html, status, location, retryAfter } = await renderPublicPage(request);
       return new Response(html, {
         status,
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': status === 200 ? 'public, s-maxage=300, stale-while-revalidate=3600' : 'public, s-maxage=60',
+          'Cache-Control': 'no-store',
+          ...(location ? { Location: location } : {}),
+          ...(retryAfter ? { 'Retry-After': retryAfter } : {}),
           'X-Content-Type-Options': 'nosniff',
         },
       });

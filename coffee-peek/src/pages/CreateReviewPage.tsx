@@ -1,3 +1,5 @@
+import { usePublicResolution } from '../components/PublicAddressPage';
+import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import WobbleRing from '../components/WobbleRing';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -23,9 +25,12 @@ interface ShopBasicInfo {
 }
 
 const CreateReviewPage: React.FC = () => {
-  const { shopId, reviewId } = useParams<{ shopId: string; reviewId?: string }>();
+  const { shopId: routeId, reviewId: routeReviewId } = useParams<{ shopId: string; reviewId?: string }>();
+  const shopId = usePublicResolution()?.id ?? routeId;
   const navigate = useNavigate();
+  const openPublic = usePublicNavigate();
   const location = useLocation();
+  const reviewId = routeReviewId || (location.state as { reviewId?: string } | null)?.reviewId;
   
   if (!shopId) {
     navigate('/shops');
@@ -46,7 +51,7 @@ const CreateReviewPage: React.FC = () => {
   // Если данных нет в state (прямой переход по URL), редиректим на страницу кофейни
   useEffect(() => {
     if (!shopFromState && !isEditMode) {
-      navigate(`/shops/${shopId}`);
+      openPublic('shops', shopId);
     }
   }, [shopFromState, isEditMode, shopId, navigate]);
 
@@ -265,7 +270,7 @@ const CreateReviewPage: React.FC = () => {
         void queryClient.invalidateQueries({ queryKey: reviewKeys.all });
         void queryClient.invalidateQueries({ queryKey: coffeeShopKeys.all });
         showToast(reviewId ? 'Отзыв успешно обновлён!' : 'Отзыв успешно опубликован!', 'success');
-        navigate(`/shops/${shopId}`);
+        openPublic('shops', shopId);
       } else {
         showToast(response.message || (reviewId ? 'Не удалось обновить отзыв' : 'Не удалось опубликовать отзыв'), 'error');
       }
@@ -313,7 +318,7 @@ const CreateReviewPage: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={() => navigate(`/shops/${shopId}`)}
+            onClick={() => openPublic('shops', shopId)}
             className="flex items-center gap-2 font-semibold hover:opacity-70 transition-opacity"
             style={{ color: colors.textMuted }}
           >

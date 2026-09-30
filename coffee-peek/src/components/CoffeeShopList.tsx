@@ -1,3 +1,4 @@
+import { getBySlug, getPublicAddresses } from '../api/publicAddresses';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, getShopTags, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto, getPhotoUrl } from '../api/coffeeshop';
 import { ShopCardSkeleton } from './skeletons';
@@ -13,7 +14,7 @@ import ShopFilterPanel from './ShopFilterPanel';
 import Mascot from './Mascot';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { useLocalCity } from '../hooks/useLocalCity';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { distanceKm } from '../utils/distance';
 import { getLocationLifetime } from '../utils/geolocation';
 
@@ -86,6 +87,7 @@ interface CoffeeShopListProps {
 
 const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { theme } = useTheme();
   const { user, requireAuth } = useRequireAuth();
   const colors = getThemeColors(theme);
@@ -107,12 +109,24 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const [filters, setFilters] = useState<CoffeeShopFilters>({});
+  const [addressPaths, setAddressPaths] = useState<Map<string, string>>(new Map());
+  const [filterResolutionError, setFilterResolutionError] = useState('');
+  const [resolvingFilter, setResolvingFilter] = useState(() => !!(searchParams.get('citySlug') || searchParams.get('roasterSlug')));
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [activeQuick, setActiveQuick] = useState<string[]>(() => searchParams.get('filter') === 'favorite' ? ['favorite'] : ['all']);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const locationExpiryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setAddressPaths(new Map());
+    void getPublicAddresses('shops', shops.map(shop => shop.id)).then(addresses => {
+      if (!cancelled) setAddressPaths(new Map([...addresses].map(([id, address]) => [id, address.canonicalPath])));
+    }).catch(() => undefined);
+  return () => { cancelled = true; };
+  }, [shops]);
 
   const clearUserLocation = useCallback(() => {
     if (locationExpiryRef.current) clearTimeout(locationExpiryRef.current);
@@ -173,7 +187,24 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   };
 
   const { cityId: storedCityId } = useLocalCity();
-  const [selectedCity, setSelectedCity] = useState<string>(storedCityId);
+  const [selectedCity, setSelectedCity] = useState<string>(searchParams.get('cityId') || storedCityId);
+  useEffect(() => {
+    let cancelled = false;
+    const city = searchParams.get('citySlug');
+    const roaster = searchParams.get('roasterSlug');
+    if (!city && !roaster) { setResolvingFilter(false); return; }
+    setResolvingFilter(true);
+    void Promise.all([
+      city ? getBySlug('cities', city) : null,
+      roaster ? getBySlug('roasters', roaster) : null,
+    ]).then(([cityResult, roasterResult]) => {
+      if (cancelled) return;
+      setFilterResolutionError('');
+      if (cityResult) setSelectedCity(cityResult.address.entityId);
+      if (roasterResult) setSelectedRoasters([roasterResult.address.entityId]);
+    }).catch((cause: { status?: number }) => { if (!cancelled) setFilterResolutionError(cause.status === 404 ? 'Фильтр не найден.' : cause.status === 400 ? 'Некорректный адрес фильтра.' : 'Не удалось загрузить фильтр. Обновите страницу для повтора.'); }).finally(() => { if (!cancelled) setResolvingFilter(false); });
+    return () => { cancelled = true; };
+  }, [searchParams]);
   const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
   const [selectedBeans, setSelectedBeans] = useState<string[]>([]);
   const [selectedRoasters, setSelectedRoasters] = useState<string[]>([]);
@@ -191,8 +222,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
 
   // City is chosen in Settings; sync when it changes (also cross-tab).
   useEffect(() => {
-    if (storedCityId) setSelectedCity(storedCityId);
-  }, [storedCityId]);
+    if (storedCityId && !searchParams.get('citySlug') && !searchParams.get('cityId')) setSelectedCity(storedCityId);
+  }, [storedCityId, searchParams]);
 
   // Fall back to the first city if none has been chosen in Settings yet.
   useEffect(() => {
@@ -243,11 +274,13 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   }, [selectedCity, selectedEquipments, selectedBeans, selectedRoasters, selectedBrewMethods, activeQuick, selectedTagIds]);
 
   useEffect(() => {
-    if (initialDataLoaded && filters.cityId) {
+    if (initialDataLoaded && filters.cityId && !resolvingFilter && !filterResolutionError) {
       void loadShops(1, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    resolvingFilter,
+    filterResolutionError,
     filters.cityId,
     filters.priceRange,
     filters.coffeeFocus,
@@ -393,7 +426,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   };
 
   const openShopDetails = (shopId: string) => {
-    onShopSelect(shopId);
+    const path = addressPaths.get(shopId);
+    if (path) navigate(path); else onShopSelect(shopId);
   };
 
   const isDark = theme === 'dark';
@@ -424,6 +458,9 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     resultCount: totalItems || shops.length,
     hasLocation: userLocation !== null,
   };
+
+  if (resolvingFilter) return <div className="p-8">Загрузка…</div>;
+  if (filterResolutionError) return <p className="p-8 text-center">{filterResolutionError}</p>;
 
   return (
     <>

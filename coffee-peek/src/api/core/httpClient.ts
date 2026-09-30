@@ -14,6 +14,7 @@ import {
   tryRefreshAccessToken,
   ensureFreshAccessToken,
 } from './interceptors';
+import { ApiRequestError } from './apiError';
 import { emitSessionInvalidated } from '../../realtime/forceLogout';
 
 /**
@@ -73,9 +74,9 @@ class HttpClient {
    */
   private async request<T>(
     endpoint: string,
-    options: RequestOptions & { _retry?: boolean } = {}
+    options: RequestOptions & { _retry?: boolean; raw?: boolean } = {}
   ): Promise<ApiResponse<T>> {
-    const { params, requiresAuth = true, skipAuthHeader, _retry, ...fetchOptions } = options;
+    const { params, requiresAuth = true, skipAuthHeader, _retry, raw, ...fetchOptions } = options;
 
     // Строим URL с параметрами
     const urlWithParams = buildUrlWithParams(endpoint, params);
@@ -116,6 +117,22 @@ class HttpClient {
       }
 
       // Применяем response interceptor
+      if (raw) {
+        const body = await response.text();
+        let parsed: any;
+        try { parsed = body ? JSON.parse(body) : null; } catch { parsed = null; }
+        if (!response.ok) {
+          const error = new ApiRequestError(response.status, {
+            isSuccess: false, message: parsed?.message || parsed?.title || `HTTP ${response.status}`,
+            errorCode: parsed?.errorCode, errors: parsed?.errors,
+          });
+          Object.assign(error, { retryAfter: response.headers.get('Retry-After') });
+          throw error;
+        }
+        if (parsed === null) throw new Error('Invalid JSON response');
+        return { success: true, message: '', data: parsed, statusCode: response.status };
+      }
+
       const data = await responseInterceptor<any>(response, fullUrl);
 
       // Нормализуем данные
@@ -151,9 +168,14 @@ class HttpClient {
     });
   }
 
-  /**
-   * POST запрос
-   */
+  /** Читает JSON без распаковки старой ApiResponse оболочки. */
+  async getRaw<T>(endpoint: string, config?: ApiConfig): Promise<T> {
+    return (await this.request<T>(endpoint, {
+      method: 'GET', raw: true, cache: 'no-store', requiresAuth: false,
+      signal: config?.signal, headers: config?.headers,
+    })).data;
+  }
+
   private serializeBody(data?: unknown): BodyInit | undefined {
     if (data === undefined) {
       return undefined;

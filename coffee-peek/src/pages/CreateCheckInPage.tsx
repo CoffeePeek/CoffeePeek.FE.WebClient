@@ -1,3 +1,5 @@
+import { usePublicResolution } from '../components/PublicAddressPage';
+import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import WobbleRing from '../components/WobbleRing';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -25,8 +27,10 @@ interface ShopBasicInfo {
 
 
 const CreateCheckInPage: React.FC = () => {
-  const { shopId } = useParams<{ shopId: string }>();
+  const { shopId: routeId } = useParams<{ shopId: string }>();
+  const shopId = usePublicResolution()?.id ?? routeId;
   const navigate = useNavigate();
+  const openPublic = usePublicNavigate();
   const location = useLocation();
   const { theme } = useTheme();
   const colors = getThemeColors(theme);
@@ -42,7 +46,7 @@ const CreateCheckInPage: React.FC = () => {
       return;
     }
     if (!shopFromState) {
-      navigate(`/shops/${shopId}`);
+      openPublic('shops', shopId!);
     }
   }, [shopFromState, shopId, navigate]);
 
@@ -98,7 +102,7 @@ const CreateCheckInPage: React.FC = () => {
         showToast(draft.isPublic ? 'Чекин создан! Отзыв отправлен на модерацию.' : 'Чекин успешно создан!', 'success');
         clearDraft();
         clearFiles();
-        navigate(`/shops/${shopId}`);
+        openPublic('shops', shopId!);
       }
     } catch (err) {
       logger.error('Error submitting check-in:', err);
@@ -121,7 +125,7 @@ const CreateCheckInPage: React.FC = () => {
       <main className="sm:max-w-[420px] sm:mx-auto sm:px-4 sm:py-6 h-[calc(100dvh-64px)] sm:h-auto flex flex-col">
         <button
           type="button"
-          onClick={() => navigate(`/shops/${shopId}`)}
+          onClick={() => openPublic('shops', shopId!)}
           className="hidden sm:flex items-center gap-2 mb-5 font-body text-sm"
           style={{ color: colors.textSecondary }}
         >

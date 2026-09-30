@@ -1,5 +1,7 @@
+import { usePublicResolution } from '../components/PublicAddressPage';
+import PublicEntityLink from '../components/PublicEntityLink';
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   createShopChangeRequest,
   getBrewMethods,
@@ -88,7 +90,8 @@ const MultiSelect = ({
 );
 
 const EditCoffeeShopPage: React.FC = () => {
-  const { shopId } = useParams<{ shopId: string }>();
+  const { shopId: routeId } = useParams<{ shopId: string }>();
+  const shopId = usePublicResolution()?.id ?? routeId;
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { showToast } = useToast();
@@ -218,7 +221,7 @@ const EditCoffeeShopPage: React.FC = () => {
     <main className={`min-h-screen ${tc.bg.primary} ${tc.text.primary} px-4 py-8`}>
       <form onSubmit={submit} className="mx-auto max-w-4xl space-y-6">
         <div>
-          <Link to={`/shops/${shop.id}`} className="text-sm text-[#D4A84B]">← {shop.name}</Link>
+          <PublicEntityLink kind="shops" entityId={shop.id} className="text-sm text-[#D4A84B]">← {shop.name}</PublicEntityLink>
           <h1 className="mt-2 text-3xl font-bold">Предложить изменения</h1>
           <p className={`mt-2 ${tc.text.secondary}`}>Выберите один раздел. Каждая заявка проверяется отдельно.</p>
         </div>

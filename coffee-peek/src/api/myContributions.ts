@@ -1,3 +1,4 @@
+import { getPublicAddresses } from './publicAddresses';
 import { httpClient } from './core/httpClient';
 import { getMyShopChangeRequests, type ShopChangeRequestDto, type ShopChangeSection } from './shopChangeRequests';
 
@@ -18,6 +19,7 @@ export interface Contribution {
   subtitle?: string;
   date?: string;
   link?: string;
+  shopId?: string;
   status: ModerationStatus;
   reason: string | null;
 }
@@ -35,7 +37,7 @@ export const toContribution = {
     id: s.id, title: s.name, status: s.moderationStatus, reason: s.rejectedReason,
     subtitle: s.address ?? undefined,
     // publishedShopId can lag behind Approved while the Shops service creates the live shop.
-    link: s.publishedShopId ? `/shops/${s.publishedShopId}` : undefined,
+    shopId: s.publishedShopId ?? undefined,
   }),
   roasters: (r: ModerationRoasterDto): Contribution => ({
     id: r.id, title: r.name, subtitle: r.about ?? undefined, status: r.moderationStatus, reason: r.rejectedReason,
@@ -43,11 +45,11 @@ export const toContribution = {
   reviews: (r: ModerationReviewDto): Contribution => ({
     id: r.id, title: r.header || 'Отзыв о кофейне', status: r.moderationStatus, reason: r.rejectedReason,
     subtitle: `Кофе ${r.rating.coffee} · Сервис ${r.rating.service} · Атмосф. ${r.rating.place}${r.comment ? ` — ${r.comment}` : ''}`,
-    date: r.createdAt, link: `/shops/${r.shopId}`,
+    date: r.createdAt, shopId: r.shopId,
   }),
   edits: (e: ShopChangeRequestDto): Contribution => ({
     id: e.id, title: sectionLabels[e.section] ?? e.section, subtitle: 'Правка кофейни', status: e.status, reason: e.rejectionReason,
-    date: e.createdAtUtc, link: `/shops/${e.shopId}`,
+    date: e.createdAtUtc, shopId: e.shopId,
   }),
 };
 
@@ -59,7 +61,7 @@ const toPage = <T,>(data: Paging | undefined, list: T[] | undefined, map: (item:
   items: (list ?? []).map(map),
 });
 
-export async function getMyContributions(kind: ContributionKind, params: Query): Promise<ContributionPage> {
+async function loadMyContributions(kind: ContributionKind, params: Query): Promise<ContributionPage> {
   switch (kind) {
     case 'shops': {
       const { data } = await httpClient.get<Paging & { moderationShops: ModerationShopDto[] }>('/api/ModerationShops/mine', { params });
@@ -78,4 +80,11 @@ export async function getMyContributions(kind: ContributionKind, params: Query):
       return toPage(data, data?.items, toContribution.edits);
     }
   }
+}
+
+export async function getMyContributions(kind: ContributionKind, params: Query): Promise<ContributionPage> {
+  const page = await loadMyContributions(kind, params);
+  const ids = page.items.flatMap(item => item.shopId ? [item.shopId] : []);
+  const addresses = await getPublicAddresses('shops', ids).catch(() => new Map());
+  return { ...page, items: page.items.map(item => ({ ...item, link: item.shopId ? addresses.get(item.shopId)?.canonicalPath : undefined })) };
 }

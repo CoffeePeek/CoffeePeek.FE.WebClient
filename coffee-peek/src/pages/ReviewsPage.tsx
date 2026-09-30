@@ -1,3 +1,4 @@
+import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
@@ -26,6 +27,7 @@ const PAGE_SIZE = 10;
 const ReviewsPage: React.FC = () => {
   usePageTitle('Мои отзывы');
   const navigate = useNavigate();
+  const openPublic = usePublicNavigate();
   const { user } = useUser();
   const { theme } = useTheme();
   const colors = getThemeColors(theme);
@@ -155,7 +157,7 @@ const ReviewsPage: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                       <button
                         type="button"
-                        onClick={() => shopId && navigate(`/shops/${shopId}`)}
+                        onClick={() => shopId && openPublic('shops', shopId)}
                         disabled={!shopId}
                         style={{
                           flex: 1, textAlign: 'left', border: 'none', background: 'transparent',
@@ -193,7 +195,7 @@ const ReviewsPage: React.FC = () => {
                       {shopId && (
                         <button
                           type="button"
-                          onClick={() => navigate(`/shops/${shopId}/reviews/${item.id}/edit`)}
+                          onClick={() => openPublic('shops', shopId, '/reviews/edit', { state: { reviewId: item.id } })}
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: 4,
                             padding: '5px 10px', borderRadius: 8,

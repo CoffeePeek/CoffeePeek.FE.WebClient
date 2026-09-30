@@ -1,0 +1,65 @@
+import type { AddressKind } from '../api/publicAddresses';
+import { getCities } from '../api/coffeeshop';
+import React, { createContext, useContext, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { getBySlug, getPublicAddress, isGuid } from '../api/publicAddresses';
+import { normalizeResponseData } from '../api/core/interceptors';
+import WobbleRing from './WobbleRing';
+
+const Resolution = createContext<{ id: string; data: any; reload: () => Promise<unknown> } | null>(null);
+export const usePublicResolution = () => useContext(Resolution);
+export default function PublicAddressPage({ kind, param, children }: { kind: AddressKind; param: string; children?: React.ReactNode }) {
+  const value = useParams()[param] || '';
+  const navigate = useNavigate();
+  const location = useLocation();
+  const legacy = isGuid(value);
+  const query = useQuery({
+    queryKey: ['publicAddress', kind, value],
+    queryFn: async () => {
+      if (!legacy) return getBySlug<any>(kind, value);
+      try { return { address: await getPublicAddress(kind, value), data: null }; }
+      catch (error) {
+        if (kind !== 'cities') throw error;
+        const cities = await getCities();
+        const city = cities.data?.find(city => city.id === value);
+        if (!city) throw Object.assign(new Error('Not found'), { status: 404 });
+        return { address: null, data: city };
+      }
+    },
+    staleTime: 0, gcTime: 0, retry: false, refetchOnWindowFocus: true,
+  });
+  useEffect(() => {
+    const address = query.data?.address;
+    if (!address) return;
+    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    const previous = canonical?.href;
+    const created = !canonical;
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.append(canonical); }
+    canonical.href = `https://coffeepeek.by${address.canonicalPath}`;
+    const prefix = kind === 'shops' ? /^\/(?:shops|coffee-shops)\/[^/]+/ : /^\/[^/]+\/[^/]+/;
+    const suffix = location.pathname.replace(prefix, '');
+    const target = address.canonicalPath + suffix;
+    if (target !== location.pathname) navigate(target + location.search, { replace: true, state: location.state });
+    return () => { if (created) canonical?.remove(); else if (canonical && previous) canonical.href = previous; };
+  }, [query.data, location.pathname, location.search, location.state, navigate, kind]);
+  if (legacy && children) return <>{children}</>;
+  if (query.isPending) return <div className="flex min-h-[70vh] items-center justify-center"><WobbleRing size={48} /></div>;
+  if (query.isError) {
+    const status = (query.error as { status?: number }).status;
+    return <main className="p-8 text-center"><p>{status === 404 ? 'Не найдено' : status === 400 ? 'Некорректный адрес' : 'Страница временно недоступна'}</p>
+      {status !== 404 && status !== 400 && <button className="mt-4 min-h-11" onClick={() => {
+        const retryAfter = (query.error as unknown as { retryAfter?: string }).retryAfter;
+        const delay = retryAfter ? (/^\d+$/.test(retryAfter) ? Number(retryAfter) * 1000 : Date.parse(retryAfter) - query.errorUpdatedAt) : 1000;
+        if (Date.now() >= query.errorUpdatedAt + Math.max(1000, Number.isFinite(delay) ? delay : 1000)) void query.refetch();
+      }}>Повторить</button>}</main>;
+  }
+  if (!query.data) return null;
+  const { address, data } = query.data;
+  return <Resolution.Provider value={{ id: address?.entityId || value, data: normalizeResponseData(data), reload: query.refetch }}>
+    {children || <main className="mx-auto max-w-3xl p-8"><h1 className="text-3xl font-bold">{data?.name}</h1><p className="mt-4">{data?.description}</p>
+      {kind === 'cities' && address && <a href={`/shops?citySlug=${encodeURIComponent(address.slug)}`}>Кофейни города</a>}
+      {kind === 'zones' && <><p>Кофеен: {data?.shopCount}</p><a href={`/dashboard?page=map&lat=${data?.latitude}&lon=${data?.longitude}`}>На карте</a></>}
+    </main>}
+  </Resolution.Provider>;
+}

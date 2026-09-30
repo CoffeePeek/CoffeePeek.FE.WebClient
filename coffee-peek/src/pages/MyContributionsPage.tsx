@@ -108,7 +108,7 @@ const MyContributionsPage: React.FC = () => {
                         ? <Link to={item.link} className="font-bold hover:underline" style={{ color: colors.text }}>{item.title}</Link>
                         : <p className="font-bold" style={{ color: colors.text }}>{item.title}</p>}
                       {item.subtitle && <p className="mt-1 line-clamp-2 text-sm" style={{ color: colors.muted }}>{item.subtitle}</p>}
-                      {kind === 'shops' && item.status === 'Approved' && !item.link && <p className="mt-1 text-sm" style={{ color: colors.muted }}>Публикуется в каталоге…</p>}
+                      {kind === 'shops' && item.status === 'Approved' && !item.link && <p className="mt-1 text-sm" style={{ color: colors.muted }}>Ссылка пока недоступна</p>}
                       {item.date && <p className="mt-1 text-xs" style={{ color: colors.muted }}>{new Date(item.date).toLocaleDateString('ru-RU')}</p>}
                     </div>
                     <span className="shrink-0 rounded-full px-3 py-1 text-xs font-bold" style={{ color: activeTab.color, background: `${activeTab.color}22` }}>{activeTab.label}</span>

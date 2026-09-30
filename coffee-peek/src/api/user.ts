@@ -1,3 +1,4 @@
+import { getPublicAddresses } from './publicAddresses';
 /**
  * API модуль для работы с публичными профилями пользователей
  */
@@ -11,6 +12,8 @@ import { logger } from '../utils/logger';
 
 export interface PublicUserProfile {
   id: string;
+  canonicalPath?: string;
+  addedShopsCount?: number;
   userName: string;
   nickname?: string;
   avatarUrl?: string;
@@ -49,36 +52,19 @@ export async function getUserPublicProfile(
       success: true,
       message: "User profile loaded successfully",
       data: {
-        id: userData.id,
+        id: userId,
         userName: userData.userName,
         nickname: userData.nickname,
         avatarUrl: userData.avatarUrl,
         about: userData.about,
         createdAtUtc: userData.createdAtUtc,
         reviewCount: userData.reviewCount,
+        addedShopsCount: userData.addedShopsCount,
         checkInCount: userData.checkInCount,
       },
     };
   } catch (error: any) {
     logger.error("[getUserPublicProfile] Exception:", error);
-    
-    // Возвращаем fallback профиль для 500 ошибок
-    if (error.status === 500) {
-      return {
-        success: true,
-        message: "Using fallback profile",
-        data: {
-          id: userId,
-          userName: "Анонимный пользователь",
-          nickname: undefined,
-          avatarUrl: undefined,
-          about: undefined,
-          createdAtUtc: undefined,
-          reviewCount: 0,
-          checkInCount: 0,
-        },
-      };
-    }
     
     return {
       success: false,
@@ -110,5 +96,12 @@ export async function getUsersPublicProfiles(
     }
   });
   
+  try {
+    const addresses = await getPublicAddresses('users', uniqueIds);
+    addresses.forEach((address, id) => {
+      const profile = userMap.get(id);
+      if (profile) profile.canonicalPath = address.canonicalPath;
+    });
+  } catch { /* Existing GUID links remain usable; retry metadata on the next page. */ }
   return userMap;
 }

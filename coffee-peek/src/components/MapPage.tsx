@@ -1,5 +1,6 @@
+import { useSearchParams } from 'react-router-dom';
+import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
 import { useTheme } from '../contexts/ThemeContext';
@@ -41,7 +42,8 @@ function openYandexRoute(from: { lat: number; lon: number } | null, toLat: numbe
 }
 
 const MapPage: React.FC = () => {
-  const navigate = useNavigate();
+  const openPublic = usePublicNavigate();
+  const [searchParams] = useSearchParams();
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -242,8 +244,12 @@ const MapPage: React.FC = () => {
     };
     paintMapRef.current = paintMap;
 
+    const latitude = Number(searchParams.get('lat'));
+    const longitude = Number(searchParams.get('lon'));
+    const hasCenter = searchParams.has('lat') && searchParams.has('lon') && Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
     const map = createOsmMap(container, {
-      zoom: 12,
+      center: hasCenter ? [longitude, latitude] : undefined,
+      zoom: hasCenter ? 14 : 12,
       dark: theme === 'dark',
       zoomControl: false,
     });
@@ -502,7 +508,7 @@ const MapPage: React.FC = () => {
                 </button>
                 <Button
                   type="button"
-                  onClick={() => navigate(`/shops/${selectedShop.id}`)}
+                  onClick={() => openPublic('shops', selectedShop.id)}
                   className="flex-1 min-h-11"
                   aria-label={`Открыть ${selectedShop.title}`}
                 >

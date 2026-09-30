@@ -1,54 +1,21 @@
 import { useState, useEffect } from 'react';
-import { getUsersPublicProfiles, PublicUserProfile } from '../api/user';
-import { Review } from '../api/coffeeshop';
-import { logger } from '../utils/logger';
-
+import type { PublicUserProfile } from '../api/user';
+import type { Review } from '../api/coffeeshop';
+import { getPublicAddresses } from '../api/publicAddresses';
 export function useUsersCache(reviews: Review[]) {
   const [usersCache, setUsersCache] = useState<Map<string, PublicUserProfile>>(new Map());
-
   useEffect(() => {
     let cancelled = false;
-
-    const loadUsersForReviews = async () => {
-      if (reviews.length === 0) return;
-
-      const userIds = [...new Set(reviews.map(r => r.userId))];
-      
-      // Проверяем, какие пользователи отсутствуют в кэше
-      let missingUserIds: string[] = [];
-      setUsersCache(prevCache => {
-        missingUserIds = userIds.filter(id => !prevCache.has(id));
-        return prevCache;
-      });
-      
-      if (missingUserIds.length === 0) return;
-
-      try {
-        const newUsers = await getUsersPublicProfiles(missingUserIds);
-        
-        if (cancelled) return;
-
-        setUsersCache(prevCache => {
-          const updatedCache = new Map(prevCache);
-          newUsers.forEach((user, userId) => {
-            updatedCache.set(userId, user);
-          });
-          return updatedCache;
-        });
-      } catch (err) {
-        if (!cancelled) {
-          logger.error('Error loading user profiles:', err);
-        }
-      }
-    };
-
-    loadUsersForReviews();
-
-    return () => {
-      cancelled = true;
-    };
+    setUsersCache(new Map());
+    const ids = [...new Set(reviews.map(review => review.userId))];
+    void getPublicAddresses('users', ids).then(addresses => {
+      if (cancelled) return;
+      setUsersCache(new Map(reviews.map(review => [review.userId, {
+        id: review.userId, userName: review.userName || 'Пользователь',
+        canonicalPath: addresses.get(review.userId)?.canonicalPath,
+      }])));
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
   }, [reviews]);
-
   return usersCache;
 }
-

@@ -1,5 +1,8 @@
+import PublicEntityLink from '../components/PublicEntityLink';
+import { usePublicResolution } from '../components/PublicAddressPage';
+import type { RoasterDetails } from '../api/coffeeshop';
 import React from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ShopDetailSkeleton } from '../components/skeletons';
 import PhotoCarousel from '../components/PhotoCarousel';
 import Mascot from '../components/Mascot';
@@ -16,7 +19,9 @@ const RoasterDetailPage: React.FC = () => {
   const { theme } = useTheme();
   const tc = getThemeClasses(theme);
 
-  const { data: roaster, isLoading, error } = useRoaster(roasterId ?? null);
+  const resolution = usePublicResolution();
+  const legacy = useRoaster(resolution ? null : roasterId ?? null);
+  const { data: roaster, isLoading, error } = resolution ? { data: resolution.data as RoasterDetails, isLoading: false, error: null } : legacy;
 
   usePageTitle(roaster?.name || 'Обжарщик');
 
@@ -113,9 +118,9 @@ const RoasterDetailPage: React.FC = () => {
             <h2 className={`mb-4 text-2xl font-bold ${textMain}`}>Где используют</h2>
             <div className="space-y-2.5">
               {roaster.shops.map((shop) => (
-                <Link
+                <PublicEntityLink
                   key={shop.id}
-                  to={`/shops/${shop.id}`}
+                  kind="shops" entityId={shop.id}
                   className={`flex min-h-[86px] items-center gap-4 rounded-[22px] border p-3 transition-colors hover:border-[#D4A84B]/60 ${cardBg} ${borderColor} ${textMain}`}
                 >
                   {shop.photoUrl
@@ -123,7 +128,7 @@ const RoasterDetailPage: React.FC = () => {
                     : <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-xl font-bold text-stone-700">{shop.name.charAt(0)}</span>}
                   <span className="min-w-0 flex-1 truncate text-lg font-semibold">{shop.name}</span>
                   <AppIcon name="chevron_right" size={24} color="currentColor" />
-                </Link>
+                </PublicEntityLink>
               ))}
             </div>
           </section>

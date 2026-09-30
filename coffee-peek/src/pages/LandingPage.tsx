@@ -530,7 +530,6 @@ const LandingPage: React.FC = () => {
                 <WobbleRing size={56} className="mx-auto mb-8" />
                 <h1 className={`text-3xl font-bold font-extended ${textPrimary} mb-3`}>Verifying Secure Link</h1>
                 <p className={`font-body ${textSecondary}`}>Please wait while we confirm your credentials...</p>
-                <p className={`${textTertiary} text-sm mt-4 font-mono truncate px-4`}>UID: {userState.userId}</p>
               </div>
             )}
 

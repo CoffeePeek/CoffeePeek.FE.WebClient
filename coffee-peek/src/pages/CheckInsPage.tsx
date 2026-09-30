@@ -1,3 +1,4 @@
+import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPhotoUrl } from '../api/coffeeshop';
@@ -22,6 +23,7 @@ const formatDate = (item: CheckInDto) => visitDate(item).toLocaleDateString('ru-
 const CheckInsPage: React.FC = () => {
   usePageTitle('Чекины');
   const navigate = useNavigate();
+  const openPublic = usePublicNavigate();
   const { theme } = useTheme();
   const colors = getThemeColors(theme);
   const gold = COLORS.primary;
@@ -93,7 +95,7 @@ const CheckInsPage: React.FC = () => {
           <>
             {view === 'calendar' && <h2 className="mb-4 mt-7 text-2xl font-extrabold" style={{ color: colors.textPrimary }}>{visitDate(items[0]).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</h2>}
             <div className="space-y-4" style={{ opacity: feed.isFetching || calendar.isFetching ? 0.7 : 1 }}>
-              {items.map(item => <CheckInCard key={item.id} item={item} colors={colors} onShopOpen={() => navigate(`/shops/${item.shopId}`)} onPhotoOpen={(images, initialIndex) => setGallery({ images, initialIndex, shopName: item.shopName || 'Кофейня' })} />)}
+              {items.map(item => <CheckInCard key={item.id} item={item} colors={colors} onShopOpen={() => openPublic('shops', item.shopId)} onPhotoOpen={(images, initialIndex) => setGallery({ images, initialIndex, shopName: item.shopName || 'Кофейня' })} />)}
             </div>
           </>
         )}

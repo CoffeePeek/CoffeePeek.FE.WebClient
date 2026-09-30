@@ -1,3 +1,5 @@
+import { usePublicNavigate } from '../hooks/usePublicNavigate';
+import { usePublicResolution } from '../components/PublicAddressPage';
 import WobbleRing from '../components/WobbleRing';
 import React from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
@@ -7,7 +9,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { getThemeClasses } from '../utils/theme';
 import Button from '../components/Button';
-import { useUsersCache } from '../hooks/useUsersCache';
 import { logger } from '../utils/logger';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { StarIcon } from '../components/icons';
@@ -18,8 +19,11 @@ import {
 import Mascot from '../components/Mascot';
 
 const UserProfilePage: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId: routeId } = useParams<{ userId: string }>();
+  const resolution = usePublicResolution();
+  const userId = resolution?.id ?? routeId;
   const navigate = useNavigate();
+  const openPublic = usePublicNavigate();
   const { user } = useUser();
   const { theme } = useTheme();
   const themeClasses = getThemeClasses(theme);
@@ -33,7 +37,6 @@ const UserProfilePage: React.FC = () => {
   const [isLoadingReviews, setIsLoadingReviews] = React.useState(false);
   const [reviewsPage, setReviewsPage] = React.useState(1);
   const [reviewsTotalPages, setReviewsTotalPages] = React.useState(1);
-  const usersCache = useUsersCache(reviews);
 
   // Устанавливаем title с именем пользователя
   usePageTitle(profile?.userName || 'Профиль пользователя');
@@ -43,10 +46,12 @@ const UserProfilePage: React.FC = () => {
     let cancelled = false;
 
     const loadProfile = async () => {
+      if (resolution) { setProfile({ ...resolution.data, id: resolution.id }); setError(null); setIsLoadingProfile(false); return; }
       if (!userId || user?.id === userId) return;
       
       try {
         setIsLoadingProfile(true);
+        setProfile(null);
         setError(null);
         const response = await getUserPublicProfile(userId);
         
@@ -74,14 +79,14 @@ const UserProfilePage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [userId, user?.id]);
+  }, [userId, user?.id, resolution]);
 
   // Load user reviews
   React.useEffect(() => {
     let cancelled = false;
 
     const loadReviews = async () => {
-      if (!userId) return;
+      if (!userId || !profile) return;
       
       try {
         setIsLoadingReviews(true);
@@ -109,7 +114,7 @@ const UserProfilePage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [userId, reviewsPage]);
+  }, [userId, reviewsPage, profile]);
 
   const handlePreviousPage = () => {
     if (reviewsPage > 1) {
@@ -124,7 +129,7 @@ const UserProfilePage: React.FC = () => {
   };
 
   const handleShopSelect = (shopId: string) => {
-    navigate(`/shops/${shopId}`);
+    openPublic('shops', shopId);
   };
 
   const bgClass = themeClasses.bg.primary;
@@ -133,7 +138,7 @@ const UserProfilePage: React.FC = () => {
   const textMain = themeClasses.text.primary;
   const textMuted = themeClasses.text.secondary;
 
-  if (userId && user?.id === userId) {
+  if (!resolution && userId && user?.id === userId) {
     return <Navigate to="/profile" replace />;
   }
 
