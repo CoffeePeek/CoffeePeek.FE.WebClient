@@ -19,8 +19,8 @@ interface QuickActionProps {
 
 const QuickAction = ({ to, label, description, icon: Icon }: QuickActionProps) => (
   <Card className="transition-colors hover:border-primary/50">
-    <Link to={to} className="group flex items-center gap-4 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-dark dark:text-primary">
+    <Link to={to} className="group flex items-center gap-3 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-dark dark:text-primary">
         <Icon className="h-5 w-5" />
       </span>
       <span className="min-w-0 flex-1">
@@ -32,7 +32,7 @@ const QuickAction = ({ to, label, description, icon: Icon }: QuickActionProps) =
   </Card>
 );
 
-const StatSkeleton = () => <div className="h-32 animate-pulse rounded-xl bg-stone-100 dark:bg-white/5" />;
+const StatSkeleton = () => <div className="h-28 animate-pulse rounded-xl bg-stone-100 dark:bg-white/5" />;
 
 export const DashboardPage = () => {
   const { user, isAdmin, isModerator, isOwner } = useUser();
@@ -51,8 +51,8 @@ export const DashboardPage = () => {
   ] : [];
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto w-full max-w-[1600px] space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-primary-dark dark:text-primary">{roleName(isAdmin, isModerator, isOwner)}</p>
           <h2 className="mt-1 font-display text-2xl font-bold tracking-tight text-text-main dark:text-white">
@@ -64,15 +64,15 @@ export const DashboardPage = () => {
       </div>
 
       {isAdmin && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {isLoading ? Array.from({ length: 4 }, (_, index) => <StatSkeleton key={index} />) : stats.map(({ label, value, hint, icon: Icon }) => (
-            <Card key={label} className="p-6">
-              <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+            <Card key={label} className="p-4">
+              <CardHeader className="flex-row items-center justify-between space-y-0 p-0 pb-2">
                 <CardTitle className="text-sm font-medium text-text-muted dark:text-stone-400">{label}</CardTitle>
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary-dark dark:text-primary"><Icon className="h-4 w-4" /></span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary-dark dark:text-primary"><Icon className="h-4 w-4" /></span>
               </CardHeader>
-              <CardContent className="p-6">
-                <p className="font-display text-3xl font-bold tabular-nums">{value}</p>
+              <CardContent className="p-0">
+                <p className="font-display text-2xl font-bold tabular-nums">{value}</p>
                 <CardDescription className="mt-1 text-xs">{hint}</CardDescription>
               </CardContent>
             </Card>

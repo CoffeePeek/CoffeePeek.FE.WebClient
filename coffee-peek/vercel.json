@@ -10,6 +10,7 @@
     }
   ],
   "rewrites": [
+    {"source": "/.well-known/assetlinks.json", "destination": "/.well-known/assetlinks.json"},
     {"source": "/coffee-shops/new", "destination": "/index.html"},
     {"source": "/roasters/new", "destination": "/index.html"},
     {"source": "/coffee-shops/:shopId", "destination": "/api/public-page?page=address&kind=shops&segment=:shopId&path=/coffee-shops/:shopId"},
@@ -26,6 +27,12 @@
     { "source": "/:path*", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [

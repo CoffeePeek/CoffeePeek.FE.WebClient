@@ -52,7 +52,7 @@ const formatChartDate = (date: string) => {
 };
 
 const SectionTitle: React.FC<{ children: React.ReactNode; right?: React.ReactNode }> = ({ children, right }) => (
-  <div className="flex items-center justify-between mb-3">
+  <div className="flex items-center justify-between gap-3 mb-2">
     <h3 className="text-sm font-semibold text-text-main dark:text-white font-display">{children}</h3>
     {right}
   </div>
@@ -81,14 +81,14 @@ const UserStatusMetric: React.FC<{
   const percent = total ? Math.round((value / total) * 100) : 0;
 
   return (
-    <div className="rounded-xl border border-border-light bg-gray-50/70 p-3.5 dark:border-border-dark dark:bg-white/[0.025]">
+    <div className="rounded-xl border border-border-light bg-gray-50/70 p-3 dark:border-border-dark dark:bg-white/[0.025]">
       <div className="flex items-center justify-between gap-3">
         <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ring-1 ${toneClasses}`}>
           {label}
         </span>
         <span className="text-xs font-medium tabular-nums text-text-muted dark:text-stone-400">{percent}%</span>
       </div>
-      <p className="mt-3 font-display text-2xl font-bold tabular-nums text-text-main dark:text-white">{value}</p>
+      <p className="mt-1.5 font-display text-xl font-bold tabular-nums text-text-main dark:text-white">{value}</p>
       <p className="mt-0.5 text-xs text-text-muted dark:text-stone-400">{description}</p>
     </div>
   );
@@ -233,9 +233,9 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Users */}
-      <Card className="p-6">
+      <Card className="p-4">
         <SectionTitle
           right={
             <span className="text-xs text-text-muted dark:text-stone-400">
@@ -270,9 +270,9 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
           />
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-5 border-t border-border-light pt-5 dark:border-border-dark lg:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-4 border-t border-border-light pt-3 dark:border-border-dark lg:grid-cols-2">
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted dark:text-stone-400">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted dark:text-stone-400">
               Возвращаются в сервис
             </p>
             <div className="grid grid-cols-3 divide-x divide-border-light rounded-xl border border-border-light dark:divide-border-dark dark:border-border-dark">
@@ -281,7 +281,7 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
                 { label: 'За 7 дней', value: overview.weeklyActiveUsers, period: 'WAU' },
                 { label: 'За 30 дней', value: overview.monthlyActiveUsers, period: 'MAU' },
               ].map((item) => (
-                <div key={item.period} className="p-3 text-center">
+                <div key={item.period} className="px-3 py-2 text-center">
                   <p className="font-display text-xl font-bold tabular-nums text-text-main dark:text-white">{item.value}</p>
                   <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">{item.period}</p>
                   <p className="mt-1 text-[10px] text-text-muted dark:text-stone-500">{item.label}</p>
@@ -292,10 +292,10 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
           </div>
 
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted dark:text-stone-400">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted dark:text-stone-400">
               Качество аккаунтов
             </p>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <AccountProgress
                 label="Подтверждённый email"
                 value={overview.emailConfirmedUsers}
@@ -314,7 +314,7 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
       </Card>
 
       {/* Timeseries */}
-      <Card className="p-6">
+      <Card className="p-4">
         <SectionTitle
           right={
             <div className="flex gap-1" role="group" aria-label="Период">
@@ -335,7 +335,7 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
         >
           Динамика
         </SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {usersTs.data ? <Bars label="Новые пользователи" points={usersTs.data.newUsers} /> : usersTs.isError ? <Unavailable /> : null}
           {!overview.shopsAvailable || shopsTs.isError ? (
             <Unavailable />
@@ -350,12 +350,12 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
       </Card>
 
       {/* Shops insights */}
-      <Card className="p-6">
+      <Card className="p-4">
         <SectionTitle>Кофейни и отзывы</SectionTitle>
         {!overview.shopsAvailable || shops.isError ? (
           <Unavailable />
         ) : shops.data && ratings ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <Metric label="Средний рейтинг" value={ratings.averageRating.toFixed(2)} hint={`${ratings.totalReviews} отзывов`} />
               <Metric label="Место" value={ratings.averagePlace.toFixed(2)} />
@@ -373,7 +373,7 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <TopShops title="Топ по чекинам (30 дн)" shops={shops.data.topShopsByCheckIns30Days} />
               <TopShops title="Топ по отзывам" shops={shops.data.topShopsByReviews} />
             </div>
@@ -381,7 +381,7 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
               <p className="text-xs text-text-muted dark:text-stone-400 font-body uppercase tracking-wide mb-2">
                 Загрузки приложения: {shops.data.downloads.total} (+{shops.data.downloads.last30Days} за 30 дн)
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm font-body">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm font-body">
                 <DownloadChannels rows={shops.data.downloads.byChannel} />
                 <DownloadCountries rows={shops.data.downloads.topCountries30Days} />
               </div>
@@ -391,12 +391,12 @@ export const AdminStatsPanel: React.FC<{ overview: OverviewStats }> = ({ overvie
       </Card>
 
       {/* Moderation insights */}
-      <Card className="p-6">
+      <Card className="p-4">
         <SectionTitle>Модерация</SectionTitle>
         {!overview.moderationAvailable || moderation.isError ? (
           <Unavailable />
         ) : moderation.data ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <Metric label="Самая старая заявка" value={fmtHours(moderation.data.oldestPendingHours)} />
               <Metric label="Отзывов промодерировано" value={moderation.data.sla.reviewsModerated30Days} hint="за 30 дн" />
