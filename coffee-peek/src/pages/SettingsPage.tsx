@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCities, type City } from '../api/coffeeshop';
 import WobbleRing from '../components/WobbleRing';
 import GuestAuthCard from '../components/GuestAuthCard';
+import { MobileAppDownload } from '../components/mobile-app';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { useLocalCity } from '../hooks/useLocalCity';
@@ -101,6 +102,11 @@ const SettingsPage: React.FC = () => {
           <SettingsRow title="Политика использования" Icon={Lock} color="#79D2B2" iconBg="rgba(27,155,111,.16)" colors={colors} onClick={() => navigate('/terms')} />
           <SettingsRow title="Поделиться" Icon={ShareNetwork} color="#6CCBE4" iconBg="rgba(32,163,193,.17)" colors={colors} onClick={() => { void shareApp(); }} />
         </SettingsSection>
+
+        <section className="mb-6" aria-labelledby="app-download-title">
+          <h2 id="app-download-title" className="mb-2 text-xs font-medium uppercase tracking-wider" style={{ color: colors.muted }}>Скачать приложение</h2>
+          <MobileAppDownload variant="compact" />
+        </section>
 
         <p className="text-sm" style={{ color: colors.muted }}>Версия 1.0.265</p>
       </div>

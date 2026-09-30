@@ -5,7 +5,7 @@ import { useMobileAppDownloads } from '../hooks/queries/useMobileAppDownloads';
 import { usePageTitle } from '../hooks/usePageTitle';
 import WobbleRing from '../components/WobbleRing';
 import Mascot from '../components/Mascot';
-import { AppIcon } from '../components/icons';
+import DownloadButton from '../components/mobile-app/DownloadButton';
 import type { AppDownloadsConfig, ApkDownloadChannel } from '../api/mobileApp';
 
 type Platform = 'android' | 'ios' | 'desktop';
@@ -15,7 +15,6 @@ interface DownloadOption {
   label: string;
   href: string;
   platform: Platform;
-  icon: string;
   apk?: ApkDownloadChannel;
 }
 
@@ -59,7 +58,6 @@ function getOptions(config: AppDownloadsConfig): DownloadOption[] {
       label: 'Скачать в Google Play',
       href: '/download/android',
       platform: 'android',
-      icon: 'public',
     });
   }
 
@@ -69,7 +67,6 @@ function getOptions(config: AppDownloadsConfig): DownloadOption[] {
       label: 'Скачать APK',
       href: '/download/apk',
       platform: 'android',
-      icon: 'check_circle',
       apk: config.android.apk,
     });
   }
@@ -80,7 +77,6 @@ function getOptions(config: AppDownloadsConfig): DownloadOption[] {
       label: 'Скачать в App Store',
       href: '/download/ios',
       platform: 'ios',
-      icon: 'call',
     });
   }
 
@@ -172,13 +168,7 @@ const DownloadPage: React.FC = () => {
                       className="rounded-2xl border p-4"
                       style={{ borderColor: colors.border, background: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF' }}
                     >
-                      <a
-                        href={option.href}
-                        className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#EAB308] px-5 font-extended text-sm font-bold text-[#1A1412] transition-opacity hover:opacity-90 sm:w-auto"
-                      >
-                        <AppIcon name={option.icon} size={18} color="currentColor" />
-                        {option.label}
-                      </a>
+                      <DownloadButton channel={option.key} href={option.href} label={option.label} />
 
                       {option.apk && (
                         <dl className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2" style={{ color: colors.textSecondary }}>

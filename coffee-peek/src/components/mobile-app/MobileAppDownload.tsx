@@ -3,7 +3,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../design-system';
 import { useMobileAppDownloads } from '../../hooks/queries/useMobileAppDownloads';
 import Shimmer from '../skeletons/Shimmer';
-import { AppIcon } from '../icons';
+import DownloadButton from './DownloadButton';
 
 export type MobileAppDownloadVariant = 'full' | 'compact';
 
@@ -30,21 +30,18 @@ const MobileAppDownload: React.FC<MobileAppDownloadProps> = ({ variant = 'full',
       label: 'Скачать в Google Play',
       href: '/download/android',
       available: data.android.googlePlay.available && Boolean(data.android.googlePlay.url),
-      icon: 'public',
     },
     {
       key: 'apk',
       label: 'Скачать APK',
       href: '/download/apk',
       available: data.android.apk.available && Boolean(data.android.apk.url),
-      icon: 'check_circle',
     },
     {
       key: 'app-store',
       label: 'Скачать в App Store',
       href: '/download/ios',
       available: data.ios.appStore.available && Boolean(data.ios.appStore.url),
-      icon: 'call',
     },
   ].filter((channel) => channel.available);
 
@@ -65,16 +62,9 @@ const MobileAppDownload: React.FC<MobileAppDownloadProps> = ({ variant = 'full',
           </p>
         </div>
       )}
-      <div className={`flex flex-col ${variant === 'full' ? 'sm:flex-row' : ''} gap-2`}>
+      <div className={`flex flex-wrap gap-3`}>
         {channels.map((channel) => (
-          <a
-            key={channel.key}
-            href={channel.href}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#EAB308] px-4 py-2.5 font-extended text-sm font-bold text-[#1A1412] transition-colors hover:bg-[#FACC15]"
-          >
-            <AppIcon name={channel.icon} size={18} color="currentColor" />
-            {channel.label}
-          </a>
+          <DownloadButton key={channel.key} channel={channel.key} href={channel.href} label={channel.label} />
         ))}
       </div>
     </div>
