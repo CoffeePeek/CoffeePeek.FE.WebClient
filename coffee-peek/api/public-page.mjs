@@ -1,6 +1,5 @@
 const SITE_URL = 'https://coffeepeek.by';
 const DEFAULT_API_URL = 'https://api.coffeepeek.by';
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const escapeHtml = (value = '') => String(value)
   .replaceAll('&', '&amp;')
@@ -150,13 +149,7 @@ export async function renderPublicPage(request) {
       return { html, status: 503 };
     }
     const shops = result.body?.data?.coffeeShops || [];
-    if (shops.length) {
-      const ids = new URLSearchParams();
-      shops.forEach(shop => ids.append('ids', shop.id));
-      const batch = await fetchJson(`/api/CoffeeShops/public-addresses?${ids}`, true);
-      const addresses = new Map((Array.isArray(batch.body) ? batch.body : []).map(address => [address.entityId, address.canonicalPath]));
-      shops.forEach(shop => { shop.canonicalPath = addresses.get(shop.id); });
-    }
+    shops.forEach(shop => { shop.canonicalPath = shop.address?.canonicalPath; });
     const title = 'Кофейни Беларуси — CoffeePeek';
     const description = `Каталог кофеен CoffeePeek: ${shops.length} заведений с адресами, рейтингами, меню и фотографиями.`;
     const structuredData = {
@@ -177,72 +170,35 @@ export async function renderPublicPage(request) {
     return { html, status: 200 };
   }
 
-  const prefixes = { shops: '/api/CoffeeShops', roasters: '/api/roasters', users: '/api/Users', cities: '/api/Catalogs/cities', zones: '/api/Catalogs/coffee-zones' };
-  if (page === 'address') {
-    const kind = url.searchParams.get('kind');
-    const segment = url.searchParams.get('segment') || '';
-    if (!prefixes[kind]) return { html: '', status: 400 };
-    const legacy = UUID_PATTERN.test(segment);
-    const prefix = prefixes[kind];
-    let result = await fetchJson(`${prefix}/${legacy ? `${encodeURIComponent(segment)}/public-address` : `by-slug/${encodeURIComponent(segment)}`}`, true);
-    const address = legacy ? result.body : result.body?.address;
-    const path = url.searchParams.get('path') || '';
-    if (result.ok && address?.canonicalPath && (legacy || address.isAlias || path !== address.canonicalPath)) {
-      return { html: '', status: 301, location: address.canonicalPath };
-    }
-    let data = result.body?.data;
-    if (legacy && !address?.canonicalPath) {
-      if (kind === 'shops' || kind === 'roasters' || kind === 'users') {
-        result = await fetchJson(`${prefix}/${segment}`);
-        data = result.body?.data;
-      } else if (kind === 'cities') {
-        result = await fetchJson(prefix);
-        data = result.body?.data?.cities?.find(city => city.id === segment);
-      }
-    }
-    if (!result.ok || !data) {
-      const status = result.ok ? 404 : result.status;
-      const content = status === 404 ? pageLayout('Не найдено', 'Страница недоступна по этому адресу.', '') : renderUnavailable();
-      return { html: injectContent(replaceMeta(shell, { title: 'CoffeePeek', description: 'Публичная страница CoffeePeek', canonical: `${SITE_URL}${path}` }), content), status, retryAfter: result.retryAfter };
-    }
-    const entity = kind === 'shops' ? data.shopDto : data;
-    const title = entity?.name || entity?.userName || 'CoffeePeek';
-    const description = entity?.description || entity?.about || title;
-    const html = injectContent(replaceMeta(shell, { title: `${title} — CoffeePeek`, description, canonical: `${SITE_URL}${address?.canonicalPath || path}` }), kind === 'shops' ? renderShopDetails(entity) : pageLayout(title, description, kind === 'users' ? `<p>Отзывов: ${escapeHtml(entity.reviewCount)}</p><p>Чекинов: ${escapeHtml(entity.checkInCount)}</p>` : ''));
-    return { html, status: 200 };
+  const prefixes = { shops: '/api/CoffeeShops', roasters: '/api/Roasters', users: '/api/Users', cities: '/api/Catalogs/cities', zones: '/api/Catalogs/coffee-zones' };
+  const kind = page === 'shop' ? 'shops' : url.searchParams.get('kind');
+  const segment = page === 'shop' ? url.searchParams.get('shopId') || '' : url.searchParams.get('segment') || '';
+  if (!prefixes[kind]) return { html: '', status: 400 };
+  const path = url.searchParams.get('path') || `/coffee-shops/${encodeURIComponent(segment)}`;
+  const result = await fetchJson(`${prefixes[kind]}/by-slug/${encodeURIComponent(segment)}`, kind === 'users' || kind === 'cities' || kind === 'zones');
+  const data = kind === 'cities' || kind === 'zones' ? result.body : result.body?.data;
+  const address = kind === 'users' ? result.body?.address : data?.address;
+  if (!result.ok || !data || !address) {
+    const status = result.ok ? 503 : result.status;
+    const content = status === 404 ? renderNotFound() : renderUnavailable();
+    return { html: injectContent(replaceMeta(shell, { title: 'CoffeePeek', description: 'Публичная страница CoffeePeek', canonical: `${SITE_URL}${path}` }), content), status, retryAfter: result.retryAfter };
   }
-
-  const shopId = url.searchParams.get('shopId') || '';
-  if (!UUID_PATTERN.test(shopId)) {
-    const html = injectContent(replaceMeta(shell, { title: 'Кофейня не найдена — CoffeePeek', description: 'Запрошенная кофейня не найдена.', canonical: `${SITE_URL}/shops/${encodeURIComponent(shopId)}` }), renderNotFound());
-    return { html, status: 404 };
-  }
-
-  const [result, citiesResult] = await Promise.all([
-    fetchJson(`/api/CoffeeShops/${shopId}`),
-    fetchJson('/api/Catalogs/cities'),
-  ]);
-  const shop = result.body?.data?.shopDto;
-  if (!result.ok || !shop) {
-    if (!result.body && (result.status >= 500 || result.status === 429)) {
-      const html = injectContent(replaceMeta(shell, { title: 'CoffeePeek временно недоступен', description: 'Данные кофейни временно недоступны.', canonical: `${SITE_URL}/shops/${shopId}` }), renderUnavailable());
-      return { html, status: result.status === 429 ? 429 : 503, retryAfter: result.retryAfter };
-    }
-    const html = injectContent(replaceMeta(shell, { title: 'Кофейня не найдена — CoffeePeek', description: 'Запрошенная кофейня не найдена.', canonical: `${SITE_URL}/shops/${shopId}` }), renderNotFound());
-    return { html, status: 404 };
-  }
-
-  const metadata = await fetchJson(`/api/CoffeeShops/${shopId}/public-address`, true);
-  if (metadata.ok && metadata.body?.canonicalPath) return { html: '', status: 301, location: metadata.body.canonicalPath };
-
-  const address = shop.location?.address || 'Беларусь';
-  const city = citiesResult.body?.data?.cities?.find((item) => item.id === shop.cityId)?.name;
-  const title = `${shop.name}${city ? `, ${city}` : ''} — CoffeePeek`;
-  const description = (shop.description || `${shop.name}: ${address}. Рейтинг, отзывы, меню и информация о кофейне на CoffeePeek.`).slice(0, 160);
-  const canonical = `${SITE_URL}/shops/${shop.id}`;
-  const image = shop.photos?.[0]?.urls?.detail || shop.photos?.[0]?.fullUrl;
-  let html = replaceMeta(shell, { title, description, canonical, type: 'business.business', image });
-  html = injectContent(html, `${renderShopDetails(shop)}${jsonLd({ '@context': 'https://schema.org', '@type': 'CafeOrCoffeeShop', name: shop.name, description, url: canonical, image, address: { '@type': 'PostalAddress', streetAddress: address, addressLocality: city, addressCountry: 'BY' }, geo: shop.location?.latitude != null ? { '@type': 'GeoCoordinates', latitude: shop.location.latitude, longitude: shop.location.longitude } : undefined, aggregateRating: shop.reviewCount ? { '@type': 'AggregateRating', ratingValue: shop.rating, reviewCount: shop.reviewCount } : undefined })}`);
+  if (path !== address.canonicalPath) return { html: '', status: 301, location: address.canonicalPath };
+  const title = data.name || data.userName || 'CoffeePeek';
+  const description = data.description || data.about || title;
+  const canonical = `${SITE_URL}${address.canonicalPath}`;
+  let html = replaceMeta(shell, { title: `${title} — CoffeePeek`, description, canonical,
+    type: kind === 'shops' ? 'business.business' : 'website',
+    image: data.photos?.[0]?.urls?.detail || data.photos?.[0]?.fullUrl,
+  });
+  const content = kind === 'shops' ? renderShopDetails(data) : pageLayout(title, description,
+    kind === 'users' ? `<p>Отзывов: ${escapeHtml(data.reviewCount)}</p><p>Чекинов: ${escapeHtml(data.checkInCount)}</p>` : '');
+  const structured = kind === 'shops' ? jsonLd({ '@context': 'https://schema.org', '@type': 'CafeOrCoffeeShop', name: data.name, description, url: canonical,
+    address: { '@type': 'PostalAddress', streetAddress: data.location?.address, addressCountry: 'BY' },
+    geo: data.location?.latitude != null ? { '@type': 'GeoCoordinates', latitude: data.location.latitude, longitude: data.location.longitude } : undefined,
+    aggregateRating: data.reviewCount ? { '@type': 'AggregateRating', ratingValue: data.rating, reviewCount: data.reviewCount } : undefined,
+  }) : '';
+  html = injectContent(html, content + structured);
   return { html, status: 200 };
 }
 

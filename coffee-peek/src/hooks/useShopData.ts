@@ -1,4 +1,3 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCoffeeShop, useInvalidateCoffeeShops } from './queries/useCoffeeShops';
 
 /**

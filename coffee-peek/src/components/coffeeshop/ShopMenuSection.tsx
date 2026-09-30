@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react';
 import {
   formatMenuCapturedAt,
   formatMenuPrice,
-  ShopMenuDto,
-  ShopMenuItemDto,
+  type ShopMenuDto,
+  type ShopMenuItemDto,
 } from '../../api/menu';
 import PhotoLightbox from '../PhotoLightbox';
 import { getPhotoUrl } from '../../api/coffeeshop';

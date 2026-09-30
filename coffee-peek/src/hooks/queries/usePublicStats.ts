@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getPublicStats, PublicStats } from '../../api/public';
+import { getPublicStats, type PublicStats } from '../../api/public';
 
 export const publicStatsKeys = {
   all: ['publicStats'] as const,

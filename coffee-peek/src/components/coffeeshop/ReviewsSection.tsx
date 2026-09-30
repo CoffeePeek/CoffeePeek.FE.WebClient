@@ -91,6 +91,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               <div key={review.id} aria-hidden={isBlurred || undefined} className={`${cardBg} min-w-[88%] snap-start rounded-[24px] border p-5 transition-all sm:min-w-0 ${borderColor} ${isBlurred ? 'pointer-events-none select-none blur-[6px]' : ''}`}>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <button
+                    disabled={!review.author}
                     onClick={() => handleNavigateToUserProfile(review.userId)}
                     className="flex min-w-0 items-center gap-4 text-left transition-opacity hover:opacity-80"
                   >

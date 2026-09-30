@@ -508,7 +508,7 @@ const MapPage: React.FC = () => {
                 </button>
                 <Button
                   type="button"
-                  onClick={() => openPublic('shops', selectedShop.id)}
+                  onClick={() => openPublic('shops', selectedShop.publicAddress)}
                   className="flex-1 min-h-11"
                   aria-label={`Открыть ${selectedShop.title}`}
                 >

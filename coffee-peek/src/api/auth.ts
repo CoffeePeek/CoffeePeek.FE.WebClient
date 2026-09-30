@@ -1,5 +1,5 @@
 import { queryClient } from '../lib/queryClient';
-import { getPublicAddress } from './publicAddresses';
+import type { PublicAddress } from './publicAddresses';
 /**
  * API модуль для аутентификации и профиля пользователя
  */
@@ -32,7 +32,7 @@ export interface AuthData {
 
 export interface AuthResponse extends ApiResponse<AuthData> {}
 
-export interface CreateEntityResponse {
+export interface RegistrationResponse {
   isSuccess: boolean;
   message: string;
   data?: any;
@@ -46,6 +46,7 @@ export interface CheckExistsResponse extends ApiResponse<CheckExistsData> {}
 
 // UserProfile interfaces
 export interface UserProfile {
+  address: PublicAddress | null;
   id?: string;
   userCredentialId: string;
   userName: string;
@@ -163,9 +164,9 @@ export async function login(credentials: LoginRequest): Promise<AuthResponse> {
 
 /**
  * Регистрация нового пользователя
- * Возвращает CreateEntityResponse с isSuccess и message
+ * Возвращает RegistrationResponse с isSuccess и message
  */
-export async function register(userData: RegisterRequest): Promise<CreateEntityResponse> {
+export async function register(userData: RegisterRequest): Promise<RegistrationResponse> {
   const response = await httpClient.post<any>(
     API_ENDPOINTS.AUTH.REGISTER,
     userData,
@@ -296,16 +297,11 @@ export async function updatePhoneNumber(
  */
 export async function updateUsername(
   data: UpdateUsernameRequest
-): Promise<ApiResponse<string>> {
-  const response = await httpClient.patch<string>(API_ENDPOINTS.USER.UPDATE_USERNAME, data, {
+): Promise<ApiResponse<{ username: string; address: PublicAddress | null }>> {
+  const response = await httpClient.patch<{ username: string; address: PublicAddress | null }>(API_ENDPOINTS.USER.UPDATE_USERNAME, data, {
     requiresAuth: true,
   });
-  if (response.success) {
-    queryClient.removeQueries({ queryKey: ['publicAddress', 'users'] });
-    const profile = await getProfile().catch(() => null);
-    const id = profile?.data?.id || profile?.data?.userCredentialId;
-    if (id) await getPublicAddress('users', id).catch(() => undefined);
-  }
+  if (response.success) queryClient.removeQueries({ queryKey: ['publicAddress', 'users'] });
   return response;
 }
 

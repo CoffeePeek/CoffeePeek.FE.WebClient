@@ -1,3 +1,4 @@
+import type { PublicAddress } from './publicAddresses';
 /**
  * API модуль для работы с кофейнями
  */
@@ -10,7 +11,9 @@ import { normalizeReviewDto } from './core/reviewNormalize';
 import { normalizeCheckInDto } from './core/checkInNormalize';
 import type { ShopMenuDto } from './menu';
 
-// ==================== Types ====================
+// ==================== UI models ====================
+// Public entity id/cityId and filter *Ids fields contain server-provided slugs.
+// publicAddress keeps the canonical metadata; photo/review/check-in IDs stay service IDs.
 
 // imgproxy variants; without the proxy configured all four equal fullUrl.
 export interface PhotoUrlsDto {
@@ -64,6 +67,8 @@ export function getPhotoUrl(
 }
 
 export interface CoffeeShop {
+  publicAddress?: PublicAddress;
+  canonicalPath?: string;
   id: string;
   name: string;
   address?: string;
@@ -108,6 +113,8 @@ export interface CoffeeShop {
 export type CoffeeShopType = 'Specialty' | 'CoffeeBar' | 'Cafe';
 
 export interface MapShop {
+  publicAddress?: PublicAddress;
+  canonicalPath?: string;
   id: string;
   latitude: number;
   longitude: number;
@@ -130,6 +137,8 @@ export interface MapCluster {
 }
 
 export interface MapCoffeeZone {
+  publicAddress?: PublicAddress;
+  canonicalPath?: string;
   id: string;
   name: string;
   description: string | null;
@@ -163,6 +172,8 @@ export interface ShopTagDto {
 }
 
 export interface DetailedCoffeeShop {
+  publicAddress?: PublicAddress;
+  canonicalPath?: string;
   id: string;
   cityId: string;
   name: string;
@@ -187,7 +198,7 @@ export interface DetailedCoffeeShop {
     longitude?: number;
   };
   beans?: Array<{ id: string; name: string }>;
-  roasters?: Array<{ id: string; name: string; photoUrl?: string | null }>;
+  roasters?: Array<{ id: string; publicAddress?: PublicAddress; name: string; photoUrl?: string | null; coverPhoto?: ShortPhotoMetadataDto | null }>;
   equipments?: Equipment[];
   brewMethods?: Array<{ id: string; name: string }> | null;
   shopContact?: {
@@ -211,7 +222,7 @@ export interface CoffeeShopFilters {
   roasterIds?: string[];
   brewMethodIds?: string[];
   priceRange?: string;
-  /** Catalog tag ids — AND semantics on the backend */
+  /** Catalog tag slugs — AND semantics on the backend */
   tagIds?: string[];
   isOpen?: boolean;
   coffeeFocus?: string;
@@ -231,6 +242,8 @@ const SHOP_TYPE_QUERY: Record<string, string> = {
 };
 
 export interface ShortShopDto {
+  publicAddress?: PublicAddress;
+  canonicalPath?: string;
   id: string;
   cityId: string;
   name: string;
@@ -249,7 +262,7 @@ export interface ShortShopDto {
     longitude?: number;
   };
   beans?: Array<{ id: string; name: string }>;
-  roasters?: Array<{ id: string; name: string; photoUrl?: string | null }>;
+  roasters?: Array<{ id: string; publicAddress?: PublicAddress; name: string; photoUrl?: string | null; coverPhoto?: ShortPhotoMetadataDto | null }>;
   equipments?: Equipment[];
   brewMethods?: Array<{ id: string; name: string }>;
   shopContact?: {
@@ -275,22 +288,26 @@ export interface GetCoffeeShopsResponse {
 }
 
 export interface City {
+  publicAddress?: PublicAddress;
+  canonicalPath?: string;
   id: string;
   name: string;
 }
 
-export enum EquipmentCategory {
-  EspressoMachine = 0,
-  Grinder = 1,
-  BulkAndShopGrinders = 2,
-  AlternativeBrewing = 3,
-  ManualBrewingEquipment = 4,
-  BatchBrewers = 5,
-  WaterFiltrationAndBoilers = 6,
-  ScalesAndPrecisiontools = 7,
-  ColdBrewSystems = 8,
-  Other = 9,
-}
+export const EquipmentCategory = {
+  EspressoMachine: 0,
+  Grinder: 1,
+  BulkAndShopGrinders: 2,
+  AlternativeBrewing: 3,
+  ManualBrewingEquipment: 4,
+  BatchBrewers: 5,
+  WaterFiltrationAndBoilers: 6,
+  ScalesAndPrecisiontools: 7,
+  ColdBrewSystems: 8,
+  Other: 9,
+} as const;
+
+export type EquipmentCategory = (typeof EquipmentCategory)[keyof typeof EquipmentCategory];
 
 export const EQUIPMENT_CATEGORY_LABELS: Record<EquipmentCategory, string> = {
   [EquipmentCategory.EspressoMachine]: 'Эспрессо-машина',
@@ -310,14 +327,15 @@ export interface Equipment {
   name: string;
   brand: string;
   model: string;
-  category: EquipmentCategory;
+  category: EquipmentCategory | keyof typeof EquipmentCategory;
 }
 
 /**
  * Возвращает локализованное название категории оборудования
  */
-export function getEquipmentCategoryLabel(category: EquipmentCategory): string {
-  return EQUIPMENT_CATEGORY_LABELS[category] ?? 'Другое';
+export function getEquipmentCategoryLabel(category: Equipment['category']): string {
+  const value = typeof category === 'string' ? EquipmentCategory[category] : category;
+  return EQUIPMENT_CATEGORY_LABELS[value] ?? 'Другое';
 }
 
 /**
@@ -334,19 +352,24 @@ export interface CoffeeBean {
 }
 
 export interface Roaster {
+  publicAddress?: PublicAddress;
+  canonicalPath?: string;
   id: string;
   name: string;
   photoUrl?: string | null;
+  coverPhoto?: ShortPhotoMetadataDto | null;
 }
 
 export interface RoasterDetails {
+  publicAddress?: PublicAddress;
+  canonicalPath?: string;
   id: string;
   name: string;
   about?: string | null;
   location?: { address?: string | null; latitude?: number | null; longitude?: number | null } | null;
   contact?: { instagramLink?: string | null; siteLink?: string | null } | null;
   photos: ShortPhotoMetadataDto[];
-  shops: Array<{ id: string; name: string; photoUrl?: string | null }>;
+  shops: Array<{ id: string; publicAddress?: PublicAddress; name: string; photoUrl?: string | null; coverPhoto?: ShortPhotoMetadataDto | null }>;
 }
 
 export interface BrewMethod {
@@ -356,6 +379,8 @@ export interface BrewMethod {
 
 // Интерфейсы для отзывов
 export interface Review {
+  author?: PublicAddress | null;
+  shop?: PublicAddress | null;
   id: string;
   coffeeShopId: string;
   shopName?: string;
@@ -383,7 +408,7 @@ export interface GetReviewsResponse {
 }
 
 export interface CreateReviewRequest {
-  shopId: string;
+  shop: string;
   header?: string | null;
   comment: string;
   ratingCoffee: number;
@@ -405,8 +430,7 @@ export interface RatingDto {
 }
 
 export interface CreateCheckInRequest {
-  coffeeShopId?: string;
-  shopId?: string;
+  shop: string;
   isPublic: boolean;
   visitedAt: string; // ISO date string, required
   note: string | null; // Required for public check-ins only.
@@ -426,6 +450,7 @@ export interface CreateCheckInResponse {
 }
 
 export interface CheckInDto {
+  shop?: PublicAddress | null;
   id: string;
   userId: string;
   shopId: string;
@@ -452,17 +477,6 @@ export interface CheckInDateRange {
   to: string;
 }
 
-// ==================== Кэш для справочных данных ====================
-
-const referenceDataCache: {
-  cities?: { data: City[]; promise?: Promise<ApiResponse<City[]>> };
-  equipments?: { data: Equipment[]; promise?: Promise<ApiResponse<Equipment[]>> };
-  coffeeBeans?: { data: CoffeeBean[]; promise?: Promise<ApiResponse<CoffeeBean[]>> };
-  roasters?: { data: Roaster[]; promise?: Promise<ApiResponse<Roaster[]>> };
-  brewMethods?: { data: BrewMethod[]; promise?: Promise<ApiResponse<BrewMethod[]>> };
-  shopTags?: { data: ShopTagDto[]; promise?: Promise<ApiResponse<ShopTagDto[]>> };
-} = {};
-
 // ==================== API Functions ====================
 
 /**
@@ -475,11 +489,11 @@ export async function getCoffeeShops(
 ): Promise<ApiResponse<GetCoffeeShopsResponse>> {
   const params: Record<string, any> = {
     page: page > 0 ? page : 1,
-    pageSize: pageSize > 0 ? pageSize : 10,
+    pageSize: Math.min(100, pageSize > 0 ? pageSize : 10),
   };
 
   if (filters) {
-    if (filters.cityId) params.cityId = filters.cityId;
+    if (filters.cityId) params.city = filters.cityId;
     if (filters.priceRange) params.priceRange = filters.priceRange;
     if (filters.equipmentIds) params.equipments = filters.equipmentIds;
     if (filters.coffeeBeanIds) params.beans = filters.coffeeBeanIds;
@@ -511,7 +525,7 @@ export async function searchCoffeeShops(
 ): Promise<ApiResponse<GetCoffeeShopsResponse>> {
   const params: Record<string, any> = {
     page: page > 0 ? page : 1,
-    pageSize: pageSize > 0 ? pageSize : 10,
+    pageSize: Math.min(100, pageSize > 0 ? pageSize : 10),
   };
 
   // Добавляем поисковый запрос
@@ -521,7 +535,7 @@ export async function searchCoffeeShops(
 
   // Добавляем фильтры
   if (filters) {
-    if (filters.cityId) params.cityId = filters.cityId;
+    if (filters.cityId) params.city = filters.cityId;
     if (filters.priceRange) params.priceRange = filters.priceRange;
     if (filters.equipmentIds) params.equipments = filters.equipmentIds;
     if (filters.coffeeBeanIds) params.beans = filters.coffeeBeanIds;
@@ -585,12 +599,12 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
 
 export type MapSearchResponseData = {
   shops?: Array<{
-    id: string;
+    address: PublicAddress;
     latitude: string | number;
     longitude: string | number;
     title: string | null;
     type: number | string | null;
-    primaryZoneId: string | null;
+    primaryZone: PublicAddress | null;
   }>;
   clusters?: Array<{
     id: string | null;
@@ -605,7 +619,7 @@ export type MapSearchResponseData = {
     };
   }>;
   zones?: Array<{
-    id: string;
+    address: PublicAddress;
     name: string | null;
     description: string | null;
     latitude: string | number;
@@ -627,14 +641,16 @@ function normalizeMapSearch(data: MapSearchResponseData): MapSearchData {
   const shops = (data.shops ?? []).flatMap((shop): MapShop[] => {
     const latitude = finiteNumber(shop.latitude);
     const longitude = finiteNumber(shop.longitude);
-    if (typeof shop.id !== 'string' || latitude === null || longitude === null) return [];
+    if (!shop.address?.slug || latitude === null || longitude === null) return [];
     return [{
-      id: shop.id,
+      id: shop.address.slug,
+      publicAddress: shop.address,
+      canonicalPath: shop.address?.canonicalPath,
       latitude,
       longitude,
       title: typeof shop.title === 'string' && shop.title.trim() ? shop.title : 'Кофейня',
       type: typeof shop.type === 'number' || typeof shop.type === 'string' ? shop.type as CoffeeShopType | number : null,
-      primaryZoneId: typeof shop.primaryZoneId === 'string' ? shop.primaryZoneId : null,
+      primaryZoneId: shop.primaryZone?.slug ?? null,
     }];
   });
   const clusters = (data.clusters ?? []).flatMap((cluster): MapCluster[] => {
@@ -660,9 +676,11 @@ function normalizeMapSearch(data: MapSearchResponseData): MapSearchData {
     const longitude = finiteNumber(zone.longitude);
     const radiusMeters = finiteNumber(zone.radiusMeters);
     const shopCount = finiteNumber(zone.shopCount);
-    if (typeof zone.id !== 'string' || latitude === null || longitude === null || radiusMeters === null || shopCount === null) return [];
+    if (!zone.address?.slug || latitude === null || longitude === null || radiusMeters === null || shopCount === null) return [];
     return [{
-      id: zone.id,
+      id: zone.address.slug,
+      publicAddress: zone.address,
+      canonicalPath: zone.address?.canonicalPath,
       name: typeof zone.name === 'string' && zone.name.trim() ? zone.name : 'Кофейная зона',
       description: typeof zone.description === 'string' ? zone.description : null,
       latitude,
@@ -731,119 +749,31 @@ export async function getMapZones(bounds: MapViewportBounds, signal?: AbortSigna
 }
 
 /**
- * Получает список городов (с кэшированием)
+ * Получает список городов
  */
 export async function getCities(): Promise<ApiResponse<City[]>> {
-  if (referenceDataCache.cities?.data) {
-    return { success: true, message: '', data: referenceDataCache.cities.data };
-  }
-  
-  if (referenceDataCache.cities?.promise) {
-    return referenceDataCache.cities.promise;
-  }
-  
-  const promise = (async () => {
-    const result = await httpClient.get<City[]>(API_ENDPOINTS.CATALOGS.CITIES, {
-      requiresAuth: false,
-    });
-    
-    if (result.success && result.data) {
-      referenceDataCache.cities = { data: result.data };
-    }
-    
-    delete referenceDataCache.cities?.promise;
-    return result;
-  })();
-  
-  referenceDataCache.cities = { data: [], promise };
-  return promise;
+  return httpClient.get<City[]>(API_ENDPOINTS.CATALOGS.CITIES, { requiresAuth: false });
 }
 
 /**
- * Получает список оборудования (с кэшированием)
+ * Получает список оборудования
  */
 export async function getEquipments(): Promise<ApiResponse<Equipment[]>> {
-  if (referenceDataCache.equipments?.data) {
-    return { success: true, message: '', data: referenceDataCache.equipments.data };
-  }
-  
-  if (referenceDataCache.equipments?.promise) {
-    return referenceDataCache.equipments.promise;
-  }
-  
-  const promise = (async () => {
-    const result = await httpClient.get<Equipment[]>(API_ENDPOINTS.CATALOGS.EQUIPMENTS, {
-      requiresAuth: false,
-    });
-    
-    if (result.success && result.data) {
-      referenceDataCache.equipments = { data: result.data };
-    }
-    
-    delete referenceDataCache.equipments?.promise;
-    return result;
-  })();
-  
-  referenceDataCache.equipments = { data: [], promise };
-  return promise;
+  return httpClient.get<Equipment[]>(API_ENDPOINTS.CATALOGS.EQUIPMENTS, { requiresAuth: false });
 }
 
 /**
- * Получает список кофейных зёрен (с кэшированием)
+ * Получает список кофейных зёрен
  */
 export async function getCoffeeBeans(): Promise<ApiResponse<CoffeeBean[]>> {
-  if (referenceDataCache.coffeeBeans?.data) {
-    return { success: true, message: '', data: referenceDataCache.coffeeBeans.data };
-  }
-  
-  if (referenceDataCache.coffeeBeans?.promise) {
-    return referenceDataCache.coffeeBeans.promise;
-  }
-  
-  const promise = (async () => {
-    const result = await httpClient.get<CoffeeBean[]>(API_ENDPOINTS.CATALOGS.BEANS, {
-      requiresAuth: false,
-    });
-    
-    if (result.success && result.data) {
-      referenceDataCache.coffeeBeans = { data: result.data };
-    }
-    
-    delete referenceDataCache.coffeeBeans?.promise;
-    return result;
-  })();
-  
-  referenceDataCache.coffeeBeans = { data: [], promise };
-  return promise;
+  return httpClient.get<CoffeeBean[]>(API_ENDPOINTS.CATALOGS.BEANS, { requiresAuth: false });
 }
 
 /**
- * Получает список обжарщиков (с кэшированием)
+ * Получает список обжарщиков
  */
 export async function getRoasters(): Promise<ApiResponse<Roaster[]>> {
-  if (referenceDataCache.roasters?.data) {
-    return { success: true, message: '', data: referenceDataCache.roasters.data };
-  }
-  
-  if (referenceDataCache.roasters?.promise) {
-    return referenceDataCache.roasters.promise;
-  }
-  
-  const promise = (async () => {
-    const result = await httpClient.get<Roaster[]>(API_ENDPOINTS.CATALOGS.ROASTERS, {
-      requiresAuth: false,
-    });
-    
-    if (result.success && result.data) {
-      referenceDataCache.roasters = { data: result.data };
-    }
-    
-    delete referenceDataCache.roasters?.promise;
-    return result;
-  })();
-  
-  referenceDataCache.roasters = { data: [], promise };
-  return promise;
+  return httpClient.get<Roaster[]>(API_ENDPOINTS.CATALOGS.ROASTERS, { requiresAuth: false });
 }
 
 /**
@@ -856,70 +786,17 @@ export async function getRoasterById(id: string): Promise<ApiResponse<RoasterDet
 }
 
 /**
- * Получает список способов заваривания (с кэшированием)
+ * Получает список способов заваривания
  */
 export async function getBrewMethods(): Promise<ApiResponse<BrewMethod[]>> {
-  if (referenceDataCache.brewMethods?.data) {
-    return { success: true, message: '', data: referenceDataCache.brewMethods.data };
-  }
-  
-  if (referenceDataCache.brewMethods?.promise) {
-    return referenceDataCache.brewMethods.promise;
-  }
-  
-  const promise = (async () => {
-    const result = await httpClient.get<BrewMethod[]>(API_ENDPOINTS.CATALOGS.BREW_METHODS, {
-      requiresAuth: false,
-    });
-    
-    if (result.success && result.data) {
-      referenceDataCache.brewMethods = { data: result.data };
-    }
-    
-    delete referenceDataCache.brewMethods?.promise;
-    return result;
-  })();
-  
-  referenceDataCache.brewMethods = { data: [], promise };
-  return promise;
+  return httpClient.get<BrewMethod[]>(API_ENDPOINTS.CATALOGS.BREW_METHODS, { requiresAuth: false });
 }
 
 /**
  * Активные теги атмосферы для фильтров (GET /api/Catalogs/shop-tags)
  */
 export async function getShopTags(): Promise<ApiResponse<ShopTagDto[]>> {
-  if (referenceDataCache.shopTags?.data) {
-    return { success: true, message: '', data: referenceDataCache.shopTags.data };
-  }
-
-  if (referenceDataCache.shopTags?.promise) {
-    return referenceDataCache.shopTags.promise;
-  }
-
-  const promise = (async () => {
-    const result = await httpClient.get<ShopTagDto[] | { shopTags?: ShopTagDto[]; items?: ShopTagDto[] }>(
-      API_ENDPOINTS.CATALOGS.SHOP_TAGS,
-      { requiresAuth: false }
-    );
-
-    let tags: ShopTagDto[] = [];
-    if (Array.isArray(result.data)) {
-      tags = result.data;
-    } else if (result.data && typeof result.data === 'object') {
-      const obj = result.data as { tags?: ShopTagDto[]; shopTags?: ShopTagDto[]; items?: ShopTagDto[] };
-      tags = obj.tags ?? obj.shopTags ?? obj.items ?? [];
-    }
-
-    if (result.success) {
-      referenceDataCache.shopTags = { data: tags };
-    }
-
-    delete referenceDataCache.shopTags?.promise;
-    return { ...result, data: tags };
-  })();
-
-  referenceDataCache.shopTags = { data: [], promise };
-  return promise;
+  return httpClient.get<ShopTagDto[]>(API_ENDPOINTS.CATALOGS.SHOP_TAGS, { requiresAuth: false });
 }
 
 /**
@@ -941,7 +818,7 @@ export async function getReviewsByUserId(
 ): Promise<ApiResponse<GetReviewsResponse>> {
   const response = await httpClient.get<any>(API_ENDPOINTS.USER.REVIEWS(userId), {
     params: { pageNumber: page, pageSize },
-    requiresAuth: false,
+    requiresAuth: true,
   });
 
   const raw = response.data ?? {};
@@ -988,7 +865,7 @@ export async function getReviewById(reviewId: string): Promise<ApiResponse<Revie
 
 export async function createReview(
   request: CreateReviewRequest,
-  token: string
+  _token: string
 ): Promise<ApiResponse<Review>> {
   return httpClient.post<Review>(API_ENDPOINTS.MODERATION.REVIEWS, request, {
     requiresAuth: true,
@@ -1000,7 +877,7 @@ export async function createReview(
  */
 export async function updateReview(
   request: CreateReviewRequest & { id: string },
-  token: string
+  _token: string
 ): Promise<ApiResponse<Review>> {
   return httpClient.put<Review>(API_ENDPOINTS.MODERATION.REVIEW_UPDATE(request.id), request, {
     requiresAuth: true,

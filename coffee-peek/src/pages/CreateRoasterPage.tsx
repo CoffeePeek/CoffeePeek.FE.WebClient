@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendRoasterToModeration } from '../api/moderation';
-import { getCities, City } from '../api/coffeeshop';
+import { getCities, type City } from '../api/coffeeshop';
 import { getRoasterUploadUrls } from '../api/photos';
 import Button from '../components/Button';
 import MaterialSelect from '../components/MaterialSelect';

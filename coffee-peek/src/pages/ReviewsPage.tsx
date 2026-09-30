@@ -36,7 +36,7 @@ const ReviewsPage: React.FC = () => {
 
   const [page, setPage] = useState(1);
   const { data, isLoading, isFetching, error, refetch } = useUserReviews(
-    user?.id ?? null,
+    user?.address?.slug ?? null,
     page,
     PAGE_SIZE,
     Boolean(user?.id)
@@ -157,7 +157,7 @@ const ReviewsPage: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                       <button
                         type="button"
-                        onClick={() => shopId && openPublic('shops', shopId)}
+                        onClick={() => shopId && openPublic('shops', item.shop)}
                         disabled={!shopId}
                         style={{
                           flex: 1, textAlign: 'left', border: 'none', background: 'transparent',
@@ -195,7 +195,7 @@ const ReviewsPage: React.FC = () => {
                       {shopId && (
                         <button
                           type="button"
-                          onClick={() => openPublic('shops', shopId, '/reviews/edit', { state: { reviewId: item.id } })}
+                          onClick={() => openPublic('shops', item.shop, '/reviews/edit', { state: { reviewId: item.id } })}
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: 4,
                             padding: '5px 10px', borderRadius: 8,

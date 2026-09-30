@@ -1,14 +1,14 @@
 import { buildShopIssueReportRequest, type ShopIssueReportDraft } from '../src/utils/shopIssueReportForm';
 
 const draft: ShopIssueReportDraft = {
-  shopId: '11111111-1111-1111-1111-111111111111',
+  shopId: '26-october-16',
   category: 'IncorrectAddress',
   description: '',
 };
 
 test('builds a minimal request when no description is given for a non-Other category', () => {
   expect(buildShopIssueReportRequest(draft)).toEqual({
-    shopId: draft.shopId,
+    shop: draft.shopId,
     category: 'IncorrectAddress',
     description: null,
   });

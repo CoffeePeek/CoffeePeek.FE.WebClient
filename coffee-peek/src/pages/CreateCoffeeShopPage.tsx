@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendCoffeeShopToModeration } from '../api/moderation';
-import { getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, City, Equipment, CoffeeBean, Roaster, BrewMethod, formatEquipmentName, getEquipmentCategoryLabel } from '../api/coffeeshop';
+import { getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, type City, type Equipment, type CoffeeBean, type Roaster, type BrewMethod, formatEquipmentName, getEquipmentCategoryLabel } from '../api/coffeeshop';
 import Button from '../components/Button';
 import MaterialSelect from '../components/MaterialSelect';
 import { PriceRangeSlider } from '../components/PriceRangeSlider';
@@ -23,13 +23,13 @@ import {
 import {
   buildShopSubmissionPayload,
   INITIAL_SHOP_FORM_DATA,
-  ShopFormData,
+  type ShopFormData,
   validateShopFormClient,
 } from '../utils/shopModerationForm';
 import {
   getShopFieldErrorClass,
   parseShopModerationError,
-  ShopFormField,
+  type ShopFormField,
 } from '../utils/shopModerationFormErrors';
 
 interface CreateCoffeeShopPageProps {
@@ -50,7 +50,6 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
   const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([]);
   const [roasters, setRoasters] = useState<Roaster[]>([]);
   const [brewMethods, setBrewMethods] = useState<BrewMethod[]>([]);
-  const [referenceDataLoaded, setReferenceDataLoaded] = useState(false);
   const [isLoadingReferenceData, setIsLoadingReferenceData] = useState(true);
 
   const [formData, setFormData] = useState<ShopFormData>(INITIAL_SHOP_FORM_DATA);
@@ -109,10 +108,8 @@ const CreateCoffeeShopPage: React.FC<CreateCoffeeShopPageProps> = ({ onBack }) =
           setFormData((prev) => (prev.cityId ? prev : { ...prev, cityId: minsk.id }));
         }
 
-        setReferenceDataLoaded(true);
       } catch (err) {
         logger.error('Error loading reference data:', err);
-        setReferenceDataLoaded(true);
       } finally {
         setIsLoadingReferenceData(false);
       }

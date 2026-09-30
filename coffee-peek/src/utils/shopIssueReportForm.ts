@@ -25,7 +25,7 @@ export interface ShopIssueReportDraft {
 }
 
 export interface CreateShopIssueReportRequest {
-  shopId: string;
+  shop: string;
   category: ShopIssueCategory;
   description: string | null;
 }
@@ -51,7 +51,7 @@ export function buildShopIssueReportRequest(draft: ShopIssueReportDraft): Create
   }
 
   return {
-    shopId: draft.shopId,
+    shop: draft.shopId,
     category: draft.category,
     description: description || null,
   };

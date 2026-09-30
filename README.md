@@ -1,5 +1,13 @@
 # React + TypeScript + Vite
 
+## Client API contracts
+
+- [Public addresses, catalogs, filters and moderation](coffee-peek/docs/PUBLIC-ADDRESSES-CONTRACT.md) — the new build's slug-based API contract, updated 2026-09-30.
+- [Check-ins](coffee-peek/docs/CHECK-IN-CONTRACT.md) — creation, pagination and date ranges under the same contract.
+
+The customer application uses public slugs and inline canonical addresses. Administrative and internal
+APIs retain their internal IDs.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

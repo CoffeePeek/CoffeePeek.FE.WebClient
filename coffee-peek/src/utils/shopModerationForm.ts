@@ -1,10 +1,11 @@
-import { SendCoffeeShopToModerationRequest } from '../api/moderation';
+import type { SendCoffeeShopToModerationRequest, FrontendSchedule } from '../api/moderation';
 import { getDefaultSchedules } from './shopUtils';
-import { ShopFormField } from './shopModerationFormErrors';
+import type { ShopFormField } from './shopModerationFormErrors';
 import { PRICE_RANGE_TO_API } from './priceRange';
 
-export type ShopFormData = Omit<SendCoffeeShopToModerationRequest, 'priceRange'> & {
+export type ShopFormData = Omit<SendCoffeeShopToModerationRequest, 'priceRange' | 'schedules'> & {
   priceRange?: string;
+  schedules: FrontendSchedule[];
 };
 
 export const INITIAL_SHOP_FORM_DATA: ShopFormData = {

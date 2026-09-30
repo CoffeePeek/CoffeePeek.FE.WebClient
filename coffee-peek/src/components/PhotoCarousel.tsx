@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getPhotoUrl, PhotoMetadataDto, ShortPhotoMetadataDto } from '../api/coffeeshop';
+import { getPhotoUrl, type PhotoMetadataDto, type ShortPhotoMetadataDto } from '../api/coffeeshop';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 
 interface PhotoCarouselProps {

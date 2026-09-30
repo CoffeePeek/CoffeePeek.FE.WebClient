@@ -4,8 +4,8 @@
 
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
-import { ApiResponse } from './core/types';
-import { SendShopSuccessResponse } from './core/apiError';
+import type { ApiResponse } from './core/types';
+import type { SendShopSuccessResponse } from './core/apiError';
 import {
   localTimeToUtc,
   normalizeDayOfWeek,
@@ -48,15 +48,6 @@ export interface ShopContactDto {
   email?: string | null;
   siteLink?: string | null;
   phoneNumber?: string | null;
-}
-
-/**
- * Фото кофейни (соответствует ShortPhotoMetadataDto на бэкенде)
- */
-export interface ShortPhotoMetadataDto {
-  fileName: string;
-  storageKey: string;
-  fullUrl: string;
 }
 
 /**
@@ -109,11 +100,7 @@ export interface SendCoffeeShopToModerationRequest {
     website?: string;
     instagram?: string;
   };
-  schedules?: Array<{
-    dayOfWeek: number;
-    openTime?: string;
-    closeTime?: string;
-  }>;
+  schedules?: FrontendSchedule[];
   equipmentIds?: string[];
   coffeeBeanIds?: string[];
   roasterIds?: string[];
@@ -149,7 +136,7 @@ export interface SendRoasterModerationResult {
 }
 
 export interface SendReviewToModerationRequest {
-  shopId: string;
+  shop: string;
   header?: string | null;
   comment: string;
   ratingService: number;
@@ -269,7 +256,7 @@ export function transformContactFromBackend(
  * Получает URL для загрузки фотографий
  */
 export async function getUploadUrls(
-  accessToken: string,
+  _accessToken: string,
   requests: UploadUrlRequest[]
 ): Promise<ApiResponse<UploadUrlResponse[]>> {
   return httpClient.post<UploadUrlResponse[]>(
@@ -299,17 +286,17 @@ export async function sendCoffeeShopToModeration(
     address: shopData.notValidatedAddress,
     description: shopData.description,
     priceRange: shopData.priceRange,
-    cityId: shopData.cityId,
+    city: shopData.cityId,
     shopContact: shopData.shopContact
       ? transformContactToBackend(shopData.shopContact)
       : undefined,
     schedules: shopData.schedules
       ? transformSchedulesToBackend(shopData.schedules)
       : undefined,
-    equipmentIds: shopData.equipmentIds,
-    coffeeBeanIds: shopData.coffeeBeanIds,
-    roasterIds: shopData.roasterIds,
-    brewMethodIds: shopData.brewMethodIds,
+    equipments: shopData.equipmentIds,
+    beans: shopData.coffeeBeanIds,
+    roasters: shopData.roasterIds,
+    brewMethods: shopData.brewMethodIds,
     shopPhotos: shopPhotos ?? shopData.shopPhotos,
     menuPhotos: menuPhotos ?? shopData.menuPhotos,
   };
@@ -317,7 +304,7 @@ export async function sendCoffeeShopToModeration(
   const response = await httpClient.post<SendShopSuccessResponse['data']>(
     API_ENDPOINTS.MODERATION.SHOP,
     backendData,
-    { requiresAuth: true }
+    { requiresAuth: false }
   );
 
   return response;
@@ -337,13 +324,13 @@ export async function sendRoasterToModeration(
     {
       name: roasterData.name,
       about: roasterData.about || undefined,
-      cityId: hasLocation ? roasterData.cityId : undefined,
+      city: roasterData.cityId || null,
       address: hasLocation ? roasterData.address : undefined,
       instagramLink: roasterData.instagramLink || undefined,
       siteLink: roasterData.siteLink || undefined,
       photos: roasterData.photos,
     },
-    { requiresAuth: true }
+    { requiresAuth: false }
   );
 }
 

@@ -1,4 +1,4 @@
-import { DetailedCoffeeShop } from '../api/coffeeshop';
+import type { DetailedCoffeeShop } from '../api/coffeeshop';
 
 /**
  * Получает информацию о возможности создания отзыва из данных кофейни

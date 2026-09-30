@@ -1,4 +1,4 @@
-import { getPublicAddresses } from './publicAddresses';
+import type { PublicAddress } from './publicAddresses';
 import { httpClient } from './core/httpClient';
 import { getMyShopChangeRequests, type ShopChangeRequestDto, type ShopChangeSection } from './shopChangeRequests';
 
@@ -9,9 +9,9 @@ export type ContributionKind = 'shops' | 'roasters' | 'reviews' | 'edits';
 type Paging = { totalItems: number; totalPages: number };
 
 // Only the fields the list renders; full DTOs live in the backend contracts.
-interface ModerationShopDto { id: string; name: string; address: string | null; moderationStatus: ModerationStatus; rejectedReason: string | null; publishedShopId: string | null }
+interface ModerationShopDto { id: string; name: string; address: string | null; moderationStatus: ModerationStatus; rejectedReason: string | null; publishedShop: PublicAddress | null }
 interface ModerationRoasterDto { id: string; name: string; about: string | null; moderationStatus: ModerationStatus; rejectedReason: string | null }
-interface ModerationReviewDto { id: string; header: string | null; comment: string; shopId: string; createdAt: string; moderationStatus: ModerationStatus; rejectedReason: string | null; rating: { place: number; service: number; coffee: number } }
+interface ModerationReviewDto { id: string; header: string | null; comment: string; shop: PublicAddress | null; createdAt: string; moderationStatus: ModerationStatus; rejectedReason: string | null; rating: { place: number; service: number; coffee: number } }
 
 export interface Contribution {
   id: string;
@@ -31,13 +31,13 @@ const sectionLabels: Record<ShopChangeSection, string> = {
   Roasters: 'Обжарщики', Equipment: 'Оборудование', Menu: 'Меню', BrewMethods: 'Методы заваривания',
 };
 
-// The four /mine endpoints disagree on list key and status/reason field names; normalize here.
+// All four /mine endpoints expose data.items; status/reason field names differ.
 export const toContribution = {
   shops: (s: ModerationShopDto): Contribution => ({
     id: s.id, title: s.name, status: s.moderationStatus, reason: s.rejectedReason,
     subtitle: s.address ?? undefined,
-    // publishedShopId can lag behind Approved while the Shops service creates the live shop.
-    shopId: s.publishedShopId ?? undefined,
+    // Publication can lag behind moderation approval.
+    shopId: s.publishedShop?.slug, link: s.publishedShop?.canonicalPath,
   }),
   roasters: (r: ModerationRoasterDto): Contribution => ({
     id: r.id, title: r.name, subtitle: r.about ?? undefined, status: r.moderationStatus, reason: r.rejectedReason,
@@ -45,11 +45,11 @@ export const toContribution = {
   reviews: (r: ModerationReviewDto): Contribution => ({
     id: r.id, title: r.header || 'Отзыв о кофейне', status: r.moderationStatus, reason: r.rejectedReason,
     subtitle: `Кофе ${r.rating.coffee} · Сервис ${r.rating.service} · Атмосф. ${r.rating.place}${r.comment ? ` — ${r.comment}` : ''}`,
-    date: r.createdAt, shopId: r.shopId,
+    date: r.createdAt, shopId: r.shop?.slug, link: r.shop?.canonicalPath,
   }),
   edits: (e: ShopChangeRequestDto): Contribution => ({
     id: e.id, title: sectionLabels[e.section] ?? e.section, subtitle: 'Правка кофейни', status: e.status, reason: e.rejectionReason,
-    date: e.createdAtUtc, shopId: e.shopId,
+    date: e.createdAtUtc, shopId: e.shop?.slug, link: e.shop?.canonicalPath,
   }),
 };
 
@@ -64,16 +64,16 @@ const toPage = <T,>(data: Paging | undefined, list: T[] | undefined, map: (item:
 async function loadMyContributions(kind: ContributionKind, params: Query): Promise<ContributionPage> {
   switch (kind) {
     case 'shops': {
-      const { data } = await httpClient.get<Paging & { moderationShops: ModerationShopDto[] }>('/api/ModerationShops/mine', { params });
-      return toPage(data, data?.moderationShops, toContribution.shops);
+      const { data } = await httpClient.get<Paging & { items: ModerationShopDto[] }>('/api/ModerationShops/mine', { params });
+      return toPage(data, data?.items, toContribution.shops);
     }
     case 'roasters': {
       const { data } = await httpClient.get<Paging & { items: ModerationRoasterDto[] }>('/api/ModerationRoasters/mine', { params });
       return toPage(data, data?.items, toContribution.roasters);
     }
     case 'reviews': {
-      const { data } = await httpClient.get<Paging & { reviewDtos: ModerationReviewDto[] }>('/api/ModerationReviews/mine', { params });
-      return toPage(data, data?.reviewDtos, toContribution.reviews);
+      const { data } = await httpClient.get<Paging & { items: ModerationReviewDto[] }>('/api/ModerationReviews/mine', { params });
+      return toPage(data, data?.items, toContribution.reviews);
     }
     case 'edits': {
       const { data } = await getMyShopChangeRequests(params);
@@ -83,8 +83,5 @@ async function loadMyContributions(kind: ContributionKind, params: Query): Promi
 }
 
 export async function getMyContributions(kind: ContributionKind, params: Query): Promise<ContributionPage> {
-  const page = await loadMyContributions(kind, params);
-  const ids = page.items.flatMap(item => item.shopId ? [item.shopId] : []);
-  const addresses = await getPublicAddresses('shops', ids).catch(() => new Map());
-  return { ...page, items: page.items.map(item => ({ ...item, link: item.shopId ? addresses.get(item.shopId)?.canonicalPath : undefined })) };
+  return loadMyContributions(kind, params);
 }

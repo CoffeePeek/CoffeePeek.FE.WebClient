@@ -1,6 +1,6 @@
 import { httpClient } from './core/httpClient';
 import { API_ENDPOINTS } from './core/apiConfig';
-import { ApiResponse } from './core/types';
+import type { ApiResponse } from './core/types';
 
 export type CoffeeDrinkCategory = 'Espresso' | 'Filter';
 export type MenuAvailability = 'Unknown' | 'Present' | 'Absent';

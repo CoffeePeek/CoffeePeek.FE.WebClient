@@ -2,7 +2,7 @@ import { buildCheckInRequest, formatCheckInDate, todayInputValue, type CheckInDr
 
 const now = new Date('2026-09-05T12:00:00Z');
 const draft: CheckInDraft = {
-  coffeeShopId: '11111111-1111-1111-1111-111111111111',
+  coffeeShopId: '26-october-16',
   isPublic: false, header: '', note: '', visitedDate: '2026-09-05',
   rating: { coffee: 5, service: 5, place: 5 },
 };
@@ -10,7 +10,7 @@ const draft: CheckInDraft = {
 test('private check-in needs no text or photos and includes all nullable wire fields', () => {
   const request = JSON.parse(JSON.stringify(buildCheckInRequest(draft, now)));
   expect(request).toMatchObject({
-    coffeeShopId: draft.coffeeShopId, isPublic: false,
+    shop: draft.coffeeShopId, isPublic: false,
     header: null, note: null, photos: [], rating: { coffee: 5, service: 5, place: 5 },
   });
   expect(todayInputValue(new Date(request.visitedAt))).toBe('2026-09-05');

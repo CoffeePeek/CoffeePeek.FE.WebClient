@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { coffeeShopKeys, reviewKeys } from '../hooks/queries';
-import { createReview, CreateReviewRequest, getReviewById, updateReview, ShortPhotoMetadataDto, getPhotoUrl } from '../api/coffeeshop';
+import { createReview, type CreateReviewRequest, getReviewById, updateReview, type ShortPhotoMetadataDto, getPhotoUrl } from '../api/coffeeshop';
 import { getReviewUploadUrls, photoContentType, putPhotoToStorage } from '../api/photos';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
@@ -253,7 +253,7 @@ const CreateReviewPage: React.FC = () => {
       const visitedAtISO = new Date(dateTimeString).toISOString();
       
       const request: CreateReviewRequest = {
-        shopId,
+        shop: shopId,
         header: header.trim() || null,
         comment: description.trim(),
         ratingCoffee,

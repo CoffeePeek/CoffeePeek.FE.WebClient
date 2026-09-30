@@ -182,10 +182,10 @@ const EditCoffeeShopPage: React.FC = () => {
         phoneNumber: nullable(contacts.phoneNumber), email: nullable(contacts.email),
         siteLink: nullable(contacts.siteLink), instagramLink: nullable(contacts.instagramLink),
       } };
-      case 'Tags': return { tagIds: ids.Tags };
-      case 'Roasters': return { roasterIds: ids.Roasters };
-      case 'Equipment': return { equipmentIds: ids.Equipment };
-      case 'BrewMethods': return { brewMethodIds: ids.BrewMethods };
+      case 'Tags': return { tags: ids.Tags };
+      case 'Roasters': return { roasters: ids.Roasters };
+      case 'Equipment': return { equipments: ids.Equipment };
+      case 'BrewMethods': return { brewMethods: ids.BrewMethods };
       case 'Photos': return { photos: {
         retainedPhotoIds: retainedPhotos,
         newPhotos: await uploadFiles(shopFiles, getShopUploadUrls),
@@ -203,7 +203,7 @@ const EditCoffeeShopPage: React.FC = () => {
     if (!shopId) return;
     setSaving(true);
     try {
-      await createShopChangeRequest({ shopId, section, payload: await buildPayload() });
+      await createShopChangeRequest({ shop: shopId, section, payload: await buildPayload() });
       showToast('Изменения отправлены на модерацию', 'success');
       navigate('/my/edits?status=Pending');
     } catch (error) {

@@ -10,6 +10,8 @@ export type ShopFormField = 'name' | 'notValidatedAddress' | 'cityId' | 'descrip
 const API_FIELD_TO_FORM: Record<string, ShopFormField> = {
   Name: 'name',
   Address: 'notValidatedAddress',
+  City: 'cityId',
+  city: 'cityId',
   CityId: 'cityId',
   Description: 'description',
 };

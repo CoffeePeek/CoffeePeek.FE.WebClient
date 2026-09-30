@@ -37,3 +37,5 @@ export * from './user';
 // Public
 export * from './public';
 export * from './shopChangeRequests';
+
+export type { PublicAddress } from './publicAddresses';

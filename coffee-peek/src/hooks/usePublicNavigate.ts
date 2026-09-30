@@ -1,16 +1,27 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
-import { getPublicAddress } from '../api/publicAddresses';
-import type { AddressKind } from '../api/publicAddresses';
+import { getBySlug } from '../api/publicAddresses';
+import { usePublicResolution } from '../components/PublicAddressPage';
+import type { AddressKind, PublicAddress } from '../api/publicAddresses';
 export function usePublicNavigate() {
   const navigate = useNavigate();
+  const resolution = usePublicResolution();
   const blockedUntil = useRef(new Map<string, number>());
   const { showToast } = useToast();
-  return async (kind: AddressKind, id: string, suffix = '', options?: { state?: unknown }) => {
+  return async (kind: AddressKind, target: string | PublicAddress | null | undefined, suffix = '', options?: { state?: unknown }) => {
+    if (!target) return;
+    const id = typeof target === 'string' ? target : target.slug;
+    if (!id) return;
     const key = `${kind}:${id}`;
     if (Date.now() < (blockedUntil.current.get(key) || 0)) { showToast('Повторите позже.', 'info'); return; }
-    try { const address = await getPublicAddress(kind, id); navigate(address.canonicalPath + suffix, options); }
+    try {
+      const address = typeof target !== 'string' ? target
+        : resolution?.id === id ? resolution.data?.publicAddress
+        : (await getBySlug(kind, id)).address;
+      if (!address) throw new Error('Address unavailable');
+      navigate(address.canonicalPath + suffix, options);
+    }
     catch (cause) {
       const error = cause as { status?: number; retryAfter?: string };
       const retryAfter = error.retryAfter;

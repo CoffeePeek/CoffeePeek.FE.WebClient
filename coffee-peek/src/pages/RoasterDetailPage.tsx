@@ -120,7 +120,7 @@ const RoasterDetailPage: React.FC = () => {
               {roaster.shops.map((shop) => (
                 <PublicEntityLink
                   key={shop.id}
-                  kind="shops" entityId={shop.id}
+                  kind="shops" entityId={shop.id} address={shop.publicAddress}
                   className={`flex min-h-[86px] items-center gap-4 rounded-[22px] border p-3 transition-colors hover:border-[#D4A84B]/60 ${cardBg} ${borderColor} ${textMain}`}
                 >
                   {shop.photoUrl

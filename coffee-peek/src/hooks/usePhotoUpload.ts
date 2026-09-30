@@ -6,10 +6,10 @@ import {
   MAX_CHECKIN_PHOTOS,
   photoContentType,
   putPhotoToStorage,
-  UploadUrlRequest,
-  UploadUrlResponse,
+  type UploadUrlRequest,
+  type UploadUrlResponse,
 } from '../api/photos';
-import { ApiResponse } from '../api/core/types';
+import type { ApiResponse } from '../api/core/types';
 import { TokenManager } from '../api/core/httpClient';
 import { isApiRequestError } from '../api/core/apiError';
 import { ErrorCodes } from '../utils/errorHandler';

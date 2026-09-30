@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Bell,
-  Briefcase,
   Camera,
   CaretDown,
   CaretLeft,

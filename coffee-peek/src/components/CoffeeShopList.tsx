@@ -1,6 +1,6 @@
-import { getBySlug, getPublicAddresses } from '../api/publicAddresses';
+import { getBySlug } from '../api/publicAddresses';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, getShopTags, CoffeeShop, City, Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto, getPhotoUrl } from '../api/coffeeshop';
+import { searchCoffeeShops, getCities, getEquipments, getCoffeeBeans, getRoasters, getBrewMethods, getShopTags, type CoffeeShop, type City, type Equipment, type CoffeeBean, type Roaster, type BrewMethod, type CoffeeShopFilters, type ShopTagDto, getPhotoUrl } from '../api/coffeeshop';
 import { ShopCardSkeleton } from './skeletons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRequireAuth } from '../hooks/useRequireAuth';
@@ -109,7 +109,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const [filters, setFilters] = useState<CoffeeShopFilters>({});
-  const [addressPaths, setAddressPaths] = useState<Map<string, string>>(new Map());
+  const addressPaths = new Map(shops.map(shop => [shop.id, shop.canonicalPath]));
   const [filterResolutionError, setFilterResolutionError] = useState('');
   const [resolvingFilter, setResolvingFilter] = useState(() => !!(searchParams.get('citySlug') || searchParams.get('roasterSlug')));
   const [isLoading, setIsLoading] = useState(true);
@@ -118,15 +118,6 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   const [activeQuick, setActiveQuick] = useState<string[]>(() => searchParams.get('filter') === 'favorite' ? ['favorite'] : ['all']);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const locationExpiryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setAddressPaths(new Map());
-    void getPublicAddresses('shops', shops.map(shop => shop.id)).then(addresses => {
-      if (!cancelled) setAddressPaths(new Map([...addresses].map(([id, address]) => [id, address.canonicalPath])));
-    }).catch(() => undefined);
-  return () => { cancelled = true; };
-  }, [shops]);
 
   const clearUserLocation = useCallback(() => {
     if (locationExpiryRef.current) clearTimeout(locationExpiryRef.current);
@@ -187,7 +178,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
   };
 
   const { cityId: storedCityId } = useLocalCity();
-  const [selectedCity, setSelectedCity] = useState<string>(searchParams.get('cityId') || storedCityId);
+  const [selectedCity, setSelectedCity] = useState<string>(searchParams.get('city') || storedCityId);
   useEffect(() => {
     let cancelled = false;
     const city = searchParams.get('citySlug');
@@ -200,8 +191,8 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
     ]).then(([cityResult, roasterResult]) => {
       if (cancelled) return;
       setFilterResolutionError('');
-      if (cityResult) setSelectedCity(cityResult.address.entityId);
-      if (roasterResult) setSelectedRoasters([roasterResult.address.entityId]);
+      if (cityResult) setSelectedCity(cityResult.address.slug);
+      if (roasterResult) setSelectedRoasters([roasterResult.address.slug]);
     }).catch((cause: { status?: number }) => { if (!cancelled) setFilterResolutionError(cause.status === 404 ? 'Фильтр не найден.' : cause.status === 400 ? 'Некорректный адрес фильтра.' : 'Не удалось загрузить фильтр. Обновите страницу для повтора.'); }).finally(() => { if (!cancelled) setResolvingFilter(false); });
     return () => { cancelled = true; };
   }, [searchParams]);
@@ -222,7 +213,7 @@ const CoffeeShopList: React.FC<CoffeeShopListProps> = ({ onShopSelect }) => {
 
   // City is chosen in Settings; sync when it changes (also cross-tab).
   useEffect(() => {
-    if (storedCityId && !searchParams.get('citySlug') && !searchParams.get('cityId')) setSelectedCity(storedCityId);
+    if (storedCityId && !searchParams.get('citySlug') && !searchParams.get('city')) setSelectedCity(storedCityId);
   }, [storedCityId, searchParams]);
 
   // Fall back to the first city if none has been chosen in Settings yet.

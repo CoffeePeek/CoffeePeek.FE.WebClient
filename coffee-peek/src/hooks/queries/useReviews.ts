@@ -4,7 +4,7 @@ import {
   getReviewById,
   createReview,
   updateReview,
-  CreateReviewRequest,
+  type CreateReviewRequest,
 } from '../../api/coffeeshop';
 
 /**
@@ -76,12 +76,12 @@ export function useCreateReview() {
       }
       return response.data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: reviewKeys.list(variables.request.shopId),
+        queryKey: reviewKeys.list(variables.request.shop),
       });
       queryClient.invalidateQueries({
-        queryKey: ['coffeeShops', 'detail', variables.request.shopId],
+        queryKey: ['coffeeShops', 'detail', variables.request.shop],
       });
     },
   });
@@ -107,10 +107,10 @@ export function useUpdateReview() {
       }
       return response.data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       // Invalidate reviews for this shop
       queryClient.invalidateQueries({
-        queryKey: reviewKeys.list(variables.request.shopId),
+        queryKey: reviewKeys.list(variables.request.shop),
       });
       // Invalidate the specific review
       queryClient.invalidateQueries({
@@ -118,7 +118,7 @@ export function useUpdateReview() {
       });
       // Invalidate shop detail to update review count
       queryClient.invalidateQueries({
-        queryKey: ['coffeeShops', 'detail', variables.request.shopId],
+        queryKey: ['coffeeShops', 'detail', variables.request.shop],
       });
     },
   });

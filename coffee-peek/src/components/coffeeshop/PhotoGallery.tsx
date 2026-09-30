@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DetailedCoffeeShop, getPhotoUrl } from '../../api/coffeeshop';
+import { type DetailedCoffeeShop, getPhotoUrl } from '../../api/coffeeshop';
 import PhotoLightbox from '../PhotoLightbox';
 import { AppIcon } from '../icons';
 

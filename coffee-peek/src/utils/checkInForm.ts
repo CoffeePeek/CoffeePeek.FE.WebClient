@@ -49,7 +49,7 @@ export function buildCheckInRequest(draft: CheckInDraft, now = new Date()): Crea
   }
 
   return {
-    coffeeShopId: draft.coffeeShopId,
+    shop: draft.coffeeShopId,
     isPublic: draft.isPublic,
     visitedAt: visitedAt.toISOString(),
     header: draft.isPublic ? header : null,

@@ -9,7 +9,7 @@ export function normalizeCheckInDto(dto: any): CheckInDto {
     ...dto,
     id: String(dto.id ?? dto.checkInId ?? ''),
     userId: String(dto.userId ?? ''),
-    shopId: String(dto.shopId ?? dto.coffeeShopId ?? ''),
+    shopId: dto.shop?.slug ?? '',
     shopName: dto.shopName ?? dto.coffeeShopName ?? undefined,
     note: dto.note ?? dto.comment ?? undefined,
     createdAt: dto.createdAt ?? dto.createdAtUtc ?? dto.visitedAt ?? dto.visitedAtUtc ?? '',

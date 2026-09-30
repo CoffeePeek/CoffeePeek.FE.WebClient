@@ -3,8 +3,8 @@
  * Обрабатывают токены, ошибки и логирование
  */
 
-import { ApiError } from './types';
-import { ApiErrorResponse, ApiRequestError } from './apiError';
+import type { ApiError } from './types';
+import { type ApiErrorResponse, ApiRequestError } from './apiError';
 import { getErrorMessageByStatus } from '../../utils/errorHandler';
 import { logger } from '../../utils/logger';
 import { isTokenExpired } from '../../utils/jwt';
@@ -127,7 +127,7 @@ export async function ensureFreshAccessToken(baseURL: string): Promise<boolean> 
 export function requestInterceptor(
   url: string,
   options: RequestInit & { skipAuthHeader?: boolean },
-  requiresAuth: boolean = true
+  _requiresAuth: boolean = true
 ): RequestInit {
   const headers = new Headers(options.headers);
 
@@ -228,60 +228,36 @@ export function normalizeResponseData<T>(data: any): T {
     return data;
   }
 
-  if ('shopDto' in data) {
-    return normalizeCoffeeShopData(data.shopDto) as T;
-  }
-  
-  if ('moderationShop' in data) {
-    const shop = data.moderationShop;
-    if (shop && typeof shop === 'object' && data.menu !== undefined) {
-      return { ...shop, menu: data.menu };
-    }
-    return data.moderationShop;
-  }
-
-  if ('brewMethods' in data && Array.isArray(data.brewMethods)) {
-    return data.brewMethods;
-  }
-  
-  if ('cities' in data && Array.isArray(data.cities)) {
-    return data.cities;
-  }
-  
-  if ('equipments' in data && Array.isArray(data.equipments)) {
-    return data.equipments;
-  }
-  
-  if ('coffeeBeans' in data && Array.isArray(data.coffeeBeans)) {
-    return data.coffeeBeans;
-  }
-  
-  if ('roasters' in data && Array.isArray(data.roasters)) {
-    return data.roasters;
-  }
-
-  // Для отзывов оставляем как есть (там пагинация)
-  if ('reviews' in data && Array.isArray(data.reviews)) {
-    return data;
-  }
-  if ('reviewDtos' in data && Array.isArray(data.reviewDtos)) {
-    return data;
-  }
-
+  data = normalizePublicDto(data);
   if ('coffeeShops' in data && Array.isArray(data.coffeeShops)) {
-    // Нормализуем каждый элемент массива
-    return {
-      ...data,
-      coffeeShops: (data.coffeeShops as unknown[]).map((shop) => normalizeCoffeeShopData(shop))
-    } as T;
+    return { ...data, coffeeShops: data.coffeeShops.map(normalizeCoffeeShopData) } as T;
   }
-
-  // Если это объект кофейни напрямую (без shopDto обертки)
-  if ('id' in data && 'name' in data && ('coffeeBeans' in data || 'shopContact' in data || 'schedules' in data)) {
+  if ('name' in data && ('shopContact' in data || 'schedules' in data || 'beans' in data || 'reviews' in data || 'userCheckIns' in data)) {
     return normalizeCoffeeShopData(data) as T;
   }
-
   return data;
+}
+
+/** UI keys named id are slugs for public entities; service IDs remain unchanged. */
+export function normalizePublicDto(data: any): any {
+  if (Array.isArray(data)) return data.map(normalizePublicDto);
+  if (!data || typeof data !== 'object' || ('slug' in data && 'canonicalPath' in data)) return data;
+  const result: any = Object.fromEntries(Object.entries(data).map(([key, value]) => [key, normalizePublicDto(value)]));
+  const address = data.address && typeof data.address === 'object' ? data.address : null;
+  if (address?.slug) {
+    result.publicAddress = address;
+    result.id ??= address.slug;
+    result.canonicalPath = address.canonicalPath;
+  } else if (typeof data.slug === 'string') result.id ??= data.slug;
+  if (data.coverPhoto && typeof data.coverPhoto === 'object') result.photoUrl ??= data.coverPhoto.urls?.card ?? data.coverPhoto.fullUrl;
+  if ('city' in data) result.cityId = data.city?.slug ?? '';
+  if ('shop' in data && typeof data.shop !== 'string') {
+    result.shopId = data.shop?.slug ?? '';
+    result.coffeeShopId = result.shopId;
+  }
+  if ('author' in data) result.userId = data.author?.slug ?? '';
+  if ('primaryZone' in data) result.primaryZoneId = data.primaryZone?.slug ?? null;
+  return result;
 }
 
 /**
@@ -330,6 +306,10 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
 
   const shopData = shop as BackendShopData;
   const normalized: Record<string, unknown> = { ...shopData };
+  if (shopData.address && typeof shopData.address === 'object') {
+    normalized.publicAddress = shopData.address;
+    normalized.address = (shopData.location as { address?: string } | undefined)?.address;
+  }
 
   if (normalized.menu === undefined && 'Menu' in shopData) {
     normalized.menu = shopData.Menu;
@@ -342,8 +322,8 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
   }
 
   // Нормализуем адрес: на бэкенде может быть "address" или "Address", на фронтенде для модерации используется "notValidatedAddress"
-  if ('address' in shop && !('notValidatedAddress' in shop)) {
-    normalized.notValidatedAddress = shop.address;
+  if (typeof normalized.address === 'string' && !('notValidatedAddress' in shop)) {
+    normalized.notValidatedAddress = normalized.address;
   } else if ('Address' in shop && !('notValidatedAddress' in shop)) {
     normalized.notValidatedAddress = shop.Address;
   }
@@ -411,7 +391,7 @@ function normalizeCoffeeShopData(shop: BackendShopData | unknown): Record<string
     normalized.reviews = shop.reviews.map((review: any) => normalizeReviewDto(review));
   }
 
-  const userCheckIns = shop.userCheckIns ?? shop.UserCheckIns;
+  const userCheckIns = shopData.userCheckIns ?? shopData.UserCheckIns;
   if (Array.isArray(userCheckIns)) {
     normalized.userCheckIns = userCheckIns.map((checkIn: any) => normalizeCheckInDto(checkIn));
   }

@@ -1,4 +1,3 @@
-import { getPublicAddress } from '../api/publicAddresses';
 import PublicEntityLink from '../components/PublicEntityLink';
 import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import { usePublicResolution } from '../components/PublicAddressPage';
@@ -169,7 +168,8 @@ const CoffeeShopPage: React.FC = () => {
 
   const handleShare = async () => {
     try {
-      const address = await getPublicAddress('shops', shop.id);
+      const address = shop.publicAddress;
+      if (!address) throw new Error('Address unavailable');
       const data = { title: shop.name, text: `Кофейня «${shop.name}» в CoffeePeek`, url: `https://coffeepeek.by${address.canonicalPath}` };
       if (navigator.share) await navigator.share(data);
       else {
@@ -223,7 +223,7 @@ const CoffeeShopPage: React.FC = () => {
         <ShopMenuSection menu={shop.menu ?? null} textMain={textMain} textMuted={textMuted} cardBg={cardBg} borderColor={borderColor} />
         {!!shop.schedules?.length && <HoursCard shop={shop} schedules={localSchedules} colors={colors} />}
 
-        {!!shop.roasters?.length && <section><SectionTitle colors={colors}>Обжарщики</SectionTitle><div className="overflow-hidden rounded-[24px] border" style={{ background: colors.surface, borderColor: colors.border }}>{shop.roasters.map((roaster, index) => <PublicEntityLink key={roaster.id} kind="roasters" entityId={roaster.id} className="flex min-h-[72px] items-center gap-4 px-5 py-3" style={{ borderTop: index ? `1px solid ${colors.border}` : undefined, color: colors.text }}>{roaster.photoUrl ? <img src={roaster.photoUrl} alt="" className="h-12 w-12 rounded-full object-cover" /> : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-100 font-bold text-stone-700">{roaster.name[0]}</span>}<span className="flex-1 font-semibold">{roaster.name}</span><AppIcon name="chevron_right" size={20} color={colors.muted} /></PublicEntityLink>)}</div></section>}
+        {!!shop.roasters?.length && <section><SectionTitle colors={colors}>Обжарщики</SectionTitle><div className="overflow-hidden rounded-[24px] border" style={{ background: colors.surface, borderColor: colors.border }}>{shop.roasters.map((roaster, index) => <PublicEntityLink key={roaster.id} kind="roasters" entityId={roaster.id} address={roaster.publicAddress} className="flex min-h-[72px] items-center gap-4 px-5 py-3" style={{ borderTop: index ? `1px solid ${colors.border}` : undefined, color: colors.text }}>{roaster.photoUrl ? <img src={roaster.photoUrl} alt="" className="h-12 w-12 rounded-full object-cover" /> : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-100 font-bold text-stone-700">{roaster.name[0]}</span>}<span className="flex-1 font-semibold">{roaster.name}</span><AppIcon name="chevron_right" size={20} color={colors.muted} /></PublicEntityLink>)}</div></section>}
 
         {!!shop.brewMethods?.length && <section><SectionTitle colors={colors}>Методы заваривания</SectionTitle><div className="flex flex-wrap gap-2 rounded-[24px] border p-5" style={{ background: colors.surface, borderColor: colors.border }}>{shop.brewMethods.map(method => <span key={method.id} className="rounded-full px-3 py-2 text-sm font-semibold" style={{ background: isDark ? '#3A321F' : '#FBF4DF', color: '#B38B32' }}>{method.name}</span>)}</div></section>}
 
@@ -231,7 +231,7 @@ const CoffeeShopPage: React.FC = () => {
 
         <ContactButtons shop={shop} cardBg={cardBg} borderColor={borderColor} textMain={textMain} textMuted={textMuted} />
         {user && <CheckInsList checkIns={shop.userCheckIns ?? []} colors={colors} onEdit={reviewId => openPublic('shops', shopId!, '/reviews/edit', { state: { shop: shopBasicInfo, reviewId } })} />}
-        <ReviewsSection reviews={reviews} usersCache={usersCache} isLoading={false} myReviewId={myReviewId} isCheckingMyReview={false} onWriteOrEditReview={handleReview} onUserSelect={userId => { const path = usersCache.get(userId)?.canonicalPath; if (path) navigate(path); else void openPublic('users', userId); }} user={user} textMain={textMain} textMuted={textMuted} cardBg={cardBg} borderColor={borderColor} coffeeShopName={shop.name} />
+        <ReviewsSection reviews={reviews} usersCache={usersCache} isLoading={false} myReviewId={myReviewId} isCheckingMyReview={false} onWriteOrEditReview={handleReview} onUserSelect={userId => { const path = usersCache.get(userId)?.canonicalPath; if (path) navigate(path);  }} user={user} textMain={textMain} textMuted={textMuted} cardBg={cardBg} borderColor={borderColor} coffeeShopName={shop.name} />
         {!user && <GuestAuthCard {...colors} />}
       </main>
 

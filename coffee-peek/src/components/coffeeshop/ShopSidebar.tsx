@@ -91,7 +91,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
             <AppIcon name="pin_drop" size={20} className={themeClasses.primary.text} />
           </div>
           <h3 className={`font-bold ${textMain} break-words min-w-0 flex-1`}>
-            {shop.location?.address || shop.address || 'Адрес не указан'}
+            {shop.location?.address || 'Адрес не указан'}
           </h3>
         </div>
 

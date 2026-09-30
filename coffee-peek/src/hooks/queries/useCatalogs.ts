@@ -6,11 +6,6 @@ import {
   getRoasters,
   getRoasterById,
   getBrewMethods,
-  City,
-  Equipment,
-  CoffeeBean,
-  Roaster,
-  BrewMethod,
 } from '../../api/coffeeshop';
 
 /**

@@ -4,7 +4,7 @@
  * Set in Settings, read by the coffee shop list.
  */
 
-const STORAGE_KEY = 'coffeepeek.selectedCityId';
+const STORAGE_KEY = 'coffeepeek.selectedCitySlug';
 const CHANGE_EVENT = 'coffeepeek:city-changed';
 
 export function getSelectedCityId(): string {

@@ -3,8 +3,8 @@ import { usePublicResolution } from '../components/PublicAddressPage';
 import WobbleRing from '../components/WobbleRing';
 import React from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { getUserPublicProfile, PublicUserProfile } from '../api/user';
-import { getReviewsByUserId, Review } from '../api/coffeeshop';
+import { getUserPublicProfile, type PublicUserProfile } from '../api/user';
+import { getReviewsByUserId, type Review } from '../api/coffeeshop';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { getThemeClasses } from '../utils/theme';
@@ -129,7 +129,7 @@ const UserProfilePage: React.FC = () => {
   };
 
   const handleShopSelect = (shopId: string) => {
-    openPublic('shops', shopId);
+    openPublic('shops', reviews.find(review => review.coffeeShopId === shopId)?.shop);
   };
 
   const bgClass = themeClasses.bg.primary;

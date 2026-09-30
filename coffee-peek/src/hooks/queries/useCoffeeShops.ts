@@ -4,9 +4,7 @@ import {
   getCoffeeShopById,
   searchCoffeeShops,
   getCoffeeShopsByCity,
-  CoffeeShopFilters,
-  GetCoffeeShopsResponse,
-  DetailedCoffeeShop,
+  type CoffeeShopFilters,
 } from '../../api/coffeeshop';
 
 /**

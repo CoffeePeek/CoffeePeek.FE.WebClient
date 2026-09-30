@@ -1,3 +1,4 @@
+import type { PublicAddress } from './publicAddresses';
 import { httpClient } from './core/httpClient';
 import type { ApiResponse } from './core/types';
 import type { UploadedPhotoDto } from './auth';
@@ -35,17 +36,16 @@ export interface ShopChangePayloadDto {
   description?: string | null;
   contacts?: ShopChangeContactsDto | null;
   photos?: ShopChangeGalleryDto | null;
-  tagIds?: string[] | null;
-  roasterIds?: string[] | null;
-  equipmentIds?: string[] | null;
+  tags?: string[] | null;
+  roasters?: string[] | null;
+  equipments?: string[] | null;
   menu?: ShopChangeMenuDto | null;
-  brewMethodIds?: string[] | null;
+  brewMethods?: string[] | null;
 }
 
 export interface ShopChangeRequestDto {
   id: string;
-  shopId: string;
-  submittedByUserId: string;
+  shop: PublicAddress | null;
   section: ShopChangeSection;
   payload: ShopChangePayloadDto;
   status: ShopChangeStatus;
@@ -68,14 +68,14 @@ export interface ShopChangeRequestQuery {
   page?: number;
   pageSize?: number;
   status?: ShopChangeStatus;
-  shopId?: string;
+  shop?: string;
   section?: ShopChangeSection;
 }
 
 const BASE = '/api/ShopChangeRequests';
 
 export function createShopChangeRequest(body: {
-  shopId: string;
+  shop: string;
   section: ShopChangeSection;
   payload: ShopChangePayloadDto;
 }): Promise<ApiResponse<ShopChangeRequestDto>> {

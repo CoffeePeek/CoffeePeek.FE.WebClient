@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto } from '../api/coffeeshop';
+import type { Equipment, CoffeeBean, Roaster, BrewMethod, CoffeeShopFilters, ShopTagDto } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
 import type { IconProps } from '@phosphor-icons/react';
 import {
@@ -162,10 +162,9 @@ const OptionRow: React.FC<{
   checked: boolean;
   onClick: () => void;
   gold: string;
-  borderColor: string;
   textPrimary: string;
   icon?: React.ReactNode;
-}> = ({ label, checked, onClick, gold, borderColor, textPrimary, icon }) => (
+}> = ({ label, checked, onClick, gold, textPrimary, icon }) => (
   <button
     type="button"
     onClick={onClick}
@@ -191,9 +190,8 @@ const ExpandableOptions: React.FC<{
   selected: string[];
   onToggle: (id: string) => void;
   gold: string;
-  borderColor: string;
   textPrimary: string;
-}> = ({ items, selected, onToggle, gold, borderColor, textPrimary }) => {
+}> = ({ items, selected, onToggle, gold, textPrimary }) => {
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? items : items.slice(0, LIST_PREVIEW);
 
@@ -206,7 +204,6 @@ const ExpandableOptions: React.FC<{
           checked={selected.includes(item.id)}
           onClick={() => onToggle(item.id)}
           gold={gold}
-          borderColor={borderColor}
           textPrimary={textPrimary}
         />
       ))}
@@ -428,7 +425,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
               checked={selectedTagIds.includes(tag.id)}
               onClick={() => onTagToggle(tag.id)}
               gold={gold}
-              borderColor={borderColor}
               textPrimary={textPrimary}
             />
           ))}
@@ -452,7 +448,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             selected={selectedEquipments}
             onToggle={(id) => patch({ equipments: toggle(selectedEquipments, id) })}
             gold={gold}
-            borderColor={borderColor}
             textPrimary={textPrimary}
           />
         </FilterAccordion>
@@ -465,7 +460,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             selected={selectedBeans}
             onToggle={(id) => patch({ beans: toggle(selectedBeans, id) })}
             gold={gold}
-            borderColor={borderColor}
             textPrimary={textPrimary}
           />
         </FilterAccordion>
@@ -478,7 +472,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             selected={selectedRoasters}
             onToggle={(id) => patch({ roasters: toggle(selectedRoasters, id) })}
             gold={gold}
-            borderColor={borderColor}
             textPrimary={textPrimary}
           />
         </FilterAccordion>
@@ -491,7 +484,6 @@ const ShopFilterPanel: React.FC<ShopFilterPanelProps> = ({
             selected={selectedBrewMethods}
             onToggle={(id) => patch({ brewMethods: toggle(selectedBrewMethods, id) })}
             gold={gold}
-            borderColor={borderColor}
             textPrimary={textPrimary}
           />
         </FilterAccordion>

@@ -1,7 +1,7 @@
 import WobbleRing from '../components/WobbleRing';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { VerificationStep, UserState } from '../types';
+import { VerificationStep, type UserState } from '../types';
 import { Icons } from '../constants';
 import Button from '../components/Button';
 import Input from '../components/Input';

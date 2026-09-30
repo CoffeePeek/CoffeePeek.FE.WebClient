@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { getUserRoles, getUserEmail, getUserId, isTokenExpired, isEmailVerified } from '../utils/jwt';
 import { TokenManager } from '../api/core/httpClient';
 import { ensureFreshAccessToken, LOGGED_OUT_KEY } from '../api/core/interceptors';
@@ -8,6 +8,7 @@ import { queryClient } from '../lib/queryClient';
 
 
 export interface AppUser {
+  address?: UserProfile['address'];
   id: string | null;
   email: string | null;
   userName?: string;
@@ -70,6 +71,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       ...currentUser,
       email: profile.email || currentUser.email,
       userName: profile.userName,
+      address: profile.address,
       avatarUrl: profile.avatarUrl,
     } : currentUser);
   }, []);

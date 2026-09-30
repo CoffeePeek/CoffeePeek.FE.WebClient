@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 
 interface OTPInputProps {
   length?: number;
@@ -53,7 +53,7 @@ const OTPInput: React.FC<OTPInputProps> = ({ length = 6, onComplete }) => {
       {otp.map((data, index) => (
         <input
           key={index}
-          ref={el => (inputs.current[index] = el)}
+          ref={el => { inputs.current[index] = el; }}
           type="text"
           maxLength={1}
           inputMode="numeric"

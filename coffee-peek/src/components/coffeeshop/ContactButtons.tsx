@@ -1,5 +1,5 @@
 import React from 'react';
-import { DetailedCoffeeShop } from '../../api/coffeeshop';
+import type { DetailedCoffeeShop } from '../../api/coffeeshop';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getThemeClasses } from '../../utils/theme';

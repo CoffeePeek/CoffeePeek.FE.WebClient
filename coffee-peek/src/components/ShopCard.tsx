@@ -1,7 +1,6 @@
 import React, { memo, useState } from 'react';
 import { type CoffeeShop, getPhotoUrl } from '../api/coffeeshop';
 import { COLORS } from '../constants/colors';
-import { useTheme } from '../contexts/ThemeContext';
 import { useLocalFavorites } from '../hooks/useLocalFavorites';
 import { distanceKm, formatDistance } from '../utils/distance';
 import { getPriceRangeTier } from '../utils/priceRange';
@@ -45,7 +44,6 @@ const SHOP_TYPE_LABELS: Record<string, string> = {
 
 const ShopCard: React.FC<ShopCardProps> = memo(({ shop, colors, userLocation, onSelect }) => {
   const [hovered, setHovered] = useState(false);
-  const { theme } = useTheme();
   const { isFavorite, toggleFavorite } = useLocalFavorites();
   const favorite = isFavorite(shop.id);
   const photos = extractPhotos(shop);

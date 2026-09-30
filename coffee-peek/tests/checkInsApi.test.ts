@@ -7,19 +7,19 @@ jest.mock('../src/api/core/apiConfig', () => ({ API_ENDPOINTS: { CHECK_IN: { BAS
 jest.mock('../src/utils/logger', () => ({ logger: { warn: jest.fn() } }));
 
 const item = {
-  id: 'checkin', shopId: 'shop', userId: 'user', shopName: 'Coffee',
+  id: 'checkin', shop: { slug: 'shop', canonicalPath: '/coffee-shops/shop', revision: 1, isAlias: false }, shopName: 'Coffee',
   note: null, createdAt: '2026-09-05T12:00:00Z', visitedAt: '2026-09-01T21:00:00Z', reviewId: null,
   photos: [{ id: 'photo', fileName: 'coffee.jpg', storageKey: 'checkins/coffee.jpg', fullUrl: 'https://media.example/coffee.jpg', sortIndex: 0 }],
 };
 
 // getCheckIns runs items through normalizeCheckInDto: note null → undefined, isPublic derived from reviewId.
-const normalizedItem = { ...item, note: undefined, isPublic: false };
+const normalizedItem = { ...item, shopId: 'shop', userId: '', note: undefined, isPublic: false };
 
 beforeEach(() => jest.clearAllMocks());
 
-test('GET uses pagination headers and preserves deployed checkIns envelope, photos and dates', async () => {
+test('GET uses pagination headers and reads data.items, photos and dates', async () => {
   jest.mocked(httpClient.get).mockResolvedValue({
-    success: true, data: { checkIns: [item], totalItems: 21, totalPages: 3, currentPage: 2, pageSize: 10 },
+    success: true, data: { items: [item], totalItems: 21, totalPages: 3, currentPage: 2, pageSize: 10 },
   } as never);
   const result = await getCheckIns(2, 10);
   expect(httpClient.get).toHaveBeenCalledWith('/api/CheckIns', {
@@ -34,7 +34,7 @@ test('response pagination totals override body totals, never page length', async
 });
 
 test('calendar range is sent as half-open from/to query parameters', async () => {
-  jest.mocked(httpClient.get).mockResolvedValue({ success: true, data: { checkIns: [], totalItems: 0, totalPages: 1 } } as never);
+  jest.mocked(httpClient.get).mockResolvedValue({ success: true, data: { items: [], totalItems: 0, totalPages: 1 } } as never);
   const range = { from: '2026-09-01T00:00:00+03:00', to: '2026-10-01T00:00:00+03:00' };
   await getCheckIns(1, 100, range);
   expect(httpClient.get).toHaveBeenCalledWith('/api/CheckIns', {
@@ -45,7 +45,7 @@ test('calendar range is sent as half-open from/to query parameters', async () =>
 });
 
 test('private check-in serializes empty fields and uploaded photo metadata with size, not sizeBytes', async () => {
-  const request = buildCheckInRequest({ coffeeShopId: item.shopId, isPublic: false, header: '', note: '', visitedDate: '2026-09-01', rating: { coffee: 5, service: 5, place: 5 } });
+  const request = buildCheckInRequest({ coffeeShopId: item.shop.slug, isPublic: false, header: '', note: '', visitedDate: '2026-09-01', rating: { coffee: 5, service: 5, place: 5 } });
   request.photos = [{ fileName: 'coffee.jpg', contentType: 'image/jpeg', storageKey: item.photos[0].storageKey, size: 1024 }];
   jest.mocked(httpClient.post).mockResolvedValue({ success: true, data: { checkInId: 'checkin', reviewId: null } } as never);
   expect((await createCheckIn(request)).data.checkInId).toBe('checkin');

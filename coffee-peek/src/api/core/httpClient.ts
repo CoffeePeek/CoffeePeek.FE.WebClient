@@ -3,7 +3,8 @@
  * Обеспечивает единый интерфейс для работы с API
  */
 
-import { ApiResponse, ApiConfig, RequestOptions } from './types';
+
+import type { ApiResponse, ApiConfig, RequestOptions } from './types';
 import { API_BASE_URL, buildUrlWithParams } from './apiConfig';
 import {
   requestInterceptor,
@@ -37,7 +38,7 @@ class HttpClient {
   ): ApiResponse<unknown>['pagination'] | undefined {
     const headerTotal = response.headers.get('X-Total-Count') ?? response.headers.get('x-total-count');
     const headerPages = response.headers.get('X-Total-Pages') ?? response.headers.get('x-total-pages');
-    const headerPage = response.headers.get('X-Page-Number') ?? response.headers.get('x-page-number');
+    const headerPage = response.headers.get('X-Current-Page') ?? response.headers.get('X-Page-Number');
     const headerPageSize = response.headers.get('X-Page-Size') ?? response.headers.get('x-page-size');
 
     const payload = body?.data && typeof body.data === 'object' ? body.data : body;

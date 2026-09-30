@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { getPhotoUrl, PhotoMetadataDto, ShortPhotoMetadataDto } from '../api/coffeeshop';
+import { getPhotoUrl, type PhotoMetadataDto, type ShortPhotoMetadataDto } from '../api/coffeeshop';
 import { CaretLeft, CaretRight, X } from '@/components/Icon';
 
 type PhotoInput = string | PhotoMetadataDto | ShortPhotoMetadataDto;
