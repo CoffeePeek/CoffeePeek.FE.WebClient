@@ -99,7 +99,7 @@ const StoreSettingsCard: React.FC<{
   onSave: () => void;
   loading: boolean;
 }> = ({ title, form, onFormChange, onSave, loading }) => (
-  <Card className="space-y-4">
+  <Card className="flex min-w-0 flex-col gap-4 p-5 sm:p-6">
     <div>
       <h3 className="font-display text-base font-semibold text-text-main dark:text-white">{title}</h3>
       <p className="mt-1 text-xs text-text-muted dark:text-stone-400">URL и доступность канала</p>
@@ -110,17 +110,19 @@ const StoreSettingsCard: React.FC<{
         value={form.url}
         onChange={(e) => onFormChange({ ...form, url: e.target.value })}
         placeholder="https://..."
-        className="w-full sm:w-72 w-full"
+        className="w-full"
       />
     </Field>
-    <Toggle
-      checked={form.enabled}
-      onChange={(enabled) => onFormChange({ ...form, enabled })}
-      label="Канал включён"
-    />
-    <Button type="button" onClick={onSave} loading={loading} className="w-full sm:w-auto min-h-[44px]">
-      Сохранить
-    </Button>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <Toggle
+        checked={form.enabled}
+        onChange={(enabled) => onFormChange({ ...form, enabled })}
+        label="Канал включён"
+      />
+      <Button type="button" onClick={onSave} loading={loading} className="min-h-[44px] w-full sm:w-auto">
+        Сохранить
+      </Button>
+    </div>
   </Card>
 );
 

@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { LEGAL_ROUTES } from '../constants/legalRoutes';
 import { useTheme } from '../contexts/ThemeContext';
-import Button from './Button';
-import { Icons } from '../constants';
 
 const CookieBanner: React.FC = () => {
   const [showBanner, setShowBanner] = useState(false);
   const { theme } = useTheme();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const consent = localStorage.getItem('cookieConsent');
@@ -33,53 +30,32 @@ const CookieBanner: React.FC = () => {
 
   if (!showBanner) return null;
 
-  const bgClass = theme === 'dark' ? 'bg-[#2D241F] border-[#3D2F28]' : 'bg-white border-gray-200';
-  const textClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
-  const linkClass = 'text-[#EAB308] hover:text-[#FACC15]';
+  const isDark = theme === 'dark';
+  const buttonClass = 'min-h-[44px] rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EAB308]';
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-50 border-t ${bgClass} shadow-lg`}>
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Icons.Info className={`w-5 h-5 ${textClass}`} />
-              <h3 className={`font-semibold ${textClass}`}>Использование данных</h3>
-            </div>
-            <p className={`text-sm ${textClass} opacity-90`}>
-              Для работы сайта мы сохраняем в браузере (localStorage) токены входа, тему и
-              отметки согласия; избранные кофейни — только на вашем устройстве. Также
-              используются технические метрики хостинга. Подробности — в{' '}
-              <button
-                type="button"
-                onClick={() => navigate(LEGAL_ROUTES.privacy)}
-                className={`underline ${linkClass} font-medium`}
-              >
-                Политике конфиденциальности
-              </button>
-              .
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button
-              variant="secondary"
-              onClick={handleDecline}
-              className="w-full sm:w-auto"
-            >
-              Отклонить
-            </Button>
-            <Button
-              onClick={handleAccept}
-              className="w-full sm:w-auto"
-            >
-              Принять
-            </Button>
-          </div>
-        </div>
+    <section
+      aria-label="Использование данных"
+      className={`fixed bottom-[calc(88px+env(safe-area-inset-bottom))] left-4 right-4 z-[1250] max-h-[calc(100dvh-120px-env(safe-area-inset-bottom))] overflow-y-auto rounded-3xl border p-5 shadow-xl lg:bottom-6 lg:left-6 lg:right-auto lg:w-[380px] ${isDark ? 'border-[#3D2F28] bg-[#2D241F] text-white' : 'border-gray-200 bg-white text-gray-900'}`}
+    >
+      <p className={`font-body text-sm leading-[1.5] ${isDark ? 'text-stone-300' : 'text-slate-500'}`}>
+        <strong className={isDark ? 'text-white' : 'text-black'}>Использование данных. </strong>
+        Сохраняем вход, настройки и согласие в браузере; избранное — на вашем устройстве.
+        Используем технические метрики хостинга.{' '}
+        <Link
+          to={LEGAL_ROUTES.privacy}
+          className={`underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EAB308] ${isDark ? 'text-white' : 'text-black'}`}
+        >
+          Политика конфиденциальности
+        </Link>
+        .
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button type="button" onClick={handleDecline} className={buttonClass}>Отклонить</button>
+        <button type="button" onClick={handleAccept} className={buttonClass}>Принять</button>
       </div>
-    </div>
+    </section>
   );
 };
 
 export default CookieBanner;
-

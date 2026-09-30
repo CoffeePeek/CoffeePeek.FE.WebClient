@@ -108,7 +108,6 @@ const SettingsPage: React.FC = () => {
           <MobileAppDownload variant="compact" />
         </section>
 
-        <p className="text-sm" style={{ color: colors.muted }}>Версия 1.0.265</p>
       </div>
     </main>
   );
