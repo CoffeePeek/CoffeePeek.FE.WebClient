@@ -204,9 +204,22 @@ export const AppDistributionPage: React.FC = () => {
   const releaseColumns: ColumnDef<AndroidAppRelease>[] = [
     { accessorKey: 'version', header: 'Версия', meta: { className: 'font-semibold text-text-main dark:text-white' } },
     { accessorKey: 'versionCode', header: 'Код' },
-    { accessorKey: 'fileName', header: 'Файл' },
+    {
+      header: 'Файл',
+      cell: ({ row }) => row.original.fileUrl
+        ? <a href={row.original.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{row.original.fileName || 'APK'}</a>
+        : row.original.fileName || '—',
+    },
     { header: 'Размер', cell: ({ row }) => formatBytes(row.original.fileSize) },
+    {
+      header: 'SHA-256',
+      cell: ({ row }) => row.original.sha256
+        ? <span title={row.original.sha256} className="font-mono text-xs">{row.original.sha256.slice(0, 12)}…</span>
+        : '—',
+    },
     { header: 'Дата релиза', cell: ({ row }) => formatDate(row.original.releasedAt) },
+    { header: 'Загружен', cell: ({ row }) => formatDate(row.original.createdAt) },
+    { header: 'Обновлён', cell: ({ row }) => formatDate(row.original.updatedAt) },
     {
       header: 'Статус',
       cell: ({ row }) => <span className={`rounded-full px-2 py-1 text-xs font-semibold ${row.original.isActive ? 'bg-primary text-black' : 'bg-gray-100 text-text-muted dark:bg-white/10 dark:text-stone-300'}`}>{row.original.isActive ? 'Production' : 'Не активен'}</span>,
@@ -299,7 +312,7 @@ export const AppDistributionPage: React.FC = () => {
           data={releases}
           loading={releasesQuery.isLoading}
           emptyText="Релизов пока нет"
-          tableClassName="min-w-[760px]"
+          tableClassName="min-w-[1100px]"
           getRowClassName={(release) => release.isActive ? 'bg-primary/10' : undefined}
         />
       </Card>

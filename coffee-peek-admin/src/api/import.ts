@@ -192,6 +192,15 @@ function asNumber(value: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/** Coordinates come either as a number or as `{ source, parsedValue }`. */
+function asCoord(value: unknown): number | undefined {
+  if (value && typeof value === 'object') {
+    const raw = value as Record<string, unknown>;
+    return asNumber(pick(raw, 'parsedValue', 'ParsedValue', 'source', 'Source'));
+  }
+  return asNumber(value);
+}
+
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => String(item)).filter(Boolean);
@@ -213,8 +222,8 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
   const name = asString(pick(raw, 'name', 'Name'));
   const brand = asString(pick(raw, 'brand', 'Brand'));
   const address = asString(pick(raw, 'address', 'Address'));
-  const latitude = asNumber(pick(raw, 'latitude', 'Latitude', 'lat', 'Lat'));
-  const longitude = asNumber(pick(raw, 'longitude', 'Longitude', 'lon', 'Lon'));
+  const latitude = asCoord(pick(raw, 'latitude', 'Latitude', 'lat', 'Lat'));
+  const longitude = asCoord(pick(raw, 'longitude', 'Longitude', 'lon', 'Lon'));
   const instagram = asString(pick(raw, 'instagram', 'Instagram'));
   const website = asString(pick(raw, 'website', 'Website'));
   const externalId = asString(pick(raw, 'externalId', 'ExternalId')) ?? '';
@@ -267,7 +276,7 @@ export function mapImportCandidate(rawInput: Record<string, unknown>): ImportCan
     signals: asStringArray(pick(raw, 'signals', 'Signals')),
     collectorBucket: parseBucket(pick(raw, 'collectorBucket', 'CollectorBucket')),
     queueStatus: mapQueueStatus(pick(raw, 'queueStatus', 'QueueStatus')),
-    coffeeFocus: parseCoffeeFocus(pick(raw, 'coffeeFocus', 'CoffeeFocus')),
+    coffeeFocus: parseCoffeeFocus(pick(raw, 'coffeeFocus', 'CoffeeFocus', 'type', 'Type')),
     tagSlugs: asStringArray(pick(raw, 'tagSlugs', 'TagSlugs')),
     googleBusinessStatus: parseGoogleStatus(
       pick(raw, 'googleBusinessStatus', 'GoogleBusinessStatus')
@@ -521,8 +530,8 @@ function mapDuplicateSide(rawInput: unknown): DuplicateCandidateSide {
     source,
     name: asString(pick(raw, 'name', 'Name')),
     address: asString(pick(raw, 'address', 'Address')),
-    latitude: asNumber(pick(raw, 'latitude', 'Latitude', 'lat', 'Lat')),
-    longitude: asNumber(pick(raw, 'longitude', 'Longitude', 'lon', 'Lon')),
+    latitude: asCoord(pick(raw, 'latitude', 'Latitude', 'lat', 'Lat')),
+    longitude: asCoord(pick(raw, 'longitude', 'Longitude', 'lon', 'Lon')),
     phone: asString(pick(raw, 'phone', 'Phone')),
     website: asString(pick(raw, 'website', 'Website')),
     instagram: asString(pick(raw, 'instagram', 'Instagram')),

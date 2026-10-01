@@ -38,6 +38,8 @@ export interface AndroidAppRelease {
   sha256: string | null;
   releasedAt: string;
   isActive: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface StoreChannelUpdateRequest {
@@ -111,6 +113,8 @@ function normalizeRelease(raw: unknown): AndroidAppRelease {
     sha256: str(row.sha256 ?? row.Sha256 ?? row.sha256Hash ?? row.Sha256Hash),
     releasedAt: String(row.releasedAt ?? row.ReleasedAt ?? row.releasedAtUtc ?? row.ReleasedAtUtc ?? ''),
     isActive: bool(row.isActive ?? row.IsActive ?? row.active ?? row.Active),
+    createdAt: str(row.createdAt ?? row.CreatedAt),
+    updatedAt: str(row.updatedAt ?? row.UpdatedAt),
   };
 }
 

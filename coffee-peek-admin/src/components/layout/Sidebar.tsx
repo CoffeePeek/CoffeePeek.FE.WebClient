@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   AppWindow, BookOpen, ChevronDown, ChevronLeft, CircleGauge, Coffee, Database,
   Flag, History, LogOut, Map, MessageSquareText, Tags, Upload, UserRound, Users,
 } from 'lucide-react';
+import { getModerationInsights, type AdminModerationQueueName } from '../../api/admin';
+import { getImportStats } from '../../api/import';
 import { useUser } from '../../contexts/UserContext';
 import { cn } from '../../lib/utils';
 import LogoMark from '../LogoMark';
@@ -59,6 +62,46 @@ const NAV_SECTIONS: NavSection[] = [
 
 const pathActive = (pathname: string, path: string) => pathname === path || pathname.startsWith(`${path}/`);
 
+const QUEUE_PATHS: Record<AdminModerationQueueName, string> = {
+  shops: '/shops',
+  reviews: '/reviews',
+  roasters: '/roasters',
+  changeRequests: '/shop-change-requests',
+  issueReports: '/shop-reports',
+};
+const BADGE_POLL_MS = 60_000;
+
+/** Pending counts per nav path. Query keys are shared with the dashboard and import stats pages. */
+function useNavBadges(isAdmin: boolean, isModerator: boolean): Record<string, number> {
+  // ponytail: /stats/moderation/insights is Admin-only on the backend, so non-admin moderators get only the import badge.
+  const moderation = useQuery({
+    queryKey: ['admin', 'stats', 'moderation-insights'],
+    queryFn: () => getModerationInsights().then((r) => r.data),
+    enabled: isAdmin,
+    refetchInterval: BADGE_POLL_MS,
+  });
+  const importStats = useQuery({
+    queryKey: ['admin', 'import', 'stats'],
+    queryFn: () => getImportStats().then((r) => r.data),
+    enabled: isModerator,
+    refetchInterval: BADGE_POLL_MS,
+  });
+  return useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const { queue, pending } of moderation.data?.queues ?? []) {
+      if (QUEUE_PATHS[queue]) counts[QUEUE_PATHS[queue]] = pending;
+    }
+    if (importStats.data) counts['/import'] = importStats.data.pending + importStats.data.pendingDuplicates;
+    return counts;
+  }, [moderation.data, importStats.data]);
+}
+
+const CountBadge = ({ count }: { count: number }) => (
+  <span className="ml-auto inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold tabular-nums text-white">
+    {count > 99 ? '99+' : count}
+  </span>
+);
+
 function canSee(item: NavItem, roles: { isAdmin: boolean; isModerator: boolean; isOwner: boolean }) {
   if (item.adminOnly) return roles.isAdmin;
   if (item.moderatorOnly) return roles.isModerator;
@@ -89,6 +132,7 @@ export const Sidebar = ({ collapsed, mobileOpen, onNavigate, onToggle }: Sidebar
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ moderation: true, data: true });
   const showLabels = !collapsed || mobileOpen;
   const roles = useMemo(() => ({ isAdmin, isModerator, isOwner }), [isAdmin, isModerator, isOwner]);
+  const badges = useNavBadges(isAdmin, isModerator);
   const visibleSections = useMemo(
     () => NAV_SECTIONS.map((section) => ({ ...section, items: section.items.filter((item) => canSee(item, roles)) }))
       .filter((section) => section.items.length),
@@ -107,14 +151,15 @@ export const Sidebar = ({ collapsed, mobileOpen, onNavigate, onToggle }: Sidebar
 
   const renderLink = (item: NavItem) => {
     const Icon = item.icon;
+    const count = badges[item.path] ?? 0;
     return (
       <NavLink
         key={item.path}
         to={item.path}
         onClick={onNavigate}
-        title={showLabels ? undefined : item.label}
+        title={showLabels ? undefined : count > 0 ? `${item.label} (${count})` : item.label}
         className={({ isActive }) => cn(
-          'group flex h-9 items-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+          'group relative flex h-9 items-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
           showLabels ? 'gap-3 px-3' : 'mx-auto w-9 justify-center',
           isActive || pathActive(pathname, item.path)
             ? 'bg-primary text-stone-950 shadow-sm'
@@ -123,6 +168,9 @@ export const Sidebar = ({ collapsed, mobileOpen, onNavigate, onToggle }: Sidebar
       >
         <Icon className="h-4 w-4 shrink-0" />
         {showLabels && <span className="truncate">{item.label}</span>}
+        {count > 0 && (showLabels
+          ? <CountBadge count={count} />
+          : <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" aria-hidden />)}
       </NavLink>
     );
   };
@@ -143,11 +191,15 @@ export const Sidebar = ({ collapsed, mobileOpen, onNavigate, onToggle }: Sidebar
         {renderLink(DASHBOARD)}
         {visibleSections.map((section) => {
           const open = !section.collapsible || !showLabels || Boolean(openSections[section.id]);
+          // Collapsed section hides its items, so surface their total on the header.
+          const hiddenCount = open ? 0 : section.items.reduce((sum, item) => sum + (badges[item.path] ?? 0), 0);
           return (
             <section key={section.id}>
               {showLabels && (section.collapsible ? (
-                <button type="button" className="mb-1 flex h-8 w-full items-center justify-between rounded-md px-3 text-[11px] font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-300" onClick={() => setOpenSections((current) => ({ ...current, [section.id]: !open }))} aria-expanded={open}>
-                  {section.label}<ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />
+                <button type="button" className="mb-1 flex h-8 w-full items-center justify-between gap-2 rounded-md px-3 text-[11px] font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-300" onClick={() => setOpenSections((current) => ({ ...current, [section.id]: !open }))} aria-expanded={open}>
+                  {section.label}
+                  {hiddenCount > 0 && <CountBadge count={hiddenCount} />}
+                  <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 transition-transform', open && 'rotate-180')} />
                 </button>
               ) : <h2 className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-stone-500">{section.label}</h2>)}
               {open && <div className="space-y-1">{section.items.map(renderLink)}</div>}
