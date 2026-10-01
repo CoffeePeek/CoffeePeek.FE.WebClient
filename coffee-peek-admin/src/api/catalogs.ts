@@ -38,6 +38,7 @@ export interface CatalogShopTag {
   name: string;
   description?: string;
   sortOrder: number;
+  isActive?: boolean;
 }
 
 export interface CatalogsBundle {
@@ -48,6 +49,7 @@ export interface CatalogsBundle {
   brewMethods: CatalogBrewMethod[];
 }
 
+// Admin endpoints: the public /api/Catalogs lists expose only slugs, but shops reference catalog items by GUID.
 function unwrapList<T>(data: unknown, ...keys: string[]): T[] {
   if (Array.isArray(data)) return data as T[];
   if (data && typeof data === 'object') {
@@ -61,23 +63,17 @@ function unwrapList<T>(data: unknown, ...keys: string[]): T[] {
 }
 
 export async function getCatalogCities(): Promise<ApiResponse<CatalogCity[]>> {
-  const response = await httpClient.get<unknown>(API_ENDPOINTS.CATALOGS.CITIES, {
-    requiresAuth: false,
-  });
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.CATALOG_CITIES);
   return { ...response, data: unwrapList<CatalogCity>(response.data, 'cities') };
 }
 
 export async function getCatalogEquipments(): Promise<ApiResponse<CatalogEquipment[]>> {
-  const response = await httpClient.get<unknown>(API_ENDPOINTS.CATALOGS.EQUIPMENTS, {
-    requiresAuth: false,
-  });
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.CATALOG_EQUIPMENTS);
   return { ...response, data: unwrapList<CatalogEquipment>(response.data, 'equipments') };
 }
 
 export async function getCatalogBeans(): Promise<ApiResponse<CatalogBean[]>> {
-  const response = await httpClient.get<unknown>(API_ENDPOINTS.CATALOGS.BEANS, {
-    requiresAuth: false,
-  });
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.CATALOG_BEANS);
   return { ...response, data: unwrapList<CatalogBean>(response.data, 'beans', 'coffeeBeans') };
 }
 
@@ -141,25 +137,20 @@ export function deleteAdminCatalogItem(kind: CatalogKind, id: string): Promise<A
 }
 
 export async function getCatalogRoasters(): Promise<ApiResponse<CatalogRoaster[]>> {
-  const response = await httpClient.get<unknown>(API_ENDPOINTS.CATALOGS.ROASTERS, {
-    requiresAuth: false,
-  });
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.CATALOG_ROASTERS);
   return { ...response, data: unwrapList<CatalogRoaster>(response.data, 'roasters') };
 }
 
 export async function getCatalogBrewMethods(): Promise<ApiResponse<CatalogBrewMethod[]>> {
-  const response = await httpClient.get<unknown>(API_ENDPOINTS.CATALOGS.BREW_METHODS, {
-    requiresAuth: false,
-  });
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.CATALOG_BREW_METHODS);
   return { ...response, data: unwrapList<CatalogBrewMethod>(response.data, 'brewMethods') };
 }
 
 export async function getShopTags(): Promise<ApiResponse<CatalogShopTag[]>> {
-  const response = await httpClient.get<unknown>(API_ENDPOINTS.CATALOGS.SHOP_TAGS, {
-    requiresAuth: false,
-  });
-  // Backend GetShopTagsResponse uses `tags` (same as admin list).
-  return { ...response, data: unwrapList<CatalogShopTag>(response.data, 'tags', 'shopTags', 'items') };
+  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.SHOP_TAGS);
+  // Admin list also returns deactivated tags; keep the public catalog's active-only semantics.
+  const tags = unwrapList<CatalogShopTag>(response.data, 'tags', 'shopTags', 'items');
+  return { ...response, data: tags.filter((tag) => tag.isActive !== false) };
 }
 
 export async function getAllCatalogs(): Promise<CatalogsBundle> {

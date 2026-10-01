@@ -427,7 +427,8 @@ export const PublishedShopEditPage: React.FC = () => {
                     <label className="block text-xs font-medium text-text-muted dark:text-stone-400 mb-1.5 font-body">
                       Город
                     </label>
-                    <NativeSelect {...register('cityId')}>
+                    {/* Remount once options exist, otherwise the stored city can't be selected. */}
+                    <NativeSelect key={catalogs ? 'ready' : 'loading'} {...register('cityId')}>
                       <option value="">Выберите город</option>
                       {(catalogs?.cities ?? []).map((city) => (
                         <option key={city.id} value={city.id}>

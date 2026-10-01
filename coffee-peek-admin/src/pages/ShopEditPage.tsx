@@ -2,7 +2,7 @@ import { Input } from '@/src/components/ui/Input';
 import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import { Textarea } from '@/src/components/ui/Textarea';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -142,8 +142,8 @@ export const ShopEditPage: React.FC = () => {
         name: data.name,
         address: data.address,
         description: data.description,
-        // '' clears the stored value (FormData '' binds to null on the backend).
-        cityId: data.cityId ?? '',
+        // The backend can't clear a city; an empty select keeps the stored one.
+        cityId: data.cityId || undefined,
         // PriceRange is a non-nullable enum on the backend, so it cannot be cleared.
         priceRange: data.priceRange ? Number(data.priceRange) : undefined,
         shopContact: {
@@ -213,6 +213,9 @@ export const ShopEditPage: React.FC = () => {
     );
   }
 
+  // The backend rejects edits of an approved (already published) submission.
+  const isApproved = shop.status === 'Approved';
+
   const requestAction = (action: PendingAction) => {
     if (
       (isDirty || extraDirty) &&
@@ -279,6 +282,20 @@ export const ShopEditPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {isApproved && (
+        <Card className="p-4 text-sm text-text-main dark:text-stone-200 font-body">
+          Кофейня уже опубликована — заявку больше нельзя редактировать. Правки, теги и coffee focus вносятся{' '}
+          {shop.publishedShopId ? (
+            <Link to={`/published-shops/${shop.publishedShopId}`} className="text-primary hover:text-primary/80">
+              в карточке опубликованной кофейни
+            </Link>
+          ) : (
+            'в карточке опубликованной кофейни'
+          )}
+          .
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] gap-5">
         <div className="space-y-5">
@@ -387,7 +404,8 @@ export const ShopEditPage: React.FC = () => {
                   <Input {...register('name')} />
                 </Field>
                 <Field label="Город">
-                  <NativeSelect {...register('cityId')} disabled={catalogsLoading}>
+                  {/* Remount once options exist, otherwise the stored city can't be selected and shows «Не указан». */}
+                  <NativeSelect key={catalogs ? 'ready' : 'loading'} {...register('cityId')} disabled={catalogsLoading}>
                     <option value="">Не указан</option>
                     {catalogs?.cities.map((city) => (
                       <option key={city.id} value={city.id}>{city.name}</option>
@@ -411,6 +429,7 @@ export const ShopEditPage: React.FC = () => {
                     setValue('priceRange', value ?? '', { shouldValidate: true, shouldDirty: true })
                   }
                   allowEmpty
+                  error={errors.priceRange?.message}
                 />
               </Field>
             </div>
@@ -449,9 +468,12 @@ export const ShopEditPage: React.FC = () => {
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-4">
+            <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">
               Оборудование и ассортимент
             </h3>
+            <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-4">
+              Теги и coffee focus у заявки не хранятся — их задают в карточке опубликованной кофейни после одобрения.
+            </p>
             {catalogsLoading ? (
               <p className="text-sm text-text-muted dark:text-stone-400 font-body">Загрузка справочников...</p>
             ) : (
@@ -523,6 +545,7 @@ export const ShopEditPage: React.FC = () => {
               variant="primary"
               size="md"
               loading={isSubmitting || updateMutation.isPending}
+              disabled={isApproved}
               className="w-full sm:w-auto"
             >
               Сохранить изменения

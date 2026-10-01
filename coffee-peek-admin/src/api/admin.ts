@@ -7,7 +7,7 @@ import type { CoffeeFocus } from '../constants/catalogIngest';
 import { COFFEE_FOCUS_TO_API, parseCoffeeFocus } from '../constants/catalogIngest';
 import { mapShopMenu, ShopMenuDto } from './menu';
 import { apiDayOfWeekToUi, uiDayToDotNetName } from '../utils/dayOfWeek';
-import { schedulesFromUtc, schedulesToUtc, type UtcScheduleEntry } from '../utils/shopForm';
+import { schedulesFromUtc, schedulesToUtc } from '../utils/shopForm';
 
 // ==================== Types ====================
 
@@ -53,10 +53,13 @@ interface BackendModerationShop {
   address?: string | null;
   addressIsValidated?: boolean;
   description?: string | null;
-  priceRange?: number;
+  /** Enums are serialized as names ("Moderate"); legacy numbers are still accepted. */
+  priceRange?: number | string;
   cityId?: string | null;
   userId: string;
   moderationStatus: ModerationStatus | number;
+  /** Published shop id; null until approval completes. */
+  publishedShopId?: string | null;
   shopContact?: BackendShopContact | null;
   schedules?: BackendSchedule[] | null;
   equipmentIds?: string[];
@@ -156,6 +159,7 @@ export interface AdminCoffeeShop {
   userId?: string;
   addressIsValidated?: boolean;
   status: ModerationStatus;
+  publishedShopId?: string;
   ownerEmail?: string;
   createdAtUtc: string;
   averageRating?: number;
@@ -539,8 +543,9 @@ function mapShopToAdmin(shop: BackendModerationShop): AdminCoffeeShop {
     userId: shop.userId,
     addressIsValidated: shop.addressIsValidated,
     status: mapModerationStatus(shop.moderationStatus),
+    publishedShopId: shop.publishedShopId ?? undefined,
     description: shop.description ?? undefined,
-    priceRange: shop.priceRange,
+    priceRange: parsePriceRange(shop.priceRange),
     photos: shop.shopPhotos?.map((photo) => ({
       fileName: photo.fileName,
       storageKey: photo.storageKey,
@@ -616,93 +621,46 @@ function toPaginatedResult<T>(
   };
 }
 
-function appendFormValue(form: FormData, key: string, value: string | number | boolean | undefined | null) {
-  if (value === undefined || value === null) return;
-  form.append(key, String(value));
-}
-
-function appendGuidArray(form: FormData, key: string, values?: string[]) {
-  values?.forEach((value, index) => {
-    form.append(`${key}[${index}]`, value);
-  });
-}
-
 function toBackendTime(value: string): string {
   if (!value) return '00:00:00';
   const [hours = '00', minutes = '00'] = value.split(':');
   return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
 }
 
-function buildModerationShopFormData(
-  shop: BackendModerationShop,
-  updates: UpdateCoffeeShopRequest
-): FormData {
-  const form = new FormData();
-  // A present update key wins even when '' (cleared); only missing keys fall back to the stored value.
-  const pick = (update: string | undefined, stored: string | null | undefined) =>
-    update !== undefined ? update : stored ?? '';
-  const contact = {
-    phoneNumber: pick(updates.shopContact?.phone, shop.shopContact?.phoneNumber),
-    email: pick(updates.shopContact?.email, shop.shopContact?.email),
-    siteLink: pick(updates.shopContact?.website, shop.shopContact?.siteLink),
-    instagramLink: pick(updates.shopContact?.instagram, shop.shopContact?.instagramLink),
+/**
+ * PUT /api/ModerationShops binds ModerationShopDto from a JSON body. Its lists (schedules, catalog ids, photos)
+ * are required, so the stored DTO is resent and only the edited fields are overridden.
+ */
+function buildModerationShopBody(shop: BackendModerationShop, updates: UpdateCoffeeShopRequest) {
+  const contact = updates.shopContact;
+  return {
+    ...shop,
+    // The update handler ignores the menu (it has its own endpoints).
+    menu: null,
+    name: updates.name ?? shop.name,
+    address: updates.address ?? shop.address,
+    description: updates.description ?? shop.description,
+    // Non-nullable enum on the backend: always resend a value.
+    priceRange: updates.priceRange ?? shop.priceRange,
+    // Guid?: '' fails to bind; null keeps the stored city (the backend cannot clear it).
+    cityId: updates.cityId || shop.cityId || null,
+    shopContact: contact
+      ? {
+          phoneNumber: contact.phone || null,
+          email: contact.email || null,
+          siteLink: contact.website || null,
+          instagramLink: contact.instagram || null,
+        }
+      : shop.shopContact,
+    // No schedule update → resend the stored (already UTC) entries untouched.
+    schedules: updates.schedules ? toPublishedApiSchedules(updates.schedules) : shop.schedules ?? [],
+    equipmentIds: updates.equipmentIds ?? shop.equipmentIds ?? [],
+    coffeeBeanIds: updates.coffeeBeanIds ?? shop.coffeeBeanIds ?? [],
+    roasterIds: updates.roasterIds ?? shop.roasterIds ?? [],
+    brewMethodIds: updates.brewMethodIds ?? shop.brewMethodIds ?? [],
+    // Photos missing from this list are deleted by the backend.
+    shopPhotos: shop.shopPhotos ?? [],
   };
-
-  appendFormValue(form, 'Id', shop.id);
-  appendFormValue(form, 'Name', updates.name ?? shop.name);
-  appendFormValue(form, 'Address', updates.address ?? shop.address ?? '');
-  appendFormValue(form, 'Description', updates.description ?? shop.description ?? '');
-  appendFormValue(form, 'PriceRange', updates.priceRange ?? shop.priceRange);
-  appendFormValue(form, 'CityId', updates.cityId ?? shop.cityId ?? '');
-  appendFormValue(form, 'UserId', shop.userId);
-  appendFormValue(form, 'ModerationStatus', mapModerationStatus(shop.moderationStatus));
-  appendFormValue(form, 'AddressIsValidated', shop.addressIsValidated ?? false);
-
-  appendFormValue(form, 'ShopContact.PhoneNumber', contact.phoneNumber);
-  appendFormValue(form, 'ShopContact.Email', contact.email);
-  appendFormValue(form, 'ShopContact.SiteLink', contact.siteLink);
-  appendFormValue(form, 'ShopContact.InstagramLink', contact.instagramLink);
-
-  // No schedule update → resend the stored (already UTC) entries untouched instead of round-tripping them.
-  const schedules: UtcScheduleEntry[] = updates.schedules
-    ? schedulesToUtc(updates.schedules)
-    : (shop.schedules ?? []).map((schedule) => ({
-        dayOfWeek: apiDayOfWeekToUi(schedule.dayOfWeek),
-        isClosed: Boolean(schedule.isClosed),
-        openTime: formatTimeSpan(schedule.intervals?.[0]?.openTime),
-        closeTime: formatTimeSpan(schedule.intervals?.[0]?.closeTime),
-      }));
-  schedules.forEach((schedule, scheduleIndex) => {
-    appendFormValue(form, `Schedules[${scheduleIndex}].DayOfWeek`, uiDayToDotNetName(schedule.dayOfWeek));
-    if (schedule.isClosed || !schedule.openTime || !schedule.closeTime) {
-      appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, schedule.isClosed);
-      return;
-    }
-    appendFormValue(form, `Schedules[${scheduleIndex}].IsClosed`, false);
-    appendFormValue(
-      form,
-      `Schedules[${scheduleIndex}].Intervals[0].OpenTime`,
-      toBackendTime(schedule.openTime)
-    );
-    appendFormValue(
-      form,
-      `Schedules[${scheduleIndex}].Intervals[0].CloseTime`,
-      toBackendTime(schedule.closeTime)
-    );
-  });
-
-  appendGuidArray(form, 'EquipmentIds', updates.equipmentIds ?? shop.equipmentIds);
-  appendGuidArray(form, 'CoffeeBeanIds', updates.coffeeBeanIds ?? shop.coffeeBeanIds);
-  appendGuidArray(form, 'RoasterIds', updates.roasterIds ?? shop.roasterIds);
-  appendGuidArray(form, 'BrewMethodIds', updates.brewMethodIds ?? shop.brewMethodIds);
-
-  shop.shopPhotos?.forEach((photo, index) => {
-    appendFormValue(form, `ShopPhotos[${index}].FileName`, photo.fileName);
-    appendFormValue(form, `ShopPhotos[${index}].StorageKey`, photo.storageKey);
-    appendFormValue(form, `ShopPhotos[${index}].FullUrl`, photo.fullUrl);
-  });
-
-  return form;
 }
 
 function buildStatusParams(id: string, status: ModerationStatus, comment?: string) {
@@ -768,10 +726,9 @@ export async function updateCoffeeShop(
     API_ENDPOINTS.MODERATION.SHOP_BY_ID(id)
   );
   const shop = shopResponse.data;
-  const formData = buildModerationShopFormData(shop, data);
   const response = await httpClient.put<BackendModerationShop>(
     API_ENDPOINTS.MODERATION.SHOPS,
-    formData
+    buildModerationShopBody(shop, data)
   );
 
   return {

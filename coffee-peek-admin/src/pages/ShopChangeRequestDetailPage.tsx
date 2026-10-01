@@ -1,9 +1,11 @@
+import { Input } from '@/src/components/ui/Input';
 import { NativeSelect } from '@/src/components/ui/NativeSelect';
 import { Textarea } from '@/src/components/ui/Textarea';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPublishedShopById } from '../api/admin';
+import { getShopTags } from '../api/catalogs';
 import { getPublishedShopMenu } from '../api/menu';
 import {
   getShopChangeRequest,
@@ -15,23 +17,46 @@ import {
 } from '../api/shopChangeRequests';
 import { getUserPublicProfile } from '../api/users';
 import { ChangeRequestPayloadView } from '../components/moderation/ChangeRequestPayloadView';
+import { CatalogMultiSelect } from '../components/moderation/CatalogMultiSelect';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
+import { useCatalogs } from '../hooks/useCatalogs';
 import { sectionLabels } from './ShopChangeRequestsPage';
 
-const sections = Object.keys({
-  Photos: 1,
-  Contacts: 1,
-  Description: 1,
-  Tags: 1,
-  Roasters: 1,
-  Equipment: 1,
-  Menu: 1,
-  BrewMethods: 1,
-}) as ShopChangeSection[];
+const SECTION_FIELD = {
+  Photos: 'photos',
+  Contacts: 'contacts',
+  Description: 'description',
+  Tags: 'tagIds',
+  Roasters: 'roasterIds',
+  Equipment: 'equipmentIds',
+  Menu: 'menu',
+  BrewMethods: 'brewMethodIds',
+} as const satisfies Record<ShopChangeSection, keyof ShopChangePayloadDto>;
+
+const sections = Object.keys(SECTION_FIELD) as ShopChangeSection[];
+
+type IdSection = 'Tags' | 'Roasters' | 'Equipment' | 'BrewMethods';
+const isIdSection = (section: ShopChangeSection): section is IdSection =>
+  section === 'Tags' || section === 'Roasters' || section === 'Equipment' || section === 'BrewMethods';
+
+const EMPTY_CONTACTS = { phoneNumber: null, email: null, siteLink: null, instagramLink: null };
+const CONTACT_FIELDS = [
+  ['phoneNumber', 'Телефон'],
+  ['email', 'Email'],
+  ['siteLink', 'Сайт'],
+  ['instagramLink', 'Instagram'],
+] as const;
+
+/** The backend rejects a payload that carries another section's field (e.g. after switching the section). */
+function payloadForSection(section: ShopChangeSection, payload: ShopChangePayloadDto): ShopChangePayloadDto {
+  const field = SECTION_FIELD[section];
+  const fallback = isIdSection(section) ? [] : section === 'Description' ? '' : null;
+  return { [field]: payload[field] ?? fallback };
+}
 
 function parsePayloadText(payload: string): ShopChangePayloadDto | null {
   try {
@@ -82,6 +107,28 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
   }, [id, showToast]);
 
   const parsedPayload = useMemo(() => parsePayloadText(payload), [payload]);
+  const updatePayload = (patch: ShopChangePayloadDto) =>
+    setPayload(JSON.stringify({ ...parsedPayload, ...patch }, null, 2));
+
+  const { data: catalogs } = useCatalogs();
+  const { data: tags = [] } = useQuery({
+    queryKey: ['catalogs', 'shop-tags'],
+    queryFn: () => getShopTags().then((r) => r.data ?? []),
+    staleTime: 5 * 60 * 1000,
+  });
+  const idEditors: Record<IdSection, { label: string; items: { id: string; name: string; subtitle?: string }[] }> = {
+    Tags: { label: 'Теги', items: tags },
+    Roasters: { label: 'Обжарщики', items: catalogs?.roasters ?? [] },
+    Equipment: {
+      label: 'Оборудование',
+      items: (catalogs?.equipments ?? []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        subtitle: [item.brand, item.model].filter(Boolean).join(' '),
+      })),
+    },
+    BrewMethods: { label: 'Методы заваривания', items: catalogs?.brewMethods ?? [] },
+  };
 
   const { data: shop } = useQuery({
     // Same key/queryFn as PublishedShopEditPage, so approval invalidation refreshes both.
@@ -120,7 +167,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
     if (!parsed) return;
     setAction('save');
     try {
-      const response = await updateShopChangeRequest(id, { section, payload: parsed });
+      const response = await updateShopChangeRequest(id, { section, payload: payloadForSection(section, parsed) });
       setRequest(response.data);
       setPayload(JSON.stringify(response.data.payload, null, 2));
       showToast('Заявка сохранена', 'success');
@@ -143,7 +190,7 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
       if (status === 'Approved') {
         const parsed = parsePayload();
         if (!parsed) return;
-        await updateShopChangeRequest(id, { section, payload: parsed });
+        await updateShopChangeRequest(id, { section, payload: payloadForSection(section, parsed) });
       }
       await reviewShopChangeRequest(id, status, reason || null);
       if (request?.shopId) {
@@ -327,16 +374,57 @@ export const ShopChangeRequestDetailPage: React.FC = () => {
           )}
 
           {parsedPayload ? (
-            <ChangeRequestPayloadView
-              section={section}
-              payload={parsedPayload}
-              shop={shop}
-              currentMenu={menuBundle?.menu}
-            />
+            pending && isIdSection(section) ? (
+              <CatalogMultiSelect
+                label={idEditors[section].label}
+                items={idEditors[section].items}
+                selectedIds={parsedPayload[SECTION_FIELD[section]] ?? []}
+                onChange={(ids) => updatePayload({ [SECTION_FIELD[section]]: ids })}
+              />
+            ) : (
+              <ChangeRequestPayloadView
+                section={section}
+                payload={parsedPayload}
+                shop={shop}
+                currentMenu={menuBundle?.menu}
+              />
+            )
           ) : (
             <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">
               JSON повреждён — исправьте в техническом редакторе ниже.
             </p>
+          )}
+
+          {pending && parsedPayload && section === 'Description' && (
+            <label className="block text-sm font-semibold">
+              Исправить описание
+              <Textarea
+                value={parsedPayload.description ?? ''}
+                onChange={(e) => updatePayload({ description: e.target.value })}
+                maxLength={1000}
+                rows={6}
+                className="mt-2"
+              />
+            </label>
+          )}
+
+          {pending && parsedPayload && section === 'Contacts' && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {CONTACT_FIELDS.map(([key, label]) => (
+                <label key={key} className="block text-sm font-semibold">
+                  {label}
+                  <Input
+                    value={parsedPayload.contacts?.[key] ?? ''}
+                    onChange={(e) =>
+                      updatePayload({
+                        contacts: { ...EMPTY_CONTACTS, ...parsedPayload.contacts, [key]: e.target.value || null },
+                      })
+                    }
+                    className="mt-2"
+                  />
+                </label>
+              ))}
+            </div>
           )}
 
           {showRawJson && (
