@@ -1,3 +1,5 @@
+import DrinkSelector from '../components/DrinkSelector';
+import { reviewDrinkSelection, savedDrinkName } from '../utils/consumedDrinks';
 import { usePublicResolution } from '../components/PublicAddressPage';
 import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import WobbleRing from '../components/WobbleRing';
@@ -56,6 +58,9 @@ const CreateReviewPage: React.FC = () => {
   }, [shopFromState, isEditMode, shopId, navigate]);
 
   // Review data
+  const [drinkSlug, setDrinkSlug] = useState('');
+  const [customDrinkName, setCustomDrinkName] = useState('');
+  const [originalDrink, setOriginalDrink] = useState({ slug: '', name: '', savedName: '' });
   const [header, setHeader] = useState('');
   const [description, setDescription] = useState('');
   const [ratingCoffee, setRatingCoffee] = useState(5);
@@ -105,6 +110,9 @@ const CreateReviewPage: React.FC = () => {
 
         if (response.success && response.data) {
           const r = response.data;
+          setDrinkSlug(r.drinkSlug || '');
+          setCustomDrinkName(r.customDrinkName || '');
+          setOriginalDrink({ slug: r.drinkSlug || '', name: r.customDrinkName || '', savedName: savedDrinkName(r) });
           setHeader(r.header || '');
           setDescription(r.comment || '');
           setRatingCoffee(r.ratingCoffee || 5);
@@ -212,6 +220,16 @@ const CreateReviewPage: React.FC = () => {
       return;
     }
 
+    let selection: { drinkSlug?: string; customDrinkName?: string; clearDrink?: boolean };
+    try {
+      selection = reviewDrinkSelection(drinkSlug, customDrinkName, isEditMode
+        ? { drinkSlug: originalDrink.slug, customDrinkName: originalDrink.name }
+        : undefined);
+    } catch (error) {
+      showToast((error as Error).message, 'error');
+      return;
+    }
+
     const token = TokenManager.getAccessToken();
     if (!token) return;
 
@@ -253,6 +271,7 @@ const CreateReviewPage: React.FC = () => {
       const visitedAtISO = new Date(dateTimeString).toISOString();
       
       const request: CreateReviewRequest = {
+        ...selection,
         shop: shopId,
         header: header.trim() || null,
         comment: description.trim(),
@@ -487,6 +506,8 @@ const CreateReviewPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              <DrinkSelector drinkSlug={drinkSlug} customDrinkName={customDrinkName} savedName={drinkSlug === originalDrink.slug ? originalDrink.savedName : undefined} disabled={isSubmitting} onChange={(slug, name) => { setDrinkSlug(slug); setCustomDrinkName(name); }} />
 
               {/* Header and Description */}
               <div className="space-y-6 pt-6 border-t" style={{ borderColor: `${colors.borderSubtle}80` }}>

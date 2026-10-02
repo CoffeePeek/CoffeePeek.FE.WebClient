@@ -9,6 +9,8 @@ let activeCheckInDraft: CheckInDraftState | null = null;
 export function createEmptyCheckInDraft(shopId: string, now = new Date()): CheckInDraftState {
   return {
     coffeeShopId: shopId,
+    drinkSlug: '',
+    customDrinkName: '',
     header: '',
     note: '',
     isPublic: false,

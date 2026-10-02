@@ -1,3 +1,4 @@
+import DrinkSelector from './DrinkSelector';
 import React, { useEffect, useState, type ChangeEvent } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { brand, getThemeColors } from '../design-system/tokens';
@@ -17,6 +18,9 @@ interface RatingColumn {
 }
 
 interface CheckInFormProps {
+  drinkSlug: string;
+  customDrinkName: string;
+  onDrinkChange: (slug: string, name: string) => void;
   shopName: string;
   header: string;
   onHeaderChange: (value: string) => void;
@@ -95,6 +99,9 @@ const PhotoThumb: React.FC<{ file: File; onRemove: () => void }> = ({ file, onRe
 };
 
 const CheckInForm: React.FC<CheckInFormProps> = ({
+  drinkSlug,
+  customDrinkName,
+  onDrinkChange,
   shopName,
   header,
   onHeaderChange,
@@ -154,6 +161,8 @@ const CheckInForm: React.FC<CheckInFormProps> = ({
           </span>
         </p>
       </header>
+
+      <DrinkSelector drinkSlug={drinkSlug} customDrinkName={customDrinkName} onChange={onDrinkChange} />
 
       <section aria-labelledby="checkin-ratings-title">
         <h3 id="checkin-ratings-title" className="font-extended text-xl font-bold" style={{ color: colors.textPrimary }}>Ваши оценки</h3>

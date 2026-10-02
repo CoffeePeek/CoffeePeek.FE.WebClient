@@ -1,3 +1,4 @@
+import { savedDrinkName } from '../utils/consumedDrinks';
 import PublicEntityLink from '../components/PublicEntityLink';
 import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import { usePublicResolution } from '../components/PublicAddressPage';
@@ -274,7 +275,7 @@ const HoursCard: React.FC<{ shop: DetailedCoffeeShop; schedules: ReturnType<type
 
 const CheckInsList: React.FC<{ checkIns: CheckInDto[]; colors: DetailColors; onEdit: (reviewId: string) => void }> = ({ checkIns, colors, onEdit }) => {
   if (!checkIns.length) return null;
-  return <section><SectionTitle colors={colors}>Мои чекины</SectionTitle><div className="space-y-2">{checkIns.map(checkIn => <article key={checkIn.id} className="rounded-[20px] border p-4" style={{ background: colors.surface, borderColor: colors.border }}><div className="flex items-center justify-between gap-3"><div><strong style={{ color: colors.text }}>{formatCheckInDate(checkIn.visitedAt || checkIn.createdAt)}</strong>{checkIn.note && <p className="mt-1 text-sm" style={{ color: colors.muted }}>{checkIn.note}</p>}</div>{checkIn.reviewId && <button type="button" onClick={() => onEdit(checkIn.reviewId!)} className="min-h-11 rounded-full border px-4 text-sm font-bold" style={{ borderColor: colors.border, color: colors.text }}>Отзыв</button>}</div></article>)}</div></section>;
+  return <section><SectionTitle colors={colors}>Мои чекины</SectionTitle><div className="space-y-2">{checkIns.map(checkIn => <article key={checkIn.id} className="rounded-[20px] border p-4" style={{ background: colors.surface, borderColor: colors.border }}><div className="flex items-center justify-between gap-3"><div><strong style={{ color: colors.text }}>{formatCheckInDate(checkIn.visitedAt || checkIn.createdAt)}</strong>{savedDrinkName(checkIn) && <p className="mt-1 text-sm" style={{ color: colors.muted }}>Напиток: {savedDrinkName(checkIn)}</p>}{checkIn.note && <p className="mt-1 text-sm" style={{ color: colors.muted }}>{checkIn.note}</p>}</div>{checkIn.reviewId && <button type="button" onClick={() => onEdit(checkIn.reviewId!)} className="min-h-11 rounded-full border px-4 text-sm font-bold" style={{ borderColor: colors.border, color: colors.text }}>Отзыв</button>}</div></article>)}</div></section>;
 };
 
 export default CoffeeShopPage;

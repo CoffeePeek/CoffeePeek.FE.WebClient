@@ -1,3 +1,4 @@
+import type { SavedDrink } from './consumedDrinks';
 import type { PublicAddress } from './publicAddresses';
 /**
  * API модуль для работы с кофейнями
@@ -379,7 +380,7 @@ export interface BrewMethod {
 }
 
 // Интерфейсы для отзывов
-export interface Review {
+export interface Review extends SavedDrink {
   author?: PublicAddress | null;
   shop?: PublicAddress | null;
   id: string;
@@ -409,6 +410,9 @@ export interface GetReviewsResponse {
 }
 
 export interface CreateReviewRequest {
+  drinkSlug?: string;
+  customDrinkName?: string;
+  clearDrink?: boolean;
   shop: string;
   header?: string | null;
   comment: string;
@@ -431,6 +435,8 @@ export interface RatingDto {
 }
 
 export interface CreateCheckInRequest {
+  drinkSlug?: string;
+  customDrinkName?: string;
   shop: string;
   isPublic: boolean;
   visitedAt: string; // ISO date string, required
@@ -450,7 +456,7 @@ export interface CreateCheckInResponse {
   reviewId?: string | null;
 }
 
-export interface CheckInDto {
+export interface CheckInDto extends SavedDrink {
   shop?: PublicAddress | null;
   id: string;
   userId: string;

@@ -1,3 +1,4 @@
+import { savedDrinkName } from '../utils/consumedDrinks';
 import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import { usePublicResolution } from '../components/PublicAddressPage';
 import WobbleRing from '../components/WobbleRing';
@@ -320,6 +321,7 @@ const UserProfilePage: React.FC = () => {
                           )}
                           <div className="flex shrink-0 items-center gap-2"><span className={`text-xs ${textMuted}`}>{formattedDate}</span><ReportReviewButton reviewId={review.id} /></div>
                         </div>
+                        {savedDrinkName(review) && <p className="my-2 text-sm">Напиток: {savedDrinkName(review)}</p>}
                         {review.comment && (
                           <p className={`text-sm ${textMuted} mt-1 leading-relaxed`}>
                             {review.comment}

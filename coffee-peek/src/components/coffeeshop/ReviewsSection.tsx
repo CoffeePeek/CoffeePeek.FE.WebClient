@@ -1,3 +1,4 @@
+import { savedDrinkName } from '../../utils/consumedDrinks';
 import React from 'react';
 import { getPhotoUrl } from '../../api/coffeeshop';
 import type { Review, ShortPhotoMetadataDto } from '../../api/coffeeshop';
@@ -81,6 +82,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 </button>
                 <ReportReviewButton reviewId={review.id} />
               </div>
+              {savedDrinkName(review) && <p className="my-2 text-sm">Напиток: {savedDrinkName(review)}</p>}
               {review.header && <h4 className={`mb-2 text-lg font-bold ${textMain}`}>{review.header}</h4>}
               <p className={`whitespace-pre-line leading-relaxed ${textMuted} ${long && !expanded ? 'line-clamp-4' : ''}`}>{review.comment}</p>
               {long && <button type="button" aria-expanded={expanded} onClick={() => setExpandedReviews(current => { const next = new Set(current); if (expanded) next.delete(review.id); else next.add(review.id); return next; })} className={`mt-2 min-h-11 font-semibold ${classes.primary.text}`}>{expanded ? 'Свернуть' : 'Читать полностью'}</button>}

@@ -1,3 +1,4 @@
+import { savedDrinkName } from '../utils/consumedDrinks';
 import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -143,6 +144,7 @@ const CheckInCard: React.FC<{ item: CheckInDto; colors: ThemeColors; onShopOpen:
         </>
       )}
 
+      {savedDrinkName(item) && <p className="my-2 text-sm">Напиток: {savedDrinkName(item)}</p>}
       {item.note && <p className="mt-5 whitespace-pre-line text-base leading-relaxed" style={{ color: colors.textSecondary }}>{item.note}</p>}
       {photos.length > 0 && (
         <div className="mt-5 flex gap-2 overflow-x-auto pb-1">

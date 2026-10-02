@@ -87,6 +87,8 @@ const CreateCheckInPage: React.FC = () => {
         note: draft.note,
         visitedDate: draft.visitedDate,
         rating: draft.rating,
+        drinkSlug: draft.drinkSlug,
+        customDrinkName: draft.customDrinkName,
       });
     } catch (err) {
       showToast(err instanceof CheckInValidationError ? err.message : 'Проверьте данные чекина', 'error');
@@ -145,6 +147,9 @@ const CreateCheckInPage: React.FC = () => {
           >
             <CheckInForm
               shopName={shopFromState.name}
+              drinkSlug={draft.drinkSlug || ''}
+              customDrinkName={draft.customDrinkName || ''}
+              onDrinkChange={(drinkSlug, customDrinkName) => updateDraft({ drinkSlug, customDrinkName })}
               header={draft.header}
               onHeaderChange={(header) => updateDraft({ header })}
               note={draft.note}

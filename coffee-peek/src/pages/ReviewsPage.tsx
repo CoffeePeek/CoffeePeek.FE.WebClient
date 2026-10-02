@@ -1,3 +1,4 @@
+import { savedDrinkName } from '../utils/consumedDrinks';
 import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -220,6 +221,7 @@ const ReviewsPage: React.FC = () => {
                       </p>
                     )}
 
+                    {savedDrinkName(item) && <p className="my-2 text-sm">Напиток: {savedDrinkName(item)}</p>}
                     {item.comment ? (
                       <p style={{
                         margin: item.header && item.shopName ? '6px 0 0' : '12px 0 0',

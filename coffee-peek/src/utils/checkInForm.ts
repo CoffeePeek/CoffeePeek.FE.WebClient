@@ -1,8 +1,11 @@
+import { drinkSelection } from './consumedDrinks';
 import type { CreateCheckInRequest, RatingDto } from '../api/coffeeshop';
 
 export const CHECK_IN_LIMITS = { headerMin: 3, headerMax: 100, noteMin: 10, noteMax: 500 };
 
 export interface CheckInDraft {
+  drinkSlug?: string;
+  customDrinkName?: string;
   coffeeShopId: string;
   isPublic: boolean;
   header: string;
@@ -19,6 +22,12 @@ export function todayInputValue(now = new Date()): string {
 
 // Validate before uploading photos; empty optional fields must not disappear from JSON.
 export function buildCheckInRequest(draft: CheckInDraft, now = new Date()): CreateCheckInRequest {
+  let selection: ReturnType<typeof drinkSelection>;
+  try {
+    selection = drinkSelection(draft.drinkSlug, draft.customDrinkName);
+  } catch (error) {
+    throw new CheckInValidationError((error as Error).message);
+  }
   const note = draft.note.trim();
   const header = draft.header.trim();
   if ([draft.rating.coffee, draft.rating.service, draft.rating.place].some(
@@ -49,6 +58,7 @@ export function buildCheckInRequest(draft: CheckInDraft, now = new Date()): Crea
   }
 
   return {
+    ...selection,
     shop: draft.coffeeShopId,
     isPublic: draft.isPublic,
     visitedAt: visitedAt.toISOString(),
