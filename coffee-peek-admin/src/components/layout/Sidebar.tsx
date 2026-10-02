@@ -41,6 +41,7 @@ const NAV_SECTIONS: NavSection[] = [
     { path: '/shop-change-requests', label: 'Правки кофеен', icon: History, moderatorOnly: true },
     { path: '/shops', label: 'Заявки на кофейни', icon: Coffee, moderatorOnly: true },
     { path: '/reviews', label: 'Отзывы на проверке', icon: MessageSquareText, moderatorOnly: true },
+    { path: '/review-reports', label: 'Жалобы на отзывы', icon: Flag, adminOnly: true },
     { path: '/shop-reports', label: 'Жалобы на данные', icon: Flag, moderatorOnly: true },
     { path: '/roasters', label: 'Заявки на обжарщиков', icon: Coffee, moderatorOnly: true },
   ] },

@@ -14,6 +14,7 @@ export interface ApiResponse<T> {
 }
 
 export interface ApiConfig {
+  cache?: RequestCache;
   headers?: Record<string, string>;
   params?: Record<string, any>;
   requiresAuth?: boolean;

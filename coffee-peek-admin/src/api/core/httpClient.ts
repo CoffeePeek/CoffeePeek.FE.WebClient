@@ -96,6 +96,7 @@ class HttpClient {
   async get<T>(endpoint: string, config?: ApiConfig): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'GET',
+      cache: config?.cache,
       params: config?.params,
       headers: config?.headers,
       requiresAuth: config?.requiresAuth,

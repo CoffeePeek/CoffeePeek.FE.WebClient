@@ -478,3 +478,28 @@ Moderation остаётся в `CoffeePeek.ModerationService`, но admin-обё
 
 - `src/api/core/apiConfig.ts`
 - `src/api/admin.ts`
+
+## 11. Жалобы на отзывы
+
+Все запросы идут через Gateway с Bearer-токеном. Клиент отправляет
+`POST /api/CoffeeShopReviews/{reviewId}/reports` с `{ text }`: текст после trim
+должен содержать 1–2000 символов. Успех — 201, ID в `data.id`;
+неопубликованный или отсутствующий отзыв — 404, лимит контента — 429.
+
+Только Admin: `GET /api/admin/review-reports?status=Pending&page=1&pageSize=20`.
+Пустой `status=` выбирает все статусы; значения — Pending (0), Dismissed (1),
+ReviewDeleted (2). Ответ `data`: `{ items, totalCount, page, pageSize }`;
+порядок — старые сначала, затем ID. Детали:
+`GET /api/admin/review-reports/{reportId}` → `data: { report, review }`.
+Список и детали не кэшируются.
+
+`PUT /api/admin/review-reports/{reportId}/resolution` с обязательным
+`{ deleteReview: boolean }`: true удаляет отзыв и закрывает жалобу,
+false отклоняет жалобу. Повтор того же решения — 200, смена решения или
+конкурентная запись — 409; фронт перечитывает данные перед повтором.
+Остальные жалобы на отзыв закрываются отдельно. Уведомления по почте отсутствуют.
+
+Перед обновлением ShopsService вручную применить миграцию `AddReviewReports`
+к Shops DB. Миграция добавляет таблицу жалоб и `Reviews.IsRemovedByAdmin`;
+защита конкурентных записей использует xmin. Удалённый администратором отзыв
+не восстанавливается повторной публикацией из модерации.

@@ -11,6 +11,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/shop-change-requests': 'Правки кофеен',
   '/shops': 'Заявки на кофейни',
   '/reviews': 'Отзывы на проверке',
+  '/review-reports': 'Жалобы на отзывы',
   '/shop-reports': 'Жалобы на данные',
   '/roasters': 'Заявки на обжарщиков',
   '/published-shops': 'Все кофейни',

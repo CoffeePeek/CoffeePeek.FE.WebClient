@@ -17,6 +17,7 @@ import {
   NotePencil, ArrowRight, CaretLeft, CaretRight,
 } from '@/components/Icon';
 import Mascot from '../components/Mascot';
+import ReportReviewButton from '../components/ReportReviewButton';
 
 const UserProfilePage: React.FC = () => {
   const { userId: routeId } = useParams<{ userId: string }>();
@@ -347,6 +348,7 @@ const UserProfilePage: React.FC = () => {
                             Перейти к кофейне
                           </button>
                         </div>
+                        <ReportReviewButton reviewId={review.id} />
                       </div>
                     </div>
                   );

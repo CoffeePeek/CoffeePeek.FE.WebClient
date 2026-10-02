@@ -35,6 +35,7 @@ const AppDistributionPage = lazy(() =>
   import('../pages/AppDistributionPage').then((m) => ({ default: m.AppDistributionPage }))
 );
 const ShopChangeRequestsPage = lazy(() => import('../pages/ShopChangeRequestsPage').then((m) => ({ default: m.ShopChangeRequestsPage })));
+const ReviewReportsPage = lazy(() => import('../pages/ReviewReportsPage').then((m) => ({ default: m.ReviewReportsPage })));
 const ShopChangeRequestDetailPage = lazy(() => import('../pages/ShopChangeRequestDetailPage').then((m) => ({ default: m.ShopChangeRequestDetailPage })));
 
 const Loader = () => (
@@ -77,6 +78,7 @@ export const AppRoutes: React.FC = () => (
       }
     >
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/review-reports" element={<ProtectedRoute requireAdmin><ReviewReportsPage /></ProtectedRoute>} />
 
         <Route path="/coffee-shops" element={<BrowseShopsPage />} />
         <Route path="/coffee-shops/:id" element={<BrowseShopPage />} />

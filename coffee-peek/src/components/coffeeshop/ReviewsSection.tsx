@@ -9,6 +9,7 @@ import type { AppUser } from '../../contexts/UserContext';
 import { StarIcon } from '../icons';
 import Mascot from '../Mascot';
 import PhotoLightbox from '../PhotoLightbox';
+import ReportReviewButton from '../ReportReviewButton';
 
 interface ReviewsSectionProps {
   reviews: Review[];
@@ -160,6 +161,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     ))}
                   </div>
                 )}
+                <ReportReviewButton reviewId={review.id} />
               </div>
             );
           })}
