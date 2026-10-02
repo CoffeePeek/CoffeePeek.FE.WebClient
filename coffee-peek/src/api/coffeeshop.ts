@@ -10,6 +10,7 @@ import { logger } from '../utils/logger';
 import { normalizeReviewDto } from './core/reviewNormalize';
 import { normalizeCheckInDto } from './core/checkInNormalize';
 import type { ShopMenuDto } from './menu';
+import { queryClient } from '../lib/queryClient';
 
 // ==================== UI models ====================
 // Public entity id/cityId and filter *Ids fields contain server-provided slugs.
@@ -703,17 +704,22 @@ async function getMapSearch(
   zoom: number,
   signal?: AbortSignal,
 ): Promise<ApiResponse<MapSearchData>> {
+  signal?.throwIfAborted();
   const requests = splitMapBounds(bounds).map((part) =>
-    httpClient.get<MapSearchResponseData>(API_ENDPOINTS.MAP.BASE, {
-      params: {
-        ...part,
-        zoom: Math.max(0, Math.min(22, Math.round(zoom))),
-      },
-      requiresAuth: false,
-      signal,
+    queryClient.fetchQuery({
+      queryKey: ['map', 'viewport', part, zoom],
+      staleTime: 30 * 60_000,
+      gcTime: 30 * 60_000,
+      retry: false,
+      queryFn: ({ signal: cacheSignal }) => httpClient.get<MapSearchResponseData>(API_ENDPOINTS.MAP.BASE, {
+        params: { ...part, zoom: Math.max(0, Math.min(22, Math.round(zoom))) },
+        requiresAuth: false,
+        signal: cacheSignal,
+      }),
     }),
   );
   const responses = await Promise.all(requests);
+  signal?.throwIfAborted();
   const data = responses.map((response) => normalizeMapSearch(response.data));
 
   return {

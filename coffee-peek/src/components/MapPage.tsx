@@ -3,14 +3,14 @@ import { usePublicNavigate } from '../hooks/usePublicNavigate';
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { distanceKm, formatDistance, nearbyBounds } from '../utils/distance';
+import { closestCardIndex } from '../utils/carousel';
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
 import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getMapShops, getMapZones, getCoffeeShopById, getPhotoUrl } from '../api/coffeeshop';
-import type { DetailedCoffeeShop, MapSearchData, MapShop, PhotoUrlsDto } from '../api/coffeeshop';
-import { ArrowRight, CaretRight, Star, NavigationArrow, MagnifyingGlass, X, Polygon, MapPin, Minus, Plus } from '@/components/Icon';
-import Button from './Button';
+import type { DetailedCoffeeShop, MapSearchData, MapShop } from '../api/coffeeshop';
+import { CaretRight, Star, NavigationArrow, MagnifyingGlass, X, Polygon, MapPin, Minus, Plus } from '@/components/Icon';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
 import Mascot from './Mascot';
 import {
@@ -25,23 +25,6 @@ import {
 import { getCurrentDayOfWeek, toLocalSchedules } from '../utils/shopUtils';
 import { getLocationLifetime } from '../utils/geolocation';
 
-/** Opens a driving route to the shop in Yandex Maps (tries the mobile app first, falls back to the web map). */
-function openYandexRoute(from: { lat: number; lon: number } | null, toLat: number, toLon: number): void {
-  const dest = `${toLat},${toLon}`;
-  const rtext = from ? `${from.lat},${from.lon}~${dest}` : `~${dest}`;
-  const webUrl = `https://yandex.ru/maps/?rtext=${rtext}&rtt=auto`;
-  const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (isMobile) {
-    // ponytail: best-effort deep link; if the Yandex app isn't installed the timeout falls back to the web map
-    window.location.href = `yandexmaps://maps.yandex.ru/?rtext=${rtext}&rtt=auto`;
-    window.setTimeout(() => {
-      if (!document.hidden) window.location.href = webUrl;
-    }, 1200);
-  } else {
-    window.open(webUrl, '_blank', 'noopener,noreferrer');
-  }
-}
-
 const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotion?: boolean }> = ({ embedded = false, autoPreview = false, reduceMotion = false }) => {
   const openPublic = usePublicNavigate();
   const [searchParams] = useSearchParams();
@@ -52,6 +35,9 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
   const markersRef = useRef<MapLibreMarker[]>([]);
   const selectedIdRef = useRef<string | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [carouselItems, setCarouselItems] = useState<MapShop[]>([]);
+  const loopedItems = carouselItems.length > 1 ? [carouselItems[carouselItems.length - 1], ...carouselItems, carouselItems[0]] : carouselItems;
   const mapDataRef = useRef<MapSearchData>({ shops: [], clusters: [], zones: [] });
   const paintMapRef = useRef<(data: MapSearchData) => void>(() => undefined);
   const mapRequestRef = useRef<AbortController | null>(null);
@@ -64,7 +50,6 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
   const [shopsLoaded, setShopsLoaded] = useState(false);
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
   const [selectedShopDetails, setSelectedShopDetails] = useState<DetailedCoffeeShop | null>(null);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const userPosRef = useRef<{ lat: number; lon: number } | null>(null);
   const [userPosition, setUserPosition] = useState<{ lat: number; lon: number } | null>(null);
@@ -119,7 +104,6 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
     // Быстрый клик A→B: ответ A не должен попасть в карточку B.
     detailsRequestRef.current = shopId;
     setSelectedShopDetails(null);
-    setIsLoadingDetails(true);
     try {
       const response = await getCoffeeShopById(shopId);
       if (detailsRequestRef.current === shopId && response.success && response.data) {
@@ -127,14 +111,13 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
       }
     } catch {
       /* name-only card is enough */
-    } finally {
-      if (detailsRequestRef.current === shopId) setIsLoadingDetails(false);
+
     }
   };
 
   const selectShop = (shop: MapShop, moveToShop = false, showDetails = true) => {
     selectedIdRef.current = shop.id;
-    carouselRef.current?.scrollTo({ left: 0 });
+
     setSelectedShop(showDetails ? shop : null);
     if (showDetails) void loadShopDetails(shop.id);
     else detailsRequestRef.current = null;
@@ -145,6 +128,25 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
     }
     paintMapRef.current(mapDataRef.current);
   };
+
+  useEffect(() => {
+    setCarouselItems(current => {
+      if (!selectedShop) return carouselShops;
+      if (!current.length) return carouselShops.some(shop => shop.id === selectedShop.id) ? carouselShops : [selectedShop, ...carouselShops];
+      return current.some(shop => shop.id === selectedShop.id) ? current : [...current, selectedShop];
+    });
+  }, [mapData.shops, nearby.data, userPosition, selectedShop?.id]);
+
+  useEffect(() => {
+    if (!carouselItems.length) return;
+    if (!selectedShop) { selectShop(carouselItems[0]); return; }
+    const list = carouselRef.current;
+    const index = carouselItems.findIndex(shop => shop.id === selectedShop.id);
+    const card = list?.children[index + (carouselItems.length > 1 ? 1 : 0)] as HTMLElement | undefined;
+    if (list && card) list.scrollTo({ left: card.offsetLeft + card.offsetWidth / 2 - list.clientWidth / 2, behavior: 'smooth' });
+  }, [carouselItems, selectedShop?.id]);
+
+  useEffect(() => () => { if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current); }, []);
 
   const handleLocate = () => {
     if (!navigator.geolocation) {
@@ -445,7 +447,7 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
       </div>
 
-      <div className={`absolute right-4 z-[500] flex flex-col gap-3 ${selectedShop && !embedded ? 'bottom-[208px]' : 'bottom-[156px]'}`}>
+      <div className="absolute right-4 bottom-[144px] z-[500] flex flex-col gap-3">
         <div className={`mb-3 flex flex-col overflow-hidden rounded-full border shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
           <button type="button" onClick={() => mapInstanceRef.current?.zoomIn()} aria-label="Приблизить карту" className={`flex h-14 w-14 items-center justify-center ${themeClasses.text.primary}`}><Plus size={28} className="h-7 w-7 shrink-0" /></button>
           <button type="button" onClick={() => mapInstanceRef.current?.zoomOut()} aria-label="Отдалить карту" className={`flex h-14 w-14 items-center justify-center border-t ${themeClasses.border.default} ${themeClasses.text.primary}`}><Minus size={28} className="h-7 w-7 shrink-0" /></button>
@@ -455,95 +457,37 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
           {isLocating ? <span className="h-7 w-7 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <NavigationArrow size={30} className="h-8 w-8 shrink-0" />}
         </button>
       </div>
-      {!selectedShop && carouselShops.length > 0 && <section aria-label={userPosition ? 'Кофейни рядом' : 'Кофейни на карте'} className="absolute inset-x-0 bottom-4 z-[500]">
-        <>
-          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">{carouselShops.map(shop => <button key={shop.id} type="button" onClick={() => selectShop(shop, true)} className={`flex w-[min(340px,85vw)] shrink-0 snap-center items-center gap-4 rounded-[28px] border p-4 text-left shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
-            <span className="h-20 w-20 shrink-0 overflow-hidden rounded-[20px]"><MapShopThumb alt="" /></span><span className="min-w-0"><span className={`block text-sm ${themeClasses.text.secondary}`}>{userPosition ? 'Кофейня рядом' : 'Кофейня на карте'}</span><span className={`mt-1 block truncate text-lg font-bold ${themeClasses.text.primary}`}>{shop.title}</span>{userPosition && <span className={`mt-1 block text-sm ${themeClasses.text.secondary}`}>{formatDistance(distanceKm(userPosition.lat, userPosition.lon, shop.latitude, shop.longitude))}</span>}</span>
-          </button>)}</div>
-          {nearby.data?.isTruncated && <p className={`mx-4 w-fit rounded-full px-3 py-1 text-xs ${themeClasses.bg.card} ${themeClasses.text.secondary}`}>Показана часть кофеен в радиусе 5 км</p>}
-        </>
+      {carouselItems.length > 0 && <section aria-label={userPosition ? 'Кофейни рядом' : 'Кофейни на карте'} className="absolute inset-x-0 bottom-4 z-[500]">
+        <div ref={carouselRef} onScroll={() => {
+          if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+          scrollTimerRef.current = setTimeout(() => {
+            const list = carouselRef.current;
+            if (!list) return;
+            const center = list.scrollLeft + list.clientWidth / 2;
+            const cards = Array.from(list.children) as HTMLElement[];
+            const index = closestCardIndex(cards, center);
+            const shop = loopedItems[index];
+            if (carouselItems.length > 1 && (index === 0 || index === loopedItems.length - 1)) {
+              const target = cards[index === 0 ? carouselItems.length : 1];
+              list.scrollTo({ left: target.offsetLeft + target.offsetWidth / 2 - list.clientWidth / 2 });
+            }
+            if (shop && selectedIdRef.current !== shop.id) selectShop(shop, true);
+          }, 150);
+        }} className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ paddingInline: 'max(8vw, calc((100% - 448px) / 2))' }}>
+          {loopedItems.map((shop, index) => {
+            const active = selectedShop?.id === shop.id;
+            const details = active ? selectedShopDetails : null;
+            return <article key={`${shop.id}-${index}`} data-shop-id={shop.id} aria-label={shop.title} className={`flex w-[min(448px,84vw)] shrink-0 snap-center items-center gap-4 rounded-[28px] border p-4 shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl"><MapShopThumb alt="" src={details?.photos?.[0] ? getPhotoUrl(details.photos[0], 'thumbnail') : undefined} /></div>
+              <div className="min-w-0 flex-1">
+                <p className={`mb-1 flex items-center gap-1 text-sm ${themeClasses.text.secondary}`}><Star size={16} weight="fill" color="#EAB308" />{details ? details.reviewCount ? `${details.rating.toFixed(1)} · ${details.reviewCount} отзывов` : 'Нет отзывов' : userPosition ? 'Кофейня рядом' : 'Кофейня на карте'}</p>
+                <button type="button" onClick={() => openPublic('shops', shop.publicAddress ?? shop.id)} className={`block w-full truncate text-left text-lg font-bold hover:underline ${themeClasses.text.primary}`}>{shop.title}</button>
+                <p className={`mt-1 text-sm ${themeClasses.text.secondary}`}>{details ? formatWorkingHours(details.schedules) : userPosition ? formatDistance(distanceKm(userPosition.lat, userPosition.lon, shop.latitude, shop.longitude)) : ' '}</p>
+              </div>
+            </article>;
+          })}
+        </div>
       </section>}
-      {embedded && selectedShop && <button type="button" onClick={() => openPublic('shops', selectedShop.publicAddress ?? selectedShop.id)} className={`absolute bottom-4 left-4 right-4 z-[500] flex items-center gap-3 rounded-[28px] border p-4 text-left shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
-        <span className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl"><MapShopThumb alt="" src={selectedShopDetails?.photos?.[0] ? getPhotoUrl(selectedShopDetails.photos[0], 'thumbnail') : undefined} /></span>
-        <span className="min-w-0 flex-1"><span className={`block truncate font-bold ${themeClasses.text.primary}`}>{selectedShop.title}</span><span className={`mt-1 flex items-center gap-1 text-sm ${themeClasses.text.secondary}`}><Star size={16} weight="fill" color="#EAB308" />{selectedShopDetails?.rating?.toFixed(1) ?? 'Кофейня на карте'}</span></span><CaretRight size={24} className={themeClasses.text.secondary} />
-      </button>}
-      {!embedded && selectedShop && (
-        <div ref={carouselRef} aria-label="Выбор кофейни" className="absolute bottom-4 inset-x-0 z-[500] flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
-        <div className={`relative w-[min(448px,85vw)] shrink-0 snap-start ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-[28px] shadow-2xl`}>
-          <button type="button" aria-label="Закрыть карточку кофейни" onClick={() => { selectedIdRef.current = null; detailsRequestRef.current = null; setSelectedShop(null); paintMapRef.current(mapDataRef.current); }} className={`absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full ${themeClasses.bg.card} ${themeClasses.text.secondary}`}><X size={20} /></button>
-          {isLoadingDetails ? (
-            <div className="p-4 flex items-center justify-center">
-              <div className="text-[#EAB308]">Загрузка...</div>
-            </div>
-          ) : (
-            <div className="p-4">
-              <div className="flex gap-4">
-                <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                  <MapShopThumb
-                    alt={selectedShop.title}
-                    src={(() => {
-                      const imageUrls =
-                        selectedShopDetails?.photos &&
-                          Array.isArray(selectedShopDetails.photos) &&
-                          selectedShopDetails.photos.length > 0
-                          ? selectedShopDetails.photos.map((p: { fullUrl?: string | null; urls?: PhotoUrlsDto | null } | string) =>
-                            typeof p === 'string' ? p : getPhotoUrl(p, 'thumbnail'),
-                          )
-                          : selectedShopDetails?.imageUrls && selectedShopDetails.imageUrls.length > 0
-                            ? selectedShopDetails.imageUrls
-                            : [];
-                      return imageUrls.length > 0 ? imageUrls[0] : undefined;
-                    })()}
-                  />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Star size={16} weight="fill" color="#EAB308" />
-                    <span className={`${themeClasses.text.secondary} text-sm`}>
-                      {selectedShopDetails?.reviewCount
-                        ? `${selectedShopDetails.reviewCount} отзывов`
-                        : 'Нет отзывов'}
-                    </span>
-                  </div>
-                  <h3 className={`${themeClasses.text.primary} font-bold text-lg mb-1 truncate`}>
-                    {selectedShop.title}
-                  </h3>
-                  <p className={`${themeClasses.text.secondary} text-sm`}>
-                    {formatWorkingHours(selectedShopDetails?.schedules)}
-                  </p>
-                </div>
-
-              </div>
-
-              <div className="flex gap-2 mt-4">
-                <button
-                  type="button"
-                  onClick={() => openYandexRoute(userPosRef.current, selectedShop.latitude, selectedShop.longitude)}
-                  aria-label={`Маршрут до ${selectedShop.title}`}
-                  className={`flex-1 min-h-11 inline-flex items-center justify-center gap-2 rounded-full border font-semibold active:scale-[0.98] transition-all ${themeClasses.border.default} ${themeClasses.text.primary}`}
-                >
-                  <NavigationArrow size={18} weight="bold" />
-                  Маршрут
-                </button>
-                <Button
-                  type="button"
-                  onClick={() => openPublic('shops', selectedShop.publicAddress)}
-                  className="flex-1 min-h-11 !rounded-full"
-                  aria-label={`Открыть ${selectedShop.title}`}
-                >
-                  Открыть
-                  <ArrowRight size={18} aria-hidden="true" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-        {carouselShops.filter(shop => shop.id !== selectedShop.id).map(shop => <button key={shop.id} type="button" onClick={() => selectShop(shop, true)} className={`flex w-[min(448px,85vw)] shrink-0 snap-start items-center gap-4 rounded-[28px] border p-4 text-left shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
-          <span className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl"><MapShopThumb alt="" /></span><span className="min-w-0 flex-1"><span className={`block text-sm ${themeClasses.text.secondary}`}>{userPosition ? 'Кофейня рядом' : 'Кофейня на карте'}</span><span className={`mt-1 block truncate text-lg font-bold ${themeClasses.text.primary}`}>{shop.title}</span>{userPosition && <span className={`mt-1 block text-sm ${themeClasses.text.secondary}`}>{formatDistance(distanceKm(userPosition.lat, userPosition.lon, shop.latitude, shop.longitude))}</span>}<span className="mt-3 block font-semibold text-[#EAB308]">Выбрать кофейню →</span></span>
-        </button>)}
-        </div>
-      )}
     </div>
   );
 };

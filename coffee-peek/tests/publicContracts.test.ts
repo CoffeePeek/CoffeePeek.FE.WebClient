@@ -12,9 +12,34 @@ import { EquipmentCategory, getEquipmentCategoryLabel, getCoffeeShops, searchCof
 import { sendCoffeeShopToModeration, sendRoasterToModeration } from '../src/api/moderation';
 import { createShopChangeRequest } from '../src/api/shopChangeRequests';
 import { httpClient } from '../src/api/core/httpClient';
+import { queryClient } from '../src/lib/queryClient';
 const address = { slug: 'coffee', canonicalPath: '/coffee-shops/server-path', revision: 3, isAlias: false };
 const author = { ...address, slug: 'petr', canonicalPath: '/users/petr' };
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => { jest.clearAllMocks(); queryClient.clear(); });
+afterEach(() => { jest.useRealTimers(); queryClient.clear(); });
+
+test('map responses are shared for 30 minutes, then refetched', async () => {
+  jest.useFakeTimers();
+  jest.mocked(httpClient.get).mockResolvedValue({ data: { shops: [], zones: [], clusters: [] } } as never);
+  const bounds = { minLat: 52, maxLat: 54, minLon: 26, maxLon: 28 };
+  await Promise.all([getMapShops(bounds), getMapShops(bounds)]);
+  expect(httpClient.get).toHaveBeenCalledTimes(1);
+  jest.setSystemTime(Date.now() + 29 * 60_000);
+  await getMapShops(bounds);
+  expect(httpClient.get).toHaveBeenCalledTimes(1);
+  jest.setSystemTime(Date.now() + 60_001);
+  await getMapShops(bounds);
+  expect(httpClient.get).toHaveBeenCalledTimes(2);
+});
+
+test('failed map requests do not become cached results', async () => {
+  const bounds = { minLat: 52, maxLat: 54, minLon: 26, maxLon: 28 };
+  jest.mocked(httpClient.get).mockRejectedValueOnce(new Error('Network'));
+  await expect(getMapShops(bounds)).rejects.toThrow('Network');
+  jest.mocked(httpClient.get).mockResolvedValueOnce({ data: { shops: [] } } as never);
+  await getMapShops(bounds);
+  expect(httpClient.get).toHaveBeenCalledTimes(2);
+});
 test('shop with brew methods and roasters remains a shop, with slug keys and canonical metadata', () => {
   const result = normalizeResponseData<any>({ address, name: 'Coffee', city: { ...address, slug: 'minsk' },
     location: { address: 'Street 1' }, beans: [{ slug: 'arabica', name: 'Arabica' }],
