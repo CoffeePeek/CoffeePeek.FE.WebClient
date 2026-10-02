@@ -318,7 +318,7 @@ const UserProfilePage: React.FC = () => {
                           ) : (
                             <p className={`font-bold ${textMain}`}>Отзыв о кофейне</p>
                           )}
-                          <span className={`text-xs ${textMuted}`}>{formattedDate}</span>
+                          <div className="flex shrink-0 items-center gap-2"><span className={`text-xs ${textMuted}`}>{formattedDate}</span><ReportReviewButton reviewId={review.id} /></div>
                         </div>
                         {review.comment && (
                           <p className={`text-sm ${textMuted} mt-1 leading-relaxed`}>
@@ -348,7 +348,6 @@ const UserProfilePage: React.FC = () => {
                             Перейти к кофейне
                           </button>
                         </div>
-                        <ReportReviewButton reviewId={review.id} />
                       </div>
                     </div>
                   );

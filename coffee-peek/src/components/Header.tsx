@@ -89,7 +89,7 @@ const Header: React.FC = () => {
           <nav
             className="hidden lg:flex"
             aria-label="Основные разделы"
-            style={{ flexShrink: 0, height: 38, justifyContent: 'center', gap: 2, padding: 2, borderRadius: 999, background: isDark ? 'rgba(255,255,255,.07)' : 'rgba(120,113,108,.09)', border: `1px solid ${borderColor}` }}
+            style={{ flexShrink: 0, alignItems: 'center', justifyContent: 'center', gap: 2, padding: 2, borderRadius: 999, background: isDark ? 'rgba(255,255,255,.07)' : 'rgba(120,113,108,.09)', border: `1px solid ${borderColor}` }}
           >
             {allNav.map(({ id, label, route, Icon }) => (
               <button key={id} onClick={() => navigate(route)} style={navBtn(currentId === id)} aria-current={currentId === id ? 'page' : undefined}>
