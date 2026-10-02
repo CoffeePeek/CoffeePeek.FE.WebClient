@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import type { Feature, FeatureCollection } from 'geojson';
-import type { CoffeeZoneCandidate, CoffeeZoneMember, GeoPoint } from '../../api/coffeeZones';
+import { DEFAULT_COFFEE_ZONE_COLOR, type CoffeeZoneCandidate, type CoffeeZoneMember, type GeoPoint } from '../../api/coffeeZones';
 import { createOsmMap, dotElement } from '../../map/osmMap';
 
 interface CoffeeZoneMapProps {
   polygon: GeoPoint[];
+  color: string;
   candidates?: CoffeeZoneCandidate[];
   members?: CoffeeZoneMember[];
   onPolygonChange: (polygon: GeoPoint[]) => void;
@@ -64,6 +65,7 @@ function stopDomEvent(event: Event) {
 
 export function CoffeeZoneMap({
   polygon,
+  color,
   candidates = [],
   members = [],
   onPolygonChange,
@@ -78,6 +80,7 @@ export function CoffeeZoneMap({
   const candidatesRef = useRef(candidates);
   // Last polygon this component emitted; any other value came from outside (load / candidate) and gets fitted.
   const emittedRef = useRef<GeoPoint[] | null>(null);
+  const fittedPolygonRef = useRef<GeoPoint[] | null>(null);
   const onPolygonChangeRef = useRef(onPolygonChange);
   const onCandidateSelectRef = useRef(onCandidateSelect);
 
@@ -104,8 +107,8 @@ export function CoffeeZoneMap({
       map.addLayer({ id: CANDIDATES_FILL, type: 'fill', source: CANDIDATES_SOURCE, paint: { 'fill-color': '#f59e0b', 'fill-opacity': 0.05 } });
       map.addLayer({ id: 'coffeepeek-candidates-line', type: 'line', source: CANDIDATES_SOURCE, paint: { 'line-color': '#f59e0b', 'line-width': 1, 'line-dasharray': [2, 2] } });
       map.addSource(ZONE_SOURCE, { type: 'geojson', data: polygonFeature([]) });
-      map.addLayer({ id: 'coffeepeek-zone-fill', type: 'fill', source: ZONE_SOURCE, paint: { 'fill-color': '#f59e0b', 'fill-opacity': 0.18 } });
-      map.addLayer({ id: 'coffeepeek-zone-line', type: 'line', source: ZONE_SOURCE, paint: { 'line-color': '#f59e0b', 'line-width': 2, 'line-opacity': 0.9 } });
+      map.addLayer({ id: 'coffeepeek-zone-fill', type: 'fill', source: ZONE_SOURCE, paint: { 'fill-color': DEFAULT_COFFEE_ZONE_COLOR, 'fill-opacity': 0.18 } });
+      map.addLayer({ id: 'coffeepeek-zone-line', type: 'line', source: ZONE_SOURCE, paint: { 'line-color': DEFAULT_COFFEE_ZONE_COLOR, 'line-width': 2, 'line-opacity': 0.9 } });
       setStyleLoaded(true);
     });
 
@@ -143,7 +146,7 @@ export function CoffeeZoneMap({
     setZoneShape(toRing(polygon));
     vertexMarkersRef.current.forEach((marker) => marker.remove());
     vertexMarkersRef.current = polygon.map((point, index) => {
-      const element = dotElement('width:14px;height:14px;background:#f59e0b;border:2px solid white;cursor:move', `Точка ${index + 1} — перетащите; двойной или правый клик удаляет`);
+      const element = dotElement(`width:14px;height:14px;background:${color};border:2px solid white;cursor:move`, `Точка ${index + 1} — перетащите; двойной или правый клик удаляет`);
       const marker = new maplibregl.Marker({ element, draggable: true }).setLngLat([point.longitude, point.latitude]).addTo(map);
       const remove = () => emit(polygonRef.current.filter((_, i) => i !== index));
       marker.on('drag', () => {
@@ -172,12 +175,20 @@ export function CoffeeZoneMap({
       return marker;
     });
 
-    if (polygon !== emittedRef.current && polygon.length > 0) {
+    if (polygon !== emittedRef.current && polygon !== fittedPolygonRef.current && polygon.length > 0) {
       const bounds = new maplibregl.LngLatBounds();
       toRing(polygon).forEach((coordinate) => bounds.extend(coordinate));
       map.fitBounds(bounds, { padding: 40, maxZoom: 16, animate: false });
+      fittedPolygonRef.current = polygon;
     }
-  }, [polygon, styleLoaded]);
+  }, [polygon, color, styleLoaded]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleLoaded) return;
+    map.setPaintProperty('coffeepeek-zone-fill', 'fill-color', color);
+    map.setPaintProperty('coffeepeek-zone-line', 'line-color', color);
+  }, [color, styleLoaded]);
 
   useEffect(() => {
     candidatesRef.current = candidates;

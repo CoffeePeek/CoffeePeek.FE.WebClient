@@ -4,6 +4,7 @@ import type { ApiResponse } from './core/types';
 
 export type CoffeeZoneStatus = 'Draft' | 'Published' | 'Archived';
 export type CoffeeZoneMembershipOverrideKind = 'Include' | 'Exclude' | 'Primary';
+export const DEFAULT_COFFEE_ZONE_COLOR = '#F59E0B';
 
 export interface GeoPoint {
   latitude: number;
@@ -14,6 +15,7 @@ export interface AdminCoffeeZone {
   id: string;
   cityId: string;
   name: string;
+  color: string;
   description?: string | null;
   polygon: GeoPoint[];
   /** Derived by the server from the polygon; read-only. */
@@ -53,6 +55,7 @@ export interface CoffeeZoneCandidate {
 export interface CoffeeZonePayload {
   cityId: string;
   name: string;
+  color: string;
   description?: string | null;
   /** 3–100 points in drawing order, not closed (first point is not repeated). */
   polygon: GeoPoint[];

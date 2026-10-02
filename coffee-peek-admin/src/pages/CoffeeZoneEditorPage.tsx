@@ -12,6 +12,7 @@ import { z } from 'zod';
 import {
   clearCoffeeZoneMembershipOverride,
   createCoffeeZone,
+  DEFAULT_COFFEE_ZONE_COLOR,
   generateCoffeeZoneCandidates,
   getCoffeeZone,
   getCoffeeZoneMembership,
@@ -36,6 +37,7 @@ import { useCatalogs } from '../hooks/useCatalogs';
 const zoneSchema = z.object({
   cityId: z.string().min(1, 'Выберите город'),
   name: z.string().trim().min(1, 'Введите название').max(100, 'Не более 100 символов'),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Выберите цвет'),
   description: z.string().max(500, 'Не более 500 символов'),
 });
 
@@ -93,6 +95,7 @@ export function CoffeeZoneEditorPage() {
     defaultValues: {
       cityId: '',
       name: '',
+      color: DEFAULT_COFFEE_ZONE_COLOR,
       description: '',
     },
   });
@@ -116,6 +119,7 @@ export function CoffeeZoneEditorPage() {
     form.reset({
       cityId: zone.cityId,
       name: zone.name,
+      color: zone.color ?? DEFAULT_COFFEE_ZONE_COLOR,
       description: zone.description ?? '',
     });
     setPolygon(zone.polygon ?? []);
@@ -159,6 +163,7 @@ export function CoffeeZoneEditorPage() {
   });
 
   const cityId = form.watch('cityId');
+  const color = form.watch('color');
   const description = form.watch('description');
   const members = membershipQuery.data?.members ?? [];
   const memberColumns: ColumnDef<CoffeeZoneMember>[] = [
@@ -200,7 +205,7 @@ export function CoffeeZoneEditorPage() {
       return;
     }
     if (tooLarge && !window.confirm(`Точки зоны удалены от центра до ${Math.round(extentMeters)} м (лимит ${ZONE_MAX_EXTENT_METERS} м). Сервер, скорее всего, отклонит зону. Всё равно сохранить?`)) return;
-    saveMutation.mutate({ ...values, description: values.description.trim() || null, polygon });
+    saveMutation.mutate({ ...values, color: values.color.toUpperCase(), description: values.description.trim() || null, polygon });
   });
 
   if (isEditing && zoneQuery.isLoading) {
@@ -244,6 +249,14 @@ export function CoffeeZoneEditorPage() {
                 <span className="mt-1 flex justify-between"><span className="text-red-400">{form.formState.errors.name?.message}</span><span>{form.watch('name').length}/100</span></span>
               </label>
               <label className="block text-xs font-medium text-text-muted dark:text-stone-400">
+                Цвет зоны
+                <span className="mt-1.5 flex items-center gap-3">
+                  <Input type="color" {...form.register('color')} className="h-10 w-16 cursor-pointer p-1" />
+                  <span className="font-mono text-sm text-text-main dark:text-white">{color.toUpperCase()}</span>
+                </span>
+                {form.formState.errors.color && <span className="mt-1 block text-red-400">{form.formState.errors.color.message}</span>}
+              </label>
+              <label className="block text-xs font-medium text-text-muted dark:text-stone-400">
                 Описание
                 <Textarea {...form.register('description')} maxLength={500} rows={4} className="mt-1.5 resize-y" />
                 <span className="mt-1 flex justify-between"><span className="text-red-400">{form.formState.errors.description?.message}</span><span>{description.length}/500</span></span>
@@ -276,6 +289,7 @@ export function CoffeeZoneEditorPage() {
         <div className="space-y-5">
           <CoffeeZoneMap
             polygon={polygon}
+            color={color}
             candidates={candidates}
             members={members}
             onPolygonChange={setPolygon}

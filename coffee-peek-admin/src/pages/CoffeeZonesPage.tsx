@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   archiveCoffeeZone,
+  DEFAULT_COFFEE_ZONE_COLOR,
   getCoffeeZones,
   setCoffeeZoneStatus,
   type AdminCoffeeZone,
@@ -30,6 +31,7 @@ type PendingAction = { zone: AdminCoffeeZone; status: CoffeeZoneStatus; archive?
 function PolygonThumbnail({ zone }: { zone: AdminCoffeeZone }) {
   const polygon = zone.polygon ?? [];
   if (polygon.length < 3) return <span>—</span>;
+  const color = zone.color ?? DEFAULT_COFFEE_ZONE_COLOR;
   // ponytail: flat projection scaled by cos(lat); fine for zones a few km across.
   const scale = Math.cos((zone.centerLatitude * Math.PI) / 180);
   const xs = polygon.map((p) => p.longitude * scale);
@@ -40,7 +42,7 @@ function PolygonThumbnail({ zone }: { zone: AdminCoffeeZone }) {
   const points = xs.map((x, i) => `${((x - minX) / size) * 36 + 2},${((ys[i] - minY) / size) * 36 + 2}`).join(' ');
   return (
     <svg width={40} height={40} viewBox="0 0 40 40" aria-label={`Контур: ${polygon.length} точек`}>
-      <polygon points={points} fill="#f59e0b" fillOpacity={0.2} stroke="#f59e0b" strokeWidth={1.5} strokeLinejoin="round" />
+      <polygon points={points} fill={color} fillOpacity={0.2} stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
     </svg>
   );
 }
@@ -73,6 +75,7 @@ export function CoffeeZonesPage() {
   const zones = zonesQuery.data ?? [];
   const columns: ColumnDef<AdminCoffeeZone>[] = [
     { accessorKey: 'name', header: 'Название', cell: ({ row }) => <div><Link to={`/coffee-zones/${row.original.id}`} className="font-medium text-text-main hover:text-primary dark:text-white">{row.original.name}</Link>{row.original.description && <p className="mt-0.5 max-w-xs truncate text-xs text-text-muted">{row.original.description}</p>}</div> },
+    { accessorKey: 'color', header: 'Цвет', cell: ({ row }) => { const color = row.original.color ?? DEFAULT_COFFEE_ZONE_COLOR; return <span className="flex items-center gap-2 whitespace-nowrap text-xs text-text-muted"><span className="h-5 w-5 rounded border border-border-light dark:border-border-dark" style={{ backgroundColor: color }} aria-hidden="true" />{color.toUpperCase()}</span>; } },
     { accessorKey: 'cityId', header: 'Город', cell: ({ row }) => <span className="whitespace-nowrap text-xs text-text-muted">{cityNames.get(row.original.cityId) ?? '—'}</span> },
     { accessorKey: 'status', header: 'Статус', cell: ({ row }) => <Badge variant={statusMeta[row.original.status].variant}>{statusMeta[row.original.status].label}</Badge> },
     { id: 'polygon', header: 'Контур', cell: ({ row }) => <PolygonThumbnail zone={row.original} /> },
