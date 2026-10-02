@@ -8,8 +8,15 @@ export function drinkSelection(drinkSlug?: string | null, customDrinkName?: stri
   return { drinkSlug, customDrinkName: name };
 }
 
-export function savedDrinkName(drink: SavedDrink) {
-  return drink.drinkNameRu || drink.drinkNameEn || drink.customDrinkName || '';
+export function savedDrinkName(drink: SavedDrink, language = typeof document === 'undefined' ? 'ru' : document.documentElement.lang) {
+  if (drink.drinkSlug === 'other' && drink.customDrinkName) return drink.customDrinkName;
+  return language.toLowerCase().startsWith('en')
+    ? drink.drinkNameEn || drink.drinkNameRu || drink.customDrinkName || ''
+    : drink.drinkNameRu || drink.drinkNameEn || drink.customDrinkName || '';
+}
+
+export function displayDrinkName(drink: SavedDrink, language = typeof document === 'undefined' ? 'ru' : document.documentElement.lang) {
+  return savedDrinkName(drink, language) || (language.toLowerCase().startsWith('en') ? 'Not specified' : 'Не указан');
 }
 
 export function reviewDrinkSelection(drinkSlug: string, customDrinkName: string, original?: SavedDrink) {

@@ -1,4 +1,4 @@
-import { drinkSelection, reviewDrinkSelection, savedDrinkName } from '../src/utils/consumedDrinks';
+import { displayDrinkName, drinkSelection, reviewDrinkSelection, savedDrinkName } from '../src/utils/consumedDrinks';
 import { buildCheckInRequest } from '../src/utils/checkInForm';
 
 test('optional selections omit fields; catalog drinks never send a custom name', () => {
@@ -14,8 +14,13 @@ test('Other trims and validates the name before submission', () => {
 
 test('historical display uses snapshot names without the catalog', () => {
   expect(savedDrinkName({ drinkSlug: 'inactive', drinkNameRu: 'Старое название', drinkNameEn: 'Old name' })).toBe('Старое название');
+  expect(savedDrinkName({ drinkSlug: 'inactive', drinkNameRu: 'Старое название', drinkNameEn: 'Old name' }, 'en')).toBe('Old name');
+  expect(savedDrinkName({ drinkSlug: 'other', customDrinkName: 'Эспрессо-тоник', drinkNameRu: 'Другое' }, 'ru')).toBe('Эспрессо-тоник');
   expect(savedDrinkName({ customDrinkName: 'Эспрессо-тоник' })).toBe('Эспрессо-тоник');
+  expect(savedDrinkName({ drinkSlug: 'inactive', drinkNameRu: 'Старое название' }, 'en')).toBe('Старое название');
   expect(savedDrinkName({})).toBe('');
+  expect(displayDrinkName({}, 'ru')).toBe('Не указан');
+  expect(displayDrinkName({ drinkSlug: null, drinkNameRu: null, drinkNameEn: null }, 'en')).toBe('Not specified');
 });
 
 test('review edits preserve unchanged inactive drinks, clear removals and submit replacements', () => {

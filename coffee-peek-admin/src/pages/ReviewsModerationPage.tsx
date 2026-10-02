@@ -22,6 +22,14 @@ const STATUS_OPTIONS: { value: ModerationStatus | ''; label: string }[] = [
   { value: 'Rejected', label: 'Отклонённые' },
 ];
 
+function displayDrinkName(review: AdminReview): string {
+  if (review.drinkSlug === 'other' && review.customDrinkName) return review.customDrinkName;
+  const isEnglish = typeof document !== 'undefined' && document.documentElement.lang.toLowerCase().startsWith('en');
+  return (isEnglish ? review.drinkNameEn || review.drinkNameRu : review.drinkNameRu || review.drinkNameEn)
+    || review.customDrinkName
+    || (isEnglish ? 'Not specified' : 'Не указан');
+}
+
 export const ReviewsModerationPage: React.FC = () => {
   const { showToast } = useToast();
   const qc = useQueryClient();
@@ -74,7 +82,7 @@ export const ReviewsModerationPage: React.FC = () => {
   };
 
   const columns: ColumnDef<AdminReview>[] = [
-    { accessorKey: 'header', header: 'Отзыв', cell: ({ row }) => <div className="max-w-[360px]"><p className="font-medium text-text-main dark:text-white">{row.original.header}</p><p className="line-clamp-2 text-xs text-text-muted">{row.original.comment}</p></div> },
+    { accessorKey: 'header', header: 'Отзыв', cell: ({ row }) => <div className="max-w-[360px]"><p className="font-medium text-text-main dark:text-white">{row.original.header}</p><p className="text-xs text-text-muted">Напиток: {displayDrinkName(row.original)}</p><p className="line-clamp-2 text-xs text-text-muted">{row.original.comment}</p></div> },
     { accessorKey: 'shopName', header: 'Кофейня', cell: ({ row }) => <Link to={`/coffee-shops/${row.original.shopId}`} className="font-medium text-blue-600 hover:underline dark:text-blue-400">{row.original.shopName}</Link> },
     { id: 'author', header: 'Автор', cell: ({ row }) => row.original.authorName ?? row.original.authorEmail },
     { id: 'ratings', header: 'Оценки', cell: ({ row }) => `К ${row.original.ratingCoffee} · С ${row.original.ratingService} · М ${row.original.ratingPlace}` },

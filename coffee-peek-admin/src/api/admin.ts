@@ -74,6 +74,10 @@ interface BackendModerationReview {
   id: string;
   header: string;
   comment: string;
+  drinkSlug?: string | null;
+  customDrinkName?: string | null;
+  drinkNameRu?: string | null;
+  drinkNameEn?: string | null;
   userId: string;
   userName?: string;
   shopId: string;
@@ -212,6 +216,10 @@ export interface AdminReview {
   id: string;
   shopId: string;
   shopName: string;
+  drinkSlug?: string | null;
+  customDrinkName?: string | null;
+  drinkNameRu?: string | null;
+  drinkNameEn?: string | null;
   authorEmail: string;
   authorName?: string;
   header: string;
@@ -574,6 +582,10 @@ function mapReviewToAdmin(review: BackendModerationReview): AdminReview {
     id: review.id,
     shopId: review.shopId,
     shopName: review.shopName ?? review.shopId,
+    drinkSlug: review.drinkSlug,
+    customDrinkName: review.customDrinkName,
+    drinkNameRu: review.drinkNameRu,
+    drinkNameEn: review.drinkNameEn,
     authorEmail: review.userName ?? review.userId,
     authorName: review.userName,
     header: review.header,
