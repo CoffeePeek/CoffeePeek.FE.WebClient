@@ -18,6 +18,14 @@ const author = { ...address, slug: 'petr', canonicalPath: '/users/petr' };
 beforeEach(() => { jest.clearAllMocks(); queryClient.clear(); });
 afterEach(() => { jest.useRealTimers(); queryClient.clear(); });
 
+test('map autocomplete requests the first three server search results without viewport filters', async () => {
+  jest.mocked(httpClient.get).mockResolvedValue({ data: { coffeeShops: [] } } as never);
+  await searchCoffeeShops(' кофе ', undefined, 1, 3);
+  expect(httpClient.get).toHaveBeenCalledWith('/api/CoffeeShops', {
+    params: { q: 'кофе', page: 1, pageSize: 3 }, requiresAuth: false,
+  });
+});
+
 test('map responses are shared for 30 minutes, then refetched', async () => {
   jest.useFakeTimers();
   jest.mocked(httpClient.get).mockResolvedValue({ data: { shops: [], zones: [], clusters: [] } } as never);

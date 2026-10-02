@@ -24,6 +24,7 @@ import {
 } from '../map/osmMap';
 import { getCurrentDayOfWeek, toLocalSchedules } from '../utils/shopUtils';
 import { getLocationLifetime } from '../utils/geolocation';
+import { useSearchCoffeeShops } from '../hooks/queries/useCoffeeShops';
 
 const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotion?: boolean }> = ({ embedded = false, autoPreview = false, reduceMotion = false }) => {
   const openPublic = usePublicNavigate();
@@ -65,7 +66,13 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
   const userMarkerRef = useRef<MapLibreMarker | null>(null);
   const locationExpiryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [query, setQuery] = useState('');
-  const queryRef = useRef('');
+  const [searchQuery, setSearchQuery] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchQuery(query.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+  const search = useSearchCoffeeShops(searchQuery, undefined, 1, 3);
+  const searchResults = searchQuery && query.trim() === searchQuery ? (search.data?.coffeeShops ?? []).slice(0, 3) : [];
   const [showZones, setShowZones] = useState(() => localStorage.getItem('mapShowZones') !== 'false');
   const showZonesRef = useRef(showZones);
 
@@ -122,7 +129,6 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
     if (showDetails) void loadShopDetails(shop.id);
     else detailsRequestRef.current = null;
     if (moveToShop) {
-      queryRef.current = '';
       setQuery('');
       mapInstanceRef.current?.flyTo({ center: [shop.longitude, shop.latitude], zoom: 16, duration: 700 });
     }
@@ -226,10 +232,7 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
         markersRef.current.push(marker);
       });
 
-      const q = queryRef.current.trim().toLowerCase();
-      const visible = q
-        ? data.shops.filter((shop) => shop.title.toLowerCase().includes(q))
-        : data.shops;
+      const visible = data.shops;
       void ensureMapPinMascots().catch(() => {}).then(() => {
         if (mapInstanceRef.current !== map || version !== paintVersion) return;
         visible.forEach((shop) => {
@@ -305,12 +308,6 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
     applyOsmMapTheme(map, theme === 'dark');
   }, [theme]);
 
-  // Filter the loaded pins by name (client-side) as the user types.
-  useEffect(() => {
-    queryRef.current = query;
-    paintMapRef.current(mapDataRef.current);
-  }, [query]);
-
   useEffect(() => {
     showZonesRef.current = showZones;
     localStorage.setItem('mapShowZones', String(showZones));
@@ -353,11 +350,6 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
     return 'Часы работы не указаны';
   };
 
-  const normalizedQuery = query.trim().toLocaleLowerCase('ru-RU');
-  const searchResults = normalizedQuery
-    ? mapData.shops.filter(shop => shop.title.toLocaleLowerCase('ru-RU').includes(normalizedQuery)).slice(0, 3)
-    : [];
-
   return (
     <div
       className={`relative z-0 isolate overflow-hidden ${themeClasses.bg.primary}`}
@@ -392,11 +384,24 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
                 <button
                   type="button"
                   key={shop.id}
-                  onClick={() => selectShop(shop, true)}
+                  onClick={async () => {
+                    try {
+                      const location = shop.location;
+                      const details = location?.latitude == null || location?.longitude == null
+                        ? (await getCoffeeShopById(shop.id)).data : shop;
+                      const coordinates = details.location;
+                      if (coordinates?.latitude == null || coordinates?.longitude == null) return;
+                      selectShop({ id: shop.id, publicAddress: shop.publicAddress, title: shop.name,
+                        latitude: coordinates.latitude, longitude: coordinates.longitude, type: null, primaryZoneId: null }, true);
+                    } catch { /* Keep the map unchanged if the shop cannot be located. */ }
+                  }}
                   className={`flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${index ? `border-t ${themeClasses.border.default}` : ''}`}
                 >
                   <MapPin size={21} weight="bold" className="shrink-0 text-[#EAB308]" />
-                  <span className={`min-w-0 flex-1 truncate font-semibold ${themeClasses.text.primary}`}>{shop.title}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className={`block truncate font-semibold ${themeClasses.text.primary}`}>{shop.name}</span>
+                    <span className={`block truncate text-sm ${themeClasses.text.secondary}`}>{shop.location?.address}</span>
+                  </span>
                   <CaretRight size={20} className={`shrink-0 ${themeClasses.text.secondary}`} />
                 </button>
               ))}
