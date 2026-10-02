@@ -9,7 +9,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getThemeClasses } from '../utils/theme';
 import { getMapShops, getMapZones, getCoffeeShopById, getPhotoUrl } from '../api/coffeeshop';
 import type { DetailedCoffeeShop, MapSearchData, MapShop, PhotoUrlsDto } from '../api/coffeeshop';
-import { getErrorMessage } from '../utils/errorHandler';
 import { ArrowRight, CaretRight, Star, NavigationArrow, MagnifyingGlass, X, Polygon, MapPin, Minus, Plus } from '@/components/Icon';
 import Button from './Button';
 import ShopPhotoPlaceholder from './ShopPhotoPlaceholder';
@@ -52,6 +51,7 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
   const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
   const selectedIdRef = useRef<string | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const mapDataRef = useRef<MapSearchData>({ shops: [], clusters: [], zones: [] });
   const paintMapRef = useRef<(data: MapSearchData) => void>(() => undefined);
   const mapRequestRef = useRef<AbortController | null>(null);
@@ -60,7 +60,6 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
   const [previewPaused, setPreviewPaused] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [mapData, setMapData] = useState<MapSearchData>({ shops: [], clusters: [], zones: [] });
   const [shopsLoaded, setShopsLoaded] = useState(false);
   const [selectedShop, setSelectedShop] = useState<MapShop | null>(null);
@@ -77,6 +76,7 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
   const nearbyShops = userPosition ? (nearby.data?.shops ?? [])
     .map(shop => ({ shop, distance: distanceKm(userPosition.lat, userPosition.lon, shop.latitude, shop.longitude) }))
     .filter(item => item.distance <= 5).sort((a, b) => a.distance - b.distance) : [];
+  const carouselShops = userPosition ? nearbyShops.map(item => item.shop) : mapData.shops;
   const userMarkerRef = useRef<MapLibreMarker | null>(null);
   const locationExpiryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [query, setQuery] = useState('');
@@ -107,12 +107,9 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
       if (!previewShopsRef.current.length) previewShopsRef.current = nextData.shops.slice(0, 3);
       setMapData(nextData);
       setShopsLoaded(true);
-      setError(null);
       return nextData;
     } catch (err: unknown) {
       if ((err as { name?: string })?.name === 'AbortError') return null;
-      setShopsLoaded(true);
-      setError('Ошибка при загрузке кофеен: ' + getErrorMessage(err));
       return null;
     }
   };
@@ -137,6 +134,7 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
 
   const selectShop = (shop: MapShop, moveToShop = false, showDetails = true) => {
     selectedIdRef.current = shop.id;
+    carouselRef.current?.scrollTo({ left: 0 });
     setSelectedShop(showDetails ? shop : null);
     if (showDetails) void loadShopDetails(shop.id);
     else detailsRequestRef.current = null;
@@ -150,21 +148,14 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
 
   const handleLocate = () => {
     if (!navigator.geolocation) {
-      setError('Геолокация не поддерживается вашим браузером');
       return;
     }
-    if (locationExpiryRef.current) clearTimeout(locationExpiryRef.current);
-    userPosRef.current = null;
-    setUserPosition(null);
-    userMarkerRef.current?.remove();
-    userMarkerRef.current = null;
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         if (!mapInstanceRef.current) return;
         const lifetime = getLocationLifetime(pos.timestamp);
         if (lifetime === 0) {
-          setError('Получено устаревшее местоположение. Попробуйте ещё раз');
           setIsLocating(false);
           return;
         }
@@ -182,6 +173,7 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
             userMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat([longitude, latitude]).addTo(map);
           }
         }
+        if (locationExpiryRef.current) clearTimeout(locationExpiryRef.current);
         locationExpiryRef.current = setTimeout(() => {
           userPosRef.current = null;
           setUserPosition(null);
@@ -192,7 +184,6 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
       },
       () => {
         if (!mapInstanceRef.current) return;
-        setError('Не удалось определить местоположение');
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
@@ -369,7 +360,7 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
     <div
       className={`relative z-0 isolate overflow-hidden ${themeClasses.bg.primary}`}
       // ponytail: 64px = sticky header height; if the email-unconfirmed banner shows, the map runs that much taller than the viewport
-      style={{ height: embedded ? 480 : 'calc(100dvh - 64px)' }}
+      style={{ height: embedded ? 480 : 'calc(100dvh - 64px)', clipPath: embedded ? 'inset(0 round 28px 28px 0 0)' : undefined }}
       onMouseEnter={() => autoPreview && setPreviewPaused(true)}
       onMouseLeave={() => autoPreview && setPreviewPaused(false)}
       onFocusCapture={() => autoPreview && setPreviewPaused(true)}
@@ -412,11 +403,6 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
         </div>
       )}
 
-      {error && (
-        <div className="absolute top-[68px] left-1/2 -translate-x-1/2 z-[600] max-w-[92%] px-4 py-2.5 rounded-2xl bg-red-500/10 border border-red-500/30 shadow-lg backdrop-blur-md">
-          <p className="text-red-400 text-sm">{error}</p>
-        </div>
-      )}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="text-[#EAB308] text-xl">Загрузка карты...</div>
@@ -459,7 +445,7 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
       </div>
 
-      <div className={`absolute right-4 z-[500] flex flex-col gap-3 ${selectedShop && !embedded ? 'bottom-[280px]' : 'bottom-[156px]'}`}>
+      <div className={`absolute right-4 z-[500] flex flex-col gap-3 ${selectedShop && !embedded ? 'bottom-[208px]' : 'bottom-[156px]'}`}>
         <div className={`mb-3 flex flex-col overflow-hidden rounded-full border shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
           <button type="button" onClick={() => mapInstanceRef.current?.zoomIn()} aria-label="Приблизить карту" className={`flex h-14 w-14 items-center justify-center ${themeClasses.text.primary}`}><Plus size={28} className="h-7 w-7 shrink-0" /></button>
           <button type="button" onClick={() => mapInstanceRef.current?.zoomOut()} aria-label="Отдалить карту" className={`flex h-14 w-14 items-center justify-center border-t ${themeClasses.border.default} ${themeClasses.text.primary}`}><Minus size={28} className="h-7 w-7 shrink-0" /></button>
@@ -469,22 +455,21 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
           {isLocating ? <span className="h-7 w-7 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <NavigationArrow size={30} className="h-8 w-8 shrink-0" />}
         </button>
       </div>
-      {!selectedShop && <section aria-label="Кофейни рядом" className="absolute inset-x-0 bottom-4 z-[500]">
-        {userPosition && nearbyShops.length > 0 ? <>
-          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">{nearbyShops.map(({ shop, distance }) => <button key={shop.id} type="button" onClick={() => selectShop(shop, true, false)} className={`flex w-[min(340px,85vw)] shrink-0 snap-center items-center gap-4 rounded-[28px] border p-4 text-left shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
-            <span className="h-20 w-20 shrink-0 overflow-hidden rounded-[20px]"><MapShopThumb alt="" /></span><span className="min-w-0"><span className={`block text-sm ${themeClasses.text.secondary}`}>Кофейня рядом</span><span className={`mt-1 block truncate text-lg font-bold ${themeClasses.text.primary}`}>{shop.title}</span><span className={`mt-1 block text-sm ${themeClasses.text.secondary}`}>{formatDistance(distance)}</span></span>
+      {!selectedShop && carouselShops.length > 0 && <section aria-label={userPosition ? 'Кофейни рядом' : 'Кофейни на карте'} className="absolute inset-x-0 bottom-4 z-[500]">
+        <>
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">{carouselShops.map(shop => <button key={shop.id} type="button" onClick={() => selectShop(shop, true)} className={`flex w-[min(340px,85vw)] shrink-0 snap-center items-center gap-4 rounded-[28px] border p-4 text-left shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+            <span className="h-20 w-20 shrink-0 overflow-hidden rounded-[20px]"><MapShopThumb alt="" /></span><span className="min-w-0"><span className={`block text-sm ${themeClasses.text.secondary}`}>{userPosition ? 'Кофейня рядом' : 'Кофейня на карте'}</span><span className={`mt-1 block truncate text-lg font-bold ${themeClasses.text.primary}`}>{shop.title}</span>{userPosition && <span className={`mt-1 block text-sm ${themeClasses.text.secondary}`}>{formatDistance(distanceKm(userPosition.lat, userPosition.lon, shop.latitude, shop.longitude))}</span>}</span>
           </button>)}</div>
           {nearby.data?.isTruncated && <p className={`mx-4 w-fit rounded-full px-3 py-1 text-xs ${themeClasses.bg.card} ${themeClasses.text.secondary}`}>Показана часть кофеен в радиусе 5 км</p>}
-        </> : <div className={`mx-4 flex max-w-md items-center gap-3 rounded-[28px] border p-4 shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}><Mascot pose="search" size={52} /><div className="min-w-0 flex-1"><p className={`font-semibold ${themeClasses.text.primary}`}>{isLocating ? 'Определяем местоположение…' : !userPosition ? 'Кофейни рядом с вами' : nearby.isLoading ? 'Ищем кофейни в радиусе 5 км…' : nearby.error ? 'Не удалось загрузить кофейни' : 'В радиусе 5 км кофеен нет'}</p>{!isLocating && (!userPosition || nearby.error) && <button type="button" className="mt-1 min-h-8 font-semibold text-[#EAB308]" onClick={() => userPosition ? void nearby.refetch() : handleLocate()}>{userPosition ? 'Повторить' : 'Разрешить местоположение'}</button>}</div></div>}
+        </>
       </section>}
       {embedded && selectedShop && <button type="button" onClick={() => openPublic('shops', selectedShop.publicAddress ?? selectedShop.id)} className={`absolute bottom-4 left-4 right-4 z-[500] flex items-center gap-3 rounded-[28px] border p-4 text-left shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
         <span className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl"><MapShopThumb alt="" src={selectedShopDetails?.photos?.[0] ? getPhotoUrl(selectedShopDetails.photos[0], 'thumbnail') : undefined} /></span>
         <span className="min-w-0 flex-1"><span className={`block truncate font-bold ${themeClasses.text.primary}`}>{selectedShop.title}</span><span className={`mt-1 flex items-center gap-1 text-sm ${themeClasses.text.secondary}`}><Star size={16} weight="fill" color="#EAB308" />{selectedShopDetails?.rating?.toFixed(1) ?? 'Кофейня на карте'}</span></span><CaretRight size={24} className={themeClasses.text.secondary} />
       </button>}
       {!embedded && selectedShop && (
-        <div
-          className={`absolute bottom-4 left-4 right-4 z-[500] ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-[28px] shadow-2xl max-w-md mx-auto`}
-        >
+        <div ref={carouselRef} aria-label="Выбор кофейни" className="absolute bottom-4 inset-x-0 z-[500] flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
+        <div className={`relative w-[min(448px,85vw)] shrink-0 snap-start ${themeClasses.bg.card} border ${themeClasses.border.default} rounded-[28px] shadow-2xl`}>
           <button type="button" aria-label="Закрыть карточку кофейни" onClick={() => { selectedIdRef.current = null; detailsRequestRef.current = null; setSelectedShop(null); paintMapRef.current(mapDataRef.current); }} className={`absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full ${themeClasses.bg.card} ${themeClasses.text.secondary}`}><X size={20} /></button>
           {isLoadingDetails ? (
             <div className="p-4 flex items-center justify-center">
@@ -553,6 +538,10 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
               </div>
             </div>
           )}
+        </div>
+        {carouselShops.filter(shop => shop.id !== selectedShop.id).map(shop => <button key={shop.id} type="button" onClick={() => selectShop(shop, true)} className={`flex w-[min(448px,85vw)] shrink-0 snap-start items-center gap-4 rounded-[28px] border p-4 text-left shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+          <span className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl"><MapShopThumb alt="" /></span><span className="min-w-0 flex-1"><span className={`block text-sm ${themeClasses.text.secondary}`}>{userPosition ? 'Кофейня рядом' : 'Кофейня на карте'}</span><span className={`mt-1 block truncate text-lg font-bold ${themeClasses.text.primary}`}>{shop.title}</span>{userPosition && <span className={`mt-1 block text-sm ${themeClasses.text.secondary}`}>{formatDistance(distanceKm(userPosition.lat, userPosition.lon, shop.latitude, shop.longitude))}</span>}<span className="mt-3 block font-semibold text-[#EAB308]">Выбрать кофейню →</span></span>
+        </button>)}
         </div>
       )}
     </div>
