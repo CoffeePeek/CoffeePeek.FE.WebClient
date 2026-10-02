@@ -21,7 +21,7 @@ export const YANDEX_TO_OURS: { label: string; slug?: string; focus?: CoffeeFocus
   { label: 'кондитерская', slug: 'bakery' },
   { label: 'с собой', slug: 'to_go' },
   { label: 'обжарка', slug: 'roastery' },
-  { label: 'спешелти', slug: 'specialty', focus: 'specialty' },
+  { label: 'спешелти', focus: 'specialty' },
 ];
 
 export function hasSignal(signals: string[], ...needles: string[]): boolean {

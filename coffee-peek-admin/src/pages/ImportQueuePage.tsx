@@ -37,7 +37,6 @@ import {
   isClosedPermanently,
   isUsableShopName,
   normalizeInstagramUrl,
-  publishTagSlugs,
 } from '../constants/catalogIngest';
 import {
   YANDEX_TO_OURS,
@@ -156,11 +155,7 @@ export const ImportQueuePage: React.FC = () => {
   useEffect(() => {
     if (!candidate) return;
     setFocus(candidate.coffeeFocus ?? suggestedFocusFromSignals(candidate));
-    setTagSlugs(
-      candidate.tagSlugs.filter((slug) => slug !== 'specialty').concat(
-        candidate.coffeeFocus === 'specialty' ? ['specialty'] : []
-      )
-    );
+    setTagSlugs(candidate.tagSlugs);
     setInstagramDraft('');
     setPhoneDraft('');
     setWebsiteDraft('');
@@ -306,7 +301,7 @@ export const ImportQueuePage: React.FC = () => {
       candidateId: id,
       page: queuePage,
       coffeeFocus: focus,
-      tagSlugs: publishTagSlugs(tagSlugs, focus),
+      tagSlugs,
     });
   };
 
@@ -410,10 +405,6 @@ export const ImportQueuePage: React.FC = () => {
     if (!check.enabled) return;
     if (chip.focus) {
       setFocus(chip.focus);
-      setTagSlugs((current) => {
-        const without = current.filter((slug) => slug !== 'specialty');
-        return chip.focus === 'specialty' ? [...without, 'specialty'] : without;
-      });
     }
     if (chip.slug) addTag(chip.slug);
   };
@@ -792,10 +783,6 @@ export const ImportQueuePage: React.FC = () => {
                     disabled={Boolean(decided)}
                     onClick={() => {
                       setFocus(option.value);
-                      setTagSlugs((current) => {
-                        const without = current.filter((slug) => slug !== 'specialty');
-                        return option.value === 'specialty' ? [...without, 'specialty'] : without;
-                      });
                     }}
                     className={focus === option.value ? pillOn : pillOff}
                   >

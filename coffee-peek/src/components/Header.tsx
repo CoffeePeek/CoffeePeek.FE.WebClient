@@ -4,7 +4,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
 import { COLORS } from '../constants/colors';
 import { MagnifyingGlass, Gear, MapTrifold, SignOut, CaretDown, User } from '@/components/Icon';
-import ThemeToggle from './ThemeToggle';
 import LogoMark, { HEADER_LOGO_SIZE } from './LogoMark';
 
 const PUBLIC_NAV = [
@@ -193,7 +192,6 @@ const Header: React.FC = () => {
               </div>
             )}
 
-            {!user && <ThemeToggle size={36} />}
 
           </div>
         </div>

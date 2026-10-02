@@ -304,10 +304,6 @@ export const PublishedShopEditPage: React.FC = () => {
 
   const handleFocusChange = (next: CoffeeFocus) => {
     setFocus(next);
-    setSelectedTagSlugs((current) => {
-      const without = current.filter((slug) => slug !== 'specialty');
-      return next === 'specialty' ? [...without, 'specialty'] : without;
-    });
   };
 
   const handleTagChange = (slugs: string[]) => {
@@ -580,7 +576,7 @@ export const PublishedShopEditPage: React.FC = () => {
           <Card className="p-6">
             <h3 className="text-sm font-semibold text-text-main dark:text-white font-display mb-1">Coffee focus</h3>
             <p className="text-xs text-text-muted dark:text-stone-400 font-body mb-3">
-              Одна категория для ленты. Specialty синхронизирует тег specialty.
+              Категория для ленты. Теги выбираются отдельно.
             </p>
             <CoffeeFocusPicker value={focus} onChange={handleFocusChange} />
             <Button

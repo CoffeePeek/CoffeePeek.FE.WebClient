@@ -180,8 +180,8 @@ const PIN_BY_FOCUS: Record<
   },
 };
 
-const PIN_SIZE = 31;
-const PIN_SIZE_SELECTED = 41;
+const PIN_SIZE = 44;
+const PIN_SIZE_SELECTED = 54;
 const PIN_SIZE_DETAIL = 43;
 
 const mascotCanvases = new Map<string, HTMLCanvasElement>();

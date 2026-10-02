@@ -273,13 +273,6 @@ export function parseDuplicateStatus(value: unknown): DuplicateSuggestionStatus 
   return DUPLICATE_STATUS_ALIASES[String(value)] ?? 'Unknown';
 }
 
-/** Tag slugs sent on publish: specialty tag follows the chosen focus. Shared by single and batch publish. */
-export function publishTagSlugs(tagSlugs: string[], focus?: CoffeeFocus): string[] {
-  return focus === 'specialty'
-    ? Array.from(new Set([...tagSlugs, 'specialty']))
-    : tagSlugs.filter((slug) => slug !== 'specialty');
-}
-
 export function isClosedPermanently(status?: GoogleBusinessStatus): boolean {
   return status === 'ClosedPermanently';
 }

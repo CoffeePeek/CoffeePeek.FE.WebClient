@@ -35,7 +35,6 @@ import {
   isClosedPermanently,
   isUsableShopName,
   parseImportListSearch,
-  publishTagSlugs,
 } from '../constants/catalogIngest';
 
 const PAGE_SIZE = IMPORT_LIST_PAGE_SIZE;
@@ -341,8 +340,8 @@ export const ImportInboxPage: React.FC<{
         decideImportCandidate(item.id, {
           status: mode,
           coffeeFocus: mode === 'Published' ? coffeeFocus : undefined,
-          // Same payload as single publish: the candidate's own tags, specialty following focus.
-          tagSlugs: mode === 'Published' ? publishTagSlugs(item.tagSlugs, coffeeFocus) : undefined,
+          // Publish only the candidate's existing tags.
+          tagSlugs: mode === 'Published' ? item.tagSlugs : undefined,
           overrideClosed: mode === 'Published' ? Boolean(overrideClosed) : undefined,
           rejectReason: mode === 'Rejected' ? reason : undefined,
         }),
