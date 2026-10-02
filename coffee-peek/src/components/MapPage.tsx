@@ -452,7 +452,7 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
       </div>
 
-      <div className="absolute right-4 bottom-[144px] z-[500] flex flex-col gap-3">
+      <div className="absolute right-4 z-[500] flex flex-col gap-3" style={{ bottom: carouselItems.length ? 164 : 16 }}>
         <div className={`mb-3 flex flex-col overflow-hidden rounded-full border shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
           <button type="button" onClick={() => mapInstanceRef.current?.zoomIn()} aria-label="Приблизить карту" className={`flex h-14 w-14 items-center justify-center ${themeClasses.text.primary}`}><Plus size={28} className="h-7 w-7 shrink-0" /></button>
           <button type="button" onClick={() => mapInstanceRef.current?.zoomOut()} aria-label="Отдалить карту" className={`flex h-14 w-14 items-center justify-center border-t ${themeClasses.border.default} ${themeClasses.text.primary}`}><Minus size={28} className="h-7 w-7 shrink-0" /></button>
@@ -482,12 +482,12 @@ const MapPage: React.FC<{ embedded?: boolean; autoPreview?: boolean; reduceMotio
           {loopedItems.map((shop, index) => {
             const active = selectedShop?.id === shop.id;
             const details = active ? selectedShopDetails : null;
-            return <article key={`${shop.id}-${index}`} data-shop-id={shop.id} aria-label={shop.title} className={`flex w-[min(448px,84vw)] shrink-0 snap-center items-center gap-4 rounded-[28px] border p-4 shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
+            return <article key={`${shop.id}-${index}`} data-shop-id={shop.id} aria-label={shop.title} style={{ height: 128 }} className={`flex w-[min(448px,84vw)] shrink-0 snap-center items-center gap-4 rounded-[28px] border p-4 shadow-lg ${themeClasses.bg.card} ${themeClasses.border.default}`}>
               <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl"><MapShopThumb alt="" src={details?.photos?.[0] ? getPhotoUrl(details.photos[0], 'thumbnail') : undefined} /></div>
               <div className="min-w-0 flex-1">
-                <p className={`mb-1 flex items-center gap-1 text-sm ${themeClasses.text.secondary}`}><Star size={16} weight="fill" color="#EAB308" />{details ? details.reviewCount ? `${details.rating.toFixed(1)} · ${details.reviewCount} отзывов` : 'Нет отзывов' : userPosition ? 'Кофейня рядом' : 'Кофейня на карте'}</p>
-                <button type="button" onClick={() => openPublic('shops', shop.publicAddress ?? shop.id)} className={`block w-full truncate text-left text-lg font-bold hover:underline ${themeClasses.text.primary}`}>{shop.title}</button>
-                <p className={`mt-1 text-sm ${themeClasses.text.secondary}`}>{details ? formatWorkingHours(details.schedules) : userPosition ? formatDistance(distanceKm(userPosition.lat, userPosition.lon, shop.latitude, shop.longitude)) : ' '}</p>
+                <p className={`mb-1 flex h-5 items-center gap-1 truncate text-sm ${themeClasses.text.secondary}`}><Star size={16} weight="fill" color="#EAB308" />{details ? details.reviewCount ? `${details.rating.toFixed(1)} · ${details.reviewCount} отзывов` : 'Нет отзывов' : userPosition ? 'Кофейня рядом' : 'Кофейня на карте'}</p>
+                <button type="button" onClick={() => openPublic('shops', shop.publicAddress ?? shop.id)} style={{ textAlign: 'left', padding: 0 }} className={`block h-7 w-full truncate text-lg font-bold leading-7 hover:underline ${themeClasses.text.primary}`}>{shop.title}</button>
+                <p className={`mt-1 h-5 truncate text-sm leading-5 ${themeClasses.text.secondary}`}>{details ? formatWorkingHours(details.schedules) : userPosition ? formatDistance(distanceKm(userPosition.lat, userPosition.lon, shop.latitude, shop.longitude)) : '\u00a0'}</p>
               </div>
             </article>;
           })}
