@@ -57,20 +57,22 @@ function num(value: unknown): number | null {
 function channel(raw: Record<string, unknown>): AppDownloadChannel {
   return {
     available: bool(raw.available ?? raw.Available ?? raw.enabled ?? raw.Enabled),
-    url: str(raw.url ?? raw.Url),
+    url: str(raw.externalUrl ?? raw.ExternalUrl ?? raw.url ?? raw.Url ?? raw.publicUrl ?? raw.PublicUrl),
   };
 }
 
 function apkChannel(raw: Record<string, unknown>): ApkDownloadChannel {
+  const release = readRecord(raw.activeRelease ?? raw.ActiveRelease);
   return {
     ...channel(raw),
-    version: str(raw.version ?? raw.Version),
-    versionCode: num(raw.versionCode ?? raw.VersionCode),
-    fileName: str(raw.fileName ?? raw.FileName),
-    fileSize: num(raw.fileSize ?? raw.FileSize),
-    fileSizeBytes: num(raw.fileSizeBytes ?? raw.FileSizeBytes ?? raw.sizeBytes ?? raw.SizeBytes),
-    releasedAt: str(raw.releasedAt ?? raw.ReleasedAt ?? raw.releasedAtUtc ?? raw.ReleasedAtUtc),
-    sha256: str(raw.sha256 ?? raw.Sha256 ?? raw.sha256Hash ?? raw.Sha256Hash),
+    url: str(raw.publicUrl ?? raw.PublicUrl ?? release.fileUrl ?? release.FileUrl ?? raw.url ?? raw.Url),
+    version: str(release.version ?? release.Version ?? raw.version ?? raw.Version),
+    versionCode: num(release.versionCode ?? release.VersionCode ?? raw.versionCode ?? raw.VersionCode),
+    fileName: str(release.fileName ?? release.FileName ?? raw.fileName ?? raw.FileName),
+    fileSize: num(release.fileSize ?? release.FileSize ?? raw.fileSize ?? raw.FileSize),
+    fileSizeBytes: num(release.fileSize ?? release.FileSize ?? raw.fileSizeBytes ?? raw.FileSizeBytes ?? raw.sizeBytes ?? raw.SizeBytes),
+    releasedAt: str(release.releasedAt ?? release.ReleasedAt ?? raw.releasedAt ?? raw.ReleasedAt ?? raw.releasedAtUtc ?? raw.ReleasedAtUtc),
+    sha256: str(release.sha256 ?? release.Sha256 ?? raw.sha256 ?? raw.Sha256 ?? raw.sha256Hash ?? raw.Sha256Hash),
   };
 }
 
@@ -82,11 +84,11 @@ export function normalizeAppDownloadsConfig(raw: unknown): AppDownloadsConfig {
 
   return {
     android: {
-      googlePlay: channel(readRecord(android.googlePlay ?? android.GooglePlay)),
-      apk: apkChannel(readRecord(android.apk ?? android.Apk ?? android.APK)),
+      googlePlay: channel(readRecord(root.androidGooglePlay ?? root.AndroidGooglePlay ?? android.googlePlay ?? android.GooglePlay)),
+      apk: apkChannel(readRecord(root.androidApk ?? root.AndroidApk ?? android.apk ?? android.Apk ?? android.APK)),
     },
     ios: {
-      appStore: channel(readRecord(ios.appStore ?? ios.AppStore)),
+      appStore: channel(readRecord(root.iosAppStore ?? root.IosAppStore ?? ios.appStore ?? ios.AppStore)),
     },
   };
 }
