@@ -1,4 +1,5 @@
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef, type RowData } from '@tanstack/react-table';
+import { Fragment, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './Table';
 
@@ -19,6 +20,8 @@ interface DataTableProps<TData> {
   getRowId?: (row: TData, index: number) => string;
   getRowClassName?: (row: TData) => string | undefined;
   onRowClick?: (row: TData) => void;
+  expandedRowId?: string | null;
+  renderExpandedRow?: (row: TData) => ReactNode;
 }
 
 export function DataTable<TData>({
@@ -31,6 +34,8 @@ export function DataTable<TData>({
   getRowId,
   getRowClassName,
   onRowClick,
+  expandedRowId,
+  renderExpandedRow,
 }: DataTableProps<TData>) {
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel(), getRowId });
   const columnCount = table.getAllLeafColumns().length;
@@ -56,17 +61,25 @@ export function DataTable<TData>({
             </TableCell>
           </TableRow>
         )) : table.getRowModel().rows.length ? table.getRowModel().rows.map((row) => (
-          <TableRow
-            key={row.id}
-            className={cn(onRowClick && 'cursor-pointer', getRowClassName?.(row.original))}
-            onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-          >
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id} className={cell.column.columnDef.meta?.className}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </TableRow>
+          <Fragment key={row.id}>
+            <TableRow
+              className={cn(onRowClick && 'cursor-pointer', getRowClassName?.(row.original))}
+              onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id} className={cell.column.columnDef.meta?.className}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+            {expandedRowId === row.id && renderExpandedRow && (
+              <TableRow className="bg-stone-50 hover:bg-stone-50 dark:bg-white/[0.03] dark:hover:bg-white/[0.03]">
+                <TableCell colSpan={columnCount} className="p-0 align-top">
+                  {renderExpandedRow(row.original)}
+                </TableCell>
+              </TableRow>
+            )}
+          </Fragment>
         )) : (
           <TableRow><TableCell colSpan={columnCount} className="h-20 text-center text-text-muted">{emptyText}</TableCell></TableRow>
         )}

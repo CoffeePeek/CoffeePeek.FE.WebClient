@@ -59,10 +59,7 @@ function formatSessionDate(value: string): string {
   }
 }
 
-const UserSessionsModal: React.FC<{
-  user: AdminUser | null;
-  onClose: () => void;
-}> = ({ user, onClose }) => {
+const UserSessionsPanel: React.FC<{ user: AdminUser }> = ({ user }) => {
   const { showToast } = useToast();
   const qc = useQueryClient();
   const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
@@ -70,17 +67,16 @@ const UserSessionsModal: React.FC<{
   const [confirmSessionId, setConfirmSessionId] = useState<string | null>(null);
 
   const { data: sessions, isLoading, isError, error } = useQuery({
-    queryKey: ['admin', 'users', user?.id, 'sessions'],
-    queryFn: () => getUserSessions(user!.id).then((r) => r.data ?? []),
-    enabled: !!user,
+    queryKey: ['admin', 'users', user.id, 'sessions'],
+    queryFn: () => getUserSessions(user.id).then((r) => r.data ?? []),
   });
 
   const revokeOneMutation = useMutation({
-    mutationFn: (sessionId: string) => revokeUserSession(user!.id, sessionId),
+    mutationFn: (sessionId: string) => revokeUserSession(user.id, sessionId),
     onSuccess: () => {
       showToast('Сессия отозвана', 'success');
       setRevokingSessionId(null);
-      qc.invalidateQueries({ queryKey: ['admin', 'users', user?.id, 'sessions'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'users', user.id, 'sessions'] });
     },
     onError: (err) => {
       setRevokingSessionId(null);
@@ -89,57 +85,74 @@ const UserSessionsModal: React.FC<{
   });
 
   const revokeAllMutation = useMutation({
-    mutationFn: () => revokeAllUserSessions(user!.id),
+    mutationFn: () => revokeAllUserSessions(user.id),
     onSuccess: () => {
       showToast('Все сессии отозваны', 'success');
       setConfirmRevokeAll(false);
-      qc.invalidateQueries({ queryKey: ['admin', 'users', user?.id, 'sessions'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'users', user.id, 'sessions'] });
     },
     onError: (err) => showToast(getErrorMessage(err, 'Ошибка'), 'error'),
   });
 
-  if (!user) return null;
-
   const list: UserSession[] = sessions ?? [];
-  const columns: ColumnDef<UserSession>[] = [
-    { accessorKey: 'deviceName', header: 'Устройство', cell: ({ row }) => row.original.deviceName || 'Неизвестное устройство' },
-    { accessorKey: 'ipAddress', header: 'IP', cell: ({ row }) => row.original.ipAddress || '—' },
-    { accessorKey: 'createdAtUtc', header: 'Создана', cell: ({ row }) => formatSessionDate(row.original.createdAtUtc) },
-    { accessorKey: 'expiryDate', header: 'Истекает', cell: ({ row }) => row.original.expiryDate ? formatSessionDate(row.original.expiryDate) : '—' },
-    { accessorKey: 'isRevoked', header: 'Статус', cell: ({ row }) => <Badge variant={row.original.isRevoked ? 'rejected' : 'approved'}>{row.original.isRevoked ? 'Отозвана' : 'Активна'}</Badge> },
-    { id: 'actions', cell: ({ row }) => !row.original.isRevoked ? <Button variant="ghost" size="sm" className="text-red-400" loading={revokingSessionId === row.original.id && revokeOneMutation.isPending} onClick={() => setConfirmSessionId(row.original.id)}>Отозвать</Button> : null },
-  ];
 
   return (
     <>
-      <Dialog open={Boolean(user)} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Сессии</DialogTitle>
-            <DialogDescription className="truncate">{user.email}</DialogDescription>
-          </DialogHeader>
-
-          <div className="flex justify-end mb-3">
-            <Button
-              variant="danger"
-              size="sm"
-              disabled={!list.some((s) => !s.isRevoked) || revokeAllMutation.isPending}
-              onClick={() => setConfirmRevokeAll(true)}
-              className="min-h-[44px] sm:min-h-0"
-            >
-              Отозвать все
-            </Button>
+      <div id={`user-sessions-${user.id}`} className="space-y-4 p-3 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-display text-base font-semibold text-text-main dark:text-white">Сессии пользователя</h3>
+            <p className="break-all font-body text-xs text-text-muted dark:text-stone-400">{user.email}</p>
           </div>
+          <Button
+            variant="danger"
+            size="sm"
+            disabled={!list.some((session) => !session.isRevoked) || revokeAllMutation.isPending}
+            onClick={() => setConfirmRevokeAll(true)}
+          >
+            Отозвать все
+          </Button>
+        </div>
 
-          {isError ? (
-            <p className="text-sm text-red-400 font-body text-center py-8">
-              {(error as { message?: string })?.message ?? 'Не удалось загрузить сессии'}
-            </p>
-          ) : (
-            <DataTable columns={columns} data={list} loading={isLoading} emptyText="Сессий нет" getRowId={(session) => session.id} tableClassName="min-w-[760px]" />
-          )}
-        </DialogContent>
-      </Dialog>
+        {isLoading ? (
+          <p className="py-4 text-sm text-text-muted">Загрузка сессий…</p>
+        ) : isError ? (
+          <p className="py-4 text-sm text-red-500">{getErrorMessage(error, 'Не удалось загрузить сессии')}</p>
+        ) : list.length === 0 ? (
+          <p className="py-4 text-sm text-text-muted">Сессий нет</p>
+        ) : (
+          <div className="space-y-2">
+            {list.map((session) => (
+              <div key={session.id} className="grid min-w-0 gap-3 rounded-lg border border-border-light bg-white p-3 font-body text-sm dark:border-border-dark dark:bg-surface-dark sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto]">
+                <div className="min-w-0 sm:col-span-2 xl:col-span-1">
+                  <p className="mb-1 text-xs text-text-muted dark:text-stone-400">Устройство</p>
+                  <p className="break-all text-text-main dark:text-white">{session.deviceName || 'Неизвестное устройство'}</p>
+                </div>
+                <div className="min-w-0">
+                  <p className="mb-1 text-xs text-text-muted dark:text-stone-400">IP</p>
+                  <p className="break-all text-text-main dark:text-white">{session.ipAddress || '—'}</p>
+                </div>
+                <div className="min-w-0">
+                  <p className="mb-1 text-xs text-text-muted dark:text-stone-400">Создана</p>
+                  <p className="text-text-main dark:text-white">{session.createdAtUtc ? formatSessionDate(session.createdAtUtc) : '—'}</p>
+                </div>
+                <div className="min-w-0">
+                  <p className="mb-1 text-xs text-text-muted dark:text-stone-400">Истекает</p>
+                  <p className="text-text-main dark:text-white">{session.expiryDate ? formatSessionDate(session.expiryDate) : '—'}</p>
+                </div>
+                <div className="flex items-start justify-between gap-2 sm:col-span-2 xl:col-span-1 xl:flex-col xl:items-end">
+                  <Badge variant={session.isRevoked ? 'rejected' : 'approved'}>{session.isRevoked ? 'Отозвана' : 'Активна'}</Badge>
+                  {!session.isRevoked && (
+                    <Button variant="ghost" size="sm" className="text-red-500" loading={revokingSessionId === session.id && revokeOneMutation.isPending} onClick={() => setConfirmSessionId(session.id)}>
+                      Отозвать
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <ConfirmDialog
         isOpen={confirmRevokeAll}
@@ -316,6 +329,7 @@ export const UsersPage: React.FC = () => {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value); else next.delete(key);
     if (key !== 'page') next.delete('page');
+    setSessionsUser(null);
     setSearchParams(next);
   };
 
@@ -336,7 +350,26 @@ export const UsersPage: React.FC = () => {
       id: 'actions',
       cell: ({ row }) => {
         const user = row.original;
-        return <div className="flex min-w-[220px] flex-wrap gap-2"><Button variant="ghost" size="sm" className="text-amber-500" onClick={() => setKickingUser(user)}>Оборвать</Button><Button variant="ghost" size="sm" onClick={() => setSessionsUser(user)}>Сессии</Button><Button variant="ghost" size="sm" onClick={() => setEditingUser(user)}>Роль</Button><Button variant="ghost" size="sm" className={user.isBlocked ? 'text-green-500' : 'text-amber-500'} onClick={() => setBlockingUser(user)}>{user.isBlocked ? 'Разблок.' : 'Блок'}</Button><Button variant="ghost" size="sm" className="text-red-400 hover:text-red-500" aria-label="Удалить" onClick={() => setDeletingUserId(user.id)}><svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></Button></div>;
+        const sessionsExpanded = sessionsUser?.id === user.id;
+        return (
+          <div className="flex min-w-[220px] flex-wrap gap-2">
+            <Button variant="ghost" size="sm" className="text-amber-500" onClick={() => setKickingUser(user)}>Оборвать</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded={sessionsExpanded}
+              aria-controls={sessionsExpanded ? `user-sessions-${user.id}` : undefined}
+              onClick={() => setSessionsUser((current) => current?.id === user.id ? null : user)}
+            >
+              {sessionsExpanded ? 'Скрыть сессии' : 'Сессии'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setEditingUser(user)}>Роль</Button>
+            <Button variant="ghost" size="sm" className={user.isBlocked ? 'text-green-500' : 'text-amber-500'} onClick={() => setBlockingUser(user)}>{user.isBlocked ? 'Разблок.' : 'Блок'}</Button>
+            <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-500" aria-label="Удалить" onClick={() => setDeletingUserId(user.id)}>
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </Button>
+          </div>
+        );
       },
     },
   ];
@@ -393,7 +426,15 @@ export const UsersPage: React.FC = () => {
       </div>
 
       <Card className="p-6">
-        <DataTable columns={columns} data={data?.items ?? []} loading={isLoading} emptyText="Пользователи не найдены" />
+        <DataTable
+          columns={columns}
+          data={data?.items ?? []}
+          loading={isLoading}
+          emptyText="Пользователи не найдены"
+          getRowId={(user) => user.id}
+          expandedRowId={sessionsUser?.id}
+          renderExpandedRow={(user) => <UserSessionsPanel user={user} />}
+        />
         {data && data.totalPages > 1 && (
           <div className="border-t border-border-light px-5 py-3 dark:border-border-dark">
             <Pagination page={page} totalPages={data.totalPages} onPageChange={(nextPage) => setParam('page', String(nextPage))} />
@@ -411,11 +452,6 @@ export const UsersPage: React.FC = () => {
           onClose={() => setEditingUser(null)}
         />
       )}
-
-      <UserSessionsModal
-        user={sessionsUser}
-        onClose={() => setSessionsUser(null)}
-      />
 
       <ConfirmDialog
         isOpen={!!kickingUser}
