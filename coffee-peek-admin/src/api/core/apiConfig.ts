@@ -59,6 +59,7 @@ export const API_ENDPOINTS = {
     IMPORT_DECISIONS: '/api/admin/import/decisions',
     IMPORT_FILE: '/api/admin/import/file',
     IMPORT_CANDIDATES: '/api/admin/import/candidates',
+    IMPORT_RECHECK_CANDIDATES: '/api/admin/import/v2/candidates/recheck',
     IMPORT_CANDIDATE_BY_ID: (id: string) => `/api/admin/import/candidates/${encodeURIComponent(id)}`,
     IMPORT_CANDIDATE_MENU: (id: string) => `/api/admin/import/candidates/${encodeURIComponent(id)}/menu`,
     IMPORT_CANDIDATE_MENU_PHOTOS: (id: string) => `/api/admin/import/candidates/${encodeURIComponent(id)}/menu/photos`,

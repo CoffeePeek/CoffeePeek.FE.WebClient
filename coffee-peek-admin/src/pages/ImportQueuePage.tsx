@@ -44,6 +44,7 @@ import {
   displayFacts,
   dossierSoftWarning,
   parseWorkspacePanel,
+  recheckReason,
   safeHttpUrl,
   suggestedFocusFromSignals,
   yandexChipApplies,
@@ -90,6 +91,7 @@ export const ImportQueuePage: React.FC = () => {
   const igInputRef = useRef<HTMLInputElement>(null);
 
   const panel = parseWorkspacePanel(searchParams.get('panel'));
+  const verification = searchParams.get('verification') === 'needs-recheck' ? 'needs-recheck' : undefined;
   const queuePage = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
   const [queueOpen, setQueueOpen] = useState(false);
   const [focus, setFocus] = useState<CoffeeFocus | undefined>();
@@ -107,12 +109,13 @@ export const ImportQueuePage: React.FC = () => {
   idRef.current = id;
 
   const queueQuery = useQuery({
-    queryKey: ['admin', 'import', 'queue', queuePage],
+    queryKey: ['admin', 'import', 'queue', verification, queuePage],
     queryFn: () =>
       getImportCandidates({
         status: 'Pending',
         page: queuePage,
         pageSize: IMPORT_QUEUE_PAGE_SIZE,
+        verification,
       }).then((r) => r.data),
   });
 
@@ -218,6 +221,7 @@ export const ImportQueuePage: React.FC = () => {
           status: 'Pending',
           page: page + 1,
           pageSize: IMPORT_QUEUE_PAGE_SIZE,
+          verification,
         });
       } catch (err) {
         showToast(
@@ -250,7 +254,7 @@ export const ImportQueuePage: React.FC = () => {
       }),
     onMutate: async ({ candidateId, page }) => {
       await qc.cancelQueries({ queryKey: ['admin', 'import', 'queue'] });
-      const key = ['admin', 'import', 'queue', page] as const;
+      const key = ['admin', 'import', 'queue', verification, page] as const;
       const previous = qc.getQueryData<ImportCandidatesPage>(key);
       const index = previous?.items.findIndex((item) => item.id === candidateId) ?? -1;
       const remaining = previous?.items.filter((item) => item.id !== candidateId) ?? [];
@@ -286,7 +290,7 @@ export const ImportQueuePage: React.FC = () => {
     },
     onError: (err: { message?: string }, { page }, ctx) => {
       if (ctx?.previous) {
-        qc.setQueryData(['admin', 'import', 'queue', page], ctx.previous);
+        qc.setQueryData(['admin', 'import', 'queue', verification, page], ctx.previous);
       }
       showToast(err?.message ?? 'Ошибка решения', 'error');
     },
@@ -387,6 +391,7 @@ export const ImportQueuePage: React.FC = () => {
 
   const title = candidate ? displayShopName(candidate.name, candidate.brand) : '';
   const facts = candidate ? displayFacts(candidate) : [];
+  const verificationNote = candidate ? recheckReason(candidate.signals) : undefined;
   const softWarning = candidate ? dossierSoftWarning(candidate) : undefined;
   const suggested = candidate
     ? clientSuggestedTags(candidate).filter(
@@ -574,6 +579,11 @@ export const ImportQueuePage: React.FC = () => {
               </h1>
               {candidate.address && (
                 <p className="text-sm text-text-muted mt-1.5">{candidate.address}</p>
+              )}
+              {verificationNote && (
+                <p className="mt-2 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                  Нужно перепроверить: {verificationNote}
+                </p>
               )}
               {candidate.openingHours && (
                 <p className="text-sm mt-2.5 flex items-center gap-2">

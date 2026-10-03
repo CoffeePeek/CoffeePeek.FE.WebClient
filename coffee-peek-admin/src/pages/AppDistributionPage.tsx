@@ -148,11 +148,11 @@ export const AppDistributionPage: React.FC = () => {
     if (!configQuery.data) return;
     setGooglePlayForm({
       url: configQuery.data.android.googlePlay.url ?? '',
-      enabled: configQuery.data.android.googlePlay.available,
+      enabled: configQuery.data.android.googlePlay.enabled,
     });
     setAppStoreForm({
       url: configQuery.data.ios.appStore.url ?? '',
-      enabled: configQuery.data.ios.appStore.available,
+      enabled: configQuery.data.ios.appStore.enabled,
     });
   }, [configQuery.data]);
 
@@ -165,7 +165,7 @@ export const AppDistributionPage: React.FC = () => {
 
   const googlePlayMutation = useMutation({
     mutationFn: () => updateAndroidGooglePlay({
-      url: googlePlayForm.url.trim() || null,
+      externalUrl: googlePlayForm.url.trim() || null,
       enabled: googlePlayForm.enabled,
     }),
     onSuccess: async () => {
@@ -177,7 +177,7 @@ export const AppDistributionPage: React.FC = () => {
 
   const appStoreMutation = useMutation({
     mutationFn: () => updateIosAppStore({
-      url: appStoreForm.url.trim() || null,
+      externalUrl: appStoreForm.url.trim() || null,
       enabled: appStoreForm.enabled,
     }),
     onSuccess: async () => {
@@ -269,7 +269,7 @@ export const AppDistributionPage: React.FC = () => {
         <Card className="p-6">
           <p className="text-xs uppercase tracking-wide text-text-muted dark:text-stone-400">Google Play</p>
           <p className="mt-2 text-lg font-bold text-text-main dark:text-white font-display">
-            {configQuery.data?.android.googlePlay.available ? 'Включён' : 'Выключен'}
+            {configQuery.data?.android.googlePlay.enabled ? 'Включён' : 'Выключен'}
           </p>
           <p className="mt-1 truncate text-sm text-text-muted dark:text-stone-400">
             {configQuery.data?.android.googlePlay.url ?? 'URL не задан'}
@@ -278,7 +278,7 @@ export const AppDistributionPage: React.FC = () => {
         <Card className="p-6">
           <p className="text-xs uppercase tracking-wide text-text-muted dark:text-stone-400">App Store</p>
           <p className="mt-2 text-lg font-bold text-text-main dark:text-white font-display">
-            {configQuery.data?.ios.appStore.available ? 'Включён' : 'Выключен'}
+            {configQuery.data?.ios.appStore.enabled ? 'Включён' : 'Выключен'}
           </p>
           <p className="mt-1 truncate text-sm text-text-muted dark:text-stone-400">
             {configQuery.data?.ios.appStore.url ?? 'URL не задан'}

@@ -154,7 +154,8 @@ export const IMPORT_QUEUE_PAGE_SIZE = 50;
 
 export function parseImportListSearch(searchParams: URLSearchParams) {
   const status = (searchParams.get('status') ?? 'Pending') as KnownQueueStatus | 'all';
-  const bucket = (searchParams.get('bucket') ?? 'priority') as CollectorBucket | 'all';
+  const defaultBucket = searchParams.get('verification') === 'needs-recheck' ? 'all' : 'priority';
+  const bucket = (searchParams.get('bucket') ?? defaultBucket) as CollectorBucket | 'all';
   const focus = (searchParams.get('focus') ?? '') as CoffeeFocus | '';
   const search = searchParams.get('search') ?? '';
   const hasAddress = searchParams.get('hasAddress') === '1';

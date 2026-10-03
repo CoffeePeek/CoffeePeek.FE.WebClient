@@ -28,6 +28,23 @@ export function hasSignal(signals: string[], ...needles: string[]): boolean {
   return needles.some((needle) => signals.includes(needle));
 }
 
+export const COFFEEMAP_RECHECK_SIGNAL = 'coffeemap:verification=needs-recheck';
+
+const RECHECK_REASON_LABELS: Record<string, string> = {
+  'missing-address': 'Уточнить улицу, дом и вход',
+  'verify-address': 'Сверить адрес и корпус',
+  'verify-name-type': 'Сверить название и формат заведения',
+  'listing-without-address': 'Найти карточку с точным адресом',
+  'insufficient-evidence': 'Найти актуальное независимое подтверждение',
+};
+
+export function recheckReason(signals: string[]): string | undefined {
+  if (!signals.includes(COFFEEMAP_RECHECK_SIGNAL)) return undefined;
+  const code = signals.find((s) => s.startsWith('coffeemap:recheck-reason='))
+    ?.slice('coffeemap:recheck-reason='.length);
+  return RECHECK_REASON_LABELS[code ?? ''] ?? 'Перепроверить данные кофейни';
+}
+
 export function displayFacts(candidate: ImportCandidate): string[] {
   if (candidate.facts && candidate.facts.length > 0) return candidate.facts;
 

@@ -3,6 +3,7 @@ import { httpClient } from './core/httpClient';
 import type { ApiResponse } from './core/types';
 
 export interface AdminDownloadChannel {
+  enabled: boolean;
   available: boolean;
   url: string | null;
 }
@@ -43,7 +44,7 @@ export interface AndroidAppRelease {
 }
 
 export interface StoreChannelUpdateRequest {
-  url: string | null;
+  externalUrl: string | null;
   enabled: boolean;
 }
 
@@ -66,22 +67,25 @@ function num(value: unknown): number | null {
 
 function channel(raw: Record<string, unknown>): AdminDownloadChannel {
   return {
+    enabled: bool(raw.enabled ?? raw.Enabled ?? raw.available ?? raw.Available),
     available: bool(raw.available ?? raw.Available ?? raw.enabled ?? raw.Enabled),
-    url: str(raw.url ?? raw.Url),
+    url: str(raw.externalUrl ?? raw.ExternalUrl ?? raw.url ?? raw.Url),
   };
 }
 
 function apkChannel(raw: Record<string, unknown>): AdminApkChannel {
+  const release = record(raw.activeRelease ?? raw.ActiveRelease);
   return {
     ...channel(raw),
-    version: str(raw.version ?? raw.Version),
-    versionCode: num(raw.versionCode ?? raw.VersionCode),
-    fileName: str(raw.fileName ?? raw.FileName),
-    fileSize: num(raw.fileSize ?? raw.FileSize),
-    fileSizeBytes: num(raw.fileSizeBytes ?? raw.FileSizeBytes ?? raw.sizeBytes ?? raw.SizeBytes),
-    releasedAt: str(raw.releasedAt ?? raw.ReleasedAt ?? raw.releasedAtUtc ?? raw.ReleasedAtUtc),
-    sha256: str(raw.sha256 ?? raw.Sha256 ?? raw.sha256Hash ?? raw.Sha256Hash),
-    releaseId: str(raw.releaseId ?? raw.ReleaseId ?? raw.id ?? raw.Id),
+    url: str(release.fileUrl ?? release.FileUrl ?? raw.fileUrl ?? raw.FileUrl ?? raw.url ?? raw.Url),
+    version: str(release.version ?? release.Version ?? raw.version ?? raw.Version),
+    versionCode: num(release.versionCode ?? release.VersionCode ?? raw.versionCode ?? raw.VersionCode),
+    fileName: str(release.fileName ?? release.FileName ?? raw.fileName ?? raw.FileName),
+    fileSize: num(release.fileSize ?? release.FileSize ?? raw.fileSize ?? raw.FileSize),
+    fileSizeBytes: num(release.fileSize ?? release.FileSize ?? raw.fileSizeBytes ?? raw.FileSizeBytes ?? raw.sizeBytes ?? raw.SizeBytes),
+    releasedAt: str(release.releasedAt ?? release.ReleasedAt ?? raw.releasedAt ?? raw.ReleasedAt ?? raw.releasedAtUtc ?? raw.ReleasedAtUtc),
+    sha256: str(release.sha256 ?? release.Sha256 ?? raw.sha256 ?? raw.Sha256 ?? raw.sha256Hash ?? raw.Sha256Hash),
+    releaseId: str(release.id ?? release.Id ?? raw.releaseId ?? raw.ReleaseId ?? raw.id ?? raw.Id),
   };
 }
 
@@ -92,11 +96,11 @@ function normalizeConfig(raw: unknown): AdminAppDownloadsConfig {
   const ios = record(root.ios ?? root.Ios ?? root.iOS ?? root.IOS);
   return {
     android: {
-      googlePlay: channel(record(android.googlePlay ?? android.GooglePlay)),
-      apk: apkChannel(record(android.apk ?? android.Apk ?? android.APK)),
+      googlePlay: channel(record(root.androidGooglePlay ?? root.AndroidGooglePlay ?? android.googlePlay ?? android.GooglePlay)),
+      apk: apkChannel(record(root.androidApk ?? root.AndroidApk ?? android.apk ?? android.Apk ?? android.APK)),
     },
     ios: {
-      appStore: channel(record(ios.appStore ?? ios.AppStore)),
+      appStore: channel(record(root.iosAppStore ?? root.IosAppStore ?? ios.appStore ?? ios.AppStore)),
     },
   };
 }

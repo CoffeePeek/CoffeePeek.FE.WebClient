@@ -96,6 +96,7 @@ export interface ImportCandidatesQuery {
   hasAddress?: boolean;
   rejectReason?: RejectReason;
   source?: ImportSource;
+  verification?: 'needs-recheck';
   page?: number;
   pageSize?: number;
 }
@@ -350,7 +351,10 @@ export async function getImportCandidates(
 ): Promise<ApiResponse<ImportCandidatesPage>> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
-  const response = await httpClient.get<unknown>(API_ENDPOINTS.ADMIN.IMPORT_CANDIDATES, {
+  const endpoint = params.verification === 'needs-recheck'
+    ? API_ENDPOINTS.ADMIN.IMPORT_RECHECK_CANDIDATES
+    : API_ENDPOINTS.ADMIN.IMPORT_CANDIDATES;
+  const response = await httpClient.get<unknown>(endpoint, {
     params: {
       status: params.status !== undefined ? QUEUE_STATUS_TO_API[params.status] : undefined,
       bucket: params.bucket !== undefined ? BUCKET_TO_API[params.bucket] : undefined,

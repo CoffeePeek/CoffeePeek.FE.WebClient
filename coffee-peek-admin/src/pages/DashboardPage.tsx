@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, Coffee, Database, Map, MessageSquareText, ShieldCheck, Users } from 'lucide-react';
+import { ArrowRight, Coffee, MessageSquareText, ShieldCheck, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getOverviewStats } from '../api/admin';
 import { AdminStatsPanel } from '../components/dashboard/AdminStatsPanel';
@@ -9,28 +9,6 @@ import { useUser } from '../contexts/UserContext';
 
 const roleName = (isAdmin: boolean, isModerator: boolean, isOwner: boolean) =>
   isAdmin ? 'Администратор' : isModerator ? 'Модератор' : isOwner ? 'Владелец' : 'Пользователь';
-
-interface QuickActionProps {
-  to: string;
-  label: string;
-  description: string;
-  icon: typeof Coffee;
-}
-
-const QuickAction = ({ to, label, description, icon: Icon }: QuickActionProps) => (
-  <Card className="transition-colors hover:border-primary/50">
-    <Link to={to} className="group flex items-center gap-3 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-dark dark:text-primary">
-        <Icon className="h-5 w-5" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold">{label}</span>
-        <span className="mt-0.5 block text-xs text-text-muted dark:text-stone-400">{description}</span>
-      </span>
-      <ArrowRight className="h-4 w-4 text-stone-400 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
-    </Link>
-  </Card>
-);
 
 const StatSkeleton = () => <div className="h-28 animate-pulse rounded-xl bg-stone-100 dark:bg-white/5" />;
 
@@ -81,23 +59,6 @@ export const DashboardPage = () => {
       )}
 
       {isAdmin && data && <AdminStatsPanel overview={data} />}
-
-      <section>
-        <div className="mb-3">
-          <h3 className="font-display text-base font-semibold">Быстрые действия</h3>
-          <p className="text-sm text-text-muted dark:text-stone-400">Часто используемые разделы для вашей роли.</p>
-        </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {isOwner && <QuickAction to="/my-shops" label="Мои кофейни" description="Управление вашими кофейнями" icon={Coffee} />}
-          {!isModerator && <QuickAction to="/coffee-shops" label="Каталог кофеен" description="Просмотр опубликованных кофеен" icon={Coffee} />}
-          {!isModerator && <QuickAction to="/map" label="Карта кофеен" description="Найти кофейни на карте" icon={Map} />}
-          {isModerator && <QuickAction to="/import" label="Парсинг" description="Кандидаты, карта и статистика" icon={Database} />}
-          {isModerator && <QuickAction to="/shops?status=Pending" label="Заявки на кофейни" description="Кофейни, добавленные пользователями" icon={Coffee} />}
-          {isModerator && <QuickAction to="/reviews?status=Pending" label="Отзывы на проверке" description="Просмотр и одобрение отзывов" icon={MessageSquareText} />}
-          {isAdmin && <QuickAction to="/users" label="Пользователи" description="Статистика, роли и редактирование" icon={Users} />}
-          {isAdmin && <QuickAction to="/cache" label="Управление кешем" description="Просмотр и очистка кеша" icon={Database} />}
-        </div>
-      </section>
     </div>
   );
 };
